@@ -1,0 +1,5 @@
+djangorestframework
+django-cors-headers
+markdown
+django-filter
+psycopg2-binary

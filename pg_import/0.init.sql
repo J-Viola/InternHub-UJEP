@@ -1,0 +1,9 @@
+GRANT ALL PRIVILEGES ON *.* TO 'internhub'@'%' WITH GRANT OPTION;
+
+CREATE TABLE `pg_import`.`import` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(255) NOT NULL,
+  `description` TEXT NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
