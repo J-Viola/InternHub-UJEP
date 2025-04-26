@@ -19,7 +19,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
-  django:
+  backend:
     build:
       context: .
       dockerfile: .docker/Backend/Dockerfile
@@ -32,7 +32,6 @@ services:
              python manage.py runserver 0.0.0.0:8000"
     env_file:
       - .env
-
     volumes:
       - ./backend:/app/backend
     ports:
@@ -49,7 +48,6 @@ services:
       args:
        - NODE_VERSION=${NODE_VERSION}
     container_name: internhub-frontend
-    command: ["npm", "start"]
     env_file:
       - .env
     restart: unless-stopped
@@ -57,7 +55,7 @@ services:
       - ./frontend:/app/frontend
       - node-modules:/app/frontend/node_modules
     depends_on:
-      - django
+      - backend
     ports:
       - "3000:3000"
     networks:
@@ -65,7 +63,7 @@ services:
 networks:
   internhub:
     name: internhub
-    external: true
+    driver: bridge
 volumes:
   node-modules:
   pgdata:

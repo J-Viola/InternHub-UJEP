@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
 
 # Application definition
@@ -78,7 +78,7 @@ DB_USER = os.environ.get("PG_USER")
 DB_PASSWORD = os.environ.get("PG_PASSWORD")
 DB_HOST = os.environ.get("PG_HOST")
 DB_PORT = os.environ.get("PG_PORT")
-
+FRONTEND_URL = os.environ.get("REACT_APP_API_URL")
 
 DATABASES = {
     "default": {
@@ -133,3 +133,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+STAG_WS_URL = os.environ.get("STAG_WS_URL")

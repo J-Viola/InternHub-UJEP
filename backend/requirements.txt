@@ -3,3 +3,11 @@ django-cors-headers
 markdown
 django-filter
 psycopg2-binary
+pydevd-pycharm~=243.26053.29
+requests
+pydantic
+pylint
+pre-commit
+black
+flake8
+isort

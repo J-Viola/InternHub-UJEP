@@ -1,8 +1,11 @@
 from django.urls import path
-from views import login
+from . import views
 
 app_name = 'users'
 
 urlpatterns = [
-    path('login/', login, name="list"),
+
+    path('login/', views.login),
+    path('auth-callback/', views.auth_callback),
+    path('ares-justice/', views.aresJustice),
 ]
