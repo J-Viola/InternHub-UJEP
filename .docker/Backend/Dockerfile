@@ -1,5 +1,5 @@
 ARG PY_VERSION
-FROM python:${PY_VERSION}-slim
+FROM python:${PY_VERSION}
 
 WORKDIR /app/backend
 
