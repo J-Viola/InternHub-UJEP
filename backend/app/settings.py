@@ -137,3 +137,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}

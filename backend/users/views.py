@@ -10,6 +10,8 @@ from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from users.dtos.dtos import EkonomickySubjektDTO
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_simplejwt.tokens import RefreshToken
 
 logger = logging.getLogger(__name__)
 
@@ -53,10 +55,10 @@ def login(request):
         )
 
 
+@csrf_exempt
 def auth_callback(request):
     """Handle callback from STAG authentication"""
-    ticket = request.GET.get("stagUserTicket")
-    user_info_b64 = request.GET.get("stagUserInfo")
+    ticket = request.POST.get("ticket")
 
     if not ticket or ticket == "anonymous":
         return JsonResponse({"error": "Authentication failed"}, status=401)
@@ -96,15 +98,28 @@ def auth_callback(request):
 
         except Exception as e:
             logger.error(f"Error requesting STAG user details: {str(e)}")
-        response = redirect(settings.FRONTEND_URL + "?auth_success=true")
-        response.set_cookie(
-            "session_id",
-            request.session.session_key,
-            httponly=True,
-            secure=True,
-        )
+        # response = redirect(settings.FRONTEND_URL + "?auth_success=true")
+        # response.set_cookie(
+        #     "session_id",
+        #     request.session.session_key,
+        #     httponly=True,
+        #     secure=True,
+        # )
         # Redirect to frontend with success
-        return response
+        return JsonResponse({
+            "a":stag_user_details
+        },
+            status=200,
+            safe=False
+        )
+
+        refresh = RefreshToken.for_user(user)
+
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+
 
     except Exception as e:
         logger.error(f"Auth callback error: {str(e)}")
