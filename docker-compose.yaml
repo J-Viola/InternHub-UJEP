@@ -62,9 +62,25 @@ services:
       - "3000:3000"
     networks:
       - internhub
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: internhub-pgadmin
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - internhub
 networks:
   internhub:
     name: internhub
 volumes:
   node-modules:
+  pgadmin-data:
   pgdata:
