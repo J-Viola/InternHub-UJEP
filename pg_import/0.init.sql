@@ -1,4 +1,4 @@
-GRANT ALL PRIVILEGES ON *.* TO 'internhub'@'%' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON DATABASE internhub TO internhub;
 
 CREATE TABLE `pg_import`.`import` (
   `id` INT NOT NULL AUTO_INCREMENT,
