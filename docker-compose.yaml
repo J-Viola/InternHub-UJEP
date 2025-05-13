@@ -65,7 +65,6 @@ services:
 networks:
   internhub:
     name: internhub
-    external: true
 volumes:
   node-modules:
   pgdata:
