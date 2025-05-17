@@ -14,7 +14,7 @@ restart: ## Restarts docker stack
 	docker compose restart
 
 frontend-open-sh: ## Opens shell inside running container
-	docker exec -it internhub-frontend bash
+	docker container exec -it internhub-frontend bash
 
 backend-open-sh: ## Opens shell inside running container
-	docker exec -it internhub-backend bash
+	docker container exec -it internhub-backend bash
