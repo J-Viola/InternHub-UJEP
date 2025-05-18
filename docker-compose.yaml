@@ -35,6 +35,7 @@ services:
     volumes:
       - ./backend:/app/backend
     ports:
+      - "5678:5678"
       - "8000:8000"
     depends_on:
       postgres:
@@ -51,7 +52,7 @@ services:
     command: ["npm", "start"]
     env_file:
       - .env
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./frontend:/app/frontend
       - node-modules:/app/frontend/node_modules

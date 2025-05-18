@@ -1,84 +1,54 @@
-import base64
-import json
-import logging
 import re
 
 import requests
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect
-from users.dtos.dtos import EkonomickySubjektDTO
-from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from users.dtos.dtos import EkonomickySubjektDTO
 
-logger = logging.getLogger(__name__)
+from .serializers import (CustomTokenObtainPairSerializer, LogoutSerializer,
+                          RegisterSerializer)
 
 
-def login(request):
-    """Redirect to STAG login page"""
-    callback_url = request.build_absolute_uri("/api/users/auth-callback/")
-    login_url = (
-        f"{settings.STAG_WS_URL}/login?originalURL={callback_url}?basicAuth=1"
-    )
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+    permission_classes = (AllowAny,)
 
-    # Add long ticket parameter if needed
-    if request.GET.get("longTicket"):
-        login_url += "&longTicket=1"
-
-    # # Use main login method if configured
-    # if getattr(settings, 'STAG_ONLY_MAIN_LOGIN_METHOD', False):
-    #     login_url += "&onlyMainLoginMethod=1"
-    # response = redirect(login_url)
-    # auth_credentials = "indy:demo"
-    # auth_bytes = auth_credentials.encode('utf-8')
-    # auth_b64 = base64.b64encode(auth_bytes).decode('utf-8')
-    # auth_header = f"Basic {auth_b64}"
-    # response.headers['Authorization'] = auth_header
-
-    auth_credentials = "indy:demo"
-    auth_bytes = auth_credentials.encode("utf-8")
-    auth_b64 = base64.b64encode(auth_bytes).decode("utf-8")
-    auth_header = f"Basic {auth_b64}"
-    headers = {"Authorization": auth_header}
-
-    response = requests.get(login_url, headers=headers)
-    if response.status_code == 200:
-        return HttpResponse(response.text)
-    else:
-        return JsonResponse(
-            {
-                "error": f"Login request failed with status {response.status_code}"
-            },
-            status=500,
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"message": "User registered successfully"},
+            status=status.HTTP_201_CREATED,
         )
 
 
-#
-# def check_auth(request):
-#     """Check if user is authorized"""
-#     ticket = request.session.get('stag_user_ticket')
-#     roles = request.session.get('stag_user_roles', [])
-#
-#     if not ticket or not roles:
-#         return JsonResponse({'authorized': False}, status=401)
-#
-#     return JsonResponse({
-#         'authorized': True,
-#         'roles': roles,
-#         'user': request.session.get('stag_user_info')
-#     })
-#
-#
-# def logout(request):
-#     """Clear session data"""
-#     for key in ['stag_user_ticket', 'stag_user_info', 'stag_user_roles']:
-#         if key in request.session:
-#             del request.session[key]
-#
-#     request.session.flush()
-#     return JsonResponse({'logged_out': True})
+class LogoutView(generics.GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = LogoutSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            refresh_token = serializer.validated_data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {"success": "Successfully logged out"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @login_required
@@ -136,7 +106,7 @@ def update_ares_subject(request):
         )
         if response.status_code == 200:
             response_data = response.json()
-            if "kod" in response_data and response_data["kod"] != None:
+            if "kod" in response_data and response_data["kod"] is not None:
                 return JsonResponse(
                     {"error": response_data["kod"]}, status=400
                 )
@@ -156,3 +126,7 @@ def update_ares_subject(request):
 
     # Return the subject information as JSON.
     return JsonResponse(ares_data)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

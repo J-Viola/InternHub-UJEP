@@ -1,10 +1,6 @@
-import base64
-import json
 import logging
 
-from django.conf import settings
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
