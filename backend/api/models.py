@@ -26,21 +26,14 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        if (
-            extra_fields.get("is_staff") is not True
-            or extra_fields.get("is_superuser") is not True
-        ):
-            raise ValueError(
-                "Superuser must have is_staff=True and is_superuser=True"
-            )
+        if extra_fields.get("is_staff") is not True or extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_staff=True and is_superuser=True")
         return self.create_user(email, password, **extra_fields)
 
 
 class Status(models.Model):
     status_id = models.AutoField(primary_key=True)
-    status_code = models.CharField(
-        unique=True, max_length=50, blank=True, null=True
-    )
+    status_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
     status_name = models.CharField(max_length=100, blank=True, null=True)
     status_category = models.CharField(max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
@@ -52,13 +45,9 @@ class Status(models.Model):
 
 class User(AbstractBaseUser, PermissionsMixin):
     user_id = models.AutoField(primary_key=True)
-    username = models.CharField(
-        unique=True, max_length=50, blank=True, null=True
-    )
+    username = models.CharField(unique=True, max_length=50, blank=True, null=True)
     password = models.CharField(max_length=255, blank=True, null=True)
-    email = models.CharField(
-        unique=True, max_length=255, blank=True, null=True
-    )
+    email = models.CharField(unique=True, max_length=255, blank=True, null=True)
     title_before = models.CharField(max_length=50, blank=True, null=True)
     first_name = models.CharField(max_length=50, blank=True, null=True)
     last_name = models.CharField(max_length=50, blank=True, null=True)
@@ -114,9 +103,7 @@ class ActionLog(models.Model):
 
 class Department(models.Model):
     department_id = models.AutoField(primary_key=True)
-    department_name = models.CharField(
-        unique=True, max_length=100, blank=True, null=True
-    )
+    department_name = models.CharField(unique=True, max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -126,9 +113,7 @@ class Department(models.Model):
 
 class DepartmentUserRole(models.Model):
     id = models.AutoField(primary_key=True)
-    department = models.ForeignKey(
-        Department, models.DO_NOTHING, blank=True, null=True
-    )
+    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     role = models.ForeignKey("Role", models.DO_NOTHING, blank=True, null=True)
 
@@ -140,13 +125,9 @@ class DepartmentUserRole(models.Model):
 
 class Subject(models.Model):
     subject_id = models.AutoField(primary_key=True)
-    subject_code = models.CharField(
-        unique=True, max_length=50, blank=True, null=True
-    )
+    subject_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
     subject_name = models.CharField(max_length=100, blank=True, null=True)
-    department = models.ForeignKey(
-        Department, models.DO_NOTHING, blank=True, null=True
-    )
+    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     hours_required = models.IntegerField(blank=True, null=True)
 
     class Meta:
@@ -161,9 +142,7 @@ class EmployerProfile(models.Model):
     dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
-    approval_status = models.ForeignKey(
-        Status, models.DO_NOTHING, blank=True, null=True
-    )
+    approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -172,19 +151,13 @@ class EmployerProfile(models.Model):
 
 class EmployerInvitation(models.Model):
     invitation_id = models.AutoField(primary_key=True)
-    employer = models.ForeignKey(
-        EmployerProfile, models.DO_NOTHING, blank=True, null=True
-    )
+    employer = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    practice = models.ForeignKey(
-        "Practice", models.DO_NOTHING, blank=True, null=True
-    )
+    practice = models.ForeignKey("Practice", models.DO_NOTHING, blank=True, null=True)
     submission_date = models.DateField(blank=True, null=True)
     expiration_date = models.DateField(blank=True, null=True)
     message = models.TextField(blank=True, null=True)
-    status = models.ForeignKey(
-        Status, models.DO_NOTHING, blank=True, null=True
-    )
+    status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -193,9 +166,7 @@ class EmployerInvitation(models.Model):
 
 class EmployerUserRole(models.Model):
     id = models.AutoField(primary_key=True)
-    employer = models.ForeignKey(
-        EmployerProfile, models.DO_NOTHING, blank=True, null=True
-    )
+    employer = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
@@ -216,21 +187,15 @@ class PracticeType(models.Model):
 
 class Practice(models.Model):
     practice_id = models.AutoField(primary_key=True)
-    employer = models.ForeignKey(
-        EmployerProfile, models.DO_NOTHING, blank=True, null=True
-    )
-    subject = models.ForeignKey(
-        Subject, models.DO_NOTHING, blank=True, null=True
-    )
+    employer = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True)
+    subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True)
     title = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     responsibilities = models.TextField(blank=True, null=True)
     available_positions = models.IntegerField(blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
-    status = models.ForeignKey(
-        Status, models.DO_NOTHING, blank=True, null=True
-    )
+    status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
     approval_status = models.ForeignKey(
         Status,
         models.DO_NOTHING,
@@ -238,14 +203,10 @@ class Practice(models.Model):
         blank=True,
         null=True,
     )
-    contact_user = models.ForeignKey(
-        User, models.DO_NOTHING, blank=True, null=True
-    )
+    contact_user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     is_active = models.BooleanField(blank=True, null=True)
     image_base64 = models.TextField(blank=True, null=True)
-    practice_type = models.ForeignKey(
-        PracticeType, models.DO_NOTHING, blank=True, null=True
-    )
+    practice_type = models.ForeignKey(PracticeType, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -254,9 +215,7 @@ class Practice(models.Model):
 
 class PracticeUser(models.Model):
     id = models.AutoField(primary_key=True)
-    practice = models.ForeignKey(
-        Practice, models.DO_NOTHING, blank=True, null=True
-    )
+    practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
@@ -267,9 +226,7 @@ class PracticeUser(models.Model):
 
 class Role(models.Model):
     role_id = models.AutoField(primary_key=True)
-    role_name = models.CharField(
-        unique=True, max_length=50, blank=True, null=True
-    )
+    role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -280,13 +237,9 @@ class Role(models.Model):
 class StudentPractice(models.Model):
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    practice = models.ForeignKey(
-        Practice, models.DO_NOTHING, blank=True, null=True
-    )
+    practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True)
     application_date = models.DateField(blank=True, null=True)
-    approval_status = models.ForeignKey(
-        Status, models.DO_NOTHING, blank=True, null=True
-    )
+    approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
     progress_status = models.ForeignKey(
         Status,
         models.DO_NOTHING,
@@ -312,9 +265,7 @@ class StudentPractice(models.Model):
 
 class UploadedDocument(models.Model):
     document_id = models.AutoField(primary_key=True)
-    practice = models.ForeignKey(
-        Practice, models.DO_NOTHING, blank=True, null=True
-    )
+    practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True)
     document_name = models.CharField(max_length=100, blank=True, null=True)
     file_path = models.CharField(max_length=255, blank=True, null=True)
     uploaded_at = models.DateTimeField(blank=True, null=True)
@@ -328,9 +279,7 @@ class UploadedDocument(models.Model):
 class UserSubject(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    subject = models.ForeignKey(
-        Subject, models.DO_NOTHING, blank=True, null=True
-    )
+    subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True)
     role = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:

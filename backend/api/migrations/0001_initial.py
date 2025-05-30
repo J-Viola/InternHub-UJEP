@@ -16,9 +16,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "last_login",
-                    models.DateTimeField(
-                        blank=True, null=True, verbose_name="last login"
-                    ),
+                    models.DateTimeField(blank=True, null=True, verbose_name="last login"),
                 ),
                 (
                     "user_id",
@@ -26,9 +24,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "username",
-                    models.CharField(
-                        blank=True, max_length=50, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=50, null=True, unique=True),
                 ),
                 (
                     "password",
@@ -36,9 +32,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "email",
-                    models.CharField(
-                        blank=True, max_length=255, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=255, null=True, unique=True),
                 ),
                 (
                     "title_before",
@@ -146,9 +140,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "department_name",
-                    models.CharField(
-                        blank=True, max_length=100, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=100, null=True, unique=True),
                 ),
                 ("description", models.TextField(blank=True, null=True)),
             ],
@@ -196,15 +188,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "ico",
-                    models.CharField(
-                        blank=True, max_length=15, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=15, null=True, unique=True),
                 ),
                 (
                     "dic",
-                    models.CharField(
-                        blank=True, max_length=15, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=15, null=True, unique=True),
                 ),
                 ("address", models.TextField(blank=True, null=True)),
                 ("company_profile", models.TextField(blank=True, null=True)),
@@ -260,9 +248,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        blank=True, max_length=100, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=100, null=True, unique=True),
                 ),
                 ("coefficient", models.FloatField(blank=True, null=True)),
             ],
@@ -290,9 +276,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "role_name",
-                    models.CharField(
-                        blank=True, max_length=50, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=50, null=True, unique=True),
                 ),
                 ("description", models.TextField(blank=True, null=True)),
             ],
@@ -310,9 +294,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "status_code",
-                    models.CharField(
-                        blank=True, max_length=50, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=50, null=True, unique=True),
                 ),
                 (
                     "status_name",
@@ -360,9 +342,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "subject_code",
-                    models.CharField(
-                        blank=True, max_length=50, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=50, null=True, unique=True),
                 ),
                 (
                     "subject_name",
