@@ -1,48 +1,112 @@
+//https://medium.com/@gahrmicc/basic-implementation-of-interceptors-in-react-js-using-axios-222bf0db6c3f
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { _post } from "@api/apiClient";
+import { createApiClient } from "@api/apiClient";
+import axios from 'axios';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [accessToken, setAccessToken] = useState(null);
-    const [refreshToken, setRefreshToken] = useState(null);
+    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") ||null);
+    const [apiClient, setApiClient] = useState(createApiClient()); // init simple api client
 
-    //FOR DEBUG :D
+    // Debug logging
     useEffect(() => {
         console.log("AccessT:", accessToken);
-        console.log("RefreshT:", RefreshToken);
-    }, [accessToken, refreshToken])
+        console.log("RefreshT:", refreshToken);
+    }, [accessToken, refreshToken]);
 
+    // Aktualizace API klienta při změně ACCESS tokenu
+    useEffect(() => {
+        const client = apiClient;
+        
+        // Request interceptor
+        const requestInterceptor = client.interceptors.request.use(async (config) => {
+            if (accessToken) {
+                config.headers['Authorization'] = `Bearer ${accessToken}`;
+            }
+            return config;
+        });
 
-    const login = async (credentials) => {
+        // Response interceptor
+        const responseInterceptor = client.interceptors.response.use(
+            (res) => res,
+            async (err) => {
+                if (err.response?.status === 401) {
+                    try {
+                        // poslu starý REFRESH token na refresh
+                        const res = await client.post('/api/refresh', {'refresh': refreshToken}, { withCredentials: true });
+                        if (res?.data?.accessToken) {
+                            setAccessToken(res.data.accessToken);
+                            // přepíšu config
+                            err.config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+                            return client(err.config);
+                        }
+                    // pokud neprojde refresh, tak smažu všechny tokeny a nechám uživatele 
+                    // znovu přihlásit a získat oba tokeny
+                    } catch (refreshErr) {
+                        setAccessToken(null);
+                        setRefreshToken(null);
+                        // smažu refresh token - musí si ho znovu založit
+                        localStorage.removeItem("refreshToken");
+                        window.location.href = '/login';
+                    }
+                }
+                throw err;
+            }
+        );
+
+        setApiClient(client);
+
+        return () => {
+            client.interceptors.request.eject(requestInterceptor);
+            client.interceptors.response.eject(responseInterceptor);
+        };
+    }, [accessToken]);
+
+    const login = async (stagData) => {
         try {
-            const response = await _post('api/login', credentials, {
+            const response = await apiClient.post('api/login', stagData, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 withCredentials: true
             });
+            
+            if (response?.data?.accessToken) {
+                setAccessToken(response.data.accessToken);
+                setRefreshToken(response.data.refreshToken);
+                
+                if (response.data.refreshToken) {
+                    localStorage.setItem("refreshToken", response.data.refreshToken);
+                }
+            }
+            
             return response;
         } catch (error) {
             throw error;
         }
     };
 
-    //SET TOKENY
-    setAccessToken(login.accessToken);
-    setRefreshToken(login.refreshToken);
-
     const logout = async () => {
         try {
-            await _post('api/logout');
+            await apiClient.post('api/logout');
             setAccessToken(null);
+            //setRefreshToken(null);
+            //localStorage.removeItem("refreshToken");
         } catch (error) {
             throw error;
         }
     };
 
     return (
-        <AuthContext.Provider value={{ accessToken, refreshToken, login, logout }}>
+        <AuthContext.Provider value={{ 
+            accessToken, 
+            refreshToken, 
+            login, 
+            logout,
+            apiClient 
+        }}>
             {children}
         </AuthContext.Provider>
     );
