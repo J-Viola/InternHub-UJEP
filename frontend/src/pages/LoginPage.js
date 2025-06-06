@@ -4,7 +4,7 @@ import Container from "@core/Container/Container";
 //import Button from "@core/Button/Button";
 import Nav from "@components/core/Nav";
 import LoginForm from "@login/LoginForm";
-import { STAGLogin, getParams } from "@utils/STAGLogin";
+import { STAGLogin, getParams } from "@auth/STAGLogin";
 
 export default function LoginPage() {
     const [params, setParams] = useState({});

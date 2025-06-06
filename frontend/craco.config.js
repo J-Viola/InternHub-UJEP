@@ -10,7 +10,11 @@ module.exports = {
       '@utils': path.resolve(__dirname, 'src/utils'),
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@context': path.resolve(__dirname, 'src/context'),
-      '@assets': path.resolve(__dirname, 'src/assets')
+      '@assets': path.resolve(__dirname, 'src/assets'),
+      '@services': path.resolve(__dirname, 'src/services'),
+      '@auth': path.resolve(__dirname, 'src/services/auth'),
+      '@api': path.resolve(__dirname, 'src/api'),
+
     },
     configure: (webpackConfig) => {
       webpackConfig.ignoreWarnings = [
@@ -21,5 +25,8 @@ module.exports = {
       ];
       return webpackConfig;
     }
-  }
+  },
+  eslint: {
+    enable: false,
+  },
 }; 

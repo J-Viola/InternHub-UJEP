@@ -1,5 +1,5 @@
 import { createContext, useState, useContext, useEffect} from "react";
-import User from "@utils/UserObj";
+import User from "@auth/UserObj";
 
 const UserContext = createContext();
 
