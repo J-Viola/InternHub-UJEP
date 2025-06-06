@@ -1,6 +1,7 @@
 import re
 
 import requests
+from api.decorators import role_required
 from api.models import EmployerProfile, Status
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
@@ -14,6 +15,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
 
+from .models import OrganizationRoleEnum
 from .serializers import CustomTokenObtainPairSerializer, LogoutSerializer, RegisterSerializer
 
 
@@ -29,6 +31,25 @@ class RegisterView(generics.CreateAPIView):
             {"message": "User registered successfully"},
             status=status.HTTP_201_CREATED,
         )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@role_required([OrganizationRoleEnum.UNREGISTERED])
+def pp(request):
+    return Response(
+        {"message": "Hello from the public endpoint!"},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def authpp(request):
+    return Response(
+        {"message": "Hello from the public endpoint!"},
+        status=status.HTTP_200_OK,
+    )
 
 
 class LogoutView(generics.GenericAPIView):

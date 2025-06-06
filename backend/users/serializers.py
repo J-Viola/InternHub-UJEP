@@ -1,4 +1,5 @@
 import requests
+from api.models import OrganizationRole, OrganizationUser, StagRole, StagUser
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -12,8 +13,18 @@ User = get_user_model()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     service_ticket = serializers.CharField(write_only=True, required=False)
-    email = serializers.CharField(write_only=True, required=False)
-    password = serializers.CharField(write_only=True, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # override parent’s password field to be optional/blank
+        pw = self.fields["password"]
+        pw.required = False
+        pw.allow_blank = True
+        pw.write_only = True
+        email = self.fields["email"]
+        email.required = False
+        email.allow_blank = True
+        email.write_only = True
 
     def validate(self, attrs):
         ticket = attrs.pop("service_ticket", None)
@@ -43,18 +54,23 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         details = resp.json()
         email = details.get("email")
-
+        stagUserInfos = details.get("stagUserInfo")
+        if not stagUserInfos or len(stagUserInfos) == 0:
+            raise AuthenticationFailed("No user information returned by STAG")
+        stagUserInfo = stagUserInfos[0]
+        role = stagUserInfo["role"]
+        roleName = stagUserInfo["roleNazev"]
         if not email:
             raise AuthenticationFailed("Email not returned by STAG")
 
-        user, _ = User.objects.get_or_create(
+        stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
+        user, _ = StagUser.objects.get_or_create(
             email=email,
-            defaults={"username": email.split("@")[0]},
-            is_active=True,
+            defaults={"email": email, "stag_role": stagRole},
         )
 
         refresh = self.get_token(user)
-        refresh["type"] = UserType.STUDENT.value
+        refresh["type"] = UserType.STAG.value
         refresh["service_ticket"] = ticket
 
         return {
@@ -72,7 +88,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise AuthenticationFailed("Invalid credentials or disabled account")
 
         refresh = self.get_token(user)
-        refresh["type"] = UserType.ORGANIZATION.value
+        if isinstance(user, OrganizationUser):
+            # organization_role = user.organization_role
+            refresh["type"] = UserType.ORGANIZATION.value
+        else:
+            refresh["type"] = "undefined"
 
         return {
             "refresh": str(refresh),
@@ -81,8 +101,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    ico = serializers.CharField(required=True, write_only=True)
-    logo = serializers.ImageField(required=True, write_only=True)
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
 
@@ -101,11 +119,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("password2")
-        user = User.objects.create(
+        unregistered_role = OrganizationRole.objects.get(role="unregistered")
+        user = OrganizationUser.objects.create(
             email=validated_data["email"],
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
             is_active=True,
+            organization_role=unregistered_role,
         )
         user.set_password(validated_data["password"])
         user.save()

@@ -12,3 +12,6 @@ black
 flake8
 isort
 djangorestframework-simplejwt
+django-polymorphic
+django-model-utils
+Pillow

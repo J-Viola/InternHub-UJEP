@@ -5,5 +5,19 @@ from enum import Enum
 
 class UserType(Enum):
     ADMIN = "admin"
-    STUDENT = ("student",)
+    STAG = "stag"
     ORGANIZATION = "organization"
+
+    def values(self):
+        return [member.value for member in self.__class__]
+
+
+class StagRoleEnum(Enum):
+    ST = "st"
+    VY = "vy"
+
+
+class OrganizationRoleEnum(Enum):
+    OWNER = "owner"
+    INSERT = "inserter"
+    UNREGISTERED = "unregistered"

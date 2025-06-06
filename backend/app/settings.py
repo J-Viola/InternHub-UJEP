@@ -34,6 +34,7 @@ AUTH_USER_MODEL = "api.user"
 # Application definition
 
 INSTALLED_APPS = [
+    "polymorphic",
     "api",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -143,11 +144,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
-}
+REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",)}
 
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 
