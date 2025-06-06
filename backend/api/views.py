@@ -53,6 +53,11 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+
+#Role: Student, Vedení organizace, Správce společnosti, Správce inzerátů, Správce předmětů, Správce katedry
+# Generally by smazané věci měli být schováné a přístup by měl mít pouze superadmin nebo vedení katedry, ostatní uživatelé by měli vidět pouze aktivní záznamy (deleted_at=xxxxx),
+# to znamená defaultně filtrovat v list a retrieve metodách nesmazané záznamy (deleted_at=None)
+
 # -------------------------------------------------------------
 # StatusViewSet – CRUD pro statusy
 # -------------------------------------------------------------
@@ -60,10 +65,10 @@ class StatusViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/statuses/
     - GET (list): Vrací seznam všech statusů (volný přístup)
-    - POST: Vytvoří nový status (autentizace požadována)
+    - POST: Vytvoří nový status (autentizace požadována) - Superadmin
     - GET /{id}/: Vrací detail konkrétního statusu (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje existující status (autentizace požadována)
-    - DELETE /{id}/: Smaže status (autentizace požadována)
+    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje existující status (autentizace požadována) - Superadmin
+    - DELETE /{id}/: Smaže status (autentizace požadována) - Superadmin
     """
     queryset = Status.objects.all().order_by('status_name')
     serializer_class = StatusSerializer
@@ -132,6 +137,7 @@ class StatusViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(active_statuses, many=True)
         return Response(serializer.data)
 
+#Superadmin
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def deactivate(self, request, pk=None):
         """
@@ -151,11 +157,11 @@ class StatusViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/users/
-    - GET (list): Vrací seznam všech uživatelů (volný přístup)
-    - POST: Registrace nového uživatele (volný přístup)
-    - GET /{id}/: Vrací detail uživatele (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje uživatele (autentizace požadována)
-    - DELETE /{id}/: Smaže uživatele (autentizace požadována)
+    - GET (list): Vrací seznam všech uživatelů - superadmin, vedení katedry, správci společnosti a správci inzerátů (filtrovaný podle předmětů a pouze studenti možná udělat samostatný endpoint)
+    - POST: Registrace nového uživatele - superadmin, vedení katedry (bude tam minimálně proces vytváření nebude to pouze CRUD)
+    - GET /{id}/: Vrací detail uživatele - superadmin, vedení katedry, správci společnosti a správci inzerátů
+    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje uživatele - superadmin a uživatel sám sebe (bude krapet složitější)
+    - DELETE /{id}/: Smaže uživatele - superadmin, vedení katedry, uživatel sám sebe
     """
     queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
@@ -226,6 +232,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(user_obj)
         return Response(serializer.data)
 
+#Všichni kromě studenta a školy
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def reset_password(self, request, pk=None):
         """
@@ -254,11 +261,11 @@ class UserViewSet(viewsets.ModelViewSet):
 class ActionLogViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/actionlogs/
-    - GET (list): Vrací seznam všech záznamů akcí (volný přístup)
-    - POST: Vytvoří nový záznam akce (autentizace požadována)
-    - GET /{id}/: Vrací detail záznamu akce (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje záznam akce (autentizace požadována)
-    - DELETE /{id}/: Smaže záznam akce (autentizace požadována)
+    - GET (list): Vrací seznam všech záznamů akcí - superadmin, vedení katedry
+    - POST: Vytvoří nový záznam akce - SMAZAT
+    - GET /{id}/: Vrací detail záznamu akce - superadmin, vedení katedry
+    - PUT /{id}/ nebo PATCH /{id}/: SMAZAT
+    - DELETE /{id}/: Smaže záznam akce - SMAZAT
     """
     queryset = ActionLog.objects.all().order_by('-action_date')
     serializer_class = ActionLogSerializer
@@ -317,6 +324,7 @@ class ActionLogViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+#superadmin, vedení katedry
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def recent(self, request):
         """
@@ -334,11 +342,11 @@ class ActionLogViewSet(viewsets.ModelViewSet):
 class DepartmentViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/departments/
-    - GET (list): Vrací seznam oddělení (volný přístup)
-    - POST: Vytvoří nové oddělení (autentizace požadována)
-    - GET /{id}/: Vrací detail oddělení (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje oddělení (autentizace požadována)
-    - DELETE /{id}/: Smaže oddělení (autentizace požadována)
+    - GET (list): Vrací seznam oddělení - superadmin, vedení katedry
+    - POST: Vytvoří nové oddělení - superadmin
+    - GET /{id}/: Vrací detail oddělení - superadmin, vedení katedry
+    - PUT /{id}/ nebo PATCH /{id}/: - superadmin, vedení katedry (sám sobě)
+    - DELETE /{id}/: Smaže oddělení - superadmin
     """
     queryset = Department.objects.all().order_by('department_name')
     serializer_class = DepartmentSerializer
@@ -397,6 +405,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+#superadmin, vedení katedry
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def with_users(self, request):
         """
@@ -414,11 +423,11 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 class DepartmentUserRoleViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/departmentuserroles/
-    - GET (list): Vrací všechny role uživatelů v odděleních (volný přístup)
-    - POST: Přiřadí uživatele k oddělení s rolí (autentizace požadována)
-    - GET /{id}/: Vrací detail přiřazení (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje přiřazení (autentizace požadována)
-    - DELETE /{id}/: Odebere uživatele z oddělení (autentizace požadována)
+    - GET (list): Vrací všechny role uživatelů v odděleních - superadmin, vedení katedry
+    - POST: Přiřadí uživatele k oddělení s rolí - superadmin,
+    - GET /{id}/: Vrací detail přiřazení - vedení katedry
+    - PUT /{id}/ nebo PATCH /{id}/: - superadmin,
+    - DELETE /{id}/: Odebere uživatele z oddělení - superadmin,
     """
     queryset = DepartmentUserRole.objects.all().order_by('id')
     serializer_class = DepartmentUserRoleSerializer
@@ -477,6 +486,7 @@ class DepartmentUserRoleViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+# superadmin, vedení katedry
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def by_department(self, request):
         """
@@ -497,11 +507,11 @@ class DepartmentUserRoleViewSet(viewsets.ModelViewSet):
 class RoleViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/roles/
-    - GET (list): Vrací seznam rolí (volný přístup)
-    - POST: Vytvoří novou roli (autentizace požadována)
-    - GET /{id}/: Vrací detail role (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje roli (autentizace požadována)
-    - DELETE /{id}/: Smaže roli (autentizace požadována)
+    - GET (list): Vrací seznam rolí (autentizace požadována)
+    - POST: Vytvoří novou roli - superadmin
+    - GET /{id}/: Vrací detail role (autentizace požadována)
+    - PUT /{id}/ nebo PATCH /{id}/: - superadmin
+    - DELETE /{id}/: Smaže roli - superadmin
     """
     queryset = Role.objects.all().order_by('role_name')
     serializer_class = RoleSerializer
@@ -577,11 +587,11 @@ class RoleViewSet(viewsets.ModelViewSet):
 class SubjectViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/subjects/
-    - GET (list): Vrací seznam všech předmětů (volný přístup)
-    - POST: Vytvoří nový předmět (autentizace požadována)
-    - GET /{id}/: Vrací detail předmětu (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje předmět (autentizace požadována)
-    - DELETE /{id}/: Smaže předmět (autentizace požadována)
+    - GET (list): Vrací seznam všech předmětů (autentizace požadována)
+    - POST: Vytvoří nový předmět - superadmin, vedení katedry
+    - GET /{id}/: Vrací detail předmětu (autentizace požadována)
+    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje předmět  - superadmin, vedení katedry
+    - DELETE /{id}/: Smaže předmět  - superadmin, vedení katedry
     """
     queryset = Subject.objects.all().order_by('subject_name')
     serializer_class = SubjectSerializer
@@ -660,11 +670,11 @@ class SubjectViewSet(viewsets.ModelViewSet):
 class EmployerProfileViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/employers/
-    - GET (list): Vrací seznam zaměstnavatelů (volný přístup)
-    - POST: Vytvoří profil zaměstnavatele (autentizace požadována)
-    - GET /{id}/: Vrací detail profilu (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje profil (autentizace požadována)
-    - DELETE /{id}/: Smaže profil (autentizace požadována)
+    - GET (list): Vrací seznam zaměstnavatelů - (autentizace požadována)
+    - POST: Vytvoří profil zaměstnavatele - organizace, superadmin, vedení katedry (složitější proces registrace)
+    - GET /{id}/: Vrací detail profilu - (autentizace požadována)
+    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje profil - organizace, superadmin, vedení katedry
+    - DELETE /{id}/: Smaže profil - organizace, superadmin
     """
     queryset = EmployerProfile.objects.all().order_by('company_name')
     serializer_class = EmployerProfileSerializer
@@ -724,6 +734,7 @@ class EmployerProfileViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+# superadmin, vedení katedry, správce předmětů
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def approved(self, request):
         """
@@ -744,11 +755,11 @@ class EmployerProfileViewSet(viewsets.ModelViewSet):
 class EmployerInvitationViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/employer-invitations/
-    - GET (list): Vrací seznam pozvánek (volný přístup)
-    - POST: Vytvoří novou pozvánku (autentizace požadována)
-    - GET /{id}/: Vrací detail pozvánky (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje pozvánku (autentizace požadována)
-    - DELETE /{id}/: Smaže pozvánku (autentizace požadována)
+    - GET (list): Vrací seznam pozvánek - superadmin, vedení katedry, správci společnosti, správci inzerátů, správce předmětů
+    - POST: Vytvoří novou pozvánku - superadmin, vedení katedry, správci společnosti, správci inzerátů
+    - GET /{id}/: Vrací detail pozvánky - superadmin, vedení katedry, správci společnosti, správci inzerátů
+    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje pozvánku - superadmin, vedení katedry, správci společnosti, správci inzerátů
+    - DELETE /{id}/: Smaže pozvánku - superadmin, vedení katedry, správci společnosti, správci inzerátů
     """
     queryset = EmployerInvitation.objects.all().order_by('-submission_date')
     serializer_class = EmployerInvitationSerializer
@@ -807,6 +818,7 @@ class EmployerInvitationViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+#superadmin, vedení katedry, správci společnosti, správci inzerátů
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def pending(self, request):
         """
@@ -827,11 +839,11 @@ class EmployerInvitationViewSet(viewsets.ModelViewSet):
 class EmployerUserRoleViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/employer-user-roles/
-    - GET (list): Vrací seznam rolí uživatelů u zaměstnavatelů (volný přístup)
-    - POST: Přiřadí uživatele k zaměstnavateli s rolí (autentizace požadována)
-    - GET /{id}/: Vrací detail přiřazení (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje přiřazení (autentizace požadována)
-    - DELETE /{id}/: Odebere uživatele od zaměstnavatele (autentizace požadována)
+    - GET (list): Vrací seznam rolí uživatelů u zaměstnavatelů - superadmin, vedení katedry, správci společnosti, správci inzerátů (společnost uvidí sama sebe)
+    - POST: Přiřadí uživatele k zaměstnavateli s rolí - superadmin, vedení katedry (společnost pozve zaměstnance)
+    - GET /{id}/: Vrací detail přiřazení - superadmin, vedení katedry, správci společnosti, správci inzerátů (společnost uvidí sama sebe)
+    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje přiřazení - superadmin, vedení katedry, správci společnosti (společnost upravuje sama sebe)
+    - DELETE /{id}/: Odebere uživatele od zaměstnavatele - superadmin, vedení katedry, správci společnosti (společnost upravuje sama sebe)
     """
     queryset = EmployerUserRole.objects.all().order_by('id')
     serializer_class = EmployerUserRoleSerializer
@@ -910,10 +922,10 @@ class EmployerUserRoleViewSet(viewsets.ModelViewSet):
 class PracticeTypeViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/practice-types/
-    - GET (list): Vrací seznam typů praxí (volný přístup)
-    - POST: Vytvoří nový typ praxe (autentizace požadována)
-    - GET /{id}/: Vrací detail typu praxe (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje typ praxe (autentizace požadována)
+    - GET (list): Vrací seznam typů praxí (autentizace požadována)
+    - POST: Vytvoří nový typ praxe - superadmin, vedení katedry
+    - GET /{id}/: Vrací detail typu praxe (autentizace požadována)
+    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje typ praxe - superadmin, vedení katedry
     - DELETE /{id}/: Smaže typ praxe (autentizace požadována)
     """
     queryset = PracticeType.objects.all().order_by('name')
@@ -990,12 +1002,13 @@ class PracticeTypeViewSet(viewsets.ModelViewSet):
 class PracticeViewSet(viewsets.ModelViewSet):
     """
     Endpoint: /api/practices/
-    - GET (list): Vrací veřejný seznam aktivních praxí (volný přístup)
-    - POST: Vytvoří novou praxi (autentizace požadována)
-    - GET /{id}/: Vrací detail praxe (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje praxi (autentizace požadována)
-    - DELETE /{id}/: Smaže praxi (autentizace požadována)
+    - GET (list): Vrací veřejný seznam aktivních praxí - superadmin, správce katedry, správce inzerátů, správce společnosti, student
+    - POST: Vytvoří novou praxi - superadmin, správce katedry, správce inzerátů, správce společnosti
+    - GET /{id}/: Vrací detail praxe - superadmin, správce katedry, správce inzerátů, správce předmětů, správce společnosti, student
+    - PUT /{id}/ nebo PATCH /{id}/: - superadmin, správce katedry, správce inzerátů, správce předmětů, správce společnosti, student
+    - DELETE /{id}/: Smaže praxi - superadmin, správce katedry,
     - POST /{id}/apply/: Student se hlásí na praxi (autentizace požadována)
+    xxx
     """
     queryset = Practice.objects.all().select_related("employer", "practice_type", "status", "approval_status")
     serializer_class = PracticeSerializer
