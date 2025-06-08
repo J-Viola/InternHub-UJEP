@@ -5,7 +5,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import RefreshToken
 from users.models import UserType
 
 User = get_user_model()
@@ -98,6 +100,42 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        # decode old refresh
+        refresh = RefreshToken(attrs["refresh"])
+        # re-fetch user
+        # lookup user by configured claim
+        user_id = refresh[api_settings.USER_ID_CLAIM]
+        try:
+            user = User.objects.get(**{api_settings.USER_ID_FIELD: user_id})
+        except User.DoesNotExist:
+            raise AuthenticationFailed("User not found", code="user_not_found")
+        self.user = user
+
+        # optionally rotate/blacklist old refresh
+        if api_settings.ROTATE_REFRESH_TOKENS:
+            refresh.blacklist()
+            refresh = RefreshToken.for_user(user)
+
+        # build new access
+        access = refresh.access_token
+
+        # inject fresh claims
+        access["type"] = user
+        if user.user_type == UserType.ORGANIZATION.value:
+            access["role"] = user.organization_role.role
+        elif user.user_type == UserType.STAG.value:
+            access["role"] = user.stag_role.role
+        elif user.is_superuser:
+            access["role"] = UserType.ADMIN.value
+
+        data = {"access": str(access)}
+        if self.rotate_refresh_tokens:
+            data["refresh"] = str(refresh)
+        return data
 
 
 class RegisterSerializer(serializers.ModelSerializer):
