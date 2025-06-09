@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "verify_email.apps.VerifyEmailConfig",
 ]
 
 MIDDLEWARE = [
@@ -147,7 +148,7 @@ STAG_WS_URL = os.environ.get("STAG_WS_URL")
 REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",)}
 
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
-ACCESS_TOKEN_REFRESH_TIME = int(os.environ.get("JWT_REFRESH_TOKEN_EXPIRATION"))
+ACCESS_TOKEN_REFRESH_TIME = int(os.environ.get("JWT_ACCESS_TOKEN_REFRESH_TIME"))
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=ACCESS_TOKEN_REFRESH_TIME),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -159,3 +160,16 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "user_id",
     "USER_ID_CLAIM": "user_id",
 }
+
+
+
+###EMAILS
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get("EMAIL_HOST")
+EMAIL_PORT = os.environ.get('EMAIL_PORT')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS')
+EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASSWORD')
+
+DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_FROM")

@@ -15,3 +15,4 @@ djangorestframework-simplejwt
 django-polymorphic
 django-model-utils
 Pillow
+django-verify-email

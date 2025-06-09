@@ -13,4 +13,5 @@ urlpatterns = [
     path("token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     path("pp/", views.pp, name="pp"),
     path("authpp/", views.authpp, name="pp"),
+    path('verification/', include('verify_email.urls')),
 ]
