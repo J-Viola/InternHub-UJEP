@@ -108,10 +108,8 @@ def aresJustice(request):
 
 @api_view(["POST"])
 @login_required
+@role_required([OrganizationRoleEnum.OWNER])
 def update_ares_subject(request):
-
-    if EmployerProfile.objects.get(employer_id=request.user.id) is not None:
-        return JsonResponse({"error": "User already has employer profile"}, status=400)
 
     ico = request.POST.get("ico")
     company_profile = request.POST.get("company_profile")
