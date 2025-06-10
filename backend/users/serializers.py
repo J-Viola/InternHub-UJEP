@@ -1,13 +1,14 @@
 import requests
-from api.models import OrganizationRole, OrganizationUser, StagRole, StagUser
+from api.models import EmployerProfile, OrganizationRole, OrganizationUser, StagRole, StagUser, Status
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core.cache import cache
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
-from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from users.dtos.dtos import EkonomickySubjektDTO
 from users.models import UserType
 
 User = get_user_model()
@@ -102,52 +103,57 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
 
-class CustomTokenRefreshSerializer(TokenRefreshSerializer):
-    def validate(self, attrs):
-        # decode old refresh
-        refresh = RefreshToken(attrs["refresh"])
-        # re-fetch user
-        # lookup user by configured claim
-        user_id = refresh[api_settings.USER_ID_CLAIM]
-        try:
-            user = User.objects.get(**{api_settings.USER_ID_FIELD: user_id})
-        except User.DoesNotExist:
-            raise AuthenticationFailed("User not found", code="user_not_found")
-        self.user = user
+# class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+#     def validate(self, attrs):
+#         # decode old refresh
+#         refresh = RefreshToken(attrs["refresh"])
+#         # re-fetch user
+#         # lookup user by configured claim
+#         user_id = refresh[api_settings.USER_ID_CLAIM]
+#         try:
+#             user = User.objects.get(**{api_settings.USER_ID_FIELD: user_id})
+#         except User.DoesNotExist:
+#             raise AuthenticationFailed("User not found", code="user_not_found")
+#         self.user = user
+#
+#         # optionally rotate/blacklist old refresh
+#         if api_settings.ROTATE_REFRESH_TOKENS:
+#             refresh.blacklist()
+#             refresh = RefreshToken.for_user(user)
+#
+#         # build new access
+#         access = refresh.access_token
+#
+#         # inject fresh claims
+#         access["type"] = user
+#         if isinstance(user.user_type, OrganizationUser):
+#             access["role"] = user.organization_role.role
+#         elif user.user_type == UserType.STAG.value:
+#             access["role"] = user.stag_role.role
+#         elif user.is_superuser:
+#             access["role"] = UserType.ADMIN.value
+#
+#         data = {"access": str(access)}
+#         if self.rotate_refresh_tokens:
+#             data["refresh"] = str(refresh)
+#         return data
 
-        # optionally rotate/blacklist old refresh
-        if api_settings.ROTATE_REFRESH_TOKENS:
-            refresh.blacklist()
-            refresh = RefreshToken.for_user(user)
 
-        # build new access
-        access = refresh.access_token
-
-        # inject fresh claims
-        access["type"] = user
-        if user.user_type == UserType.ORGANIZATION.value:
-            access["role"] = user.organization_role.role
-        elif user.user_type == UserType.STAG.value:
-            access["role"] = user.stag_role.role
-        elif user.is_superuser:
-            access["role"] = UserType.ADMIN.value
-
-        data = {"access": str(access)}
-        if self.rotate_refresh_tokens:
-            data["refresh"] = str(refresh)
-        return data
-
-
-class RegisterSerializer(serializers.ModelSerializer):
+class OrganizationRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
+    ico = serializers.RegexField(regex=r"\d{8}", write_only=True, required=True)
+    email = serializers.CharField(write_only=True, required=True)
+    phone = serializers.CharField(write_only=True, required=True)
+    logo = serializers.ImageField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ("email", "password", "password2", "first_name", "last_name")
+        fields = ("email", "phone", "password", "password2", "ico", "logo")
         extra_kwargs = {
-            "first_name": {"required": True},
-            "last_name": {"required": True},
+            "ico": {"required": True},
+            "email": {"required": True},
+            "phone": {"required": True},
         }
 
     def validate(self, attrs):
@@ -156,18 +162,44 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop("password2")
-        unregistered_role = OrganizationRole.objects.get(role="unregistered")
-        user = OrganizationUser.objects.create(
-            email=validated_data["email"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
-            is_active=True,
-            organization_role=unregistered_role,
-        )
-        user.set_password(validated_data["password"])
-        user.save()
-        return user
+        try:
+            unregistered_role = OrganizationRole.objects.get(role="unregistered")
+        except OrganizationRole.DoesNotExist:
+            raise serializers.ValidationError({"organization_role": "Role 'unregistered' does not exist."})
+        ico = validated_data.pop("ico")
+        cache_key = f"ares_{ico}"
+        ares_data = cache.get(cache_key)
+
+        if not ares_data:
+            response = requests.get("https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/" + ico)
+            if response.status_code == 200:
+                response_data = response.json()
+                if "kod" in response_data and response_data["kod"] is not None:
+                    raise serializers.ValidationError({"ARES": "ARES returned an error code."})
+                ares_data = EkonomickySubjektDTO.model_validate(response_data)
+                cache.set(cache_key, ares_data, timeout=3600)
+            else:
+                raise serializers.ValidationError({"ARES": "Failed to fetch data from ARES"})
+
+        with transaction.atomic():
+            user = OrganizationUser.objects.create(
+                email=validated_data["email"] + "s",
+                organization_role=unregistered_role,
+            )
+            # TODO: Must be set in DB (migration maybe?+)
+            status = Status.objects.get(status_name="Pending")
+            EmployerProfile.objects.create(
+                employer_id=user.id,
+                ico=ares_data.ico,
+                dic=ares_data.dic,
+                company_name=ares_data.obchodniJmeno,
+                address=ares_data.sidlo.textAdresy,
+                zip_code=ares_data.sidlo.psc,
+                approval_status=status,
+            )
+            user.set_password(validated_data["password"])
+            # TODO: Finish this with activation of the account by VEDENÍ KATEDRY approving and sending activation email?
+            return user
 
 
 class LogoutSerializer(serializers.Serializer):

@@ -78,6 +78,7 @@ class EmployerProfile(models.Model):
     ico = models.CharField(unique=True, max_length=15, blank=True, null=True)
     dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
+    zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
     approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
 

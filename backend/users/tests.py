@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.serializers import CustomTokenObtainPairSerializer, LogoutSerializer, RegisterSerializer
+from users.serializers import CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
 from users.views import aresJustice
 
 User = get_user_model()
@@ -88,7 +88,7 @@ class RegisterSerializerTests(TestCase):
             "first_name": "John",
             "last_name": "Doe",
         }
-        serializer = RegisterSerializer(data=data)
+        serializer = OrganizationRegisterSerializer(data=data)
         self.assertTrue(serializer.is_valid())
         user = serializer.save()
         self.assertEqual(user.email, "new@example.com")
@@ -105,7 +105,7 @@ class RegisterSerializerTests(TestCase):
             "first_name": "John",
             "last_name": "Doe",
         }
-        serializer = RegisterSerializer(data=data)
+        serializer = OrganizationRegisterSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("password", serializer.errors)
         self.assertIn("didn't match", str(serializer.errors["password"]))
@@ -116,7 +116,7 @@ class RegisterSerializerTests(TestCase):
             "password": "StrongPassword123",
             "password2": "StrongPassword123",
         }
-        serializer = RegisterSerializer(data=data)
+        serializer = OrganizationRegisterSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("first_name", serializer.errors)
         self.assertIn("last_name", serializer.errors)

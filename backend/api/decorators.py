@@ -4,7 +4,7 @@ from functools import wraps
 from api.models import OrganizationUser, StagUser
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from users.models import OrganizationRoleEnum, StagRoleEnum, UserType
+from users.models import OrganizationRoleEnum, StagRoleEnum
 
 
 def role_required(allowed_Enums: list[Enum]):

@@ -14,5 +14,5 @@ isort
 djangorestframework-simplejwt
 django-polymorphic
 django-model-utils
-Pillow
+pillow
 django-verify-email

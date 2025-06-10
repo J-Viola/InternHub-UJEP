@@ -12,15 +12,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
 
 from .models import OrganizationRoleEnum
-from .serializers import CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer, LogoutSerializer, RegisterSerializer
+from .serializers import CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
 
 
 class RegisterView(generics.CreateAPIView):
-    serializer_class = RegisterSerializer
+    serializer_class = OrganizationRegisterSerializer
     permission_classes = (AllowAny,)
 
     def create(self, request, *args, **kwargs):
@@ -31,29 +31,6 @@ class RegisterView(generics.CreateAPIView):
             {"message": "User registered successfully"},
             status=status.HTTP_201_CREATED,
         )
-
-
-class CustomTokenRefreshView(TokenRefreshView):
-    serializer_class = CustomTokenRefreshSerializer
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-@role_required([OrganizationRoleEnum.UNREGISTERED])
-def pp(request):
-    return Response(
-        {"message": "Hello from the public endpoint!"},
-        status=status.HTTP_200_OK,
-    )
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def authpp(request):
-    return Response(
-        {"message": "Hello from the public endpoint!"},
-        status=status.HTTP_200_OK,
-    )
 
 
 class LogoutView(generics.GenericAPIView):
@@ -112,7 +89,6 @@ def aresJustice(request):
 def update_ares_subject(request):
 
     ico = request.POST.get("ico")
-    company_profile = request.POST.get("company_profile")
     if not ico:
         return JsonResponse({"error": "IČO parameter is missing"}, status=400)
 
@@ -148,7 +124,6 @@ def update_ares_subject(request):
             name=ares_data.obchodniJmeno,
             street=ares_data.sidlo.textAdresy,
             zip_code=ares_data.sidlo.psc,
-            company_profile=company_profile,
             approval_status=status,
         )
     user.save()
