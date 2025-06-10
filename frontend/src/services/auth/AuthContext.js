@@ -10,6 +10,24 @@ export const AuthProvider = ({ children }) => {
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") ||null);
     const [apiClient, setApiClient] = useState(createApiClient()); // init simple api client
 
+    // Funkce pro aktualizaci session - refresh tokenu
+    const refreshUX = async () => {
+        const client = apiClient;
+        if (refreshToken) {
+            const res = await client.post('/api/refresh', {'refresh': refreshToken}, { withCredentials: true });
+            if (res?.data?.accessToken && res?.data?.refreshToken) {
+                setAccessToken(res.data.accessToken);
+                setRefreshToken(res.data.refreshToken);
+            }
+        }
+    }
+
+    // Aktualizace session pro lepší UX - intervalově
+    useEffect(() => {
+        let intervalId = setInterval(refreshUX, 1000 * 60 * 4.5); // 4.5 min - předělat na env proměnnou
+        return () => clearInterval(intervalId); // odstraním interval při změně refresh tokenu - cleanup funkce
+    }, [refreshToken]);
+
     // Debug logging
     useEffect(() => {
         console.log("AccessT:", accessToken);
@@ -20,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const client = apiClient;
         
-        // Request interceptor
+        // Request interceptor - přidám access token do hlavičky před odesláním requestu
         const requestInterceptor = client.interceptors.request.use(async (config) => {
             if (accessToken) {
                 config.headers['Authorization'] = `Bearer ${accessToken}`;
@@ -28,7 +46,7 @@ export const AuthProvider = ({ children }) => {
             return config;
         });
 
-        // Response interceptor
+        // Response interceptor - zpracování chyby 401 v response
         const responseInterceptor = client.interceptors.response.use(
             (res) => res,
             async (err) => {
@@ -59,10 +77,11 @@ export const AuthProvider = ({ children }) => {
         setApiClient(client);
 
         return () => {
-            client.interceptors.request.eject(requestInterceptor);
-            client.interceptors.response.eject(responseInterceptor);
+            client.interceptors.request.eject(requestInterceptor); // odstraním interceptor
+            client.interceptors.response.eject(responseInterceptor); // odstraním interceptor
         };
     }, [accessToken]);
+
 
     const login = async (stagData) => {
         try {
