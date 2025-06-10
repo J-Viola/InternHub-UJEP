@@ -24,8 +24,10 @@ export const AuthProvider = ({ children }) => {
 
     // Aktualizace session pro lepší UX - intervalově
     useEffect(() => {
-        let intervalId = setInterval(refreshUX, 1000 * 60 * 4.5); // 4.5 min - předělat na env proměnnou
-        return () => clearInterval(intervalId); // odstraním interval při změně refresh tokenu - cleanup funkce
+        if (refreshToken) {
+            let intervalId = setInterval(refreshUX, 1000 * 60 * 4.5); // 4.5 min - předělat na env proměnnou
+            return () => clearInterval(intervalId); // odstraním interval při změně refresh tokenu - cleanup funkce
+        }
     }, [refreshToken]);
 
     // Debug logging
