@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-if (process.env.REACT_APP_API_URL) {
-    console.log("ENV URL JE NAČTENA:", process.env.REACT_APP_API_URL);
-}
+const API_ROOT = '/api';
+const DEFAULT_URL = 'http://localhost:8000';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const BASE_URL = process.env.REACT_APP_API_URL 
+    ? `${process.env.REACT_APP_API_URL}${API_ROOT}`
+    : `${DEFAULT_URL}${API_ROOT}`;
+
 console.log("API URL:", BASE_URL);
 
 export const createApiClient = () => {

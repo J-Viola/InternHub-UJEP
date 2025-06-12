@@ -1,20 +1,13 @@
 class User {
     constructor() {
-        this.ticker = null;
-        this.name = null;
         this.role = null;
-        //........
     }
 
-    setUser(user) {
-        this.ticker = user.ticker;
-        this.name = user.name;
-        this.role = user.role;
-        //........
+    setUser(data) {
+        this.role = data.role; // pro FE
     }
 
-    // Dodělat constructor,getters a setters podle BE (je student, je na katedře....)
-
+    // dodělat checks na role, check T/F: má data?
 }
 
 export default User;

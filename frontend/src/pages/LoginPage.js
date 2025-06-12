@@ -5,9 +5,11 @@ import Container from "@core/Container/Container";
 import Nav from "@components/core/Nav";
 import LoginForm from "@login/LoginForm";
 import { STAGLogin, getParams } from "@auth/STAGLogin";
+import { useAuth } from "@auth/Auth";
 
 export default function LoginPage() {
     const [params, setParams] = useState({});
+    const {login} = useAuth();
 
     // handle loginu - z komponenty LoginForm - hadnle API a vytvoření session
     const handleParams = () => {

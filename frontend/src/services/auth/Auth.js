@@ -2,23 +2,29 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { createApiClient } from "@api/apiClient";
 import axios from 'axios';
+import { useUser } from "@hooks/UserProvider"; // předpokládám, že máte useUser hook
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+function AuthProvider({ children }) {
     const [accessToken, setAccessToken] = useState(null);
-    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") ||null);
-    const [apiClient, setApiClient] = useState(createApiClient()); // init simple api client
+    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
+    const [apiClient] = useState(() => createApiClient()); // Inicializace při vytvoření
+    const { user, setUser, cleanUser } = useUser(); // použití useUser hooku místo UserProvider komponenty
 
     // Funkce pro aktualizaci session - refresh tokenu
     const refreshUX = async () => {
-        const client = apiClient;
-        if (refreshToken) {
-            const res = await client.post('/api/refresh', {'refresh': refreshToken}, { withCredentials: true });
+        if (!apiClient || !refreshToken) return;
+        
+        try {
+            const res = await apiClient.post('/api/refresh', {'refresh': refreshToken}, { withCredentials: true });
             if (res?.data?.accessToken && res?.data?.refreshToken) {
                 setAccessToken(res.data.accessToken);
                 setRefreshToken(res.data.refreshToken);
+                setUser(res.data.user) // chci user role - user.role - aktualizace pro jistotu
             }
+        } catch (error) {
+            console.error('Refresh token failed:', error);
         }
     }
 
@@ -38,37 +44,38 @@ export const AuthProvider = ({ children }) => {
 
     // Aktualizace API klienta při změně ACCESS tokenu
     useEffect(() => {
-        const client = apiClient;
-        
-        // Request interceptor - přidám access token do hlavičky před odesláním requestu
-        const requestInterceptor = client.interceptors.request.use(async (config) => {
-            if (accessToken) {
-                config.headers['Authorization'] = `Bearer ${accessToken}`;
-            }
-            return config;
-        });
+        if (!apiClient) return;
 
-        // Response interceptor - zpracování chyby 401 v response
-        const responseInterceptor = client.interceptors.response.use(
-            (res) => res,
-            async (err) => {
-                if (err.response?.status === 401) {
+        // Request interceptor
+        const requestInterceptor = apiClient.interceptors.request.use(
+            (config) => {
+                if (accessToken) {
+                    config.headers['Authorization'] = `Bearer ${accessToken}`;
+                }
+                return config;
+            },
+            (error) => {
+                return Promise.reject(error);
+            }
+        );
+
+        // Response interceptor
+        const responseInterceptor = apiClient.interceptors.response.use(
+            (response) => response,
+            async (error) => {
+                if (error.response?.status === 401) {
                     try {
-                        // poslu starý REFRESH token na refresh
-                        const res = await client.post('/api/refresh', {'refresh': refreshToken}, { withCredentials: true });
+                        const res = await apiClient.post('refresh', {'refresh': refreshToken}, { withCredentials: true });
                         if (res?.data?.accessToken) {
                             setAccessToken(res.data.accessToken);
-                            // přepíšu config
-                            err.config.headers.Authorization = `Bearer ${res.data.accessToken}`;
-                            return client(err.config);
+                            error.config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+                            return apiClient(error.config);
                         }
-                    // pokud neprojde refresh, tak smažu všechny tokeny a nechám uživatele 
-                    // znovu přihlásit a získat oba tokeny
-                    } catch (refreshErr) {
+                    } catch (refreshError) {
                         setAccessToken(null);
                         setRefreshToken(null);
-                        // smažu refresh token - musí si ho znovu založit
                         localStorage.removeItem("refreshToken");
+                        cleanUser();
                         window.location.href = '/login';
                     }
                 }
@@ -76,18 +83,17 @@ export const AuthProvider = ({ children }) => {
             }
         );
 
-        setApiClient(client);
-
         return () => {
-            client.interceptors.request.eject(requestInterceptor); // odstraním interceptor
-            client.interceptors.response.eject(responseInterceptor); // odstraním interceptor
+            apiClient.interceptors.request.eject(requestInterceptor);
+            apiClient.interceptors.response.eject(responseInterceptor);
         };
-    }, [accessToken]);
-
+    }, [accessToken, apiClient]);
 
     const login = async (stagData) => {
+        if (!apiClient) throw new Error('API není inicializován!');
+        
         try {
-            const response = await apiClient.post('api/login', stagData, {
+            const response = await apiClient.post('login', stagData, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -97,6 +103,7 @@ export const AuthProvider = ({ children }) => {
             if (response?.data?.accessToken) {
                 setAccessToken(response.data.accessToken);
                 setRefreshToken(response.data.refreshToken);
+                setUser(response.data.user);
                 
                 if (response.data.refreshToken) {
                     localStorage.setItem("refreshToken", response.data.refreshToken);
@@ -110,11 +117,14 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        if (!apiClient) throw new Error('API není inicializován!');
+        
         try {
-            await apiClient.post('api/logout');
+            await apiClient.post('logout');
             setAccessToken(null);
-            //setRefreshToken(null);
-            //localStorage.removeItem("refreshToken");
+            setRefreshToken(null);
+            localStorage.removeItem("refreshToken");
+            cleanUser();
         } catch (error) {
             throw error;
         }
@@ -131,6 +141,14 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth volej, pokud jsi pod AuthProvider!');
+    }
+    return context;
+}
+
+export default AuthProvider;
