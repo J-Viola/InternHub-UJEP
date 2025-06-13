@@ -80,6 +80,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "user",
                 "swappable": "AUTH_USER_MODEL",
+                "managed": False,
             },
             managers=[
                 ("objects", api.models.UserManager()),
@@ -97,6 +98,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "department",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -112,6 +114,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "organizationrole",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -129,6 +132,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "practicetype",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -143,6 +147,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "role",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -158,6 +163,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "stagrole",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -180,6 +186,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "status",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -199,11 +206,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "organizationuser",
+                "managed": False,
             },
-            bases=("api.user",),
-            managers=[
-                ("objects", api.models.UserManager()),
-            ],
         ),
         migrations.CreateModel(
             name="StagUser",
@@ -259,11 +263,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "staguser",
+                "managed": False,
             },
-            bases=("api.user",),
-            managers=[
-                ("objects", api.models.UserManager()),
-            ],
         ),
         migrations.CreateModel(
             name="ActionLog",
@@ -286,6 +287,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "actionlog",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -318,6 +320,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "employerprofile",
+                "managed": False,
+                
             },
         ),
         migrations.CreateModel(
@@ -345,6 +349,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "subject",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -359,6 +364,25 @@ class Migration(migrations.Migration):
                 ("end_date", models.DateField(blank=True, null=True)),
                 ("is_active", models.BooleanField(blank=True, null=True)),
                 ("image_base64", models.TextField(blank=True, null=True)),
+                (
+                    "approval_status",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="practice_approval_status_set",
+                        to="api.status",
+                    ),
+                ),
+                (
+                    "contact_user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to="api.organizationuser",
+                    ),
+                ),
                 (
                     "employer",
                     models.ForeignKey(
@@ -375,16 +399,6 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         to="api.practicetype",
-                    ),
-                ),
-                (
-                    "approval_status",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.DO_NOTHING,
-                        related_name="practice_approval_status_set",
-                        to="api.status",
                     ),
                 ),
                 (
@@ -405,18 +419,10 @@ class Migration(migrations.Migration):
                         to="api.subject",
                     ),
                 ),
-                (
-                    "contact_user",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.DO_NOTHING,
-                        to="api.organizationuser",
-                    ),
-                ),
             ],
             options={
                 "db_table": "practice",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -445,6 +451,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "uploadeddocument",
+                "managed": False,
             },
         ),
         migrations.AddField(
@@ -513,6 +520,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "employerinvitation",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -542,6 +550,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "usersubject",
                 "unique_together": {("user", "subject")},
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -605,6 +614,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "studentpractice",
                 "unique_together": {("user", "practice")},
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -633,6 +643,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "practiceuser",
                 "unique_together": {("practice", "user")},
+                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -670,6 +681,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "departmentuserrole",
                 "unique_together": {("department", "user", "role")},
+                "managed": False,
             },
         ),
     ]
