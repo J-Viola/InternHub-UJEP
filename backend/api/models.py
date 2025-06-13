@@ -273,7 +273,7 @@ class StudentPractice(models.Model):
     hours_completed = models.IntegerField(blank=True, null=True)
     cancellation_reason = models.TextField(blank=True, null=True)
     cancelled_by_user = models.ForeignKey(
-        User,
+        StagUser,
         models.DO_NOTHING,
         related_name="studentpractice_cancelled_by_user_set",
         blank=True,
