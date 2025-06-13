@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     # "verify_email.apps.VerifyEmailConfig",
 ]
 
@@ -145,7 +146,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
 
-REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",)}
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
 
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 ACCESS_TOKEN_REFRESH_TIME = int(os.environ.get("JWT_ACCESS_TOKEN_REFRESH_TIME"))
@@ -172,3 +176,11 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
 DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_FROM")
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Your Project API",
+    "DESCRIPTION": "Your project description",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # OTHER SETTINGS
+}

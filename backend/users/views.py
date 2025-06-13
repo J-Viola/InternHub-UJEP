@@ -8,7 +8,7 @@ from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -16,7 +16,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
 
 from .models import OrganizationRoleEnum
-from .serializers import CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
+from .serializers import AresJusticeSerializer, CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
 
 
 class RegisterView(generics.CreateAPIView):
@@ -53,36 +53,36 @@ class LogoutView(generics.GenericAPIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@csrf_exempt
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def aresJustice(request):
-    ico = request.GET.get("ico")
-    if not ico:
-        return JsonResponse({"error": "IČO parameter is missing"}, status=400)
+class AresJusticeView(generics.GenericAPIView):
+    serializer_class = AresJusticeSerializer
 
-    if not re.fullmatch(r"\d{8}", ico):
-        return JsonResponse({"error": "Invalid IČO format. It must be 8 digits."}, status=400)
+    @csrf_exempt
+    @api_view(["GET"])
+    def get(self, request):
+        ico = request.query_params.get("ico")
+        serializer = self.get_serializer(data={"ico": ico})
+        serializer.is_valid(raise_exception=True)
 
-    cache_key = f"ares_{ico}"
-    cached_data = cache.get(cache_key)
-    if cached_data:
-        return JsonResponse(cached_data)
+        cache_key = f"ares_{ico}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return JsonResponse(cached_data)
 
-    response = requests.get("https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/" + ico)
+        response = requests.get("https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/" + ico)
 
-    if response.status_code == 200:
-        data = response.json()
-        ares_dto = EkonomickySubjektDTO.model_validate(data)
-        cache.set(cache_key, ares_dto, timeout=3600)
-        return JsonResponse(data)
-    else:
-        return JsonResponse(
-            {"error": "Failed to fetch data from ARES"},
-            status=response.status_code,
-        )
+        if response.status_code == 200:
+            data = response.json()
+            ares_dto = EkonomickySubjektDTO.model_validate(data)
+            cache.set(cache_key, ares_dto, timeout=3600)
+            return JsonResponse(data)
+        else:
+            return JsonResponse(
+                {"error": "Failed to fetch data from ARES"},
+                status=response.status_code,
+            )
 
 
+# TODO not finished endpoint
 @api_view(["POST"])
 @login_required
 @role_required([OrganizationRoleEnum.OWNER])

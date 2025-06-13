@@ -16,3 +16,4 @@ django-polymorphic
 django-model-utils
 pillow
 django-verify-email
+drf-spectacular

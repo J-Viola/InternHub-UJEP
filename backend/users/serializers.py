@@ -183,7 +183,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             user = OrganizationUser.objects.create(
-                email=validated_data["email"] + "s",
+                email=validated_data["email"],
                 organization_role=unregistered_role,
             )
             # TODO: Must be set in DB (migration maybe?+)
@@ -196,11 +196,18 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
                 address=ares_data.sidlo.textAdresy,
                 zip_code=ares_data.sidlo.psc,
                 approval_status=status,
+                # TODO: LOGO
+                # logo=validated_data["logo"] if "logo" in validated_data else None,
             )
             user.set_password(validated_data["password"])
+            user.save()
             # TODO: Finish this with activation of the account by VEDENÍ KATEDRY approving and sending activation email?
             return user
 
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField(help_text="Refresh token to invalidate")
+
+
+class AresJusticeSerializer(serializers.Serializer):
+    ico = serializers.RegexField(regex=r"\d{8}")

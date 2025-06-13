@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 from users.serializers import CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
-from users.views import aresJustice
+from users.views import AresJusticeView
 
 User = get_user_model()
 
@@ -196,7 +196,7 @@ class AresViewsTests(TestCase):
 
         request = self.factory.get("/ares/?ico=12345678")
         request.user = self.user
-        response = aresJustice(request)
+        response = AresJusticeView(request)
 
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
@@ -205,7 +205,7 @@ class AresViewsTests(TestCase):
     def returnsBadRequestForMissingIco(self):
         request = self.factory.get("/ares/")
         request.user = self.user
-        response = aresJustice(request)
+        response = AresJusticeView(request)
 
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.content)
@@ -214,7 +214,7 @@ class AresViewsTests(TestCase):
     def returnsBadRequestForInvalidIcoFormat(self):
         request = self.factory.get("/ares/?ico=1234")
         request.user = self.user
-        response = aresJustice(request)
+        response = AresJusticeView(request)
 
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.content)
@@ -228,7 +228,7 @@ class AresViewsTests(TestCase):
 
         request = self.factory.get("/ares/?ico=12345678")
         request.user = self.user
-        response = aresJustice(request)
+        response = AresJusticeView(request)
 
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
