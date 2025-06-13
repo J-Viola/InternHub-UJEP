@@ -17,11 +17,13 @@ function AuthProvider({ children }) {
         if (!apiClient || !refreshToken) return;
         
         try {
-            const res = await apiClient.post('/api/refresh', {'refresh': refreshToken}, { withCredentials: true });
-            if (res?.data?.accessToken && res?.data?.refreshToken) {
-                setAccessToken(res.data.accessToken);
-                setRefreshToken(res.data.refreshToken);
-                setUser(res.data.user) // chci user role - user.role - aktualizace pro jistotu
+            const res = await apiClient.post('/refresh', {'refresh': refreshToken}, { withCredentials: true });
+            if (res?.data?.access && res?.data?.refresh) {
+                setAccessToken(res.data.access);
+                setRefreshToken(res.data.refresh);
+                if (res.data.user) {
+                    setUser(res.data.user);
+                }
             }
         } catch (error) {
             console.error('Refresh token failed:', error);
@@ -65,10 +67,10 @@ function AuthProvider({ children }) {
             async (error) => {
                 if (error.response?.status === 401) {
                     try {
-                        const res = await apiClient.post('refresh', {'refresh': refreshToken}, { withCredentials: true });
-                        if (res?.data?.accessToken) {
-                            setAccessToken(res.data.accessToken);
-                            error.config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+                        const res = await apiClient.post('/refresh', {'refresh': refreshToken}, { withCredentials: true });
+                        if (res?.data?.access) {
+                            setAccessToken(res.data.access);
+                            error.config.headers.Authorization = `Bearer ${res.data.access}`;
                             return apiClient(error.config);
                         }
                     } catch (refreshError) {
@@ -79,7 +81,7 @@ function AuthProvider({ children }) {
                         window.location.href = '/login';
                     }
                 }
-                throw err;
+                throw error;
             }
         );
 
@@ -93,25 +95,30 @@ function AuthProvider({ children }) {
         if (!apiClient) throw new Error('API není inicializován!');
         
         try {
-            const response = await apiClient.post('/users/login', stagData, {
+            const response = await apiClient.post('/users/login/', stagData, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 withCredentials: true
             });
             
-            if (response?.data?.accessToken) {
-                setAccessToken(response.data.accessToken);
-                setRefreshToken(response.data.refreshToken);
-                setUser(response.data.user);
+            console.log('Login response:', response.data);  // Debug log
+            
+            if (response?.data?.access) {
+                setAccessToken(response.data.access);
+                setRefreshToken(response.data.refresh);
+                if (response.data.user) {
+                    setUser(response.data.user);
+                }
                 
-                if (response.data.refreshToken) {
-                    localStorage.setItem("refreshToken", response.data.refreshToken);
+                if (response.data.refresh) {
+                    localStorage.setItem("refreshToken", response.data.refresh);
                 }
             }
             
             return response;
         } catch (error) {
+            console.error('Login error:', error);  // Debug log
             throw error;
         }
     };

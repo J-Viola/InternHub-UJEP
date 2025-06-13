@@ -80,7 +80,6 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "user",
                 "swappable": "AUTH_USER_MODEL",
-                "managed": False,
             },
             managers=[
                 ("objects", api.models.UserManager()),
@@ -98,7 +97,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "department",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -114,7 +112,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "organizationrole",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -132,7 +129,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "practicetype",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -147,7 +143,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "role",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -163,7 +158,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "stagrole",
-                #"managed": False,
             },
         ),
         migrations.CreateModel(
@@ -186,7 +180,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "status",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -206,7 +199,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "organizationuser",
-                "managed": False,
             },
             bases=("api.user",),
             managers=[
@@ -267,7 +259,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "staguser",
-                #"managed": False,
             },
             bases=("api.user",),
             managers=[
@@ -295,7 +286,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "actionlog",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -328,7 +318,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "employerprofile",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -356,7 +345,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "subject",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -429,7 +417,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "practice",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -458,7 +445,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "uploadeddocument",
-                "managed": False,
             },
         ),
         migrations.AddField(
@@ -527,7 +513,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "employerinvitation",
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -557,7 +542,6 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "usersubject",
                 "unique_together": {("user", "subject")},
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -621,7 +605,6 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "studentpractice",
                 "unique_together": {("user", "practice")},
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -650,7 +633,6 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "practiceuser",
                 "unique_together": {("practice", "user")},
-                "managed": False,
             },
         ),
         migrations.CreateModel(
@@ -688,7 +670,6 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "departmentuserrole",
                 "unique_together": {("department", "user", "role")},
-                "managed": False,
             },
         ),
     ]
