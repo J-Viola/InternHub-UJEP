@@ -34,19 +34,13 @@ def role_required(allowed_Enums: list[Enum]):
             user, token = user_auth
             request.user, request.auth = user, token
 
-            if isinstance(user, OrganizationUser):
-                role = user.organization_role.role
-                if role not in allowed_roles:
-                    raise PermissionDenied("You do not have permission to access this resource")
-            if isinstance(user, StagUser):
-                role = user.stag_role.role
-                if role not in allowed_roles:
-                    raise PermissionDenied("You do not have permission to access this resource")
-            if user.is_superuser:
-                pass
-            else:
-                raise NotAuthenticated("Authentication credentials were not provided")
-            return view_func(request, *args, **kwargs)
+            if user.is_superuser or (
+                isinstance(user, OrganizationUser) and user.organization_role.role in allowed_roles
+            ) or (
+                isinstance(user, StagUser) and user.stag_role.role in allowed_roles
+            ):
+                return view_func(request, *args, **kwargs)
+            raise PermissionDenied("You do not have permission to access this resource")
 
         return _wrapped_view
 
