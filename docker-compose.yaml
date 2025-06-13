@@ -32,10 +32,10 @@ services:
              python manage.py runserver 0.0.0.0:8000"
     env_file:
       - .env
-
     volumes:
       - ./backend:/app/backend
     ports:
+      - "5678:5678"
       - "8000:8000"
     depends_on:
       postgres:
@@ -52,7 +52,7 @@ services:
     command: ["npm", "start"]
     env_file:
       - .env
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./frontend:/app/frontend
       - node-modules:/app/frontend/node_modules
@@ -80,6 +80,7 @@ services:
 networks:
   internhub:
     name: internhub
+    driver: bridge
 volumes:
   node-modules:
   pgadmin-data:
