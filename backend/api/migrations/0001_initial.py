@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "user",
                 "swappable": "AUTH_USER_MODEL",
-                #"managed": False,
+                "managed": False,
             },
             managers=[
                 ("objects", api.models.UserManager()),
