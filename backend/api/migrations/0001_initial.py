@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "user",
                 "swappable": "AUTH_USER_MODEL",
-                "managed": False,
+                #"managed": False,
             },
             managers=[
                 ("objects", api.models.UserManager()),
@@ -163,7 +163,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "stagrole",
-                "managed": False,
+                #"managed": False,
             },
         ),
         migrations.CreateModel(
@@ -267,7 +267,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "staguser",
-                "managed": False,
+                #"managed": False,
             },
             bases=("api.user",),
             managers=[

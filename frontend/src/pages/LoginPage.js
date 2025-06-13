@@ -8,20 +8,27 @@ import { STAGLogin, getParams } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
 
 export default function LoginPage() {
-    const [params, setParams] = useState({});
+    const [ticket, setTicket] = useState({});
     const {login} = useAuth();
+    // hook pro user data
 
     // handle loginu - z komponenty LoginForm - hadnle API a vytvoření session
     const handleParams = () => {
         const params = getParams();
         console.log("Params:", params);
-        params && setParams(params);
+        ticket && setTicket(params);
     }
 
     
     const handleSTAGLogin = () => {
         STAGLogin();
         handleParams();
+        if (ticket) {
+            login({"service_ticket": ticket})
+        }
+        else {
+            console.error("Nemáme stag ticket")
+        }
     }
 
     useEffect(() => {

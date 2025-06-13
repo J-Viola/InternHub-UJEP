@@ -93,7 +93,7 @@ function AuthProvider({ children }) {
         if (!apiClient) throw new Error('API není inicializován!');
         
         try {
-            const response = await apiClient.post('login', stagData, {
+            const response = await apiClient.post('/users/login', stagData, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
