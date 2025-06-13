@@ -6,7 +6,6 @@ from api.models import EmployerProfile, Status
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -56,17 +55,15 @@ class LogoutView(generics.GenericAPIView):
 class AresJusticeView(generics.GenericAPIView):
     serializer_class = AresJusticeSerializer
 
-    @csrf_exempt
-    @api_view(["GET"])
-    def get(self, request):
-        ico = request.query_params.get("ico")
-        serializer = self.get_serializer(data={"ico": ico})
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
+        ico = serializer.validated_data.get("ico")
         cache_key = f"ares_{ico}"
         cached_data = cache.get(cache_key)
         if cached_data:
-            return JsonResponse(cached_data)
+            ares_dto = EkonomickySubjektDTO.model_validate(cached_data)
+            return JsonResponse(ares_dto, safe=False)
 
         response = requests.get("https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/" + ico)
 
