@@ -208,6 +208,10 @@ class Migration(migrations.Migration):
                 "db_table": "organizationuser",
                 "managed": False,
             },
+            bases=("api.user",),
+            managers=[
+                ("objects", api.models.UserManager()),
+            ],
         ),
         migrations.CreateModel(
             name="StagUser",
@@ -265,6 +269,10 @@ class Migration(migrations.Migration):
                 "db_table": "staguser",
                 "managed": False,
             },
+            bases=("api.user",),
+            managers=[
+                ("objects", api.models.UserManager()),
+            ],
         ),
         migrations.CreateModel(
             name="ActionLog",
@@ -321,7 +329,6 @@ class Migration(migrations.Migration):
             options={
                 "db_table": "employerprofile",
                 "managed": False,
-                
             },
         ),
         migrations.CreateModel(
@@ -365,25 +372,6 @@ class Migration(migrations.Migration):
                 ("is_active", models.BooleanField(blank=True, null=True)),
                 ("image_base64", models.TextField(blank=True, null=True)),
                 (
-                    "approval_status",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.DO_NOTHING,
-                        related_name="practice_approval_status_set",
-                        to="api.status",
-                    ),
-                ),
-                (
-                    "contact_user",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.DO_NOTHING,
-                        to="api.organizationuser",
-                    ),
-                ),
-                (
                     "employer",
                     models.ForeignKey(
                         blank=True,
@@ -402,6 +390,16 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "approval_status",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="practice_approval_status_set",
+                        to="api.status",
+                    ),
+                ),
+                (
                     "status",
                     models.ForeignKey(
                         blank=True,
@@ -417,6 +415,15 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         to="api.subject",
+                    ),
+                ),
+                (
+                    "contact_user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to="api.organizationuser",
                     ),
                 ),
             ],
