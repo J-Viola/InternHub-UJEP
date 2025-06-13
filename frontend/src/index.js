@@ -15,26 +15,30 @@ import VytvorenePraxe from '@pages/VytvorenePraxePage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
 
 import reportWebVitals from './reportWebVitals';
+
 import UserProvider from '@hooks/UserProvider';
+import AuthProvider from '@services/auth/Auth';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <UserProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/nabidka" element={<NabidkaPage />} />
-          <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
-          <Route path="/profil" element={<ProfilPage />} />
-          <Route path="/praxe" element={<PraxePage />} />
-          <Route path="/TEST" element={<TextEditor />} />
-          <Route path="/ProfileForm" element={<ProfileForm />} /> {/* DODĚLAT PARAMS NA USERA ZE SESSION*/}
-          <Route path="/Students" element={<StudentPage />} />
-          <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
-          <Route path="/VytNabidku" element={<VytvoritNabidku />} />
-        </Routes>
-      </BrowserRouter>
+    <UserProvider> {/* USE INFO PRO ŘÍZENÍ FE */}
+      <AuthProvider> {/* TOKEN WORK */}
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/nabidka" element={<NabidkaPage />} />
+            <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
+            <Route path="/profil" element={<ProfilPage />} />
+            <Route path="/praxe" element={<PraxePage />} />
+            <Route path="/TEST" element={<TextEditor />} />
+            <Route path="/ProfileForm" element={<ProfileForm />} /> {/* DODĚLAT PARAMS NA USERA ZE SESSION*/}
+            <Route path="/Students" element={<StudentPage />} />
+            <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
+            <Route path="/VytNabidku" element={<VytvoritNabidku />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </UserProvider>
   </React.StrictMode>
 );
