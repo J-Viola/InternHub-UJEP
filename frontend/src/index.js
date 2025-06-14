@@ -16,7 +16,7 @@ import VytvoritNabidku from '@pages/VytvoritNabidku';
 
 import reportWebVitals from './reportWebVitals';
 
-import UserProvider from '@hooks/UserProvider';
+import UserProvider from '@hooks/userProvider';
 import AuthProvider from '@services/auth/Auth';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

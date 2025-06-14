@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { createApiClient } from "@api/apiClient";
 import axios from 'axios';
-import { useUser } from "@hooks/UserProvider"; // předpokládám, že máte useUser hook
+import { useUser } from "@hooks/userProvider"; // předpokládám, že máte useUser hook
 
 const AuthContext = createContext(null);
 
@@ -11,16 +11,19 @@ function AuthProvider({ children }) {
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
     const [apiClient] = useState(() => createApiClient()); // Inicializace při vytvoření
     const { user, setUser, cleanUser } = useUser(); // použití useUser hooku místo UserProvider komponenty
+    
+    console.log("STORAGE:", localStorage?.getItem("refreshToken"));
 
     // Funkce pro aktualizaci session - refresh tokenu
     const refreshUX = async () => {
         if (!apiClient || !refreshToken) return;
         
         try {
-            const res = await apiClient.post('/refresh', {'refresh': refreshToken}, { withCredentials: true });
+            const res = await apiClient.post('/users/token/refresh/', {'refresh': refreshToken}, { withCredentials: true });
             if (res?.data?.access && res?.data?.refresh) {
                 setAccessToken(res.data.access);
                 setRefreshToken(res.data.refresh);
+                // USER DATA
                 if (res.data.user) {
                     setUser(res.data.user);
                 }
@@ -30,13 +33,27 @@ function AuthProvider({ children }) {
         }
     }
 
+    // Mám refresh token v localStorage, tak ho rovnou lognu
+    useEffect(() => {
+        if (localStorage.getItem("refreshToken") && window.location.pathname !== '/nabidka') {
+            console.log("Mám refresh token v localStorage, tak ho rovnou lognu");
+            
+            refreshUX();
+            setTimeout(() => {
+                window.location.href = '/nabidka';
+            }, 50000);
+            
+        }
+    },[])
+
     // Aktualizace session pro lepší UX - intervalově
     useEffect(() => {
         if (refreshToken) {
-            let intervalId = setInterval(refreshUX, 1000 * 60 * 4.5); // 4.5 min - předělat na env proměnnou
+            console.log("Nastavuji interval..");
+            let intervalId = setInterval(refreshUX, 1000 * 60 * 4.5); // 4.5 minuty
             return () => clearInterval(intervalId); // odstraním interval při změně refresh tokenu - cleanup funkce
         }
-    }, [refreshToken]);
+    }, [refreshToken]);    
 
     // Debug logging
     useEffect(() => {
@@ -67,9 +84,10 @@ function AuthProvider({ children }) {
             async (error) => {
                 if (error.response?.status === 401) {
                     try {
-                        const res = await apiClient.post('/refresh', {'refresh': refreshToken}, { withCredentials: true });
+                        const res = await apiClient.post('/users/token/refresh/', {'refresh': refreshToken}, { withCredentials: true });
                         if (res?.data?.access) {
                             setAccessToken(res.data.access);
+
                             error.config.headers.Authorization = `Bearer ${res.data.access}`;
                             return apiClient(error.config);
                         }
@@ -78,7 +96,7 @@ function AuthProvider({ children }) {
                         setRefreshToken(null);
                         localStorage.removeItem("refreshToken");
                         cleanUser();
-                        window.location.href = '/login';
+                        window.location.href = '/';
                     }
                 }
                 throw error;
@@ -102,11 +120,12 @@ function AuthProvider({ children }) {
                 withCredentials: true
             });
             
-            console.log('Login response:', response.data);  // Debug log
+            //console.log('Login response:', response.data);  // Debug log
             
             if (response?.data?.access) {
                 setAccessToken(response.data.access);
                 setRefreshToken(response.data.refresh);
+                // USER DATA
                 if (response.data.user) {
                     setUser(response.data.user);
                 }
@@ -114,6 +133,8 @@ function AuthProvider({ children }) {
                 if (response.data.refresh) {
                     localStorage.setItem("refreshToken", response.data.refresh);
                 }
+                //redirect na nabídku po loginu
+                window.location.href = '/nabidka';
             }
             
             return response;
@@ -132,6 +153,7 @@ function AuthProvider({ children }) {
             setRefreshToken(null);
             localStorage.removeItem("refreshToken");
             cleanUser();
+            window.location.href = '/';
         } catch (error) {
             throw error;
         }
