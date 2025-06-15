@@ -4,7 +4,7 @@ import Nav from "@components/core/Nav";
 import NabidkaEntity from "@components/Nabidka/NabidkaEntity";
 import { useSearchParams } from "react-router-dom";
 import FilterNabidka from "@components/Nabidka/FilterNabidka";
-import { makeQuery, useCurrentUrl, useSetParams as useSetParams, useClearParams } from "@hooks/searchParams"
+import { makeQuery, useCurrentUrl, useSetParams as useSetParams, useClearParams } from "@hooks/SearchParams"
 
 export default function NabidkaPage() {
     const currentUrl = useCurrentUrl();

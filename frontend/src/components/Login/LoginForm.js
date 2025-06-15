@@ -5,10 +5,12 @@ import Headings from "@components/core/Text/Headings";
 import LoginSwitch from "@login/LoginSwitch";
 import Paragraph from "@components/core/Text/Paragraph";
 import TextField from "@core/Form/TextField";
+import { useNavigate } from "react-router-dom";
 
-export default function LoginForm({handleSTAGLogin}) {
+export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) { 
     // dodělat hook z parenta na informace z formuláře
     const [loginAccess, setLoginAccess] = useState({});
+    const navigate = useNavigate();
 
     const handleAccess = useCallback((newValues) => {
         setLoginAccess(prevState => ({
@@ -35,12 +37,12 @@ export default function LoginForm({handleSTAGLogin}) {
                { loginAccess.switch !== "STAG" ? (
                 <>
                 <TextField 
-                    id="name" 
+                    id="email" 
                     onIconClick={handleButtonClick} 
                     icon="user" 
                     required={true} 
-                    label="Přihlašovácí jméno" 
-                    placeholder="Jméno" 
+                    label="E-mail" 
+                    placeholder="E-mail" 
                     property="m-4"
                     onChange={handleAccess}
                 />
@@ -64,12 +66,41 @@ export default function LoginForm({handleSTAGLogin}) {
                 )
                 }
 
-                <Button 
-                    property={"w-full items-center"}
-                    onClick={handleSTAGLogin}
-                >
-                    Přihlaste se             
-                </Button>
+                {loginAccess.switch == "STAG" ? (
+                    <>
+                        {/* STAG LOGIN */}
+                        <Button 
+                            property={"w-full items-center"}
+                            onClick={handleSTAGLogin}
+                        >
+                            Přihlaste se             
+                        </Button>
+                    </>
+                       
+
+                ):(
+                    <>
+                        {/* ORGANIZACE LOGIN */}
+                        <Button 
+                            property={"w-full items-center"}
+                            onClick={() => handleOrganizationLogin(loginAccess)}
+                        >
+                            Přihlaste se             
+                        </Button>
+
+                        <Button 
+                            property={"w-full items-center mt-2"}
+                            variant="yellow"
+                            onClick={() => navigate("/registrace")}
+                        >
+                            Registrace             
+                        </Button>
+                    </>
+                )
+                
+                }
+
+
             </Container>
         </Container>
     );

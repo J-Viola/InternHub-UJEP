@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { createApiClient } from "@api/apiClient";
 import axios from 'axios';
-import { useUser } from "@hooks/userProvider"; // předpokládám, že máte useUser hook
+import { useUser } from "@hooks/UserProvider"; // předpokládám, že máte useUser hook
 
 const AuthContext = createContext(null);
 
@@ -96,7 +96,7 @@ function AuthProvider({ children }) {
                         setRefreshToken(null);
                         localStorage.removeItem("refreshToken");
                         cleanUser();
-                        window.location.href = '/';
+                        //window.location.href = '/';
                     }
                 }
                 throw error;
@@ -109,11 +109,11 @@ function AuthProvider({ children }) {
         };
     }, [accessToken, apiClient]);
 
-    const login = async (stagData) => {
+    const login = async (loginData) => {
         if (!apiClient) throw new Error('API není inicializován!');
         
         try {
-            const response = await apiClient.post('/users/login/', stagData, {
+            const response = await apiClient.post('/users/login/', loginData, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -134,6 +134,9 @@ function AuthProvider({ children }) {
                     localStorage.setItem("refreshToken", response.data.refresh);
                 }
                 //redirect na nabídku po loginu
+            }
+
+            if (response?.status === 200) {
                 window.location.href = '/nabidka';
             }
             
@@ -148,7 +151,7 @@ function AuthProvider({ children }) {
         if (!apiClient) throw new Error('API není inicializován!');
         
         try {
-            await apiClient.post('logout');
+            await apiClient.post('/users/logout/', {'refresh': refreshToken});
             setAccessToken(null);
             setRefreshToken(null);
             localStorage.removeItem("refreshToken");

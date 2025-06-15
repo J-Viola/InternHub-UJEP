@@ -68,10 +68,7 @@ function Nav({user=USER}) {
             "SprInPrihlaseni": "/SprInPrihlaseni",
             "VytStáže": "/VytNabidku"
         },
-        "Formuláře": {
-            "StudentForm": "/ProfileForm",
-            "Studenti": "/Students"
-        },
+        "Odhlásit se": "/logout",
         "Profil": "/profil",
     };
 

@@ -44,6 +44,16 @@ export default function LoginPage() {
         handleSTAGLogin();
     }, [ticket]);
 
+    const handleOrganizationLogin = async (loginData) => {
+        try{
+            console.log("Organization login")
+            const response = await login({email: loginData.email, password: loginData.password});
+
+        } catch (error) {
+            console.error("Chyba při loginu organizace:", error);
+        }
+    }
+
     // Hook - STAG komunikace
     const initiateSTAGLogin = async () => {
         try {
@@ -58,7 +68,7 @@ export default function LoginPage() {
         <>
         <Nav/>              
         <Container property="min-h-screen flex items-center justify-center bg-gray-100">
-            <LoginForm handleSTAGLogin={initiateSTAGLogin}/>
+            <LoginForm handleSTAGLogin={initiateSTAGLogin} handleOrganizationLogin={handleOrganizationLogin}/>
         </Container>
         </>
     );
