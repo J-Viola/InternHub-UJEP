@@ -1,4 +1,4 @@
-import CompanyForm from "@components/Company/CompanyForm"
+import CompanyForm from "@components/Forms/CompanyForm"
 import React, {useState} from "react";
 import Container from "@core/Container/Container";
 import TextField from "@core/Form/TextField";
