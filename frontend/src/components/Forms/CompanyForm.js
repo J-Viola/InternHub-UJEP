@@ -10,18 +10,19 @@ import Button from "@components/core/Button/Button";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 
 
-export default function CompanyForm({entity, handleARESCall}) {
+export default function CompanyForm({entity, handleARESCall, handleFormValues, handleRegistration}) {
     const ares = useAresAPI();
     const [ico, setICO] = useState('');
 
-    useEffect(() => {
-        console.log(ico);
-    },[ico])
+    //useEffect(() => {
+        //console.log(ico);
+    //},[ico])
 
     const renderAdress = (entity) => {
         if (!entity?.sidlo) return '';
         return `${entity.sidlo.nazevUlice} ${entity.sidlo.cisloDomovni}${entity.sidlo.cisloOrientacni ? '/' + entity.sidlo.cisloOrientacni : ''}, ${entity.sidlo.nazevCastiObce}, ${entity.sidlo.psc} ${entity.sidlo.nazevObce}`;
     };
+
 
     return(
             <>
@@ -32,7 +33,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         label={"Vyplnění údajů pomocí systému ARES"} 
                         placeholder={"Zadejte IČO firmy"}
                         value={ico[ico]}
-                        onChange={(value) => setICO(value)}
+                        onChange={(value) => setICO(value)} // to poslouží pro volání ARES api
                         property={"w-full"}
                     />
                     <Button
@@ -51,7 +52,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         label={"Název společnosti"} 
                         value={entity?.obchodniJmeno}
                         placeholder={"Zadejte název společnosti"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                         disabled={true}
                     />
 
@@ -61,7 +62,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         label={"Adresa"} 
                         value={renderAdress(entity)}
                         placeholder={"Zadejte adresu"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                         disabled={true}
                     />
 
@@ -70,7 +71,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         required={true}
                         label={"Jméno jednatele"} 
                         placeholder={"Zadejte jméno a příjmení jednatele"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                     />
 
                     <TextField 
@@ -78,7 +79,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         required={true}
                         label={"Příjmení jednatele"} 
                         placeholder={"Zadejte příjmení jednatele"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                     />
 
                     <TextField 
@@ -86,7 +87,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         required={true}
                         label={"E-mailová adresa jednatele"} 
                         placeholder={"Zadejte e-mailovou adresu jednatele"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                     />
 
                     <TextField 
@@ -94,7 +95,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         required={true}
                         label={"Telefonní číslo jednatele"} 
                         placeholder={"Zadejte telefonní číslo jednatele"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                     />
 
                     {/*<DropDown
@@ -118,7 +119,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         label={"Heslo"} 
                         placeholder={"Zadejte heslo"}
                         type={"password"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                     />
 
                     <TextField 
@@ -127,7 +128,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                         label={"Heslo znovu"} 
                         placeholder={"Zadejte heslo znovu"}
                         type={"password"}
-                        onChange={(value) => console.log(value)}
+                        onChange={(value) => handleFormValues(value)}
                     />
                 </Container>
                 
@@ -144,7 +145,7 @@ export default function CompanyForm({entity, handleARESCall}) {
                 <Container property={"flex w-full justify-end ml-auto mt-4"}>
                     <Button 
                         property={"mt-2 px-16"} 
-                        onClick={() => console.log("Ukládám vole")}
+                        onClick={() => handleRegistration()}
                     >
                         Dokončit registraci
                     </Button>
