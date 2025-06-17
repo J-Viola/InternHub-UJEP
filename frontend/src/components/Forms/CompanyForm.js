@@ -8,9 +8,9 @@ import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
+import UploadFile from "@core/Form/UploadFile";
 
-
-export default function CompanyForm({entity, handleARESCall, handleFormValues, handleRegistration}) {
+export default function CompanyForm({entity, handleARESCall, handleFormValues, handleRegistration, handleFileChange}) {
     const ares = useAresAPI();
     const [ico, setICO] = useState('');
 
@@ -132,15 +132,16 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                     />
                 </Container>
                 
-                <Button 
-                    property={"w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 mt-2 hover:bg-gray-200"} 
-                    noVariant={true}
+                <UploadFile 
+                    id="companyLogo"
+                    property={"w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 mt-4 hover:bg-gray-200"} 
                     icon={"upload"}
                     iconColor="text-gray-900"
-                    onClick={() => console.log("Nahraju logo organizace")}
-                >
-                    Nahrát logo organizace
-                </Button>
+                    onChange={(file) => handleFileChange(file)}
+                    label={"Nahrát logo organizace"}
+                    accept="image/*"
+                    previewOn={true}
+                />
 
                 <Container property={"flex w-full justify-end ml-auto mt-4"}>
                     <Button 

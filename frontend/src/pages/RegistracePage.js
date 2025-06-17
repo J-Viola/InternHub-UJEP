@@ -11,11 +11,16 @@ import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import { useUserAPI } from "@api/user/userAPI";
 import CompanyForm from "@components/Forms/CompanyForm";
 
+
 export default function RegistracePage() {
     const ares = useAresAPI();
     const user = useUserAPI();
     const [entity, setEntity] = useState(null);
     const [formValue, setFormValue] = useState({});
+
+    useEffect(() => {
+        console.log("Form value:", formValue);
+    }, [formValue]);
 
     const handleARESCall = async (ico) => {
         try {
@@ -33,6 +38,14 @@ export default function RegistracePage() {
             ...prevValue,
             ico: entity?.ico,
             ...value
+        }));
+    }
+
+    const handleFileChange = (file) => {
+        console.log("File changed:", file);
+        setFormValue(prevValue => ({
+            ...prevValue,
+            logo: file
         }));
     }
 
@@ -54,6 +67,7 @@ export default function RegistracePage() {
             handleARESCall={handleARESCall} 
             handleFormValues={handleFormValues}
             handleRegistration={handleRegistration}
+            handleFileChange={handleFileChange}
         />;
     };
 
