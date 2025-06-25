@@ -81,7 +81,7 @@ class EmployerProfile(models.Model):
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
     approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
-    logo = models.ImageField(blank=True, null=True)
+    logo = models.ImageField(upload_to="/images/logos", blank=True, null=True)
 
     class Meta:
         db_table = "employerprofile"
