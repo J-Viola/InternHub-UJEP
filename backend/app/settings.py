@@ -191,35 +191,82 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://www.localhost:3000",
+    "http://www.localhost:8000",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
 ]
 
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 # Additional CORS settings
 CORS_ORIGIN_ALLOW_ALL = True  # Pro vývoj
-CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
 # Debug settings
 DEBUG = True  # Pro vývoj
+
+# Ensure the logs directory exists
+LOGS_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+# Debug and error logging settings
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "file_info": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "django.log"),
+            "formatter": "verbose",
+        },
+        "file_error": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "django_error.log"),
+            "formatter": "verbose",
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file_info", "file_error", "console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}

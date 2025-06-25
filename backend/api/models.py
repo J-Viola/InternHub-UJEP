@@ -81,6 +81,7 @@ class EmployerProfile(models.Model):
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
     approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
+    logo = models.ImageField(blank=True, null=True)
 
     class Meta:
         db_table = "employerprofile"
@@ -92,8 +93,8 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     username = models.CharField(unique=True, max_length=150, blank=True, null=True)
     email = models.EmailField(unique=True)
     title_before = models.CharField(max_length=50, blank=True, null=True)
-    first_name = models.CharField(max_length=50, blank=True, null=True)
-    last_name = models.CharField(max_length=50, blank=True, null=True)
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
     title_after = models.CharField(max_length=50, blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
     is_active = models.BooleanField(default=False)
@@ -117,6 +118,10 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     def id(self):
         return self.user_id
 
+    @property
+    def role(self):
+        return None
+
 
 class OrganizationUser(User):
     employer_profile = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True)
@@ -127,6 +132,10 @@ class OrganizationUser(User):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
+
+    @property
+    def role(self):
+        return self.organization_role.role
 
 
 # Role: student, vedení katedry, vedoucí předmětu
@@ -151,6 +160,10 @@ class StagUser(User):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
+
+    @property
+    def role(self):
+        return self.stag_role.role
 
 
 class ActionLog(models.Model):

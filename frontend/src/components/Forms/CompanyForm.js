@@ -20,7 +20,11 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
 
     const renderAdress = (entity) => {
         if (!entity?.sidlo) return '';
-        return `${entity.sidlo.nazevUlice} ${entity.sidlo.cisloDomovni}${entity.sidlo.cisloOrientacni ? '/' + entity.sidlo.cisloOrientacni : ''}, ${entity.sidlo.nazevCastiObce}, ${entity.sidlo.psc} ${entity.sidlo.nazevObce}`;
+        // v tý entitě sidlo.textAdresy by měl ekvivalent to spodní kdyžtak můžeš smazat (tohle IČO: 06883141 ti tam hodí null jelikož nemá název ulice)
+        if (entity?.sidlo?.textAdresy) {
+            return entity.sidlo.textAdresy;
+        }
+        return `${entity.sidlo.nazevUlice ? entity.sidlo.nazevUlice : ''} ${entity.sidlo.cisloDomovni}${entity.sidlo.cisloOrientacni ? '/' + entity.sidlo.cisloOrientacni : ''}, ${entity.sidlo.nazevCastiObce}, ${entity.sidlo.psc} ${entity.sidlo.nazevObce}`;
     };
 
 

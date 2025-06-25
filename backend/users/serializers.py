@@ -76,10 +76,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         refresh["type"] = UserType.STAG.value
         refresh["service_ticket"] = ticket
 
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
 
     def _validate_with_credentials(self, email, password):
         try:
@@ -97,10 +94,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         else:
             refresh["type"] = "undefined"
 
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
 
 
 # class CustomTokenRefreshSerializer(TokenRefreshSerializer):
@@ -183,21 +177,20 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             user = OrganizationUser.objects.create(
-                email=validated_data["email"],
-                organization_role=unregistered_role,
+                email=validated_data["email"], organization_role=unregistered_role, is_active=True  # TODO: Remove this
             )
             # TODO: Must be set in DB (migration maybe?+)
             status = Status.objects.get(status_name="Pending")
             EmployerProfile.objects.create(
                 employer_id=user.id,
-                ico=ares_data.ico,
+                ico=ares_data.icoId,
                 dic=ares_data.dic,
                 company_name=ares_data.obchodniJmeno,
                 address=ares_data.sidlo.textAdresy,
                 zip_code=ares_data.sidlo.psc,
                 approval_status=status,
                 # TODO: LOGO
-                # logo=validated_data["logo"] if "logo" in validated_data else None,
+                logo=validated_data["logo"] if "logo" in validated_data else None,
             )
             user.set_password(validated_data["password"])
             user.save()
@@ -211,3 +204,17 @@ class LogoutSerializer(serializers.Serializer):
 
 class AresJusticeSerializer(serializers.Serializer):
     ico = serializers.RegexField(regex=r"\d{8}")
+
+
+class UserInfoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    role = serializers.CharField()
+    firstName = serializers.CharField()
+    lastName = serializers.CharField()
+
+
+class TokenResponseSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+    user = UserInfoSerializer()
