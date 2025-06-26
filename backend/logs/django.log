@@ -1,0 +1,21 @@
+[2025-06-26 16:34:14,781] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-06-26 16:36:35,348] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-06-26 16:36:35,491] WARNING django.request Bad Request: /api/users/login/
+[2025-06-26 16:36:35,492] WARNING django.server "POST /api/users/login/ HTTP/1.1" 400 99
+[2025-06-26 16:37:35,157] INFO django.server "OPTIONS /api/users/ares-justice/ HTTP/1.1" 200 0
+[2025-06-26 16:37:35,439] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4241
+[2025-06-26 16:38:12,390] WARNING django.request Bad Request: /api/users/register/
+[2025-06-26 16:38:12,394] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 49
+[2025-06-26 16:39:14,531] INFO django.server "GET /api/schema/swagger-ui/ HTTP/1.1" 200 4649
+[2025-06-26 16:39:14,855] INFO django.server "GET /api/schema/ HTTP/1.1" 200 47998
+[2025-06-26 16:40:19,322] WARNING django.request Bad Request: /api/users/ares-justice/
+[2025-06-26 16:40:19,323] WARNING django.server "POST /api/users/ares-justice/ HTTP/1.1" 400 59
+[2025-06-26 16:40:41,623] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4241
+[2025-06-26 16:40:43,642] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4241
+[2025-06-26 16:40:47,587] WARNING django.request Bad Request: /api/users/register/
+[2025-06-26 16:40:47,588] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 49
+[2025-06-26 16:41:40,697] WARNING django.request Bad Request: /api/users/login/
+[2025-06-26 16:41:40,698] WARNING django.server "POST /api/users/login/ HTTP/1.1" 400 99
+[2025-06-26 17:01:55,033] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-06-26 17:02:01,315] INFO django.server "GET /api/schema/swagger-ui/ HTTP/1.1" 200 4649
+[2025-06-26 17:02:01,520] INFO django.server "GET /api/schema/ HTTP/1.1" 200 47998
