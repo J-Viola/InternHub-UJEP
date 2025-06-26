@@ -1,3 +1,4 @@
+//upravit types
 export default uploadedDocuments = [
   {
     "document_id": 1,
