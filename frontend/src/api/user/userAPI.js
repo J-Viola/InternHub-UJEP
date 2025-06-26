@@ -10,7 +10,7 @@ export const useUserAPI = () => {
         formData.append('phone', data.executivePhone);
         formData.append('password', data.executivePassword1);
         formData.append('password2', data.executivePassword2);
-        formData.append('ico', data.ico);
+        formData.append('ico', data.ico.toString());
         formData.append('companyName', data.companyName);
         formData.append('address', data.address);
         formData.append('executiveName', data.executiveName);
