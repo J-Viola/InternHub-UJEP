@@ -18,7 +18,6 @@ export default function NabidkaPage() {
     const [data, setData] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
 
-    //NOTE - LOOP VYHLEDÁVÁNÍ..
     //fetch
     const fetchData = async () => {
         try {
@@ -33,7 +32,7 @@ export default function NabidkaPage() {
 
     useEffect(() => {
         fetchData();
-    }),[]
+    }, []);
     
 
     const handleSearchChange = (e) => {
