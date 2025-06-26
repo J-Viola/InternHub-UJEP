@@ -136,7 +136,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class OrganizationRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-    ico = serializers.RegexField(regex=r"\d{8}", write_only=True, required=True)
+    ico = serializers.RegexField(regex=r"^\d{1,8}$", write_only=True, required=True)
     email = serializers.CharField(write_only=True, required=True)
     phone = serializers.CharField(write_only=True, required=True)
     logo = serializers.ImageField(write_only=True, required=False)
@@ -161,6 +161,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
         except OrganizationRole.DoesNotExist:
             raise serializers.ValidationError({"organization_role": "Role 'unregistered' does not exist."})
         ico = validated_data.pop("ico")
+        ico = str(ico).zfill(8)
         cache_key = f"ares_{ico}"
         ares_data = cache.get(cache_key)
 
