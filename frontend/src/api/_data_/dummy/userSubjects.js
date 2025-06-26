@@ -1,4 +1,4 @@
-export default userSubjects = [
+const userSubjects = [
   {
     "id": 1,
     "user": 5,
@@ -12,3 +12,5 @@ export default userSubjects = [
     "role": "student"
   }
 ] 
+
+export default userSubjects

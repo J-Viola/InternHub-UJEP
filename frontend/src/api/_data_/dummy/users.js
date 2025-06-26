@@ -1,4 +1,4 @@
-export default users = [
+const users = [
   {
     "user_id": 1,
     "password": "hashed_password_123",
@@ -33,4 +33,6 @@ export default users = [
     "created_at": "2023-02-01T00:00:00Z",
     "updated_at": "2023-12-01T00:00:00Z"
   }
-] 
+];
+
+export default users; 

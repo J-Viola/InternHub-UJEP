@@ -1,4 +1,4 @@
-export default practiceUsers = [
+const practiceUsers = [
   {
     "id": 1,
     "practice": 1,
@@ -9,4 +9,6 @@ export default practiceUsers = [
     "practice": 2,
     "user": 6
   }
-] 
+];
+
+export default practiceUsers; 

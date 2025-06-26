@@ -1,4 +1,4 @@
-export default studentPractices = [
+const studentPractices = [
   {
     "student_practice_id": 1,
     "user": 5,
@@ -21,4 +21,6 @@ export default studentPractices = [
     "cancellation_reason": null,
     "cancelled_by_user": null
   }
-] 
+];
+
+export default studentPractices; 

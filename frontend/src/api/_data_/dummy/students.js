@@ -1,4 +1,4 @@
-export default students = [
+const students = [
     {
         "id": 1,
         "username": "f20b0539p",
@@ -28,4 +28,6 @@ export default students = [
         "faculty": "FF",
         "os_cislo": "F20B0539P"
     }
-]
+];
+
+export default students;

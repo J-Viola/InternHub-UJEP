@@ -1,4 +1,4 @@
-export default actionLogs = [
+const actionLogs = [
   {
     "action_id": 1,
     "user": 1,
@@ -17,4 +17,6 @@ export default actionLogs = [
     "action_description": "Přihláška na praxi: Vývojář React aplikací",
     "action_date": "2023-12-02T14:15:00Z"
   }
-] 
+];
+
+export default actionLogs; 

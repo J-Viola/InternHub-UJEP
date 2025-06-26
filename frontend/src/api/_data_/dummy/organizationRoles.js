@@ -1,4 +1,4 @@
-export default organizationRoles = [
+const organizationRoles = [
   {
     "id": 1,
     "role": "HR",
@@ -11,4 +11,6 @@ export default organizationRoles = [
     "role_name": "Náborář",
     "description": "Specialista na nábor"
   }
-] 
+];
+
+export default organizationRoles; 

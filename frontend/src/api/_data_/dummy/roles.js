@@ -1,4 +1,4 @@
-export default roles = [
+const roles = [
   {
     "role_id": 1,
     "role_name": "admin",
@@ -9,4 +9,6 @@ export default roles = [
     "role_name": "user",
     "description": "Běžný uživatel s omezenými právy"
   }
-] 
+];
+
+export default roles; 

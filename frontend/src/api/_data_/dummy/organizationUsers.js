@@ -1,4 +1,4 @@
-export default organizationUsers = [
+const organizationUsers = [
   {
     "user_id": 3,
     "password": "hashed_password_789",
@@ -38,3 +38,5 @@ export default organizationUsers = [
     "organization_role": 2
   }
 ] 
+
+export default organizationUsers;

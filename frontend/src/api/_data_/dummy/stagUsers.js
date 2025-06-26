@@ -1,4 +1,4 @@
-export default stagUsers = [
+const stagUsers = [
   {
     "user_id": 5,
     "password": "hashed_password_345",
@@ -61,4 +61,6 @@ export default stagUsers = [
     "specialization": "Datová analýza",
     "stag_role": 1
   }
-] 
+];
+
+export default stagUsers; 

@@ -2,6 +2,7 @@ import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
 import { useState, useRef } from "react";
+import { Image } from "@core/Image";
 
 export default function UploadFile({id, previewOn = false, property, label, onChange, onIconClick, icon, accept, iconPointer = false}) {
 
@@ -41,8 +42,16 @@ export default function UploadFile({id, previewOn = false, property, label, onCh
             />
             {previewOn && preview && (
                 <Container property={"mt-2 justify-center ml-auto"}>
-                    <img src={preview} alt="Preview" className="max-h-32 object-contain" />
+                    <Image 
+                        src={preview} 
+                        alt={"Preview"} 
+                        width={"200"} 
+                        height={"200"} 
+                        objectFit={"contain"}
+                        property={"max-w-[200px] max-h-[200px]"}
+                    />
                 </Container>
+
             )}
         </Container>
     )

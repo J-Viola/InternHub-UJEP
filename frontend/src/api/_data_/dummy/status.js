@@ -1,4 +1,4 @@
-export default statuses = [
+const statuses = [
   {
     "status_id": 1,
     "status_code": "ACTIVE",
@@ -13,4 +13,6 @@ export default statuses = [
     "status_category": "approval",
     "description": "Čeká na schválení"
   }
-] 
+];
+
+export default statuses; 

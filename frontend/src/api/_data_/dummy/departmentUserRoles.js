@@ -1,4 +1,4 @@
-export default departmentUserRoles = [
+const departmentUserRoles = [
   {
     "id": 1,
     "department": 1,
@@ -11,4 +11,6 @@ export default departmentUserRoles = [
     "user": 6,
     "role": 2
   }
-] 
+];
+
+export default departmentUserRoles; 

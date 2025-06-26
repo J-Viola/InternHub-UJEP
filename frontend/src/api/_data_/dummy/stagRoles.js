@@ -1,4 +1,4 @@
-export default stagRoles = [
+const stagRoles = [
   {
     "id": 1,
     "role": "ST",
@@ -11,4 +11,6 @@ export default stagRoles = [
     "role_name": "Vyučující",
     "description": "Vyučující vysoké školy"
   }
-] 
+];
+
+export default stagRoles; 

@@ -1,4 +1,4 @@
-export default employerInvitations = [
+const employerInvitations = [
   {
     "invitation_id": 1,
     "employer": 1,
@@ -19,4 +19,6 @@ export default employerInvitations = [
     "message": "Připojte se k našemu týmu a rozvíjejte své dovednosti.",
     "status": 1
   }
-] 
+];
+
+export default employerInvitations; 

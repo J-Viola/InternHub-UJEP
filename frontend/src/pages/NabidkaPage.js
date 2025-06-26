@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Container from "@core/Container/Container";
 import Nav from "@components/core/Nav";
 import NabidkaEntity from "@components/Nabidka/NabidkaEntity";
 import { useSearchParams } from "react-router-dom";
 import FilterNabidka from "@components/Nabidka/FilterNabidka";
 import { makeQuery, useCurrentUrl, useSetParams as useSetParams, useClearParams } from "@hooks/SearchParams"
+import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 
 export default function NabidkaPage() {
     const currentUrl = useCurrentUrl();
@@ -14,6 +15,26 @@ export default function NabidkaPage() {
     const search = searchParams.get("search");
     const [searchValue, setSearchValue] = useState(search || "");
 
+    const [data, setData] = useState(null);
+    const nabidkaAPI = useNabidkaAPI();
+
+    //NOTE - LOOP VYHLEDÁVÁNÍ..
+    //fetch
+    const fetchData = async () => {
+        try {
+            const params = search ? { title: search } : {}; //zatim pro debug
+            const result = await nabidkaAPI.getNabidky(params);
+            console.log("Fetching..")
+            setData(result);
+        } catch (error) {
+            console.error("Chyba při načítání nabídek:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }),[]
+    
 
     const handleSearchChange = (e) => {
         setSearchValue(e.target.value);
@@ -27,18 +48,18 @@ export default function NabidkaPage() {
         if (searchValue) {
             const queryString = makeQuery({ search: searchValue });
             setParams(currentUrl, queryString);
+            fetchData();
+
         } else {
             clearParams(currentUrl);
         }
     };
 
-    const entity = {
-        "id": "1",
-        "title": "Apple IOS Developer",
-        "annotation": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Suspendisse nisl. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Nulla pulvinar eleifend sem. Curabitur sagittis hendrerit ante. Nullam sit amet magna in magna gravida vehicula. Fusce tellus odio, dapibus id fermentum quis, suscipit id erat. Ut tempus purus at lorem. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Nullam dapibus fermentum ipsum.",
-        "adress": "Praha, Česká republika"
-    }
-
+    //DEBUG
+    useEffect(() => {
+        console.log(data);
+    },[data])
+    
     return(
         <Container property="min-h-screen">
             <Nav/>
@@ -51,9 +72,9 @@ export default function NabidkaPage() {
                 />
                 
                 <Container property="grid grid-cols-1 gap-4 mt-2">
-                    <NabidkaEntity entity={entity}/>
-                    <NabidkaEntity entity={entity}/>
-                    <NabidkaEntity entity={entity}/>
+                    {data && data.map((entity, index) => (
+                        <NabidkaEntity key={entity.practice_id || index} entity={entity}/>
+                    ))}
                 </Container>
             </Container>
         </Container>

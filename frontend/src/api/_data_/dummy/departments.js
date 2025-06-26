@@ -1,4 +1,4 @@
-export default departments = [
+const departments = [
   {
     "department_id": 1,
     "department_name": "Katedra informatiky",
@@ -9,4 +9,6 @@ export default departments = [
     "department_name": "Katedra matematiky",
     "description": "Katedra zaměřená na matematiku a její aplikace"
   }
-] 
+];
+
+export default departments; 

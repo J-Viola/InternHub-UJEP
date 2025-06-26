@@ -1,4 +1,4 @@
-export default practiceTypes = [
+const practiceTypes = [
   {
     "practice_type_id": 1,
     "name": "Povinná praxe",
@@ -9,4 +9,6 @@ export default practiceTypes = [
     "name": "Volitelná praxe",
     "coefficient": 0.8
   }
-] 
+];
+
+export default practiceTypes; 

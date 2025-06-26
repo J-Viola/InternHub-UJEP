@@ -1,4 +1,4 @@
-export default subjects = [
+const subjects = [
   {
     "subject_id": 1,
     "subject_code": "KIV/PRG",
@@ -13,4 +13,6 @@ export default subjects = [
     "department": 2,
     "hours_required": 80
   }
-] 
+];
+
+export default subjects; 

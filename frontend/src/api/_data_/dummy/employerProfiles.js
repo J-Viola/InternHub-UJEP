@@ -1,4 +1,4 @@
-export default employerProfiles = [
+const employerProfiles = [
   {
     "employer_id": 1,
     "company_name": "Microsoft Czech Republic",
@@ -21,4 +21,6 @@ export default employerProfiles = [
     "approval_status": 1,
     "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/272px-Google_2015_logo.svg.png"
   }
-] 
+];
+
+export default employerProfiles; 

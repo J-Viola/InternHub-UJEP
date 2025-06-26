@@ -1,5 +1,5 @@
 //upravit types
-export default uploadedDocuments = [
+const uploadedDocuments = [
   {
     "document_id": 1,
     "practice": 1,
@@ -17,3 +17,5 @@ export default uploadedDocuments = [
     "document_type": "presentation"
   }
 ] 
+
+export default uploadedDocuments
