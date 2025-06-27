@@ -7,93 +7,116 @@ import TextBox from "@core/Form/TextBox";
 import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
+import {makeQuery} from "@hooks/SearchParams";
+import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
+
 
 export default function VytvoritNabidkuForm() {
+  const nabidkaAPI = useNabidkaAPI();
 
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+  // State for all form fields
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [spravceInzeratu, setSpravceInzeratu] = useState("");
+  const [predmet, setPredmet] = useState("");
+  const [nazev, setNazev] = useState("");
+  const [popisStaze, setPopisStaze] = useState("");
+  const [odpovednostStaze, setOdpovednostStaze] = useState("");
 
-    return(
-            <>
-                <Container property={"grid gap-2 grid-cols-2"}>
-                    <CustomDatePicker
-                        id={"startDate"}
-                        selected={startDate}
-                        label={"Čas období od"}
-                        required={true}
-                        onChange={(value) => console.log(value)}
-                    />
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+      start_date: startDate.startDate,
+      end_date: endDate.endDate,
+      employer_id:spravceInzeratu.spravceInzeratu,
+      subject_id:predmet.predmet,
+      name:nazev.nazev,
+      description:popisStaze.popisStaze,
+      responsibilities:odpovednostStaze.odpovednostStaze,
+    };
+    console.log(data);
+    await nabidkaAPI.createNabidka(data);
+  };
 
-                    <CustomDatePicker
-                        id={"endDate"}
-                        selected={endDate}
-                        label={"Čas období do"}
-                        required={true}
-                        onChange={(value) => console.log(value)}
-                    />
+  return (
+    <>
+      <Container property={"grid gap-2 grid-cols-2"}>
+        <CustomDatePicker
+          id={"startDate"}
+          selected={startDate}
+          label={"Čas období od"}
+          required={true}
+          onChange={setStartDate}
+        />
 
-                    <DropDown
-                        id={"spravceInzeratu"}
-                        required={true}
-                        label={"Správce inzerátu"}
-                        icon={"user"}
-                        options={[
-                            { value: "1", label: "volba1" },
-                            { value: "2", label: "volba2" }
-                        ]}
-                        onChange={(value) => console.log(value)}
-                    />
+        <CustomDatePicker
+          id={"endDate"}
+          selected={endDate}
+          label={"Čas období do"}
+          required={true}
+          onChange={setEndDate}
+        />
 
-                    <DropDown
-                        id={"predmet"}
-                        required={true}
-                        label={"Přiřazený předmět"}
-                        icon={"book"}
-                        options={[
-                            { value: "1", label: "volba1" },
-                            { value: "2", label: "volba2" }
-                        ]}
-                        onChange={(value) => console.log(value)}
-                    />
-                </Container>
+        <DropDown
+          id={"spravceInzeratu"}
+          required={true}
+          label={"Správce inzerátu"}
+          icon={"user"}
+          options={[
+            { value: "1", label: "volba1" },
+            { value: "2", label: "volba2" }
+          ]}
+          onChange={setSpravceInzeratu}
+        />
 
-                <Container property={"w-full gap-2 mt-2 flex-cols"}>
+        <DropDown
+          id={"predmet"}
+          required={true}
+          label={"Přiřazený předmět"}
+          icon={"book"}
+          options={[
+            { value: "1", label: "volba1" },
+            { value: "2", label: "volba2" }
+          ]}
+          onChange={setPredmet}
+        />
+      </Container>
 
-                    <TextField 
-                        id={"nazev"}
-                        required={true}
-                        label={"Název"} 
-                        placeholder={"Název stáže"}
-                        onChange={(value) => console.log(value)}
-                    />
+      <Container property={"w-full gap-2 mt-2 flex-cols"}>
+        <TextField
+          id={"nazev"}
+          required={true}
+          label={"Název"}
+          placeholder={"Název stáže"}
+          onChange={setNazev}
+        />
 
-                    <TextBox
-                        id={"popisStaze"}
-                        required={true}
-                        label={"Popis stáže"}
-                        placeholder={"Napište popis stáže"}
-                        onChange={(value) => console.log(value)}
-                    />
+        <TextBox
+          id={"popisStaze"}
+          required={true}
+          label={"Popis stáže"}
+          placeholder={"Napište popis stáže"}
+          onChange={setPopisStaze}
+        />
 
-                    <TextBox
-                        id={"odpovednostStaze"}
-                        required={true}
-                        label={"Odpovědnost stáže"}
-                        placeholder={"Popište odpovědnost stáže"}
-                        onChange={(value) => console.log(value)}
-                    />
-                </Container>
+        <TextBox
+          id={"odpovednostStaze"}
+          required={true}
+          label={"Odpovědnost stáže"}
+          placeholder={"Popište odpovědnost stáže"}
+          onChange={setOdpovednostStaze}
+        />
+      </Container>
 
-
-                {/* PROSTOR PRO TLAČÍKO */}
-                <Container property={"flex w-full justify-end ml-auto"}>
-                    <Button 
-                        property={"mt-2 px-16"} 
-                        onClick={() => console.log("Vytvářim nabídku")}
-                    >
-                        Vytvořit
-                    </Button>
-                </Container>
-            </>
-        )
+      {/* PROSTOR PRO TLAČÍKO */}
+      <Container property={"flex w-full justify-end ml-auto"}>
+        <Button
+          property={"mt-2 px-16"}
+          onClick={handleFormSubmit}
+        >
+          Vytvořit
+        </Button>
+      </Container>
+    </>
+  );
 }
