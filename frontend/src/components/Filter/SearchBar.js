@@ -12,7 +12,7 @@ export default function SearchBar({ value, onChange, onClear }) {
                 id={"title"} 
                 className={inputClass} 
                 placeholder={"Hledat..."} 
-                value={value}
+                value={value || ""}
                 onChange={onChange}
             />
             <Container property="absolute right-2 top-1/2 -translate-y-1/2">

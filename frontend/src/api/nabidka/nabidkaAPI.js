@@ -3,10 +3,10 @@ import { useApi } from "@hooks/useApi";
 
 export const useNabidkaAPI = () => {
     const api = useApi();
+    const practices = api.dummyDB.practices;
 
     const getNabidky = async (params = {}) => {
         try {
-            const practices = api.dummyDB.practices;
             
             let filteredData = practices;
             
@@ -35,7 +35,18 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const getNabidkaById = async (id) => {
+        try {
+            const practice = practices.find(practice => practice.practice_id === parseInt(id));
+            return practice || null;
+        } catch (error) {
+            console.error("Chyba při získávání nabídky podle ID:", error);
+            throw error;
+        }
+    }
+
     return {
-        getNabidky
+        getNabidky,
+        getNabidkaById
     };
 };
