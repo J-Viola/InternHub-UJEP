@@ -2,12 +2,12 @@ import SearchBar from "@components/Filter/SearchBar";
 import Container from "@core/Container/Container";
 import Button from "@core/Button/Button";
 
-export default function FilterNabidka({ searchValue, onSearchChange, onSearchClear, onSearchSubmit }) {
+export default function FilterNabidka({ filterValue, handleFilterChange, onSearchClear, onSearchSubmit }) {
     return (
         <Container property="w-full flex items-center inline-block justify-center mb-8">
             <SearchBar 
-                value={searchValue}
-                onChange={onSearchChange}
+                value={filterValue?.title}
+                onChange={handleFilterChange}
                 onClear={onSearchClear}
             />
             <Button 

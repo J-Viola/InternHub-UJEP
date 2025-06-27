@@ -4,16 +4,16 @@ import Nav from "@components/core/Nav";
 import NabidkaEntity from "@components/Nabidka/NabidkaEntity";
 import { useSearchParams } from "react-router-dom";
 import FilterNabidka from "@components/Nabidka/FilterNabidka";
-import { makeQuery, useCurrentUrl, useSetParams as useSetParams, useClearParams } from "@hooks/SearchParams"
+import { makeQuery, useCurrentUrl, useSetParams, useClearParams, useStripParams } from "@hooks/SearchParams"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 
 export default function NabidkaPage() {
     const currentUrl = useCurrentUrl();
     const setParams = useSetParams();
     const clearParams = useClearParams();
+    const stripUrlParams = useStripParams();
     const [searchParams] = useSearchParams();
-    const search = searchParams.get("search");
-    const [searchValue, setSearchValue] = useState(search || "");
+    const [filterValue, setFilterValue] = useState({ title: "" })
 
     const [data, setData] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
@@ -21,9 +21,20 @@ export default function NabidkaPage() {
     //fetch
     const fetchData = async () => {
         try {
-            const params = search ? { title: search } : {}; //zatim pro debug
+            // Načti všechny parametry z URL
+            const urlParams = stripUrlParams(currentUrl);
+            const params = {};
+            
+            if (urlParams) {
+                // Parsuj parametry z URL
+                const searchParams = new URLSearchParams(urlParams);
+                searchParams.forEach((value, key) => {
+                    if (value) params[key] = value;
+                });
+            }
+            
+            console.log("Fetching with params:", params);
             const result = await nabidkaAPI.getNabidky(params);
-            console.log("Fetching..")
             setData(result);
         } catch (error) {
             console.error("Chyba při načítání nabídek:", error);
@@ -32,40 +43,52 @@ export default function NabidkaPage() {
 
     useEffect(() => {
         fetchData();
-    }, []);
-    
+    }, [searchParams]); 
 
-    const handleSearchChange = (e) => {
-        setSearchValue(e.target.value);
+    useEffect(() => {
+        console.log("filter values", filterValue)
+    }, [filterValue]);
+
+    //DEBUG
+    useEffect(() => {
+        console.log(data);
+    },[data])
+        
+    const handleFilterChange = (e) => {
+        setFilterValue(prev => ({
+            ...prev,
+            [e.target.id]: e.target.value
+        }));
     };
 
     const handleSearchClear = () => {
-        setSearchValue("");
+        setFilterValue(prev => ({
+            ...prev,
+            title: ""
+        }));
     };
 
     const handleSearchSubmit = () => {
-        if (searchValue) {
-            const queryString = makeQuery({ search: searchValue });
+        const hasValues = Object.values(filterValue).some(value => value && value.trim() !== "");
+    
+        if (hasValues) {
+            const queryString = makeQuery(filterValue);
+            console.log("QueryString", queryString);
             setParams(currentUrl, queryString);
-            fetchData();
+            fetchData(); // api call
 
         } else {
             clearParams(currentUrl);
         }
     };
 
-    //DEBUG
-    useEffect(() => {
-        console.log(data);
-    },[data])
-    
     return(
         <Container property="min-h-screen">
             <Nav/>
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <FilterNabidka 
-                    searchValue={searchValue}
-                    onSearchChange={handleSearchChange}
+                    filterValue={filterValue}
+                    handleFilterChange={handleFilterChange}
                     onSearchClear={handleSearchClear}
                     onSearchSubmit={handleSearchSubmit}
                 />

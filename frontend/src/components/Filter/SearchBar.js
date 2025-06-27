@@ -9,7 +9,7 @@ export default function SearchBar({ value, onChange, onClear }) {
         <Container property="relative inline-block w-full items-center justify-center">
             <input
                 type={"text"}
-                id={"search"} 
+                id={"title"} 
                 className={inputClass} 
                 placeholder={"Hledat..."} 
                 value={value}

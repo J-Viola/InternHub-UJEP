@@ -34,3 +34,10 @@ export function useClearParams() {
         setSearchParams(new URLSearchParams());
     };
 }
+
+export function useStripParams() {
+    return (url) => {
+        const parts = url.split('?');
+        return parts.length > 1 ? parts[1] : '';
+    };
+}
