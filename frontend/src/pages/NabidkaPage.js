@@ -4,12 +4,13 @@ import Nav from "@components/core/Nav";
 import NabidkaEntity from "@components/Nabidka/NabidkaEntity";
 import { useSearchParams } from "react-router-dom";
 import FilterNabidka from "@components/Nabidka/FilterNabidka";
-import { makeQuery, useCurrentUrl, useSetParams, useClearParams, useStripParams } from "@hooks/SearchParams"
+import { makeQuery, useCurrentUrl, useSetParams, useFullUrl, useClearParams, useStripParams } from "@hooks/SearchParams"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 
 export default function NabidkaPage() {
     const currentUrl = useCurrentUrl();
     const setParams = useSetParams();
+    const fullUrl = useFullUrl();
     const clearParams = useClearParams();
     const stripUrlParams = useStripParams();
     const [searchParams] = useSearchParams();
@@ -18,22 +19,26 @@ export default function NabidkaPage() {
     const [data, setData] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
 
-    //fetch
-    const fetchData = async () => {
+    const initParamLoad = () => {
+        console.log("full url", fullUrl);
+        const urlParams = stripUrlParams(fullUrl);
+        console.log("URL params", urlParams);
+        
+        if (urlParams && Object.keys(urlParams).length > 0) {
+            console.log("Mám params data");
+            setFilterValue(urlParams);
+            console.log("FILTER DATA Z PARAMS", urlParams);
+            fetchDataWithParams(urlParams);
+        } else {
+            setFilterValue({});
+            fetchData();
+        }
+    }
+
+    //fetch s parametry
+    const fetchDataWithParams = async (params) => {
         try {
-            // Načti všechny parametry z URL
-            const urlParams = stripUrlParams(currentUrl);
-            const params = {};
-            
-            if (urlParams) {
-                // Parsuj parametry z URL
-                const searchParams = new URLSearchParams(urlParams);
-                searchParams.forEach((value, key) => {
-                    if (value) params[key] = value;
-                });
-            }
-            
-            console.log("Fetching with params:", params);
+            console.log("Fetching with URL params:", params);
             const result = await nabidkaAPI.getNabidky(params);
             setData(result);
         } catch (error) {
@@ -41,12 +46,23 @@ export default function NabidkaPage() {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [searchParams]); 
+    //fetch s aktuálními filtry
+    const fetchData = async () => {
+        try {
+            console.log("Fetching with current filters:", filterValue);
+            const result = await nabidkaAPI.getNabidky(filterValue);
+            setData(result);
+        } catch (error) {
+            console.error("Chyba při načítání nabídek:", error);
+        }
+    };
 
     useEffect(() => {
-        console.log("filter values", filterValue)
+        initParamLoad();
+    }, []); 
+
+    useEffect(() => {
+        console.log("filter values", filterValue);
     }, [filterValue]);
 
     //DEBUG
@@ -69,17 +85,10 @@ export default function NabidkaPage() {
     };
 
     const handleSearchSubmit = () => {
-        const hasValues = Object.values(filterValue).some(value => value && value.trim() !== "");
-    
-        if (hasValues) {
-            const queryString = makeQuery(filterValue);
-            console.log("QueryString", queryString);
-            setParams(currentUrl, queryString);
-            fetchData(); // api call
-
-        } else {
-            clearParams(currentUrl);
-        }
+        const queryString = makeQuery(filterValue);
+        console.log("QueryString", queryString);
+        setParams(currentUrl, queryString);
+        fetchData(); // api call
     };
 
     return(
