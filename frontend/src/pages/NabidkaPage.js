@@ -13,11 +13,12 @@ export default function NabidkaPage() {
     const fullUrl = useFullUrl();
     const clearParams = useClearParams();
     const stripUrlParams = useStripParams();
-    const [searchParams] = useSearchParams();
-    const [filterValue, setFilterValue] = useState({ title: "" })
-
+    const [ searchParams ] = useSearchParams();
+    const [ filterValue, setFilterValue ] = useState({ title: "" });
+    const [ filterOptions, setFilterOptions ] = useState({});
     const [data, setData] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
+
 
     const initParamLoad = () => {
         console.log("full url", fullUrl);
@@ -33,6 +34,10 @@ export default function NabidkaPage() {
             setFilterValue({});
             fetchData();
         }
+    }
+
+    const initFilterOptions = () =>{
+        return "tady budou hodnoty pro filtraci nabídek"
     }
 
     //fetch s parametry

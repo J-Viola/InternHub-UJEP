@@ -11,13 +11,15 @@ import Button from "@core/Button/Button";
 import DocsPanel from "@components/Nabidka/DocsPanel";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
+import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
-    const [popUp, setPopUp] = useState(false);
-    const [entity, setEntity] = useState(null);
+    const [ popUp, setPopUp ] = useState(false);
+    const [ entity, setEntity ] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
+    const { user } = useUser();
 
     const fetchData = async () => {
         try {
@@ -63,14 +65,12 @@ export default function NabidkaDetailPage() {
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
                             
                         {/* LOGO */}
-                        <Container property="w-md rounded-lg p-4 flex items-center justify-center">
+                        <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
                             <Headings sizeTag="h4" property="text-white">
                                 <Image
                                     src={entity?.image_base64}
                                     alt={entity?.title}
-                                    className="w-full h-full"
                                     objectFit="cover"
-                                    fallbackSrc="https://via.placeholder.com/96x96/3B82F6/FFFFFF?text=P"
                                 />
                             </Headings>
                         </Container>
@@ -78,7 +78,7 @@ export default function NabidkaDetailPage() {
                         {/* TITLE */}
                         <Container>
                             <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
-                            <Container property={"flex flex-row gap-2"}>
+                            <Container property={"flex flex-row gap-2 mt-2"}>
                                 <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.address}</Button>
                                 <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
                             </Container>
@@ -96,21 +96,29 @@ export default function NabidkaDetailPage() {
                     </Container>
 
                     <Container property={"grid grid-cols-1 gap-8 mt-4"}>
-                        <Button className="col-start-1 justify-self-end" onClick={handlePopUp}>Podat přihlášku</Button>
+                        {user && user.role === "ST" && (
+                            <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
+                        )}
+
+                        {user && user.role === "VY" && (
+                            <Button variant={"red"} property={"col-start-1 justify-self-end"} onClick={handlePopUp}>Spravovat</Button>
+                        )}
                     </Container>
                 </ContainerForEntity>
                 
             </Container>
 
+            {/* PODÁNÍ PŘIHLÁŠKY */}
             {popUp && (
                 <PopUpCon 
                     onClose={handlePopUp} 
-                    title="Přihláška" 
+                    title= {"Přihláška"} 
                     text={"Opravdu si přejete podat přihlášku?"}
                     onSubmit={onSubmit}
                     onReject={onReject}
                 ></PopUpCon>
             )}
+
         </Container>
     )
 } 
