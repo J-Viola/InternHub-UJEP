@@ -6,6 +6,8 @@ import { useSearchParams } from "react-router-dom";
 import FilterNabidka from "@components/Nabidka/FilterNabidka";
 import { makeQuery, useCurrentUrl, useSetParams, useFullUrl, useClearParams, useStripParams } from "@hooks/SearchParams"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
+import { useCodeListAPI } from "@api/code_list/code_listAPI";
+
 
 export default function NabidkaPage() {
     const currentUrl = useCurrentUrl();
@@ -18,6 +20,10 @@ export default function NabidkaPage() {
     const [ filterOptions, setFilterOptions ] = useState({});
     const [data, setData] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
+    const codelist = useCodeListAPI();
+
+    const [ uniqueLocations, setLocations ] = useState([])
+    const [ uniqueSubjects, setSubjects ] = useState([])
 
 
     const initParamLoad = () => {
@@ -36,8 +42,15 @@ export default function NabidkaPage() {
         }
     }
 
-    const initFilterOptions = () =>{
-        return "tady budou hodnoty pro filtraci nabídek"
+    const initFilterOptions = async() =>{
+        const locations = await codelist.getUniqueLocations();
+        console.log("Locations", locations)
+        setLocations(locations);
+
+        const subjects = await codelist.getUniqueSubjects();
+        console.log("Subjects", subjects)
+        setSubjects(subjects);
+
     }
 
     //fetch s parametry
@@ -64,6 +77,7 @@ export default function NabidkaPage() {
 
     useEffect(() => {
         initParamLoad();
+        initFilterOptions();
     }, []); 
 
     useEffect(() => {
@@ -75,11 +89,19 @@ export default function NabidkaPage() {
         console.log(data);
     },[data])
         
-    const handleFilterChange = (e) => {
-        setFilterValue(prev => ({
-            ...prev,
-            [e.target.id]: e.target.value
-        }));
+    const handleFilterChange = (e, id, value, directValue = false) => {
+        setFilterValue(prev => {
+            const newValue = directValue ? value : e.target.value;
+            const key = directValue ? id : e.target.id;
+            const updatedFilter = { ...prev };
+            
+            if (newValue === "" || newValue === null || newValue === undefined) {
+                delete updatedFilter[key];
+            } else {
+                updatedFilter[key] = newValue;
+            }
+            return updatedFilter;
+        });
     };
 
     const handleSearchClear = () => {
@@ -105,6 +127,8 @@ export default function NabidkaPage() {
                     handleFilterChange={handleFilterChange}
                     onSearchClear={handleSearchClear}
                     onSearchSubmit={handleSearchSubmit}
+                    locations={uniqueLocations}
+                    subjects={uniqueSubjects}
                 />
                 
                 <Container property="grid grid-cols-1 gap-4 mt-2">

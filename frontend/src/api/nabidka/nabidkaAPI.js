@@ -14,9 +14,15 @@ export const useNabidkaAPI = () => {
                 filteredData = practices.filter(practice => {
                     return Object.entries(params).every(([key, value]) => {
                         if (practice.hasOwnProperty(key)) {
+                            // Pro číselné hodnoty (subject, practice_id, atd.)
+                            if (typeof practice[key] === 'number') {
+                                return practice[key] === parseInt(value);
+                            }
+                            // Pro string hodnoty (address, title, atd.)
                             if (typeof value === 'string' && typeof practice[key] === 'string') {
                                 return practice[key].toLowerCase().includes(value.toLowerCase());
                             }
+                            // Pro ostatní typy
                             return practice[key] === value;
                         }
                         return false;

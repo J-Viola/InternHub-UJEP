@@ -4,13 +4,23 @@ import SearchBar from "@components/Filter/SearchBar";
 import Button from "@core/Button/Button";
 import DropDown from "@core/Form/DropDown";
 
-export default function FilterNabidka({ filterValue, handleFilterChange, onSearchClear, onSearchSubmit }) {
+export default function FilterNabidka({ 
+    filterValue, 
+    handleFilterChange, 
+    onSearchClear, 
+    onSearchSubmit, 
+    locations, 
+    subjects 
+}) 
+    
+    {
     return (
         <Container property="w-full mb-8">
             {/* PRVNÍ ŘÁDEK - VYHLEDÁVÁNÍ */}
             <Container property="flex items-center justify-center mb-4">
                 <SearchBar 
                     value={filterValue?.title}
+                    placeholder={"Název"}
                     onChange={handleFilterChange}
                     onClear={onSearchClear}
                 />
@@ -23,51 +33,36 @@ export default function FilterNabidka({ filterValue, handleFilterChange, onSearc
                 </Button>
             </Container>
 
+
             {/* DRUHÝ ŘÁDEK - DALŠÍ FILTRY */}
-            <Container property="flex justify-center gap-8 inline-block">
+            <Container property="flex justify-center gap-16 inline-block">
                 <DropDown
-                    id="location"
+                    id="address"
                     label="Místo:"
+                    value={filterValue?.address}
                     placeholder="Všechna místa"
                     variant="facultyGreen"
-                    options={[
-                        { value: "praha", label: "Praha" },
-                        { value: "brno", label: "Brno" },
-                        { value: "ostrava", label: "Ostrava" }
-                    ]}
-                    onChange={(value) => console.log("Location filter:", value)}
-                    property="w-32"
-                />
-
-                <DropDown
-                    id="availability"
-                    label="Dostupnost:"
-                    placeholder="Všechny"
-                    variant="facultyGreen"
-                    options={[
-                        { value: "available", label: "Dostupné" },
-                        { value: "limited", label: "Omezené" },
-                        { value: "full", label: "Plné" }
-                    ]}
-                    onChange={(value) => console.log("Availability filter:", value)}
-                    property="w-32"
+                    options={locations}
+                    onChange={(dict) => handleFilterChange(null, "address", dict.address, true)}
+                    property="w-full"
                 />
 
                 <DropDown
                     id="subject"
                     label="Předmět:"
+                    value={filterValue?.subject}
                     placeholder="Všechny"
                     variant="facultyGreen"
-                    options={[
-                        { value: "available", label: "Dostupné" },
-                        { value: "limited", label: "Omezené" },
-                        { value: "full", label: "Plné" }
-                    ]}
-                    onChange={(value) => console.log("Subject filter:", value)}
+                    options={subjects}
+                    onChange={(dict) => handleFilterChange(null, "subject", dict.subject, true)}
                     property="w-32"
                 />
 
             </Container>
+
+            {/* ODDĚLOVAČ */}
+            <Container property="border-t border-gray-300 my-4"></Container>
+            
         </Container>
     )
 }
