@@ -25,26 +25,96 @@ from .models import (
 )
 
 
+@admin.register(Status)
+class StatusAdmin(admin.ModelAdmin):
+    list_display = ("pk", "status_code", "status_name")
+
+
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ("pk", "role_name")
+
+
+@admin.register(StagRole)
+class StagRoleAdmin(admin.ModelAdmin):
+    list_display = ("pk", "role_name", "role")
+
+
+@admin.register(OrganizationRole)
+class OrganizationRoleAdmin(admin.ModelAdmin):
+    list_display = ("pk", "role_name", "role")
+
+
+@admin.register(EmployerProfile)
+class EmployerProfileAdmin(admin.ModelAdmin):
+    list_display = ("pk", "company_name")
+
+
+@admin.register(OrganizationUser)
+class OrganizationUserAdmin(UserAdmin):
+    list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
+
+
+@admin.register(StagUser)
+class StagUserAdmin(UserAdmin):
+    list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
+
+
+@admin.register(ActionLog)
+class ActionLogAdmin(admin.ModelAdmin):
+    list_display = ("pk", "action_type", "action_date", "user")
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ("pk", "department_name")
+
+
+@admin.register(DepartmentUserRole)
+class DepartmentUserRoleAdmin(admin.ModelAdmin):
+    list_display = ("pk", "user", "department", "role")
+
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ("pk", "subject_code", "subject_name")
+
+
+@admin.register(EmployerInvitation)
+class EmployerInvitationAdmin(admin.ModelAdmin):
+    list_display = ("pk", "user", "practice", "status")
+
+
+@admin.register(PracticeType)
+class PracticeTypeAdmin(admin.ModelAdmin):
+    list_display = ("pk", "name")
+
+
+@admin.register(Practice)
+class PracticeAdmin(admin.ModelAdmin):
+    list_display = ("pk", "title", "employer", "subject", "status")
+
+
+@admin.register(PracticeUser)
+class PracticeUserAdmin(admin.ModelAdmin):
+    list_display = ("pk", "practice", "user")
+
+
+@admin.register(StudentPractice)
+class StudentPracticeAdmin(admin.ModelAdmin):
+    list_display = ("pk", "user", "practice", "approval_status")
+
+
+@admin.register(UploadedDocument)
+class UploadedDocumentAdmin(admin.ModelAdmin):
+    list_display = ("pk", "document_name", "practice", "uploaded_at")
+
+
+@admin.register(UserSubject)
+class UserSubjectAdmin(admin.ModelAdmin):
+    list_display = ("pk", "user", "subject", "role")
+
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    pass
-
-
-admin.site.register(Status)
-admin.site.register(Role)
-admin.site.register(StagRole)
-admin.site.register(OrganizationRole)
-admin.site.register(EmployerProfile)
-admin.site.register(OrganizationUser)
-admin.site.register(StagUser)
-admin.site.register(ActionLog)
-admin.site.register(Department)
-admin.site.register(DepartmentUserRole)
-admin.site.register(Subject)
-admin.site.register(EmployerInvitation)
-admin.site.register(PracticeType)
-admin.site.register(Practice)
-admin.site.register(PracticeUser)
-admin.site.register(StudentPractice)
-admin.site.register(UploadedDocument)
-admin.site.register(UserSubject)
+    list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
