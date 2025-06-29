@@ -9,6 +9,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
+from django_enumfield import enum
 from polymorphic.models import PolymorphicManager, PolymorphicModel
 
 
@@ -42,6 +43,9 @@ class Status(models.Model):
     class Meta:
         db_table = "status"
 
+    def __str__(self):
+        return self.status_name or self.status_code or super().__str__()
+
 
 class Role(models.Model):
     role_id = models.AutoField(primary_key=True)
@@ -51,12 +55,18 @@ class Role(models.Model):
     class Meta:
         db_table = "role"
 
+    def __str__(self):
+        return self.role_name or super().__str__()
+
 
 class StagRole(models.Model):
     id = models.AutoField(primary_key=True)
     role = models.CharField(unique=True, blank=False, null=False)
     role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.role_name or self.role or super().__str__()
 
     class Meta:
         db_table = "stagrole"
@@ -68,6 +78,9 @@ class OrganizationRole(models.Model):
     role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
+    def __str__(self):
+        return self.role_name or self.role or super().__str__()
+
     class Meta:
         db_table = "organizationrole"
 
@@ -77,11 +90,15 @@ class EmployerProfile(models.Model):
     company_name = models.CharField(max_length=100, blank=True, null=True)
     ico = models.CharField(unique=True, max_length=15, blank=True, null=True)
     dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
+    city = models.TextField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
     approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
     logo = models.ImageField(upload_to="images/logos", blank=True, null=True)
+
+    def __str__(self):
+        return self.company_name or super().__str__()
 
     class Meta:
         db_table = "employerprofile"
@@ -121,6 +138,9 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     @property
     def role(self):
         return None
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"
 
 
 class OrganizationUser(User):
@@ -175,6 +195,10 @@ class ActionLog(models.Model):
     action_description = models.TextField(blank=True, null=True)
     action_date = models.DateTimeField(blank=True, null=True)
 
+    def __str__(self):
+        user_repr = str(self.user) if self.user else "Unknown"
+        return f"[{self.action_date}] {self.action_type} by {user_repr}"
+
     class Meta:
         db_table = "actionlog"
 
@@ -183,6 +207,9 @@ class Department(models.Model):
     department_id = models.AutoField(primary_key=True)
     department_name = models.CharField(unique=True, max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.department_name or super().__str__()
 
     class Meta:
         db_table = "department"
@@ -193,6 +220,9 @@ class DepartmentUserRole(models.Model):
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True)
     role = models.ForeignKey(Role, models.DO_NOTHING, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user} as {self.role} in {self.department}"
 
     class Meta:
         db_table = "departmentuserrole"
@@ -205,6 +235,9 @@ class Subject(models.Model):
     subject_name = models.CharField(max_length=100, blank=True, null=True)
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     hours_required = models.IntegerField(blank=True, null=True)
+
+    def __str__(self):
+        return self.subject_name or self.subject_code or super().__str__()
 
     class Meta:
         db_table = "subject"
@@ -220,6 +253,9 @@ class EmployerInvitation(models.Model):
     message = models.TextField(blank=True, null=True)
     status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
 
+    def __str__(self):
+        return f"Invitation {self.invitation_id} for {self.user} to {self.practice}"
+
     class Meta:
         db_table = "employerinvitation"
 
@@ -228,6 +264,9 @@ class PracticeType(models.Model):
     practice_type_id = models.AutoField(primary_key=True)
     name = models.CharField(unique=True, max_length=100, blank=True, null=True)
     coefficient = models.FloatField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name or super().__str__()
 
     class Meta:
         db_table = "practicetype"
@@ -256,14 +295,28 @@ class Practice(models.Model):
     image_base64 = models.TextField(blank=True, null=True)
     practice_type = models.ForeignKey(PracticeType, models.DO_NOTHING, blank=True, null=True)
 
+    def __str__(self):
+
+        return self.title or super().__str__()
+
     class Meta:
         db_table = "practice"
+
+
+class SemesterType(enum.Enum):
+    WINTER = 0
+    SUMMER = 1
 
 
 class PracticeUser(models.Model):
     id = models.AutoField(primary_key=True)
     practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True)
+    year = models.IntegerField(blank=True, null=True)
+    semester = enum.EnumField(SemesterType)
+
+    def __str__(self):
+        return f"{self.user} in {self.practice}"
 
     class Meta:
         db_table = "practiceuser"
@@ -293,6 +346,9 @@ class StudentPractice(models.Model):
         null=True,
     )
 
+    def __str__(self):
+        return f"{self.user} - {self.practice} (status: {self.approval_status})"
+
     class Meta:
         db_table = "studentpractice"
         unique_together = (("user", "practice"),)
@@ -306,6 +362,9 @@ class UploadedDocument(models.Model):
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = models.CharField(max_length=50, blank=True, null=True)
 
+    def __str__(self):
+        return self.document_name or super().__str__()
+
     class Meta:
         db_table = "uploadeddocument"
 
@@ -315,6 +374,9 @@ class UserSubject(models.Model):
     user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True)
     subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True)
     role = models.CharField(max_length=50, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.subject} ({self.role})"
 
     class Meta:
         db_table = "usersubject"

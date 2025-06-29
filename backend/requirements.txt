@@ -17,3 +17,4 @@ django-model-utils
 pillow
 django-verify-email
 drf-spectacular
+django-enumfield

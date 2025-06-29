@@ -57,6 +57,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         details = resp.json()
         email = details.get("email")
+        jmeno = details.pop("jmeno")
+        prijmeni = details.pop("prijmeni")
+
         stagUserInfos = details.get("stagUserInfo")
         if not stagUserInfos or len(stagUserInfos) == 0:
             raise AuthenticationFailed("No user information returned by STAG")
@@ -69,7 +72,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
         user, _ = StagUser.objects.get_or_create(
             email=email,
-            defaults={"email": email, "stag_role": stagRole},
+            defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni},
         )
 
         refresh = self.get_token(user)
