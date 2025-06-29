@@ -9,6 +9,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
+from django_enumfield import enum
 from polymorphic.models import PolymorphicManager, PolymorphicModel
 
 
@@ -89,6 +90,7 @@ class EmployerProfile(models.Model):
     company_name = models.CharField(max_length=100, blank=True, null=True)
     ico = models.CharField(unique=True, max_length=15, blank=True, null=True)
     dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
+    city = models.TextField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
@@ -301,10 +303,17 @@ class Practice(models.Model):
         db_table = "practice"
 
 
+class SemesterType(enum.Enum):
+    WINTER = 0
+    SUMMER = 1
+
+
 class PracticeUser(models.Model):
     id = models.AutoField(primary_key=True)
     practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True)
+    year = models.IntegerField(blank=True, null=True)
+    semester = enum.EnumField(SemesterType)
 
     def __str__(self):
         return f"{self.user} in {self.practice}"
