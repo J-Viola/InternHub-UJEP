@@ -5,6 +5,7 @@ export const useNabidkaAPI = () => {
     const api = useApi();
     const practices = api.dummyDB.practices;
 
+    // případně vytvořt zvlášť na id..
     const getNabidky = async (params = {}) => {
         try {
             
@@ -14,15 +15,15 @@ export const useNabidkaAPI = () => {
                 filteredData = practices.filter(practice => {
                     return Object.entries(params).every(([key, value]) => {
                         if (practice.hasOwnProperty(key)) {
-                            // Pro číselné hodnoty (subject, practice_id, atd.)
+
                             if (typeof practice[key] === 'number') {
                                 return practice[key] === parseInt(value);
                             }
-                            // Pro string hodnoty (address, title, atd.)
+
                             if (typeof value === 'string' && typeof practice[key] === 'string') {
                                 return practice[key].toLowerCase().includes(value.toLowerCase());
                             }
-                            // Pro ostatní typy
+
                             return practice[key] === value;
                         }
                         return false;
@@ -41,18 +42,19 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    {/** FUNKCE NA GET PRO ID NABIDKY
     const getNabidkaById = async (id) => {
-        try {
-            const practice = practices.find(practice => practice.practice_id === parseInt(id));
-            return practice || null;
-        } catch (error) {
-            console.error("Chyba při získávání nabídky podle ID:", error);
-            throw error;
-        }
-    }
+            try {
+                const practice = practices.find(practice => practice.practice_id === parseInt(id));
+                return practice || null;
+            } catch (error) {
+                console.error("Chyba při získávání nabídky podle ID:", error);
+                throw error;
+            }
+        }    
+        */}
 
     return {
         getNabidky,
-        getNabidkaById
-    };
+    }
 };

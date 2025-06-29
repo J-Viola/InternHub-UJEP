@@ -17,6 +17,7 @@ import practiceUsers from '@dummy/practiceUsers.js';
 import studentPractices from '@dummy/studentPractices.js';
 import uploadedDocuments from '@dummy/uploadedDocuments.js';
 import userSubjects from '@dummy/userSubjects.js';
+import students from '@dummy/students';
 
 
 const dummyData = {
@@ -38,7 +39,8 @@ const dummyData = {
   practiceUsers,
   studentPractices,
   uploadedDocuments,
-  userSubjects
+  userSubjects,
+  students
 };
 
 export default dummyData; 

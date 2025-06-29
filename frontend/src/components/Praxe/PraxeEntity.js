@@ -4,6 +4,7 @@ import Headings from "@core/Text/Headings";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
+import { Image } from "@components/core/Image";
 
 export default function PraxeEntity({entity, onClick, onView}) {
 
@@ -16,9 +17,17 @@ export default function PraxeEntity({entity, onClick, onView}) {
     }
 
     return(
-        <ContainerForEntity variant={entity.status ? statusEntity[entity.status] : ""} property={"pl-8 pt-2 pb-2 pr-4"}>
-            <Container property={"grid grid-cols-5 gap-2 items-center"}>
-                <Paragraph sizeTag="h4">{entity.logo}</Paragraph>
+        <ContainerForEntity variant={entity.status ? statusEntity[entity.status] : ""} property={"pl-4 pt-2 pb-2 pr-4"}>
+            <Container property={"grid grid-cols-5 gap-1 items-center"}>
+                <Image
+                    alt={"Logo" + entity.title}
+                    src={entity.logo}
+                    width="50px"
+                    height="50px"
+                    objectFit="cover"
+                    property="mr-auto"
+
+                />
                 <Paragraph variant={"baseBold"}>{entity.title}</Paragraph>
                 <Paragraph>Datum podání: {entity.administration_date}</Paragraph>
                 <Paragraph>Status: {entity.status}</Paragraph>

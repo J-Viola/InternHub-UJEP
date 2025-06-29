@@ -11,6 +11,7 @@ import Button from "@core/Button/Button";
 import DocsPanel from "@components/Nabidka/DocsPanel";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
+import { usePrihlaskaAPI } from "@api/prihlaska/prihlaskaAPI";
 import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 
@@ -19,18 +20,24 @@ export default function NabidkaDetailPage() {
     const [ popUp, setPopUp ] = useState(false);
     const [ entity, setEntity ] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
+    const prihlaskaAPI = usePrihlaskaAPI();
     const { user } = useUser();
 
     const fetchData = async () => {
         try {
             console.log("Fetching nabídka with ID:", id);
-            const result = await nabidkaAPI.getNabidkaById(id);
-            console.log("result", result)
-            setEntity(result);
+            const result = await nabidkaAPI.getNabidky({"practice_id": id});
+            console.log("result", result[0]) // přistupuju k jednomu
+            setEntity(result[0]);
         } catch (error) {
             console.error("Chyba při načítání nabídky:", error);
         }
     };
+
+    const createApplication = async() => {
+        const creation = await prihlaskaAPI.createPrihlaska(user.id, id); 
+        console.log(creation)
+    }
 
     useEffect(() => {
         if (id) {
@@ -45,20 +52,24 @@ export default function NabidkaDetailPage() {
     }
 
     const onSubmit = () => {
-        console.log("Přihláška podána");
+        console.log("Podání příhlášky");
+        if (user.id && id) {
+            createApplication();
+            //HANDLE (PŘESMĚROVÁNÍ NA PRAXE PAGE)
+        }
     }
 
     const onReject = () => {
         console.log("Přihláška odmítnuta");
     }
 
-    //
+    // entita karty
     return(
         <Container property="min-h-screen">
             <Nav/>
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
-                {/* PODLE PŘÍZNAKU */}
+                {/* PODLE PŘÍZNAKU - panel dokumentů */}
                 <DocsPanel/>
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     {/*<BackButton/>*/}
