@@ -14,6 +14,7 @@ import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { usePrihlaskaAPI } from "@api/prihlaska/prihlaskaAPI";
 import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
+import { useNavigate } from "react-router-dom";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -22,6 +23,7 @@ export default function NabidkaDetailPage() {
     const nabidkaAPI = useNabidkaAPI();
     const prihlaskaAPI = usePrihlaskaAPI();
     const { user } = useUser();
+    const navigate = useNavigate();
 
     const fetchData = async () => {
         try {
@@ -55,7 +57,7 @@ export default function NabidkaDetailPage() {
         console.log("Podání příhlášky");
         if (user.id && id) {
             createApplication();
-            //HANDLE (PŘESMĚROVÁNÍ NA PRAXE PAGE)
+            navigate("/praxe");
         }
     }
 
@@ -69,8 +71,8 @@ export default function NabidkaDetailPage() {
             <Nav/>
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
-                {/* PODLE PŘÍZNAKU - panel dokumentů */}
-                <DocsPanel/>
+                {/* PODLE PŘÍZNAKU Z GETU- panel dokumentů */}
+                <DocsPanel/>000
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     {/*<BackButton/>*/}
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
@@ -107,11 +109,11 @@ export default function NabidkaDetailPage() {
                     </Container>
 
                     <Container property={"grid grid-cols-1 gap-8 mt-4"}>
-                        {user && user.role === "ST" && (
+                        {user.isStudent() && (
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
-                        {user && user.role === "VY" && (
+                        {user.isVyucujici() && (
                             <Button variant={"red"} property={"col-start-1 justify-self-end"} onClick={handlePopUp}>Spravovat</Button>
                         )}
                     </Container>

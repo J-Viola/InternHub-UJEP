@@ -8,6 +8,7 @@ import PraxeEntity from "@components/Praxe/PraxeEntity";
 import PopUpCon from "@core/Container/PopUpCon";
 import { usePrihlaskaAPI } from "@api/prihlaska/prihlaskaAPI";
 import { useUser } from "@hooks/UserProvider";
+import { useNavigate } from "react-router-dom";
 
 
 export default function PraxePage() {
@@ -16,7 +17,7 @@ export default function PraxePage() {
     const [loading, setLoading] = useState(true);
     const prihlaskaAPI = usePrihlaskaAPI();
     const { user } = useUser();
-
+    const navigate = useNavigate();
 
     const fetchPractices = async () => {
         try {
@@ -37,13 +38,24 @@ export default function PraxePage() {
         fetchPractices();
     }, [user]);
 
-    const handleClick = (entity) => {
+    const handleClick = async (entity) => {
         console.log("clicked praxe:", entity);
-        setSelectedEntity(entity); 
+        setSelectedEntity(entity);
     }
 
     const handleView = (entity) => {
         console.log("Redirect na id entity:", entity.id)
+        navigate(`/nabidka/${entity.id}`);
+    }
+
+    const handleSubmit = async () => {
+        try {
+            const res = await prihlaskaAPI.acceptInvitation(selectedEntity.id, user.id);
+            console.log("Přijmutí pozvánky:", res);
+            await fetchPractices();
+        } catch (error) {
+            console.error("Chyba při přijímání pozvánky:", error);
+        }
     }
 
     // Pop Up render
@@ -53,8 +65,8 @@ export default function PraxePage() {
                 title={selectedEntity.title} 
                 onClose={() => handleClick({})} 
                 text={"Opravdu si přejete zahájit tuto praxi?"}
-                onSubmit={() => console.log("Submit")}
-                onReject={() => handleClick({})}
+                onSubmit={() => handleSubmit()}
+                onReject={() => console.log(practices)}
             />
         )
     }

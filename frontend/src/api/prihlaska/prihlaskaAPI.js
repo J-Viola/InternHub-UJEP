@@ -75,14 +75,14 @@ export const usePrihlaskaAPI = () => {
                 const practice = practices.find(p => p.practice_id === application.practice);
                 if (practice) {
                     let status = "Čeká na schválení";
-                    if (application.approval_status === 2) {
-                        status = "Schváleno";
-                    } else if (application.approval_status === 3) {
-                        status = "Zamítnuto";
-                    } else if (application.progress_status === 2) {
+                    if (application.progress_status === 2) {
                         status = "Probíhající stáž";
                     } else if (application.progress_status === 3) {
                         status = "Ukončená stáž";
+                    } else if (application.approval_status === 2) {
+                        status = "Schváleno";
+                    } else if (application.approval_status === 3) {
+                        status = "Zamítnuto";
                     }
 
                     practicesWithDetails.push({
@@ -138,8 +138,51 @@ export const usePrihlaskaAPI = () => {
         }
     };
 
+    const acceptInvitation = async (practiceId, userId) => {
+        try {
+            const invitation = employerInvitations.find(
+                inv => inv.practice === parseInt(practiceId) && inv.user === parseInt(userId)
+            );
+
+            if (!invitation) {
+                throw new Error('Pozvánka nebyla nalezena');
+            }
+
+
+            invitation.status = 2;
+
+            const newStudentPractice = {
+                student_practice_id: studentPractices.length + 1,
+                user: parseInt(userId),
+                practice: parseInt(practiceId),
+                application_date: new Date().toISOString().split('T')[0],
+                approval_status: 2, // Schváleno
+                progress_status: 2, // Probíhající stáž
+                hours_completed: 0,
+                cancellation_reason: null,
+                cancelled_by_user: null
+            };
+
+            studentPractices.push(newStudentPractice);
+
+            return {
+                success: true,
+                message: 'Pozvánka byla úspěšně přijata a stáž začala',
+                data: {
+                    invitation: invitation,
+                    studentPractice: newStudentPractice
+                }
+            };
+
+        } catch (error) {
+            console.error('Chyba při přijímání pozvánky:', error);
+            throw error;
+        }
+    };
+
     return {
         createPrihlaska,
-        getStudentPractices
+        getStudentPractices,
+        acceptInvitation
     };
 };
