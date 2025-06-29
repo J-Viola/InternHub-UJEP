@@ -100,7 +100,8 @@ const CreatePracticeSchema = z.object({
 });
 
 export const useNabidkaAPI = () => {
-  const api = useApi();
+    const api = useApi();
+    const practices = api.dummyDB.practices;
 
   const getNabidky = async (params = {}) => {
     try {
@@ -112,26 +113,27 @@ export const useNabidkaAPI = () => {
       let practices = parsed.results;
       console.log("Nabídky:", practices);
 
-      let filteredData = practices;
+       let filteredData = practices;
 
-      if (Object.keys(params).length > 0) {
-        filteredData = practices.filter((practice) => {
-          return Object.entries(params).every(([key, value]) => {
-            if (practice.hasOwnProperty(key)) {
-              if (
-                typeof value === "string" &&
-                typeof practice[key] === "string"
-              ) {
-                return practice[key]
-                  .toLowerCase()
-                  .includes(value.toLowerCase());
-              }
-              return practice[key] === value;
+            if (Object.keys(params).length > 0) {
+                filteredData = practices.filter(practice => {
+                    return Object.entries(params).every(([key, value]) => {
+                        if (practice.hasOwnProperty(key)) {
+                            // Pro číselné hodnoty (subject, practice_id, atd.)
+                            if (typeof practice[key] === 'number') {
+                                return practice[key] === parseInt(value);
+                            }
+                            // Pro string hodnoty (address, title, atd.)
+                            if (typeof value === 'string' && typeof practice[key] === 'string') {
+                                return practice[key].toLowerCase().includes(value.toLowerCase());
+                            }
+                            // Pro ostatní typy
+                            return practice[key] === value;
+                        }
+                        return false;
+                    });
+                });
             }
-            return false;
-          });
-        });
-      }
 
       const response = {
         data: filteredData,
