@@ -1,5 +1,5 @@
 import requests
-from api.models import EmployerProfile, OrganizationRole, OrganizationUser, StagRole, StagUser, Status
+from api.models import EmployerProfile, OrganizationRole, OrganizationUser, StagRole, StagUser, Status, Subject, UserSubject
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -68,12 +68,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         roleName = stagUserInfo["roleNazev"]
         if not email:
             raise AuthenticationFailed("Email not returned by STAG")
+        osCislo = stagUserInfo.get("osCislo")
 
         stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
         user, _ = StagUser.objects.get_or_create(
             email=email,
-            defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni},
+            defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni, "os_cislo": osCislo},
         )
+        sync_stag_roles(ticket, osCislo, user)
 
         refresh = self.get_token(user)
         refresh["type"] = UserType.STAG.value
@@ -222,3 +224,57 @@ class TokenResponseSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     access = serializers.CharField()
     user = UserInfoSerializer()
+
+
+class PredmetStudentaSerializer(serializers.Serializer):
+    katedra = serializers.CharField()
+    kredity = serializers.IntegerField()
+    nazev = serializers.CharField()
+    rok = serializers.CharField()
+    statut = serializers.CharField()
+    uznano = serializers.CharField()
+    zkratka = serializers.CharField()
+
+
+def sync_stag_roles(stag_ticket: str, osCislo: str, user: StagUser):
+    """
+    Synchronizes STAG roles with the database.
+    This function should be called periodically to ensure that STAG roles are up-to-date.
+    """
+    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
+    params = {
+        "osCislo": osCislo,
+        "outputFormat": "JSON",
+        "semestr": "%",
+        "rok": "%",
+    }
+
+    cookies = {
+        "WSCOOKIE": stag_ticket,
+    }
+    response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
+
+    if response.status_code == 200:
+        response_json = response.json()
+        items = response_json.get("predmetStudenta", [])
+        serializer = PredmetStudentaSerializer(data=items, many=True)
+        serializer.is_valid(raise_exception=True)
+        subject_data = serializer.validated_data
+        for subj in subject_data:
+            subjInDb = None
+            try:
+                subjInDb = Subject.objects.get(subject_code=subj["zkratka"])
+            except Subject.DoesNotExist:
+                pass
+            if subjInDb is not None:
+                # TODO: Co role??? Je to tu vůbec k něčemu?
+                UserSubject.objects.get_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={
+                        "subject": subjInDb,
+                        "user": user,
+                    },
+                )
+    else:
+        raise Exception("Failed to fetch STAG roles")

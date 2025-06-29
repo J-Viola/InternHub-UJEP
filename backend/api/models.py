@@ -121,6 +121,7 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     activated_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    date_joined = models.DateField(blank=True, null=True)
 
     objects = UserManager()
 
@@ -161,6 +162,7 @@ class OrganizationUser(User):
 # Role: student, vedení katedry, vedoucí předmětu
 class StagUser(User):
     profile_picture = models.TextField(blank=True, null=True)
+    os_cislo = models.CharField(unique=True, max_length=64, blank=True, null=True)
     field_of_study = models.CharField(max_length=100, blank=True, null=True)
     year_of_study = models.IntegerField(blank=True, null=True)
     stag_f_number = models.IntegerField(unique=True, blank=True, null=True)
