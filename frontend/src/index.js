@@ -13,9 +13,8 @@ import StudentPage from '@pages/StudentsPage';
 import VytvorenePraxe from '@pages/VytvorenePraxePage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
 import RegistracePage from '@pages/RegistracePage';
-
+import ProfileEditPage from '@pages/ProfileEditPage'
 import reportWebVitals from './reportWebVitals';
-
 import UserProvider from '@hooks/UserProvider';
 import AuthProvider from '@services/auth/Auth';
 
@@ -29,13 +28,14 @@ root.render(
             <Route path="/" element={<LoginPage />} />
             <Route path="/nabidka" element={<NabidkaPage />} />
             <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
-            <Route path="/profil" element={<ProfilPage />} />
+            <Route path="/profil/:id?" element={<ProfilPage />} />
             <Route path="/registrace" element={<RegistracePage />} />
             <Route path="/praxe" element={<PraxePage />} />
             <Route path="/TEST" element={<TextEditor />} />
             <Route path="/Students" element={<StudentPage />} />
             <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
             <Route path="/VytNabidku" element={<VytvoritNabidku />} />
+            <Route path="/profil/edit/:id?" element={<ProfileEditPage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

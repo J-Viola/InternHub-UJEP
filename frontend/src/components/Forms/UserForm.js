@@ -9,6 +9,9 @@ import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 
 export default function UserForm() {
+
+    const [birthDate, setBirthDate] = useState("");
+    
     return(
         <>
         <Container property={"grid gap-2 grid-cols-3"}>
