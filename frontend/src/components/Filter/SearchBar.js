@@ -2,14 +2,14 @@ import React from "react";
 import Container from "@core/Container/Container";
 import Button from "@core/Button/Button";
 
-export default function SearchBar({ value, placeholder, onChange, onClear }) {
+export default function SearchBar({ value, placeholder, onChange, onClear, id=null }) {
     const inputClass = `w-full py-1 px-2 text-black bg-facultyColLight rounded-lg border border-black placeholder-gray-800`;
 
     return (
         <Container property="relative inline-block w-full items-center justify-center">
             <input
                 type={"text"}
-                id={"title"} 
+                id={id ? id :"title"} 
                 className={inputClass} 
                 placeholder={placeholder ? placeholder : "Hledat..."} 
                 value={value || ""}

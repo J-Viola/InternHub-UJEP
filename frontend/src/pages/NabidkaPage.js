@@ -104,11 +104,19 @@ export default function NabidkaPage() {
         });
     };
 
-    const handleSearchClear = () => {
-        setFilterValue(prev => ({
-            ...prev,
-            title: ""
-        }));
+    const handleSearchClear = (field_id) => {
+        setFilterValue(prev => {
+            const updatedFilter = { ...prev };
+            
+            if (field_id === "title") {
+                updatedFilter.title = "";
+            } 
+            if (field_id === "address") {
+                updatedFilter.address = "";
+            }
+            
+            return updatedFilter;
+        });
     };
 
     const handleSearchSubmit = () => {

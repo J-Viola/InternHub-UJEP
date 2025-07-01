@@ -19,10 +19,11 @@ export default function FilterNabidka({
             {/* PRVNÍ ŘÁDEK - VYHLEDÁVÁNÍ */}
             <Container property="flex items-center justify-center mb-4">
                 <SearchBar 
+                    id={"title"}
                     value={filterValue?.title}
                     placeholder={"Název"}
                     onChange={handleFilterChange}
-                    onClear={onSearchClear}
+                    onClear={() => onSearchClear("title")}
                 />
                 <Button 
                     onClick={onSearchSubmit} 
@@ -35,29 +36,40 @@ export default function FilterNabidka({
 
 
             {/* DRUHÝ ŘÁDEK - DALŠÍ FILTRY */}
-            <Container property="flex justify-center gap-16 inline-block">
-                <DropDown
-                    id="address"
-                    label="Místo:"
-                    value={filterValue?.address}
-                    placeholder="Všechna místa"
-                    variant="facultyGreen"
-                    options={locations}
-                    onChange={(dict) => handleFilterChange(null, "address", dict.address, true)}
-                    property="w-full"
-                />
+            <Container property="flex items-center gap-4 mb-4 w-full">
+                <Container property="flex-1">
+                    {/*<DropDown
+                        id="address"
+                        label="Místo:"
+                        value={filterValue?.address}
+                        placeholder="Všechna místa"
+                        variant="facultyGreen"
+                        options={locations}
+                        onChange={(dict) => handleFilterChange(null, "address", dict.address, true)}
+                        property="w-full"
+                    />*/}
+                    <SearchBar 
+                        id={"address"}
+                        value={filterValue?.address}
+                        placeholder={"Místo konání nabídky - např. Praha"}
+                        onChange={handleFilterChange}
+                        onClear={() => onSearchClear("address")}
+                    />
+                </Container>
 
-                <DropDown
-                    id="subject"
-                    label="Předmět:"
-                    value={filterValue?.subject}
-                    placeholder="Všechny"
-                    variant="facultyGreen"
-                    options={subjects}
-                    onChange={(dict) => handleFilterChange(null, "subject", dict.subject, true)}
-                    property="w-32"
-                />
 
+                <Container property="w-64">
+                    <DropDown
+                        id="subject"
+                        //label="Předmět:"
+                        value={filterValue?.subject}
+                        placeholder="Zvolte předmět"
+                        variant="facultyGreen"
+                        options={subjects}
+                        onChange={(dict) => handleFilterChange(null, "subject", dict.subject, true)}
+                        property={"w-full"}
+                    />
+                </Container>
             </Container>
 
             {/* ODDĚLOVAČ */}
