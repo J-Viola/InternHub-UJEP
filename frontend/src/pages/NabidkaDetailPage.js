@@ -72,7 +72,7 @@ export default function NabidkaDetailPage() {
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
                 {/* PODLE PŘÍZNAKU Z GETU- panel dokumentů */}
-                <DocsPanel/>000
+                <DocsPanel/>
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     {/*<BackButton/>*/}
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">

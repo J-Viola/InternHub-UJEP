@@ -62,14 +62,15 @@ function Nav({user=USER}) {
     
     const navigationDict = {
         "Nabídka praxí": "/nabidka",
-        "Účet": "/",
         "Praxe": "/praxe",
+        "Profil": "/profil",
+        "Účet": "/",
+        "Odhlásit se": "/",
         "TEST STRÁNEK": {
             "SprInPrihlaseni": "/SprInPrihlaseni",
             "VytStáže": "/VytNabidku"
         },
-        "Odhlásit se": "/logout",
-        "Profil": "/profil",
+
     };
 
     return(
