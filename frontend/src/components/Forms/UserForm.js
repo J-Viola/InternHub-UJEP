@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import Container from "@core/Container/Container";
 import TextField from "@core/Form/TextField";
 import DropDown from "@core/Form/DropDown";
@@ -8,34 +8,35 @@ import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 
-export default function UserForm() {
+export default function UserForm({userProfile, handleChange}) {
 
-    const [birthDate, setBirthDate] = useState("");
-    
     return(
         <>
         <Container property={"grid gap-2 grid-cols-3"}>
             <TextField 
-                id={"name"}
+                id={"first_name"}
                 required={true}
                 label={"Jméno"} 
                 placeholder={"Zadejte jméno"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.first_name || ""}
+                onChange={handleChange}
             />
             <TextField 
-                id={"surname"}
+                id={"last_name"}
                 required={true}
                 label={"Příjmení"} 
                 placeholder={"Zadejte příjmení"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.last_name || ""}
+                onChange={handleChange}
             />
 
+            {/* nefunguje kvůli formátu datumu */}
             <CustomDatePicker
-                id={"birthDate"}
-                selected={birthDate}
+                id={"date_of_birth"}
+                selected={userProfile?.date_of_birth}
                 label={"Datum narození"}
                 required={true}
-                onChange={(value) => console.log(value)}
+                onChange={handleChange}
             />
 
             <TextField 
@@ -43,7 +44,8 @@ export default function UserForm() {
                 required={true}
                 label={"E-mailová adresa"} 
                 placeholder={"Zadejte e-mailovou adresu"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.email || ""}
+                onChange={handleChange}
             />
 
             <TextField 
@@ -51,15 +53,17 @@ export default function UserForm() {
                 required={true}
                 label={"Telefonní číslo"} 
                 placeholder={"Zadejte svoje telefonní číslo"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.phone || ""}
+                onChange={handleChange}
             />
 
             <TextField 
-                id={"birthPlace"}
+                id={"place_of_birth"}
                 required={true}
                 label={"Místo narození"} 
                 placeholder={"Místo narození"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.place_of_birth || ""}
+                onChange={handleChange}
             />
 
             <TextField 
@@ -67,7 +71,8 @@ export default function UserForm() {
                 required={true}
                 label={"Město"} 
                 placeholder={"Město"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.city || ""}
+                onChange={handleChange}
             />
 
             <TextField 
@@ -75,17 +80,27 @@ export default function UserForm() {
                 required={true}
                 label={"Ulice"} 
                 placeholder={"Ulice"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.street || ""}
+                onChange={handleChange}
             />
 
             <TextField 
-                id={"houseNum"}
+                id={"street_number"}
                 required={true}
                 label={"Číslo popisné"} 
                 placeholder={"Číslo popisné"}
-                onChange={(value) => console.log(value)}
+                value={userProfile?.street_number || ""}
+                onChange={handleChange}
             />
 
+            <TextField 
+                id={"zip_code"}
+                required={true}
+                label={"PSČ"} 
+                placeholder={"PSČ"}
+                value={userProfile?.zip_code || ""}
+                onChange={handleChange}
+            />
 
             {/*<DropDown
                 id={"kategorie"}
@@ -102,21 +117,26 @@ export default function UserForm() {
         </Container>
 
         <TextBox
-            id={"aboutMe"}
+            id={"additional_info"}
             required={true}
             label={"O mě"}
             placeholder={"Napište něco o sobě"}
-            onChange={(value) => console.log(value)}
+            value={userProfile?.additional_info || ""}
+            onChange={handleChange}
         />
 
         <TextBox
-            id={"skills"}
+            id={"resume"}
             required={true}
             label={"Moje schopnosti"}
             placeholder={"Popište svoje znalosti, zkušenosti a dovednosti, které můžete firmě nabídnout"}
-            onChange={(value) => console.log(value)}
+            value={userProfile?.resume || ""}
+            onChange={handleChange}
         />
 
+        {/* DODĚLAT SKILLS - multipicker */}
+
+        {/* DODĚLAT HANDLER - na upload obrázků */}
         <Button 
             property={"w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 mt-2 hover:bg-gray-200"} 
             noVariant={true}
@@ -131,7 +151,7 @@ export default function UserForm() {
         <Container property={"flex w-full justify-end ml-auto"}>
             <Button 
                 property={"mt-2 px-16"} 
-                onClick={() => console.log("Ukládám vole")}
+                onClick={() => console.log("Ukládám vole", userProfile)}
             >
                 Uložit
             </Button>

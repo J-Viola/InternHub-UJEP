@@ -10,89 +10,26 @@ import { Image } from "@components/core/Image";
 import { useParams } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
 import { useNavigate } from "react-router-dom";
+import { useStudentAPI } from "@api/student/studentAPI";
 
 
 export default function ProfilPage() {
     const { id } = useParams()
     const { user } = useUser();
     const navigate = useNavigate();
-
+    const students = useStudentAPI();
     const  [ userProfile, setUserProfile ] = useState({});
     
-    const dummy_profiles = [
-        {
-            "id": 1,
-            "username": "f20b0539p",
-            "email": "f20b0539p@students.zcu.cz",
-            "title_before": "Bc.",
-            "first_name": "Jan",
-            "last_name": "Novák",
-            "title_after": "",
-            "phone": "+420 123 456 789",
-            "date_joined": "2023-09-01T00:00:00Z",
-            "is_active": true,
-            "profile_picture": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAADMElEQVR4nOzVwQnAIBQFQYXff81RUkQCOyDj1YOPnbXWPmeTRef+/3O/OyBjzh3CD95BfqICMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMO0TAAD//2Anhf4QtqobAAAAAElFTkSuQmCC",
-            "field_of_study": "Informatika",
-            "year_of_study": 3,
-            "stag_f_number": 20200539,
-            "resume": "Zkušenosti s programováním v JavaScript, React, Node.js. Praxe v IT firmě během letních prázdnin.",
-            "additional_info": "Zajímám se o webový vývoj a umělou inteligenci. Aktivní člen studentského klubu.",
-            "date_of_birth": "2002-05-15",
-            "place_of_birth": "Praha",
-            "street": "Nerudova",
-            "street_number": "15",
-            "zip_code": "11800",
-            "city": "Praha",
-            "specialization": "Webové technologie",
-            "role": "ST",
-            "role_name": "Student",
-            "faculty": "FF",
-            "os_cislo": "F20B0539P",
-            "skills": ["JavaScript", "React", "Node.js", "Python", "SQL", "Git", "Docker", "TypeScript"]
-        },
-        {
-            "id": 2,
-            "username": "f21a1234k",
-            "email": "f21a1234k@students.zcu.cz",
-            "title_before": "Bc.",
-            "first_name": "Anna",
-            "last_name": "Svobodová",
-            "title_after": "",
-            "phone": "+420 987 654 321",
-            "date_joined": "2021-09-01T00:00:00Z",
-            "is_active": true,
-            "profile_picture": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAADMElEQVR4nOzVwQnAIBQFQYXff81RUkQCOyDj1YOPnbXWPmeTRef+/3O/OyBjzh3CD95BfqICMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMO0TAAD//2Anhf4QtqobAAAAAElFTkSuQmCC",
-            "field_of_study": "Aplikovaná matematika",
-            "year_of_study": 2,
-            "stag_f_number": 20211234,
-            "resume": "Zkušenosti s matematickým modelováním, statistickou analýzou a programováním v Python a R. Účast na matematických soutěžích.",
-            "additional_info": "Zajímám se o data science, strojové učení a matematické modelování. Členka matematického kroužku a dobrovolnice v organizaci matematických soutěží pro středoškoláky.",
-            "date_of_birth": "2003-08-22",
-            "place_of_birth": "Brno",
-            "street": "Kounicova",
-            "street_number": "8",
-            "zip_code": "60200",
-            "city": "Brno",
-            "specialization": "Data Science a Matematické modelování",
-            "role": "ST",
-            "role_name": "Student",
-            "faculty": "FF",
-            "os_cislo": "F21A1234K",
-            "skills": ["Python", "R", "MATLAB", "SQL", "Machine Learning", "Statistics", "Data Analysis", "LaTeX", "Git", "Jupyter Notebooks"]
-        }
-    ]
-
 
     const fetchUser = async() => {
-        // PŘEDĚLAT NA API
         if (id) {
-            const foundUser = dummy_profiles.find(u => u.id === parseInt(id));
-            setUserProfile(foundUser || dummy_profiles[0]);
-        } else if (user && user.id) {
-            const foundUser = dummy_profiles.find(u => u.id === parseInt(user.id));
-            setUserProfile(foundUser || dummy_profiles[0]);
-        } else {
-            setUserProfile(dummy_profiles[0]); // Výchozí uživatel
+            const res = await students.getStudentById(id)
+            console.log("res", res);
+            setUserProfile(res);
+        } if (user && user.id) {
+            const res = await students.getStudentById(user.id)
+            console.log("res", res);
+            setUserProfile(res);
         }
     }
 

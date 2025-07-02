@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from "react";
+import React, {useState, useCallback, useEffect} from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { cs } from "date-fns/locale";
@@ -7,16 +7,25 @@ import Button from "@core/Button/Button";
 import Paragraph from "@components/core/Text/Paragraph";
 import { format } from "date-fns";
 
-export default function CustomDatePicker({ id, property, value, required=false, label, onChange, children }) {
-    const [date, setDate] = useState(value ? new Date(value) : null);
+export default function CustomDatePicker({ id, property, value, selected, required=false, label, onChange, children }) {
+    const [date, setDate] = useState(selected ? new Date(selected) : null);
     const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
+
+    // Synchronizace s selected prop
+    useEffect(() => {
+        if (selected) {
+            setDate(new Date(selected));
+        } else {
+            setDate(null);
+        }
+    }, [selected]);
 
     const handleDateChange = useCallback((newDate) => {
         setDate(newDate);
         
         if (onChange) {
-            const formattedDate = newDate ? format(newDate, 'dd.MM.yyyy') : null;
+            const formattedDate = newDate ? format(newDate, 'yyyy-MM-dd') : null;
             onChange({ [id]: formattedDate });
         }
     }, [id, onChange]);
