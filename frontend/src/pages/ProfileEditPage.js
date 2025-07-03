@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { useStudentAPI } from "@api/student/studentAPI";
 
+
 export default function ProfileEditPage() {
     const { id } = useParams();
     const { user } = useUser();
@@ -43,6 +44,26 @@ export default function ProfileEditPage() {
         }));
     };
 
+    const handleFileChange = (file) => {
+        console.log("File changed:", file);
+        setUserProfile(prev => ({
+            ...prev,
+            profile_picture: file
+        }));
+    }
+
+    const handlePushChanges = async () => {
+        try {
+            if (userProfile) {
+                // await apiCallToEditProfile(userProfile) - DODĚLAT;
+                console.log("Pushuju na neexistující endpoint!")
+                console.log(userProfile);
+            }
+        } catch (err) {
+            throw new Error(err);
+        }
+    }
+
     useEffect(() => {
         console.log("Profile", userProfile);
     }, [userProfile])
@@ -62,6 +83,8 @@ export default function ProfileEditPage() {
                 <UserForm 
                     userProfile={userProfile}
                     handleChange={handleFormChange}
+                    handleFileChange={handleFileChange}
+                    handleSubmit={handlePushChanges}
                 />
             </Container>
         </Container>

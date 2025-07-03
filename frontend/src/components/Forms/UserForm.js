@@ -7,8 +7,10 @@ import TextBox from "@core/Form/TextBox";
 import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
+import UploadFile from "@components/core/Form/UploadFile";
+import TagCreator from "@core/Form/TagCreator";
 
-export default function UserForm({userProfile, handleChange}) {
+export default function UserForm({userProfile, handleChange, handleFileChange, handleSubmit}) {
 
     return(
         <>
@@ -135,23 +137,28 @@ export default function UserForm({userProfile, handleChange}) {
         />
 
         {/* DODĚLAT SKILLS - multipicker */}
+        <TagCreator
+            onChange={handleChange}
+        >
+        </TagCreator>
 
-        {/* DODĚLAT HANDLER - na upload obrázků */}
-        <Button 
-            property={"w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 mt-2 hover:bg-gray-200"} 
-            noVariant={true}
+
+        <UploadFile 
+            id="profile_picture"
+            property={"w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 mt-4 hover:bg-gray-200"} 
             icon={"upload"}
             iconColor="text-gray-900"
-            onClick={() => console.log("Nahraju profile pic")}
-        >
-            
-            Nahrát profilový obrázek
-        </Button>
+            onChange={(file) => handleFileChange(file)}
+            label={"Nahrát profilový obrázek"}
+            accept="image/*"
+            previewOn={true}
+        />
+
 
         <Container property={"flex w-full justify-end ml-auto"}>
             <Button 
                 property={"mt-2 px-16"} 
-                onClick={() => console.log("Ukládám vole", userProfile)}
+                onClick={() => handleSubmit()}
             >
                 Uložit
             </Button>
