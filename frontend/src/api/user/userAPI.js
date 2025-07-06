@@ -33,7 +33,24 @@ export const useUserAPI = () => {
         }
     };
 
+
+    const postUpdateProfile = async (data) => {
+        try {
+            const response = await api.post('/users/XXXXXX/', data, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Chyba při registraci organizace:", error);
+            throw error;
+        }
+    }
+
+    
     return {
-        postRegister
+        postRegister,
+        postUpdateProfile
     };
 };

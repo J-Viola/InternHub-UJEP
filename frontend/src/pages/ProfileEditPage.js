@@ -13,6 +13,7 @@ import { useUser } from "@hooks/UserProvider";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { useStudentAPI } from "@api/student/studentAPI";
+import { useUserAPI } from "src/api/user/userAPI";
 
 
 export default function ProfileEditPage() {
@@ -21,6 +22,7 @@ export default function ProfileEditPage() {
     const navigate = useNavigate();
     const students = useStudentAPI();
     const  [ userProfile, setUserProfile ] = useState({});
+    const db_user = useUserAPI();
 
     const fetchUser = async() => {
         if (id) {
@@ -55,7 +57,8 @@ export default function ProfileEditPage() {
     const handlePushChanges = async () => {
         try {
             if (userProfile) {
-                // await apiCallToEditProfile(userProfile) - DODĚLAT;
+                const res = await db_user.postUpdateProfile(userProfile);
+                console.log(res)
                 console.log("Pushuju na neexistující endpoint!")
                 console.log(userProfile);
             }
@@ -63,6 +66,7 @@ export default function ProfileEditPage() {
             throw new Error(err);
         }
     }
+
 
     useEffect(() => {
         console.log("Profile", userProfile);
