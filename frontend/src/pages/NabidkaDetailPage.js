@@ -15,6 +15,7 @@ import { usePrihlaskaAPI } from "@api/prihlaska/prihlaskaAPI";
 import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 import { useNavigate } from "react-router-dom";
+import ProgressPanel from "@components/Nabidka/ProgressPanel"
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -73,6 +74,21 @@ export default function NabidkaDetailPage() {
                 <BackButton/>
                 {/* PODLE PŘÍZNAKU Z GETU- panel dokumentů */}
                 <DocsPanel/>
+
+                {/* ProgressBar*/}
+                <Container property={"mt-2 mb-2"}>
+                    <ProgressPanel 
+                        currentValueSingle={100}
+                        goalValueSingle={200}
+                        noteSingle="Plnění aktuální karty v rámci kritéria předmětu: XXX"
+                        currentValueAll={350}
+                        goalValueAll={500}
+                        noteAll="Plnění všech probíhajících karet v rámci kritéria předmětu: XXX"
+                        title="Průběh"
+                        property=""
+                    />
+                </Container>
+
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     {/*<BackButton/>*/}
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
@@ -99,12 +115,12 @@ export default function NabidkaDetailPage() {
 
                     </Container>
                     {/* DESCRIPTION */}
-                    <Container property={"editor-content mt-2"}>
+                    <Container property={"mt-2"}>
                         <Paragraph>{entity?.description}</Paragraph>
                     </Container>
 
                     {/* RESPONSIBILITY */}
-                    <Container property={"editor-content mt-2"}>
+                    <Container property={"mt-2"}>
                         <Paragraph>{entity?.responsibilities}</Paragraph>
                     </Container>
 
@@ -118,6 +134,7 @@ export default function NabidkaDetailPage() {
                         )}
                     </Container>
                 </ContainerForEntity>
+                
                 
             </Container>
 
