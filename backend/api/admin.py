@@ -6,7 +6,6 @@ from .forms import UserChangeForm, UserCreationForm
 from .models import (
     ActionLog,
     Department,
-    DepartmentUserRole,
     EmployerInvitation,
     EmployerProfile,
     OrganizationRole,
@@ -14,11 +13,13 @@ from .models import (
     Practice,
     PracticeType,
     PracticeUser,
+    ProfessorUser,
     Role,
     StagRole,
     StagUser,
     Status,
     StudentPractice,
+    StudentUser,
     Subject,
     UploadedDocument,
     User,
@@ -61,6 +62,16 @@ class StagUserAdmin(UserAdmin):
     list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
 
 
+@admin.register(StudentUser)
+class StudentUserAdmin(UserAdmin):
+    list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
+
+
+@admin.register(ProfessorUser)
+class ProfessorUserAdmin(UserAdmin):
+    list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
+
+
 @admin.register(ActionLog)
 class ActionLogAdmin(admin.ModelAdmin):
     list_display = ("pk", "action_type", "action_date", "user")
@@ -69,11 +80,6 @@ class ActionLogAdmin(admin.ModelAdmin):
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
     list_display = ("pk", "department_name")
-
-
-@admin.register(DepartmentUserRole)
-class DepartmentUserRoleAdmin(admin.ModelAdmin):
-    list_display = ("pk", "user", "department", "role")
 
 
 @admin.register(Subject)

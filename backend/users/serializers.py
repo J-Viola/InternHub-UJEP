@@ -3,9 +3,11 @@ from api.models import (
     EmployerProfile,
     OrganizationRole,
     OrganizationUser,
+    ProfessorUser,
     StagRole,
     StagUser,
     Status,
+    StudentUser,
     Subject,
     UserSubject,
     UserSubjectType,
@@ -79,17 +81,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not email:
             raise AuthenticationFailed("Email not returned by STAG")
         osCislo = stagUserInfo.get("osCislo")
-        # TODO: CO JE ZAS TOHLEEEEEEEEEEEEEEEEEEEEE
         ucitIdno = stagUserInfo.get("ucitIdno")
 
         stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
-        user, _ = StagUser.objects.get_or_create(
-            email=email,
-            defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni, "os_cislo": osCislo},
-        )
         if osCislo:
+            user, _ = StudentUser.objects.get_or_create(
+                email=email,
+                defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni, "os_cislo": osCislo},
+            )
             sync_stag_subjects_for_student(ticket, osCislo, user)
         if ucitIdno:
+            user, _ = ProfessorUser.objects.get_or_create(
+                email=email,
+                defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni, "ucit_idno": ucitIdno},
+            )
             sync_stag_roles_for_teacher(ticket, ucitIdno, user)
 
         refresh = self.get_token(user)

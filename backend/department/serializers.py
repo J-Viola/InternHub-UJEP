@@ -1,4 +1,4 @@
-from api.models import DepartmentUserRole, Practice, StagUser, Status, StudentPractice, UserSubjectType
+from api.models import Department, Practice, StagUser, Status, StudentPractice, UserSubjectType
 from api.serializers import StatusSerializer
 from django.core.handlers.base import logger
 from rest_framework import serializers
@@ -37,6 +37,7 @@ class StudentThisPracticeSerializer(serializers.ModelSerializer):
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
+    student_practice_id = serializers.SerializerMethodField()
     practice = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
 
@@ -50,9 +51,14 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             "os_cislo",
             "year_of_study",
             "field_of_study",
+            "student_practice_id",
             "practice",
             "department",
         )
+
+    def get_student_practice_id(self, obj):
+        first = obj.studentpractice_set.first()
+        return first.student_practice_id if first else None
 
     def get_practice(self, obj):
         qs = list(obj.studentpractice_set.all())
@@ -81,11 +87,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class DepartmentUserRoleSerializer(serializers.ModelSerializer):
+class DepartmentSerializer(serializers.ModelSerializer):
     user = StudentDetailSerializer(read_only=True)
     department = serializers.StringRelatedField()
     role = serializers.StringRelatedField()
 
     class Meta:
-        model = DepartmentUserRole
+        model = Department
         fields = "__all__"

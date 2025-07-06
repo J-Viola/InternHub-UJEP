@@ -6,10 +6,8 @@ from rest_framework import serializers
 from .models import (
     ActionLog,
     Department,
-    DepartmentUserRole,
     EmployerInvitation,
     EmployerProfile,
-    OrganizationRole,
     Practice,
     PracticeType,
     PracticeUser,
@@ -17,9 +15,7 @@ from .models import (
     Status,
     StudentPractice,
     Subject,
-    UploadedDocument,
     User,
-    UserSubject,
 )
 
 
@@ -237,64 +233,6 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 # ------------------------------------------------------------
-# 6. DepartmentUserRoleSerializer – používá RoleSerializer
-# ------------------------------------------------------------
-class DepartmentUserRoleSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model DepartmentUserRole
-    - id: primární klíč (read-only)
-    - department: nested Department (read-only)
-    - department_id: PK oddělení (write-only)
-    - user: PK uživatele (write-only)
-    - user_info: nested informace o uživateli (read-only)
-    - role: nested Role (read-only)
-    - role_id: PK role (write-only)
-    """
-
-    department = DepartmentSerializer(read_only=True)
-    department_id = serializers.PrimaryKeyRelatedField(
-        queryset=Department.objects.all(), source="department", write_only=True, required=True
-    )
-
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=True)
-    user_info = serializers.SerializerMethodField(read_only=True)
-
-    role = RoleSerializer(read_only=True)
-    role_id = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), source="role", write_only=True, required=True)
-
-    class Meta:
-        model = DepartmentUserRole
-        fields = [
-            "id",
-            "department",
-            "department_id",
-            "user",
-            "user_info",
-            "role",
-            "role_id",
-        ]
-        read_only_fields = ["id", "department", "user_info", "role"]
-
-    def get_user_info(self, obj):
-        if obj.user:
-            return {
-                "user_id": obj.user.user_id,
-                "username": obj.user.username,
-            }
-        return None
-
-    def validate(self, data):
-        """
-        Zkontroluje, zda uživatel již nemá přiřazenou roli v tomto oddělení.
-        """
-        dept = data.get("department")
-        user = data.get("user")
-        if DepartmentUserRole.objects.filter(department=dept, user=user).exists():
-            raise serializers.ValidationError("Uživatel je již přiřazen k tomuto oddělení.")
-        return data
-
-
-# ------------------------------------------------------------
 # 7. SubjectSerializer
 # ------------------------------------------------------------
 class SubjectSerializer(serializers.ModelSerializer):
@@ -481,57 +419,6 @@ class EmployerInvitationSerializer(serializers.ModelSerializer):
         if "submission_date" not in validated_data:
             validated_data["submission_date"] = date.today()
         return super().create(validated_data)
-
-
-# ------------------------------------------------------------
-# 10. OrganizationRoleSerializer – používá RoleSerializer
-# ------------------------------------------------------------
-class OrganizationRoleSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model OrganizationRole
-    - id: primární klíč (read-only)
-    - employer: nested EmployerProfile (read-only)
-    - employer_id: PK zaměstnavatele (write-only)
-    - user: PK uživatele (write-only)
-    - user_info: informace o uživateli (user_id, username)
-    """
-
-    employer = EmployerProfileSerializer(read_only=True)
-    employer_id = serializers.PrimaryKeyRelatedField(
-        queryset=EmployerProfile.objects.all(), source="employer", write_only=True, required=True
-    )
-
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=True)
-    user_info = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = OrganizationRole
-        fields = [
-            "id",
-            "employer",
-            "employer_id",
-            "user",
-            "user_info",
-        ]
-        read_only_fields = ["id", "employer", "user_info"]
-
-    def get_user_info(self, obj):
-        if obj.user:
-            return {
-                "user_id": obj.user.user_id,
-                "username": obj.user.username,
-            }
-        return None
-
-    def validate(self, data):
-        """
-        Zkontroluje, zda uživatel již není přiřazen k tomuto zaměstnavateli.
-        """
-        employer = data.get("employer")
-        user = data.get("user")
-        if OrganizationRole.objects.filter(employer=employer, user=user).exists():
-            raise serializers.ValidationError("Uživatel je již přiřazen k tomuto zaměstnavateli.")
-        return data
 
 
 # ------------------------------------------------------------
@@ -822,111 +709,6 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             pending_status = Status.objects.filter(status_name__icontains="pending").first()
             if pending_status:
                 validated_data["approval_status"] = pending_status
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
-
-
-# ------------------------------------------------------------
-# 15. UploadedDocumentSerializer
-# ------------------------------------------------------------
-
-
-class UploadedDocumentSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model UploadedDocument
-    - document_id: primární klíč (read-only)
-    - practice: nested Practice (read-only)
-    - practice_id: PK praxe (write-only)
-    - document_name: název dokumentu
-    - file_path: cesta k souboru nebo base64
-    - uploaded_at: datum nahrání (read-only)
-    - document_type: typ dokumentu (string)
-    """
-
-    practice = PracticeSerializer(read_only=True)
-    practice_id = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), source="practice", write_only=True, required=True)
-
-    class Meta:
-        model = UploadedDocument
-        fields = [
-            "document_id",
-            "practice",
-            "practice_id",
-            "document_name",
-            "file_path",
-            "uploaded_at",
-            "document_type",
-        ]
-        read_only_fields = ["document_id", "uploaded_at"]
-
-    def validate_document_name(self, value):
-        if not value:
-            raise serializers.ValidationError("Název dokumentu je povinný.")
-        return value
-
-    def create(self, validated_data):
-        """
-        Při vytvoření lze sem přidat kontrolu typu souboru a logiku přejmenování.
-        """
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
-
-
-# ------------------------------------------------------------
-# 16. UserSubjectSerializer
-# ------------------------------------------------------------
-class UserSubjectSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model UserSubject
-    - id: primární klíč (read-only)
-    - user: PK uživatele (write-only)
-    - user_info: informace o uživateli (user_id, username)
-    - subject: nested Subject (read-only)
-    - subject_id: PK předmětu (write-only)
-    - role: string, role v rámci předmětu (př. 'student', 'teacher')
-    """
-
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=True)
-    user_info = serializers.SerializerMethodField(read_only=True)
-
-    subject = SubjectSerializer(read_only=True)
-    subject_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), source="subject", write_only=True, required=True)
-
-    class Meta:
-        model = UserSubject
-        fields = [
-            "id",
-            "user",
-            "user_info",
-            "subject",
-            "subject_id",
-            "role",
-        ]
-        read_only_fields = ["id", "user_info", "subject"]
-
-    def get_user_info(self, obj):
-        if obj.user:
-            return {
-                "user_id": obj.user.user_id,
-                "username": obj.user.username,
-            }
-        return None
-
-    def validate(self, data):
-        """
-        Zkontroluje, zda uživatel již není přiřazen k tomuto předmětu.
-        """
-        subject = data.get("subject")
-        user = data.get("user")
-        if UserSubject.objects.filter(subject=subject, user=user).exists():
-            raise serializers.ValidationError("Uživatel je již přiřazen k tomuto předmětu.")
-        return data
-
-    def create(self, validated_data):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):

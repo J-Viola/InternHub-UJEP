@@ -160,8 +160,21 @@ class OrganizationUser(User):
         return self.organization_role.role
 
 
-# Role: student, vedení katedry, vedoucí předmětu
 class StagUser(User):
+    stag_role = models.ForeignKey(StagRole, models.DO_NOTHING, blank=True, null=True)
+
+    class Meta:
+        db_table = "staguser"
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"
+
+    @property
+    def role(self):
+        return self.stag_role.role
+
+
+class StudentUser(User):
     profile_picture = models.TextField(blank=True, null=True)
     os_cislo = models.CharField(unique=True, max_length=64, blank=True, null=True)
     field_of_study = models.CharField(max_length=100, blank=True, null=True)
@@ -179,14 +192,27 @@ class StagUser(User):
     stag_role = models.ForeignKey(StagRole, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        db_table = "staguser"
+        db_table = "studentuser"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
 
-    @property
-    def role(self):
-        return self.stag_role.role
+
+class DepartmentRole(enum.Enum):
+    TEACHER = 0
+    HEAD = 1
+
+
+class ProfessorUser(StagUser):
+    ucit_idno = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    department = models.ForeignKey("Department", models.DO_NOTHING, blank=True, null=True)
+    department_role = enum.EnumField(DepartmentRole, blank=True, null=True)
+
+    class Meta:
+        db_table = "professoruser"
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"
 
 
 class ActionLog(models.Model):
@@ -216,20 +242,6 @@ class Department(models.Model):
 
     class Meta:
         db_table = "department"
-
-
-class DepartmentUserRole(models.Model):
-    id = models.AutoField(primary_key=True)
-    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
-    user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True)
-    role = models.ForeignKey(Role, models.DO_NOTHING, blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.user} as {self.role} in {self.department}"
-
-    class Meta:
-        db_table = "departmentuserrole"
-        unique_together = (("department", "user", "role"),)
 
 
 class Subject(models.Model):

@@ -1,9 +1,9 @@
-from api.models import DepartmentUserRole, StagUser, StudentPractice, UserSubjectType
+from api.models import Department, StagUser, StudentPractice, UserSubjectType
 from django.db.models import Prefetch
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-from .serializers import DepartmentUserRoleSerializer, StudentDetailSerializer
+from .serializers import DepartmentSerializer, StudentDetailSerializer
 
 
 class DepartmentStudentListView(generics.ListAPIView):
@@ -12,7 +12,7 @@ class DepartmentStudentListView(generics.ListAPIView):
 
     def get_queryset(self):
         # departments where current user has any role
-        dept_ids = DepartmentUserRole.objects.filter(user=self.request.user).values_list("department_id", flat=True)
+        dept_ids = Department.objects.filter(user=self.request.user).values_list("department_id", flat=True)
 
         # students enrolled in subjects of those departments
         return (
@@ -28,6 +28,6 @@ class DepartmentStudentListView(generics.ListAPIView):
 
 
 class DepartmentUserRoleDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = DepartmentUserRole.objects.all()
-    serializer_class = DepartmentUserRoleSerializer
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
     permission_classes = [IsAuthenticated]

@@ -32,7 +32,8 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/documents/<path:path>/", serve_user_file, name="serve_user_file"),
-    path("api/department/", include("department.urls")),
+    path("api/departments/", include("department.urls")),
+    path("api/subjects/", include("subject.urls")),
 ]
 
 # TODO: Remove this in production
