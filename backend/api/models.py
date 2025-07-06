@@ -6,6 +6,7 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or
 # field names.
+from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
@@ -95,7 +96,7 @@ class EmployerProfile(models.Model):
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
     approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
-    logo = models.ImageField(upload_to="images/logos", blank=True, null=True)
+    logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
 
     def __str__(self):
         return self.company_name or super().__str__()
@@ -359,23 +360,27 @@ class StudentPractice(models.Model):
 class UploadedDocument(models.Model):
     document_id = models.AutoField(primary_key=True)
     practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True)
-    document_name = models.CharField(max_length=100, blank=True, null=True)
-    file_path = models.CharField(max_length=255, blank=True, null=True)
+    document = models.FileField(upload_to=settings.STORAGE_URL + "documents", blank=True, null=True)
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = models.CharField(max_length=50, blank=True, null=True)
 
     def __str__(self):
-        return self.document_name or super().__str__()
+        return self.document.name or super().__str__()
 
     class Meta:
         db_table = "uploadeddocument"
+
+
+class UserSubjectType(enum.Enum):
+    Student = 0
+    Teacher = 1
 
 
 class UserSubject(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True)
     subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True)
-    role = models.CharField(max_length=50, blank=True, null=True)
+    role = enum.EnumField(UserSubjectType)
 
     def __str__(self):
         return f"{self.user} - {self.subject} ({self.role})"

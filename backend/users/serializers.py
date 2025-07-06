@@ -1,5 +1,15 @@
 import requests
-from api.models import EmployerProfile, OrganizationRole, OrganizationUser, StagRole, StagUser, Status, Subject, UserSubject
+from api.models import (
+    EmployerProfile,
+    OrganizationRole,
+    OrganizationUser,
+    StagRole,
+    StagUser,
+    Status,
+    Subject,
+    UserSubject,
+    UserSubjectType,
+)
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -69,13 +79,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not email:
             raise AuthenticationFailed("Email not returned by STAG")
         osCislo = stagUserInfo.get("osCislo")
+        # TODO: CO JE ZAS TOHLEEEEEEEEEEEEEEEEEEEEE
+        ucitIdno = stagUserInfo.get("ucitIdno")
 
         stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
         user, _ = StagUser.objects.get_or_create(
             email=email,
             defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni, "os_cislo": osCislo},
         )
-        sync_stag_roles(ticket, osCislo, user)
+        if osCislo:
+            sync_stag_subjects_for_student(ticket, osCislo, user)
+        if ucitIdno:
+            sync_stag_roles_for_teacher(ticket, ucitIdno, user)
 
         refresh = self.get_token(user)
         refresh["type"] = UserType.STAG.value
@@ -236,10 +251,64 @@ class PredmetStudentaSerializer(serializers.Serializer):
     zkratka = serializers.CharField()
 
 
-def sync_stag_roles(stag_ticket: str, osCislo: str, user: StagUser):
+class PredmetUciteleSerializer(serializers.Serializer):
+    cvicici = serializers.SerializerMethodField()
+    cviciciPodil = serializers.IntegerField()
+    examinator = serializers.SerializerMethodField()
+    garant = serializers.SerializerMethodField()
+    garantPodil = serializers.IntegerField(allow_null=True)
+    katedra = serializers.CharField()
+    nazev = serializers.CharField()
+    prednasejici = serializers.SerializerMethodField()
+    rok = serializers.CharField()
+    seminarici = serializers.SerializerMethodField()
+    seminariciPodil = serializers.IntegerField()
+    zkratka = serializers.CharField()
+
+    def get_cvicici(self, obj):
+        value = obj.get("cvicici", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_examinator(self, obj):
+        value = obj.get("examinator", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_garant(self, obj):
+        value = obj.get("garant", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_prednasejici(self, obj):
+        value = obj.get("prednasejici", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_seminarici(self, obj):
+        value = obj.get("seminarici", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+
+def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StagUser):
     """
-    Synchronizes STAG roles with the database.
-    This function should be called periodically to ensure that STAG roles are up-to-date.
+    Synchronizes STAG roles with the database for student.
     """
     url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
     params = {
@@ -267,14 +336,53 @@ def sync_stag_roles(stag_ticket: str, osCislo: str, user: StagUser):
             except Subject.DoesNotExist:
                 pass
             if subjInDb is not None:
-                # TODO: Co role??? Je to tu vůbec k něčemu?
                 UserSubject.objects.get_or_create(
                     subject=subjInDb,
                     user=user,
                     defaults={
                         "subject": subjInDb,
                         "user": user,
+                        "role": UserSubjectType.Student,
                     },
+                )
+    else:
+        raise Exception("Failed to fetch STAG roles")
+
+
+def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: StagUser):
+    """
+    Synchronizes STAG roles with the database.
+    """
+    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByUcitel"
+    params = {
+        "ucitIdno": ucitIdno,
+        "outputFormat": "JSON",
+        "semestr": "%",
+        "rok": "%",
+    }
+
+    cookies = {
+        "WSCOOKIE": stag_ticket,
+    }
+    response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
+
+    if response.status_code == 200:
+        response_json = response.json()
+        items = response_json.get("predmetUcitele", [])
+        serializer = PredmetUciteleSerializer(data=items, many=True)
+        serializer.is_valid(raise_exception=True)
+        subject_data = serializer.validated_data
+        for subj in subject_data:
+            subjInDb = None
+            try:
+                subjInDb = Subject.objects.get(subject_code=subj["zkratka"])
+            except Subject.DoesNotExist:
+                pass
+            if subjInDb is not None:
+                UserSubject.objects.get_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={"subject": subjInDb, "user": user, "role": UserSubjectType.Teacher},
                 )
     else:
         raise Exception("Failed to fetch STAG roles")

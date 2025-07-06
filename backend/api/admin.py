@@ -108,7 +108,7 @@ class StudentPracticeAdmin(admin.ModelAdmin):
 
 @admin.register(UploadedDocument)
 class UploadedDocumentAdmin(admin.ModelAdmin):
-    list_display = ("pk", "document_name", "practice", "uploaded_at")
+    list_display = ("pk", "document", "practice", "uploaded_at")
 
 
 @admin.register(UserSubject)

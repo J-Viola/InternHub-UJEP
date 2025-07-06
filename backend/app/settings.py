@@ -35,7 +35,7 @@ AUTH_USER_MODEL = "api.user"
 
 INSTALLED_APPS = [
     "polymorphic",
-    "api",
+    "backend.api",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -58,6 +58,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "backend.api.middleware.DocumentPermissionMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -137,7 +138,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-
+STORAGE_ROOT = BASE_DIR / "storage"
+STORAGE_URL = "storage/"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
