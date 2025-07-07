@@ -1,4 +1,4 @@
-from api.models import Department, Practice, StagUser, Status, StudentPractice, UserSubjectType
+from api.models import Department, Practice, Status, StudentPractice, StudentUser, UserSubjectType
 from api.serializers import StatusSerializer
 from django.core.handlers.base import logger
 from rest_framework import serializers
@@ -42,7 +42,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField()
 
     class Meta:
-        model = StagUser
+        model = StudentUser
         fields = (
             "user_id",
             "first_name",
@@ -76,7 +76,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
 
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = StagUser
+        model = StudentUser
         fields = (
             "user_id",
             "first_name",
