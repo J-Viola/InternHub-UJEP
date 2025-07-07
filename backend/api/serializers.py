@@ -1,19 +1,8 @@
- from datetime import date
+from datetime import date
 
-from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
-from .models import (
-    Department,
-    EmployerProfile,
-    Practice,
-    PracticeType,
-    PracticeUser,
-    Status,
-    StudentPractice,
-    Subject,
-    User,
-)
+from .models import Department, EmployerProfile, Practice, PracticeType, PracticeUser, Status, StudentPractice, Subject, User
 
 
 class StatusSerializer(serializers.ModelSerializer):
