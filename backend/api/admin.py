@@ -17,7 +17,6 @@ from .models import (
     Role,
     StagRole,
     StagUser,
-    Status,
     StudentPractice,
     StudentUser,
     Subject,
@@ -25,12 +24,6 @@ from .models import (
     User,
     UserSubject,
 )
-
-
-@admin.register(Status)
-class StatusAdmin(admin.ModelAdmin):
-    list_display = ("pk", "status_code", "status_name")
-
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):

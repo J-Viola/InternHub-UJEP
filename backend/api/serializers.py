@@ -2,32 +2,8 @@ from datetime import date
 
 from rest_framework import serializers
 
-from .models import Department, EmployerProfile, Practice, PracticeType, PracticeUser, Status, StudentPractice, Subject, User
-
-
-class StatusSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model Status
-    - status_id: primární klíč (read-only)
-    - status_name: název statusu
-    - is_active: boolean, zda je status aktivní
-    """
-
-    class Meta:
-        model = Status
-        fields = "__all__"
-        read_only_fields = ["status_id"]
-
-    def validate_status_name(self, value):
-        if not value:
-            raise serializers.ValidationError("Název statusu je povinný.")
-        return value
-
-    def create(self, validated_data):
-        # Nastav výchozí hodnotu is_active, pokud není poskytnuta
-        if "is_active" not in validated_data:
-            validated_data["is_active"] = True
-        return super().create(validated_data)
+from .models import Department, EmployerProfile, Practice, PracticeType, PracticeUser, StudentPractice, Subject, User, \
+    ApprovalStatus, ProgressStatus
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -110,11 +86,6 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
     - approval_status_id: PK statusu (write-only, volitelné)
     """
 
-    approval_status = StatusSerializer(read_only=True)
-    approval_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=Status.objects.all(), source="approval_status", write_only=True, required=False
-    )
-
     class Meta:
         model = EmployerProfile
         fields = [
@@ -125,7 +96,6 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
             "address",
             "company_profile",
             "approval_status",
-            "approval_status_id",
         ]
         read_only_fields = ["employer_id"]
 
@@ -139,7 +109,7 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         Nastaví výchozí approval_status na 'pending', pokud není zadán.
         """
         if "approval_status" not in validated_data:
-            pending = Status.objects.filter(status_name__icontains="pending").first()
+            pending = ApprovalStatus.PENDING.value
             if pending:
                 validated_data["approval_status"] = pending
         return super().create(validated_data)
@@ -188,9 +158,7 @@ class PracticeSerializer(serializers.ModelSerializer):
     - start_date: datum zahájení
     - end_date: datum ukončení
     - status: nested Status (read-only)
-    - status_id: PK statusu (write-only)
     - approval_status: nested Status (read-only)
-    - approval_status_id: PK statusu schválení (write-only)
     - contact_user: PK uživatele, který je kontaktem (write-only)
     - contact_user_info: informace o kontaktu (user_id, username) (read-only)
     - is_active: boolean, zda je praxe aktivní (read-only)
@@ -206,14 +174,6 @@ class PracticeSerializer(serializers.ModelSerializer):
 
     subject = SubjectSerializer(read_only=True)
     subject_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), source="subject", write_only=True, required=True)
-
-    status = StatusSerializer(read_only=True)
-    status_id = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all(), source="status", write_only=True, required=False)
-
-    approval_status = StatusSerializer(read_only=True)
-    approval_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=Status.objects.all(), source="approval_status", write_only=True, required=False
-    )
 
     contact_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
     contact_user_info = serializers.SerializerMethodField(read_only=True)
@@ -238,9 +198,7 @@ class PracticeSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "status",
-            "status_id",
             "approval_status",
-            "approval_status_id",
             "contact_user",
             "contact_user_info",
             "is_active",
@@ -277,11 +235,11 @@ class PracticeSerializer(serializers.ModelSerializer):
         if "is_active" not in validated_data:
             validated_data["is_active"] = True
         if "status" not in validated_data:
-            default_status = Status.objects.filter(status_name__icontains="open").first()
+            default_status = ProgressStatus.NOT_STARTED
             if default_status:
                 validated_data["status"] = default_status
         if "approval_status" not in validated_data:
-            pending_status = Status.objects.filter(status_name__icontains="pending").first()
+            pending_status =ApprovalStatus.PENDING
             if pending_status:
                 validated_data["approval_status"] = pending_status
         return super().create(validated_data)
@@ -351,9 +309,7 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
     - logo: base64 obrázek praxe (read-only)
     - application_date: datum podání (read-only)
     - approval_status: nested Status (read-only)
-    - approval_status_id: PK statusu schválení (write-only)
     - progress_status: nested Status (read-only)
-    - progress_status_id: PK statusu průběhu (write-only)
     - hours_completed: počet dokončených hodin
     - cancellation_reason: důvod zrušení
     - cancelled_by_user: PK uživatele, kdo zrušil (write-only, volitelné)
@@ -363,16 +319,6 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
     practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
     title = serializers.CharField(source="practice.title", read_only=True)
     logo = serializers.CharField(source="practice.image_base64", read_only=True)
-
-    approval_status = StatusSerializer(read_only=True)
-    approval_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=Status.objects.all(), source="approval_status", write_only=True, required=False
-    )
-
-    progress_status = StatusSerializer(read_only=True)
-    progress_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=Status.objects.all(), source="progress_status", write_only=True, required=False
-    )
 
     cancelled_by_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
     cancelled_by_user_info = serializers.SerializerMethodField(read_only=True)
@@ -386,9 +332,7 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "logo",
             "application_date",
             "approval_status",
-            "approval_status_id",
             "progress_status",
-            "progress_status_id",
             "hours_completed",
             "cancellation_reason",
             "cancelled_by_user",
@@ -399,8 +343,6 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "title",
             "logo",
             "application_date",
-            "approval_status",
-            "progress_status",
             "cancelled_by_user_info",
         ]
 
@@ -433,7 +375,7 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
         if "application_date" not in validated_data:
             validated_data["application_date"] = date.today()
         if "approval_status" not in validated_data:
-            pending_status = Status.objects.filter(status_name__icontains="pending").first()
+            pending_status = ApprovalStatus.PENDING
             if pending_status:
                 validated_data["approval_status"] = pending_status
         return super().create(validated_data)

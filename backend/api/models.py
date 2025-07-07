@@ -34,6 +34,23 @@ class UserManager(PolymorphicManager, BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
+class ApprovalStatus(enum.Enum):
+    PENDING = 0
+    APPROVED = 1
+    REJECTED = 2
+
+class EmployerInvitationStatus(enum.Enum):
+    PENDING = 0
+    ACCEPTED = 1
+    REJECTED = 2
+    CANCELLED = 3
+
+class ProgressStatus(enum.Enum):
+    NOT_STARTED = 0
+    IN_PROGRESS = 1
+    COMPLETED = 2
+    CANCELLED = 3
+
 class Status(models.Model):
     status_id = models.AutoField(primary_key=True)
     status_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
@@ -95,7 +112,7 @@ class EmployerProfile(models.Model):
     address = models.TextField(blank=True, null=True)
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
-    approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
+    approval_status = enum.EnumField(ApprovalStatus)
     logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
 
     def __str__(self):
@@ -266,7 +283,7 @@ class EmployerInvitation(models.Model):
     submission_date = models.DateField(blank=True, null=True)
     expiration_date = models.DateField(blank=True, null=True)
     message = models.TextField(blank=True, null=True)
-    status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
+    status = enum.EnumField(EmployerInvitationStatus)
 
     def __str__(self):
         return f"Invitation {self.invitation_id} for {self.user} to {self.practice}"
@@ -297,14 +314,8 @@ class Practice(models.Model):
     available_positions = models.IntegerField(blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
-    status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
-    approval_status = models.ForeignKey(
-        Status,
-        models.DO_NOTHING,
-        related_name="practice_approval_status_set",
-        blank=True,
-        null=True,
-    )
+    status = enum.EnumField(ProgressStatus)
+    approval_status = enum.EnumField(ApprovalStatus)
     contact_user = models.ForeignKey(OrganizationUser, models.DO_NOTHING, blank=True, null=True)
     is_active = models.BooleanField(blank=True, null=True)
     image_base64 = models.TextField(blank=True, null=True)
@@ -343,14 +354,8 @@ class StudentPractice(models.Model):
     user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True)
     practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True)
     application_date = models.DateField(blank=True, null=True)
-    approval_status = models.ForeignKey(Status, models.DO_NOTHING, blank=True, null=True)
-    progress_status = models.ForeignKey(
-        Status,
-        models.DO_NOTHING,
-        related_name="studentpractice_progress_status_set",
-        blank=True,
-        null=True,
-    )
+    approval_status = enum.EnumField(ApprovalStatus)
+    progress_status = enum.EnumField(ProgressStatus)
     hours_completed = models.IntegerField(blank=True, null=True)
     cancellation_reason = models.TextField(blank=True, null=True)
     cancelled_by_user = models.ForeignKey(

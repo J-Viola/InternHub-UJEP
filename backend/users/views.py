@@ -2,7 +2,7 @@ import re
 
 import requests
 from api.decorators import role_required
-from api.models import EmployerProfile, Status
+from api.models import EmployerProfile, ApprovalStatus
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
@@ -125,8 +125,7 @@ def update_ares_subject(request):
     user = request.user
     employer_profile = EmployerProfile.objects.get(employer_id=user.id)
     if not employer_profile:
-        status = Status.objects.get(status_name="Pending")
-        assert status is not None, "Status 'Pending' must exist in the database"
+        status = ApprovalStatus.PENDING
         EmployerProfile.objects.create(
             employer_id=user.id,
             ico=ares_data.ico,

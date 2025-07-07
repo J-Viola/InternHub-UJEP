@@ -1,20 +1,10 @@
-from api.models import Department, Practice, Status, StudentPractice, StudentUser, UserSubjectType
-from api.serializers import StatusSerializer
+from api.models import Department, Practice, StudentPractice, StudentUser, UserSubjectType
 from django.core.handlers.base import logger
 from rest_framework import serializers
 
 
 class StudentThisPracticeSerializer(serializers.ModelSerializer):
     practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
-    approval_status = StatusSerializer(read_only=True)
-    approval_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=Status.objects.all(), source="approval_status", write_only=True, required=False
-    )
-
-    progress_status = StatusSerializer(read_only=True)
-    progress_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=Status.objects.all(), source="progress_status", write_only=True, required=False
-    )
 
     class Meta:
         model = StudentPractice
@@ -22,17 +12,13 @@ class StudentThisPracticeSerializer(serializers.ModelSerializer):
             "student_practice_id",
             "practice",
             "approval_status",
-            "approval_status_id",
             "progress_status",
-            "progress_status_id",
         ]
         read_only_fields = [
             "student_practice_id",
             "practice",
             "approval_status",
-            "approval_status_id",
             "progress_status",
-            "progress_status_id",
         ]
 
 
