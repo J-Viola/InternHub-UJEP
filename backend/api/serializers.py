@@ -1,17 +1,14 @@
-from datetime import date
+ from datetime import date
 
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from .models import (
-    ActionLog,
     Department,
-    EmployerInvitation,
     EmployerProfile,
     Practice,
     PracticeType,
     PracticeUser,
-    Role,
     Status,
     StudentPractice,
     Subject,
@@ -19,39 +16,6 @@ from .models import (
 )
 
 
-# -------------------------------------------------
-# 1. RoleSerializer – musí být nahoře, než se použije
-# -------------------------------------------------
-class RoleSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model Role
-    - role_id: primární klíč (read-only)
-    - role_name: název role
-    - description: popis role
-    """
-
-    class Meta:
-        model = Role
-        fields = ["role_id", "role_name", "description"]
-        read_only_fields = ["role_id"]
-
-    def validate_role_name(self, value):
-        if len(value) < 3:
-            raise serializers.ValidationError("Název role musí mít alespoň 3 znaky.")
-        return value
-
-    def create(self, validated_data):
-        # Lze sem přidat vlastní logiku (např. zápis do ActionLog)
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        # Před aktualizací možno zkontrolovat práva nebo udělat logování
-        return super().update(instance, validated_data)
-
-
-# -----------------------------
-# 2. StatusSerializer
-# -----------------------------
 class StatusSerializer(serializers.ModelSerializer):
     """
     Serializer pro model Status
@@ -77,142 +41,6 @@ class StatusSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-# -----------------------------
-# 3. UserSerializer
-# -----------------------------
-class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model User
-    - user_id: primární klíč (read-only)
-    - username: login uživatele
-    - password: write-only, bude hashováno
-    - email: emailová adresa
-    - title_before, first_name, last_name, title_after: titul a jména
-    - role: cizí klíč – RoleSerializer (read-only)
-    - role_id: primární klíč role (write-only)
-    - phone: telefonní číslo
-    - date_joined: datum registrace (read-only)
-    - is_active: boolean, zda je účet aktivní (read-only)
-    - profile_picture: base64 nebo URL na profilový obrázek
-    - field_of_study, year_of_study, stag_f_number: informace o studiu (pokud je student)
-    - resume: životopis (file path nebo base64)
-    - additional_info: další informace o uživateli
-    - date_of_birth, place_of_birth, street, street_number, zip_code, city, specialization: osobní údaje
-    """
-
-    password = serializers.CharField(write_only=True, required=True)
-    role = RoleSerializer(read_only=True)
-    role_id = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), source="role", write_only=True, required=False)
-
-    class Meta:
-        model = User
-        fields = [
-            "user_id",
-            "username",
-            "password",
-            "email",
-            "title_before",
-            "first_name",
-            "last_name",
-            "title_after",
-            "role",
-            "role_id",
-            "phone",
-            "date_joined",
-            "is_active",
-            "profile_picture",
-            "field_of_study",
-            "year_of_study",
-            "stag_f_number",
-            "resume",
-            "additional_info",
-            "date_of_birth",
-            "place_of_birth",
-            "street",
-            "street_number",
-            "zip_code",
-            "city",
-            "specialization",
-        ]
-        read_only_fields = ["user_id", "date_joined", "is_active"]
-
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Uživatel s tímto uživatelským jménem již existuje.")
-        return value
-
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Uživatel s tímto emailem již existuje.")
-        return value
-
-    def create(self, validated_data):
-        """
-        Vytvoří uživatele a zahashuje heslo.
-        """
-        raw_password = validated_data.pop("password")
-        user = User(**validated_data)
-        user.password = make_password(raw_password)
-        user.save()
-        return user
-
-    def update(self, instance, validated_data):
-        """
-        Umožní aktualizovat heslo a další pole.
-        """
-        if "password" in validated_data:
-            raw_password = validated_data.pop("password")
-            instance.password = make_password(raw_password)
-        return super().update(instance, validated_data)
-
-
-# -----------------------------
-# 4. ActionLogSerializer
-# -----------------------------
-class ActionLogSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model ActionLog
-    - action_id: primární klíč (read-only)
-    - timestamp: datum a čas akce (read-only)
-    - user: uživatel, který provedl akci (write-only, PK)
-    - user_info: nested pole s informacemi o uživateli (read-only)
-    - action_type: typ akce (string)
-    - description: popis akce (string)
-    """
-
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=True)
-    user_info = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = ActionLog
-        fields = [
-            "action_id",
-            "timestamp",
-            "user",
-            "user_info",
-            "action_type",
-            "description",
-        ]
-        read_only_fields = ["action_id", "action_date"]
-
-    def get_user_info(self, obj):
-        if obj.user:
-            return {
-                "user_id": obj.user.user_id,
-                "username": obj.user.username,
-            }
-        return None
-
-    def create(self, validated_data):
-        """
-        Vytvoří ActionLog s implicitním timestamp a uloží.
-        """
-        return super().create(validated_data)
-
-
-# -----------------------------
-# 5. DepartmentSerializer
-# -----------------------------
 class DepartmentSerializer(serializers.ModelSerializer):
     """
     Serializer pro model Department
@@ -232,9 +60,6 @@ class DepartmentSerializer(serializers.ModelSerializer):
         return value
 
 
-# ------------------------------------------------------------
-# 7. SubjectSerializer
-# ------------------------------------------------------------
 class SubjectSerializer(serializers.ModelSerializer):
     """
     Serializer pro model Subject
@@ -332,93 +157,6 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
-
-
-# ------------------------------------------------------------
-# 9. EmployerInvitationSerializer
-# ------------------------------------------------------------
-class EmployerInvitationSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model EmployerInvitation
-    - invitation_id: primární klíč (read-only)
-    - employer: nested EmployerProfile (read-only)
-    - employer_id: PK zaměstnavatele (write-only)
-    - user: PK uživatele (write-only)
-    - user_info: informace o uživateli (username, user_id)
-    - practice: PK praxe (write-only)
-    - practice_info: informace o praxi (title, practice_id)
-    - submission_date: datum odeslání (read-only)
-    - expiration_date: datum vypršení pozvánky
-    - message: zpráva zaměstnavatele
-    - status: nested Status (read-only)
-    - status_id: PK statusu (write-only, volitelné)
-    """
-
-    employer = EmployerProfileSerializer(read_only=True)
-    employer_id = serializers.PrimaryKeyRelatedField(
-        queryset=EmployerProfile.objects.all(), source="employer", write_only=True, required=True
-    )
-
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=True)
-    user_info = serializers.SerializerMethodField(read_only=True)
-
-    practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
-    practice_info = serializers.SerializerMethodField(read_only=True)
-
-    status = StatusSerializer(read_only=True)
-    status_id = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all(), source="status", write_only=True, required=False)
-
-    class Meta:
-        model = EmployerInvitation
-        fields = [
-            "invitation_id",
-            "employer",
-            "employer_id",
-            "user",
-            "user_info",
-            "practice",
-            "practice_info",
-            "submission_date",
-            "expiration_date",
-            "message",
-            "status",
-            "status_id",
-        ]
-        read_only_fields = ["invitation_id", "submission_date", "practice_info", "user_info", "status"]
-
-    def get_user_info(self, obj):
-        if obj.user:
-            return {
-                "user_id": obj.user.user_id,
-                "username": obj.user.username,
-            }
-        return None
-
-    def get_practice_info(self, obj):
-        if obj.practice:
-            return {
-                "practice_id": obj.practice.practice_id,
-                "title": obj.practice.title,
-            }
-        return None
-
-    def validate(self, data):
-        """
-        Zkontroluje, zda neexistuje duplicitní pozvánka pro daného uživatele a praxi.
-        """
-        user = data.get("user")
-        practice = data.get("practice")
-        if EmployerInvitation.objects.filter(user=user, practice=practice).exists():
-            raise serializers.ValidationError("Pro tohoto uživatele a praxi již existuje pozvánka.")
-        return data
-
-    def create(self, validated_data):
-        """
-        Pokud není zadáno submission_date, nastaví na dnešní datum.
-        """
-        if "submission_date" not in validated_data:
-            validated_data["submission_date"] = date.today()
-        return super().create(validated_data)
 
 
 # ------------------------------------------------------------
