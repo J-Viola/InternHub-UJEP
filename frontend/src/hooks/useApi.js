@@ -1,4 +1,4 @@
-import { useAuth } from '@auth/AuthContext';
+import { useAuth } from '@services/auth/Auth';
 
 export const useApi = () => {
     const { apiClient } = useAuth();

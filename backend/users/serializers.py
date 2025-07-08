@@ -1,5 +1,17 @@
 import requests
-from api.models import EmployerProfile, OrganizationRole, OrganizationUser, StagRole, StagUser, Status
+from api.models import (
+    EmployerProfile,
+    OrganizationRole,
+    OrganizationUser,
+    ProfessorUser,
+    StagRole,
+    StagUser,
+    Status,
+    StudentUser,
+    Subject,
+    UserSubject,
+    UserSubjectType,
+)
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -57,6 +69,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         details = resp.json()
         email = details.get("email")
+        jmeno = details.pop("jmeno")
+        prijmeni = details.pop("prijmeni")
+
         stagUserInfos = details.get("stagUserInfo")
         if not stagUserInfos or len(stagUserInfos) == 0:
             raise AuthenticationFailed("No user information returned by STAG")
@@ -65,21 +80,42 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         roleName = stagUserInfo["roleNazev"]
         if not email:
             raise AuthenticationFailed("Email not returned by STAG")
+        osCislo = stagUserInfo.get("osCislo")
+        ucitIdno = stagUserInfo.get("ucitIdno")
 
         stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
-        user, _ = StagUser.objects.get_or_create(
-            email=email,
-            defaults={"email": email, "stag_role": stagRole},
-        )
+        if osCislo:
+            user, _ = StudentUser.objects.get_or_create(
+                email=email,
+                defaults={
+                    "email": email,
+                    "stag_role": stagRole,
+                    "first_name": jmeno,
+                    "last_name": prijmeni,
+                    "os_cislo": osCislo,
+                    "is_active": True,
+                },
+            )
+            sync_stag_subjects_for_student(ticket, osCislo, user)
+        if ucitIdno:
+            user, _ = ProfessorUser.objects.get_or_create(
+                email=email,
+                defaults={
+                    "email": email,
+                    "stag_role": stagRole,
+                    "first_name": jmeno,
+                    "last_name": prijmeni,
+                    "ucit_idno": ucitIdno,
+                    "is_active": True,
+                },
+            )
+            sync_stag_roles_for_teacher(ticket, ucitIdno, user)
 
         refresh = self.get_token(user)
         refresh["type"] = UserType.STAG.value
         refresh["service_ticket"] = ticket
 
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
 
     def _validate_with_credentials(self, email, password):
         try:
@@ -97,10 +133,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         else:
             refresh["type"] = "undefined"
 
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
 
 
 # class CustomTokenRefreshSerializer(TokenRefreshSerializer):
@@ -142,7 +175,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class OrganizationRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-    ico = serializers.RegexField(regex=r"\d{8}", write_only=True, required=True)
+    ico = serializers.RegexField(regex=r"^\d{1,8}$", write_only=True, required=True)
     email = serializers.CharField(write_only=True, required=True)
     phone = serializers.CharField(write_only=True, required=True)
     logo = serializers.ImageField(write_only=True, required=False)
@@ -167,6 +200,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
         except OrganizationRole.DoesNotExist:
             raise serializers.ValidationError({"organization_role": "Role 'unregistered' does not exist."})
         ico = validated_data.pop("ico")
+        ico = str(ico).zfill(8)
         cache_key = f"ares_{ico}"
         ares_data = cache.get(cache_key)
 
@@ -183,21 +217,20 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             user = OrganizationUser.objects.create(
-                email=validated_data["email"],
-                organization_role=unregistered_role,
+                email=validated_data["email"], organization_role=unregistered_role, is_active=True  # TODO: Remove this
             )
             # TODO: Must be set in DB (migration maybe?+)
             status = Status.objects.get(status_name="Pending")
             EmployerProfile.objects.create(
                 employer_id=user.id,
-                ico=ares_data.ico,
+                ico=ares_data.icoId,
                 dic=ares_data.dic,
                 company_name=ares_data.obchodniJmeno,
                 address=ares_data.sidlo.textAdresy,
                 zip_code=ares_data.sidlo.psc,
                 approval_status=status,
                 # TODO: LOGO
-                # logo=validated_data["logo"] if "logo" in validated_data else None,
+                logo=validated_data["logo"] if "logo" in validated_data else None,
             )
             user.set_password(validated_data["password"])
             user.save()
@@ -211,3 +244,164 @@ class LogoutSerializer(serializers.Serializer):
 
 class AresJusticeSerializer(serializers.Serializer):
     ico = serializers.RegexField(regex=r"\d{8}")
+
+
+class UserInfoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    role = serializers.CharField()
+    firstName = serializers.CharField()
+    lastName = serializers.CharField()
+
+
+class TokenResponseSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+    user = UserInfoSerializer()
+
+
+class PredmetStudentaSerializer(serializers.Serializer):
+    katedra = serializers.CharField()
+    kredity = serializers.IntegerField()
+    nazev = serializers.CharField()
+    rok = serializers.CharField()
+    statut = serializers.CharField()
+    uznano = serializers.CharField()
+    zkratka = serializers.CharField()
+
+
+class PredmetUciteleSerializer(serializers.Serializer):
+    cvicici = serializers.SerializerMethodField()
+    cviciciPodil = serializers.IntegerField()
+    examinator = serializers.SerializerMethodField()
+    garant = serializers.SerializerMethodField()
+    garantPodil = serializers.IntegerField(allow_null=True)
+    katedra = serializers.CharField()
+    nazev = serializers.CharField()
+    prednasejici = serializers.SerializerMethodField()
+    rok = serializers.CharField()
+    seminarici = serializers.SerializerMethodField()
+    seminariciPodil = serializers.IntegerField()
+    zkratka = serializers.CharField()
+
+    def get_cvicici(self, obj):
+        value = obj.get("cvicici", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_examinator(self, obj):
+        value = obj.get("examinator", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_garant(self, obj):
+        value = obj.get("garant", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_prednasejici(self, obj):
+        value = obj.get("prednasejici", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+    def get_seminarici(self, obj):
+        value = obj.get("seminarici", "")
+        if value.upper() == "ANO":
+            return True
+        elif value.upper() == "NE":
+            return False
+        return None
+
+
+def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StagUser):
+    """
+    Synchronizes STAG roles with the database for student.
+    """
+    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
+    params = {
+        "osCislo": osCislo,
+        "outputFormat": "JSON",
+        "semestr": "%",
+        "rok": "%",
+    }
+
+    cookies = {
+        "WSCOOKIE": stag_ticket,
+    }
+    response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
+
+    if response.status_code == 200:
+        response_json = response.json()
+        items = response_json.get("predmetStudenta", [])
+        serializer = PredmetStudentaSerializer(data=items, many=True)
+        serializer.is_valid(raise_exception=True)
+        subject_data = serializer.validated_data
+        for subj in subject_data:
+            subjInDb = None
+            try:
+                subjInDb = Subject.objects.get(subject_code=subj["zkratka"])
+            except Subject.DoesNotExist:
+                pass
+            if subjInDb is not None:
+                UserSubject.objects.get_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={
+                        "subject": subjInDb,
+                        "user": user,
+                        "role": UserSubjectType.Student,
+                    },
+                )
+    else:
+        raise Exception("Failed to fetch STAG roles")
+
+
+def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: StagUser):
+    """
+    Synchronizes STAG roles with the database.
+    """
+    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByUcitel"
+    params = {
+        "ucitIdno": ucitIdno,
+        "outputFormat": "JSON",
+        "semestr": "%",
+        "rok": "%",
+    }
+
+    cookies = {
+        "WSCOOKIE": stag_ticket,
+    }
+    response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
+
+    if response.status_code == 200:
+        response_json = response.json()
+        items = response_json.get("predmetUcitele", [])
+        serializer = PredmetUciteleSerializer(data=items, many=True)
+        serializer.is_valid(raise_exception=True)
+        subject_data = serializer.validated_data
+        for subj in subject_data:
+            subjInDb = None
+            try:
+                subjInDb = Subject.objects.get(subject_code=subj["zkratka"])
+            except Subject.DoesNotExist:
+                pass
+            if subjInDb is not None:
+                UserSubject.objects.get_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={"subject": subjInDb, "user": user, "role": UserSubjectType.Teacher},
+                )
+    else:
+        raise Exception("Failed to fetch STAG roles")

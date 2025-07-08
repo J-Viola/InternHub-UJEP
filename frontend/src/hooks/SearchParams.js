@@ -18,6 +18,10 @@ export function useCurrentUrl() {
     return window.location.pathname;
 }
 
+export function useFullUrl() {
+    return window.location.href;
+}
+
 export function useSetParams() {
     const [searchParams, setSearchParams] = useSearchParams();
     
@@ -32,5 +36,28 @@ export function useClearParams() {
     
     return (baseUrl) => {
         setSearchParams(new URLSearchParams());
+    };
+}
+
+export function useStripParams() {
+    return (url) => {
+        const parts = url.split('?');
+        if (parts.length > 1) {
+            const queryString = decodeURIComponent(parts[1]);
+            const params = {};
+            
+            const paramPairs = queryString.split('&');
+            
+            paramPairs.forEach(pair => {
+                const [key, value] = pair.split('=');
+                if (key && value !== undefined) {
+                    const decodedValue = value.replace(/\+/g, ' ');
+                    params[key] = decodedValue;
+                }
+            });
+            
+            return params;
+        }
+        return {};
     };
 }

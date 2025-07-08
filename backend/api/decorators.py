@@ -4,6 +4,7 @@ from functools import wraps
 from api.models import OrganizationUser, StagUser
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenBackendError, TokenError
 from users.models import OrganizationRoleEnum, StagRoleEnum
 
 
@@ -22,11 +23,17 @@ def role_required(allowed_Enums: list[Enum]):
 
     def decorator(view_func):
         @wraps(view_func)
-        def _wrapped_view(request, *args, **kwargs):
+        def _wrapped_view(self, request, *args, **kwargs):
             auth = JWTAuthentication()
             try:
                 user_auth = auth.authenticate(request)
-            except Exception as e:
+            except AuthenticationFailed as e:
+                print(f"JWT authentication error: {e}")
+                raise NotAuthenticated("Invalid or missing credentials")
+            except TokenError as e:
+                print(f"JWT authentication error: {e}")
+                raise NotAuthenticated("Invalid or missing credentials")
+            except TokenBackendError as e:
                 print(f"JWT authentication error: {e}")
                 raise NotAuthenticated("Invalid or missing credentials")
             if not user_auth:
@@ -34,12 +41,12 @@ def role_required(allowed_Enums: list[Enum]):
             user, token = user_auth
             request.user, request.auth = user, token
 
-            if user.is_superuser or (
-                isinstance(user, OrganizationUser) and user.organization_role.role in allowed_roles
-            ) or (
-                isinstance(user, StagUser) and user.stag_role.role in allowed_roles
+            if (
+                user.is_superuser
+                or (isinstance(user, OrganizationUser) and user.organization_role.role in allowed_roles)
+                or (isinstance(user, StagUser) and user.stag_role.role in allowed_roles)
             ):
-                return view_func(request, *args, **kwargs)
+                return view_func(self, request, *args, **kwargs)
             raise PermissionDenied("You do not have permission to access this resource")
 
         return _wrapped_view

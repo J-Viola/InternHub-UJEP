@@ -14,6 +14,8 @@ module.exports = {
       '@services': path.resolve(__dirname, 'src/services'),
       '@auth': path.resolve(__dirname, 'src/services/auth'),
       '@api': path.resolve(__dirname, 'src/api'),
+      '@dummy': path.resolve(__dirname, 'src/api/_data_/dummy'),
+      '@docs': path.resolve(__dirname, 'src/api/_data_/docs'),
 
     },
     configure: (webpackConfig) => {
