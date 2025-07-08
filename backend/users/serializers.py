@@ -5,7 +5,6 @@ from api.models import (
     OrganizationUser,
     ProfessorUser,
     StagRole,
-    StagUser,
     Status,
     StudentUser,
     Subject,
@@ -325,7 +324,7 @@ class PredmetUciteleSerializer(serializers.Serializer):
         return None
 
 
-def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StagUser):
+def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StudentUser):
     """
     Synchronizes STAG roles with the database for student.
     """
@@ -368,7 +367,7 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StagUse
         raise Exception("Failed to fetch STAG roles")
 
 
-def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: StagUser):
+def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
     """
     Synchronizes STAG roles with the database.
     """

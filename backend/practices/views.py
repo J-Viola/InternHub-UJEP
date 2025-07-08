@@ -25,7 +25,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
     - POST /{id}/apply/: Student se hlásí na praxi (autentizace požadována)
     """
 
-    queryset = Practice.objects.all().select_related("employer", "practice_type", "status", "approval_status")
+    queryset = Practice.objects.all().select_related("employer", "practice_type")
     serializer_class = PracticeSerializer
     pagination_class = StandardResultsSetPagination
     parser_classes = [MultiPartParser, FormParser]

@@ -2,8 +2,7 @@ from datetime import date
 
 from rest_framework import serializers
 
-from .models import Department, EmployerProfile, Practice, PracticeType, PracticeUser, StudentPractice, Subject, User, \
-    ApprovalStatus, ProgressStatus
+from .models import ApprovalStatus, Department, EmployerProfile, Practice, PracticeType, ProgressStatus, StudentPractice, Subject, User
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -197,7 +196,7 @@ class PracticeSerializer(serializers.ModelSerializer):
             "available_positions",
             "start_date",
             "end_date",
-            "status",
+            "progress_status",
             "approval_status",
             "contact_user",
             "contact_user_info",
@@ -239,62 +238,13 @@ class PracticeSerializer(serializers.ModelSerializer):
             if default_status:
                 validated_data["status"] = default_status
         if "approval_status" not in validated_data:
-            pending_status =ApprovalStatus.PENDING
+            pending_status = ApprovalStatus.PENDING
             if pending_status:
                 validated_data["approval_status"] = pending_status
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
-
-
-# ------------------------------------------------------------
-# 13. PracticeUserSerializer
-# ------------------------------------------------------------
-class PracticeUserSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model PracticeUser
-    - id: primární klíč (read-only)
-    - practice: nested Practice (read-only)
-    - practice_id: PK praxe (write-only)
-    - user: PK uživatele (write-only)
-    - user_info: informace o uživateli (user_id, username)
-    """
-
-    practice = PracticeSerializer(read_only=True)
-    practice_id = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), source="practice", write_only=True, required=True)
-
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=True)
-    user_info = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = PracticeUser
-        fields = [
-            "id",
-            "practice",
-            "practice_id",
-            "user",
-            "user_info",
-        ]
-        read_only_fields = ["id", "practice", "user_info"]
-
-    def get_user_info(self, obj):
-        if obj.user:
-            return {
-                "user_id": obj.user.user_id,
-                "username": obj.user.username,
-            }
-        return None
-
-    def validate(self, data):
-        """
-        Zkontroluje, zda uživatel již není přiřazen k této praxi.
-        """
-        practice = data.get("practice")
-        user = data.get("user")
-        if PracticeUser.objects.filter(practice=practice, user=user).exists():
-            raise serializers.ValidationError("Uživatel je již přiřazen k této praxi.")
-        return data
 
 
 # ------------------------------------------------------------
