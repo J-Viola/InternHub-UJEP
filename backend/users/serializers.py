@@ -87,13 +87,27 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if osCislo:
             user, _ = StudentUser.objects.get_or_create(
                 email=email,
-                defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni, "os_cislo": osCislo},
+                defaults={
+                    "email": email,
+                    "stag_role": stagRole,
+                    "first_name": jmeno,
+                    "last_name": prijmeni,
+                    "os_cislo": osCislo,
+                    "is_active": True,
+                },
             )
             sync_stag_subjects_for_student(ticket, osCislo, user)
         if ucitIdno:
             user, _ = ProfessorUser.objects.get_or_create(
                 email=email,
-                defaults={"email": email, "stag_role": stagRole, "first_name": jmeno, "last_name": prijmeni, "ucit_idno": ucitIdno},
+                defaults={
+                    "email": email,
+                    "stag_role": stagRole,
+                    "first_name": jmeno,
+                    "last_name": prijmeni,
+                    "ucit_idno": ucitIdno,
+                    "is_active": True,
+                },
             )
             sync_stag_roles_for_teacher(ticket, ucitIdno, user)
 
