@@ -2,7 +2,7 @@ import axios from 'axios';
 import dummyData from './_data_/localDatabase';
 
 const API_ROOT = '/api';
-const DUMMY_DATA = true;
+const DUMMY_DATA = false;
 const DEFAULT_URL = 'http://localhost:8000';
 
 // Pro lokální vývoj použijeme DEFAULT_URL, pro produkci REACT_APP_API_URL
