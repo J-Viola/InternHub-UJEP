@@ -4,7 +4,7 @@ import Nav from "@components/core/Nav";
 import Headings from "@core/Text/Headings";
 import BackButton from "@core/Button/BackButton";
 import Button from "@core/Button/Button";
-import UserEntity from "@components/Users/UserEntity";
+import UserEntity from "@components/User/UserEntity";
 
 export default function VytvorenePraxe() {
 

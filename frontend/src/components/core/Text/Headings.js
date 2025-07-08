@@ -3,6 +3,7 @@ import React from 'react';
 export default function Headings({ children, sizeTag = 'h4', property }) {
     
     const headingVariants = {
+        'h5': "text-xl font-normal",
         'h5-bold': "text-xl font-bold",
         'h4': "text-2xl font-semibold",
         'h3': "text-4xl font-semibold",

@@ -15,15 +15,27 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from api.views import serve_user_file
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from . import settings
 from .views import index
 
 urlpatterns = [
     path("", index),
     path("admin/", admin.site.urls),
     path("api/users/", include("users.urls")),
+    path("api/practices/", include("practices.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/documents/<path:path>/", serve_user_file, name="serve_user_file"),
+    path("api/departments/", include("department.urls")),
+    path("api/subjects/", include("subject.urls")),
 ]
+
+# TODO: Remove this in production
+if settings.DEBUG:
+    urlpatterns += static(settings.STORAGE_URL, document_root=settings.STORAGE_URL)

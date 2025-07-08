@@ -2,10 +2,11 @@ import re
 
 import requests
 from api.decorators import role_required
-from api.models import EmployerProfile, Status
+from api.models import EmployerProfile, ApprovalStatus
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,7 +16,13 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
 
 from .models import OrganizationRoleEnum
-from .serializers import AresJusticeSerializer, CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
+from .serializers import (
+    AresJusticeSerializer,
+    CustomTokenObtainPairSerializer,
+    LogoutSerializer,
+    OrganizationRegisterSerializer,
+    TokenResponseSerializer,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -25,7 +32,13 @@ class RegisterView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            serializer.save()
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(
             {"message": "User registered successfully"},
             status=status.HTTP_201_CREATED,
@@ -63,15 +76,15 @@ class AresJusticeView(generics.GenericAPIView):
         cached_data = cache.get(cache_key)
         if cached_data:
             ares_dto = EkonomickySubjektDTO.model_validate(cached_data)
-            return JsonResponse(ares_dto, safe=False)
+            return JsonResponse(ares_dto.model_dump(), safe=False)
 
         response = requests.get("https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/" + ico)
 
         if response.status_code == 200:
             data = response.json()
             ares_dto = EkonomickySubjektDTO.model_validate(data)
-            cache.set(cache_key, ares_dto, timeout=3600)
-            return JsonResponse(data)
+            cache.set(cache_key, ares_dto.model_dump(), timeout=3600)
+            return JsonResponse(ares_dto.model_dump(), safe=False)
         else:
             return JsonResponse(
                 {"error": "Failed to fetch data from ARES"},
@@ -102,7 +115,7 @@ def update_ares_subject(request):
             if "kod" in response_data and response_data["kod"] is not None:
                 return JsonResponse({"error": response_data["kod"]}, status=400)
             ares_data = EkonomickySubjektDTO.model_validate(response_data)
-            cache.set(cache_key, ares_data, timeout=3600)
+            cache.set(cache_key, ares_data.model_dump(), timeout=3600)
         else:
             return JsonResponse(
                 {"error": "Failed to fetch data from ARES"},
@@ -112,8 +125,7 @@ def update_ares_subject(request):
     user = request.user
     employer_profile = EmployerProfile.objects.get(employer_id=user.id)
     if not employer_profile:
-        status = Status.objects.get(status_name="Pending")
-        assert status is not None, "Status 'Pending' must exist in the database"
+        status = ApprovalStatus.PENDING
         EmployerProfile.objects.create(
             employer_id=user.id,
             ico=ares_data.ico,
@@ -130,3 +142,29 @@ def update_ares_subject(request):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+    @extend_schema(responses={200: TokenResponseSerializer})
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        tokens = serializer.validated_data
+
+        user = tokens["user"]
+        user_info = {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
+        }
+
+        serializer = TokenResponseSerializer(
+            data={
+                "refresh": tokens["refresh"],
+                "access": tokens["access"],
+                "user": user_info,
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

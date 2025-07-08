@@ -10,7 +10,7 @@ export default function PopUpCon({children, onClose, title, text, onSubmit, onRe
         <Container property={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
             <ContainerForEntity property={"w-1/2 max-w-2xl"} variant={variant}>
                 <Container property={"flex justify-between items-center mb-4"}>
-                    <Headings sizeTag={"h5-bold"}>{title}</Headings>
+                    <Headings property={"ml-4"} sizeTag={"h5"}>{title}</Headings>
                     <Button variant={"red"} onClick={onClose} property={"px-2 py-1"}>
                         X
                     </Button>
