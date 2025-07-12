@@ -7,12 +7,13 @@ export const useNabidkaAPI = () => {
 
     const getNabidky = async (params = {}) => {
         try {
-
-            const response = api.get('/practices/practices/')
+            const response = await api.get('/practices/practices/')
             
-            if (response) {
-                return(response)
+            if (response && response.data) {
+                return response.data.results || response.data
             }
+            
+            return []
 
         } catch (error) {
             console.error("Chyba při získávání nabídek:", error);
@@ -22,11 +23,13 @@ export const useNabidkaAPI = () => {
 
     const getNabidkaById = async (id) => {
         try {
-            const response = api.get(`/practices/practices/${id}`)
+            const response = await api.get(`/practices/practices/${id}`)
             
-            if (response) {
-                return(response)
+            if (response && response.data) {
+                return response.data
             }
+            
+            return null
 
         } catch (error) {
             console.error("Chyba při získávání nabídky podle ID:", error);

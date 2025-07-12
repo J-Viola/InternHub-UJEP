@@ -13,6 +13,7 @@ import StudentPage from '@pages/StudentsPage';
 import VytvorenePraxe from '@pages/VytvorenePraxePage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
 import RegistracePage from '@pages/RegistracePage';
+import LogoutUser from '@services/auth/Logout';
 
 import reportWebVitals from './reportWebVitals';
 
@@ -36,6 +37,7 @@ root.render(
             <Route path="/Students" element={<StudentPage />} />
             <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
             <Route path="/VytNabidku" element={<VytvoritNabidku />} />
+            <Route path="/logout" element={<LogoutUser />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

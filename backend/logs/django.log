@@ -1,0 +1,1045 @@
+[2025-07-12 15:49:26,704] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-12 15:50:01,742] INFO django.server "GET /api/schema/swagger-ui/ HTTP/1.1" 200 4649
+[2025-07-12 15:50:02,200] INFO django.server "GET /api/schema/ HTTP/1.1" 200 76674
+[2025-07-12 15:50:53,303] INFO django.server "GET /admin/ HTTP/1.1" 302 0
+[2025-07-12 15:50:53,320] INFO django.server "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4170
+[2025-07-12 15:50:53,344] INFO django.server "GET /static/admin/css/base.css HTTP/1.1" 304 0
+[2025-07-12 15:50:53,347] INFO django.server "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+[2025-07-12 15:50:53,348] INFO django.server "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+[2025-07-12 15:50:53,349] INFO django.server "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+[2025-07-12 15:50:53,349] INFO django.server "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+[2025-07-12 15:50:53,349] INFO django.server "GET /static/admin/css/login.css HTTP/1.1" 304 0
+[2025-07-12 15:50:53,349] INFO django.server "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+[2025-07-12 15:50:53,423] WARNING django.request Not Found: /favicon.ico
+[2025-07-12 15:50:53,424] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-12 15:50:59,889] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4342
+[2025-07-12 15:51:03,773] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4342
+[2025-07-12 15:51:45,373] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4342
+[2025-07-12 15:52:26,122] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4346
+[2025-07-12 15:54:43,614] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+[2025-07-12 15:54:43,641] INFO django.server "GET /admin/ HTTP/1.1" 200 18844
+[2025-07-12 15:54:43,669] INFO django.server "GET /static/admin/css/dashboard.css HTTP/1.1" 304 0
+[2025-07-12 15:54:43,725] INFO django.server "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+[2025-07-12 15:54:43,725] INFO django.server "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+[2025-07-12 15:54:48,864] INFO django.server "GET /admin/api/practice/ HTTP/1.1" 200 16731
+[2025-07-12 15:54:48,885] INFO django.server "GET /static/admin/css/changelists.css HTTP/1.1" 304 0
+[2025-07-12 15:54:48,886] INFO django.server "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,886] INFO django.server "GET /static/admin/js/core.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,887] INFO django.server "GET /static/admin/js/jquery.init.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,887] INFO django.server "GET /static/admin/js/actions.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,888] INFO django.server "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,889] INFO django.server "GET /static/admin/js/urlify.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,890] INFO django.server "GET /static/admin/js/prepopulate.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,892] INFO django.server "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 304 0
+[2025-07-12 15:54:48,892] INFO django.server "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+[2025-07-12 15:54:48,894] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:54:48,946] INFO django.server "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+[2025-07-12 15:54:50,589] INFO django.server "GET /admin/api/practice/add/ HTTP/1.1" 200 32035
+[2025-07-12 15:54:50,608] INFO django.server "GET /static/admin/js/calendar.js HTTP/1.1" 200 9141
+[2025-07-12 15:54:50,608] INFO django.server "GET /static/admin/css/forms.css HTTP/1.1" 200 8525
+[2025-07-12 15:54:50,608] INFO django.server "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+[2025-07-12 15:54:50,609] INFO django.server "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 200 19319
+[2025-07-12 15:54:50,610] INFO django.server "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+[2025-07-12 15:54:50,614] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:54:50,615] INFO django.server "GET /static/admin/css/widgets.css HTTP/1.1" 200 11991
+[2025-07-12 15:54:50,617] INFO django.server "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+[2025-07-12 15:54:50,617] INFO django.server "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 200 392
+[2025-07-12 15:54:50,689] INFO django.server "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1086
+[2025-07-12 15:55:00,378] INFO django.server "GET /admin/api/subject/ HTTP/1.1" 200 16724
+[2025-07-12 15:55:00,398] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:55:02,026] INFO django.server "GET /admin/api/subject/add/ HTTP/1.1" 200 20828
+[2025-07-12 15:55:02,051] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:55:11,118] INFO django.server "GET /admin/api/department/add/?_to_field=department_id&_popup=1 HTTP/1.1" 200 5073
+[2025-07-12 15:55:11,140] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:55:21,356] INFO django.server "POST /admin/api/department/add/?_to_field=department_id&_popup=1 HTTP/1.1" 200 334
+[2025-07-12 15:55:21,372] INFO django.server "GET /static/admin/js/popup_response.js HTTP/1.1" 200 532
+[2025-07-12 15:55:25,968] INFO django.server "POST /admin/api/subject/add/ HTTP/1.1" 302 0
+[2025-07-12 15:55:25,987] INFO django.server "GET /admin/api/subject/ HTTP/1.1" 200 18583
+[2025-07-12 15:55:26,013] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:55:26,024] INFO django.server "GET /static/admin/img/icon-yes.svg HTTP/1.1" 200 436
+[2025-07-12 15:55:32,507] INFO django.server "GET /admin/api/practice/ HTTP/1.1" 200 16731
+[2025-07-12 15:55:32,535] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:55:33,757] INFO django.server "GET /admin/api/practice/add/ HTTP/1.1" 200 32084
+[2025-07-12 15:55:33,784] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:55:36,831] INFO django.server "GET /admin/api/employerprofile/add/?_to_field=employer_id&_popup=1 HTTP/1.1" 200 9447
+[2025-07-12 15:55:36,856] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:56:04,456] INFO django.server "POST /admin/api/employerprofile/add/?_to_field=employer_id&_popup=1 HTTP/1.1" 200 334
+[2025-07-12 15:56:06,573] INFO django.server "GET /admin/api/practice/ HTTP/1.1" 200 16731
+[2025-07-12 15:56:06,599] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:56:07,413] INFO django.server "GET /admin/api/practice/add/ HTTP/1.1" 200 32125
+[2025-07-12 15:56:07,440] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:56:26,316] INFO django.server "GET /static/admin/img/calendar-icons.svg HTTP/1.1" 200 2455
+[2025-07-12 15:56:41,679] INFO django.server "GET /admin/api/organizationuser/add/?_to_field=user_ptr&_popup=1 HTTP/1.1" 200 7867
+[2025-07-12 15:56:41,699] INFO django.server "GET /static/admin/css/unusable_password_field.css HTTP/1.1" 200 663
+[2025-07-12 15:56:41,700] INFO django.server "GET /static/admin/js/unusable_password_field.js HTTP/1.1" 200 1480
+[2025-07-12 15:56:41,707] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:56:49,734] INFO django.server "POST /admin/api/organizationuser/add/?_to_field=user_ptr&_popup=1 HTTP/1.1" 200 8178
+[2025-07-12 15:56:49,758] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:56:59,625] INFO django.server "POST /admin/api/organizationuser/add/?_to_field=user_ptr&_popup=1 HTTP/1.1" 200 8103
+[2025-07-12 15:56:59,693] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:57:21,974] INFO django.server "POST /admin/api/organizationuser/add/?_to_field=user_ptr&_popup=1 HTTP/1.1" 200 324
+[2025-07-12 15:58:33,539] INFO django.server "GET /admin/api/practicetype/add/?_to_field=practice_type_id&_popup=1 HTTP/1.1" 200 4999
+[2025-07-12 15:58:33,573] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:58:33,601] WARNING django.request Not Found: /favicon.ico
+[2025-07-12 15:58:33,602] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-12 15:58:43,222] INFO django.server "POST /admin/api/practicetype/add/?_to_field=practice_type_id&_popup=1 HTTP/1.1" 200 324
+[2025-07-12 15:58:43,242] INFO django.server "GET /static/admin/js/popup_response.js HTTP/1.1" 200 532
+[2025-07-12 15:58:53,433] INFO django.server "POST /admin/api/practice/add/ HTTP/1.1" 302 0
+[2025-07-12 15:58:53,452] INFO django.server "GET /admin/api/practice/ HTTP/1.1" 200 18974
+[2025-07-12 15:58:53,479] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-12 15:59:17,933] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-12 15:59:17,933] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-12 15:59:17,937] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-12 15:59:17,957] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 15:59:17,957] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 15:59:18,244] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 15:59:18,482] INFO django.server "OPTIONS /api/practices/practices/ HTTP/1.1" 200 0
+[2025-07-12 15:59:18,483] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-12 15:59:18,484] INFO django.server "OPTIONS /api/practices/practices/ HTTP/1.1" 200 0
+[2025-07-12 15:59:18,485] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-12 15:59:18,499] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 15:59:18,506] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 15:59:18,561] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 15:59:18,564] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:00:47,356] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:00:47,357] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:00:47,370] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:00:47,371] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:00:47,372] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:00:47,374] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:00:47,377] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:00:47,377] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:47,379] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:00:47,387] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:47,472] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:47,472] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:47,490] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:00:47,491] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:00:56,211] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:00:56,214] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:00:56,215] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:00:56,216] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:00:56,216] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:00:56,217] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:00:56,217] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:00:56,218] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:00:56,223] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:56,224] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:56,240] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:56,244] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:00:56,311] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:00:56,311] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:01:09,175] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:01:09,176] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:01:12,812] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:01:12,812] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:01:13,018] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:01:13,163] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:01:13,163] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:01:13,165] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:01:13,166] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:01:23,899] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:01:25,544] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:02:12,561] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:12,562] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:15,634] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:15,634] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:15,864] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:02:16,004] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:02:16,006] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:02:16,006] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:02:16,007] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:02:38,800] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:02:38,802] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:02:38,817] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:38,870] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:02:38,872] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:02:38,873] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:02:38,873] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:02:38,874] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:02:38,874] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:02:38,881] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:38,900] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:38,901] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:39,041] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:02:39,046] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:02:41,549] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:41,549] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:44,714] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:44,714] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:44,938] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:02:45,091] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:02:45,093] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:02:45,093] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:02:45,093] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:02:53,121] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:02:53,125] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:02:53,127] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:02:53,128] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:02:53,131] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:02:53,132] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:02:53,136] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:02:53,137] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:02:53,142] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:53,145] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:53,200] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:53,200] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:02:53,219] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:02:53,220] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:03:06,299] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:03:06,303] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:03:09,124] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:03:09,125] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:03:09,337] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:03:09,487] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:03:09,487] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:03:09,487] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:03:09,487] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:04:31,413] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:04:31,415] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:04:31,417] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:04:31,418] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:04:31,418] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:04:31,418] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:04:31,419] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:04:31,419] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:04:31,425] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:04:31,425] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:04:31,438] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:04:31,438] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:04:31,494] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:04:31,500] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:05:05,359] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:05:05,359] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:05:06,410] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:05:06,410] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:05:06,410] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:05:06,411] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:05:08,112] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-12 16:05:08,113] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-12 16:05:08,119] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:05:08,119] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:05:08,126] INFO django.server "OPTIONS /api/practices/practices/1/ HTTP/1.1" 200 0
+[2025-07-12 16:05:08,126] INFO django.server "OPTIONS /api/practices/practices/1/ HTTP/1.1" 200 0
+[2025-07-12 16:05:08,199] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:05:08,199] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:05:19,057] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:05:19,057] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:05:19,057] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:05:19,057] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:05:21,689] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:05:27,549] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:05:30,072] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:05:59,401] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:05:59,402] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:05:59,407] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:05:59,407] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:05:59,411] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:05:59,413] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:05:59,416] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:05:59,417] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:05:59,419] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:05:59,419] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:05:59,479] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:05:59,479] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:05:59,498] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:05:59,498] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:06:10,663] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:06:10,664] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:06:10,666] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:06:10,667] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:06:10,669] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:06:10,669] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:06:10,670] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:06:10,670] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:06:10,676] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:10,677] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:10,719] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:10,719] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:10,781] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:06:10,818] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:06:25,534] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:25,534] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:28,357] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:28,357] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:06:28,568] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:06:28,707] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:06:28,707] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:06:28,708] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:06:28,708] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:06:31,703] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:06:31,703] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:06:31,723] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:06:31,723] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:06:34,871] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:06:34,873] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:06:34,875] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:06:34,876] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:07:24,096] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:07:26,027] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:08:03,105] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:08:03,107] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:08:03,110] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:08:03,110] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:08:03,111] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:08:03,112] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:08:03,112] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:08:03,113] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:08:03,119] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:03,119] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:03,124] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:03,125] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:03,185] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:08:03,186] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:08:40,646] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:08:40,648] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:08:40,650] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:08:40,650] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:08:40,651] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:08:40,652] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:08:40,652] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:08:40,652] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:08:40,659] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:40,661] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:40,665] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:40,665] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:08:40,721] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:08:40,721] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:09:15,644] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:15,644] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:18,793] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:18,795] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:19,016] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:09:19,170] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:09:19,172] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:09:19,172] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:09:19,173] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:09:23,278] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:09:23,279] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:09:23,283] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:09:23,283] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:09:23,289] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:09:23,290] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:09:23,291] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:09:23,292] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:09:23,293] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:23,295] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:23,341] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:23,341] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:09:23,428] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:09:23,432] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:21,073] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:21,075] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:21,077] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:21,077] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:21,078] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:21,078] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:21,078] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:21,079] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:21,085] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:21,085] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:21,103] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:21,104] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:21,163] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:21,164] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:31,637] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:31,641] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:31,642] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:31,643] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:31,644] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:31,644] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:31,645] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:31,645] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:31,651] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:31,652] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:31,666] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:31,667] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:31,725] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:31,728] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:39,689] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:39,691] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:39,693] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:39,694] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:39,694] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:39,695] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:39,695] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:39,695] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:39,700] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:39,700] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:39,712] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:39,712] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:39,773] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:39,774] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:44,081] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:44,083] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:10:44,084] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:44,085] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:10:44,085] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:44,086] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:10:44,086] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:44,087] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:10:44,092] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:44,092] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:44,102] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:44,104] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:10:44,161] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:10:44,162] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:11:36,627] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:11:36,627] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:11:37,670] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:11:37,670] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:11:37,681] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:11:37,683] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:12:59,668] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:12:59,669] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:12:59,672] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:12:59,673] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:12:59,674] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:12:59,674] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:12:59,674] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:12:59,675] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:12:59,681] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:12:59,681] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:12:59,827] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:12:59,857] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:12:59,942] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:12:59,942] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:13:11,893] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:13:11,895] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:13:11,897] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:13:11,898] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:13:11,898] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:13:11,899] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:13:11,899] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:13:11,900] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:13:11,906] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:13:11,907] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:13:11,925] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:13:11,928] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:13:11,982] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:13:12,072] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:14:15,452] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:14:15,455] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:14:15,455] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:14:15,456] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:14:15,463] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:14:15,465] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:14:15,465] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:14:15,465] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:14:15,472] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:15,473] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:15,487] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:15,722] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:15,726] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:14:15,758] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:14:21,180] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:14:21,182] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:14:21,182] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:14:21,184] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:14:21,184] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:14:21,185] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:14:21,185] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:14:21,186] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:14:21,193] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:21,194] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:21,280] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:21,352] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:14:21,565] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:14:21,566] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:14:38,560] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:15:22,931] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:22,934] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:22,935] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:22,936] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:22,936] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:22,937] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:22,937] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:22,937] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:22,943] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:22,943] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:22,957] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:22,957] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:23,021] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:23,021] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:29,416] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:29,418] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:29,419] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:29,420] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:29,421] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:29,421] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:29,421] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:29,422] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:29,428] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:29,429] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:29,441] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:29,442] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:29,499] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:29,500] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:34,353] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:34,356] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:34,357] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:34,358] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:34,359] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:34,359] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:34,360] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:34,360] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:34,366] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:34,367] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:34,380] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:34,381] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:34,440] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:34,441] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:38,545] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:38,547] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:38,549] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:38,550] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:38,551] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:38,551] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:38,551] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:38,552] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:38,558] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:38,558] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:38,572] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:38,573] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:38,631] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:38,632] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:43,603] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:43,606] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:15:43,607] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:43,608] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:15:43,609] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:43,609] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:15:43,610] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:43,610] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:15:43,617] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:43,617] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:43,628] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:43,630] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:15:43,694] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:15:43,694] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:01,286] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:16:01,288] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:16:01,290] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:16:01,290] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:16:01,291] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:16:01,291] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:16:01,291] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:16:01,292] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:16:01,298] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:01,298] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:01,308] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:01,311] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:01,365] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:01,369] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:04,401] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:16:04,403] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:16:04,405] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:16:04,405] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:16:04,406] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:16:04,406] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:16:04,407] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:16:04,407] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:16:04,413] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:04,413] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:04,423] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:04,423] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:04,481] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:04,481] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:15,471] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:16:15,472] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:16:15,474] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:16:15,475] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:16:15,475] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:16:15,476] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:16:15,476] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:16:15,476] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:16:15,483] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:15,483] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:15,494] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:15,495] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:15,556] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:15,558] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:22,582] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:22,587] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:23,698] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:23,698] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:23,698] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:16:23,699] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:16:42,982] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:42,982] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:44,049] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:44,049] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:16:44,049] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:44,049] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:16:49,394] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:49,396] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:52,325] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:52,325] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:16:52,540] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:16:52,704] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:16:52,704] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:16:52,704] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:16:52,705] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:17:24,485] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:17:24,487] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:17:24,488] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:17:24,490] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:17:24,490] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:17:24,493] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:17:24,497] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:17:24,497] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:17:24,499] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:24,501] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:24,569] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:24,570] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:24,588] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:17:24,588] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:17:36,245] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:17:36,245] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:17:36,250] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:17:36,250] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:17:36,259] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:36,262] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:17:36,263] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:17:36,268] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:36,269] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:17:36,270] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:17:36,411] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:36,428] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:36,439] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:17:36,512] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:17:55,278] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:17:55,281] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:17:55,283] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:17:55,284] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:17:55,284] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:17:55,285] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:17:55,285] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:17:55,286] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:17:55,293] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:55,293] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:55,337] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:55,338] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:17:55,355] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:17:55,429] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:18:00,300] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:18:00,300] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:18:00,311] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:18:00,311] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:18:00,320] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:18:00,328] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:18:00,378] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:18:00,379] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:18:00,380] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:18:00,381] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:18:00,476] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:18:00,476] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:18:00,494] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:18:00,495] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:19:45,395] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:19:45,397] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:19:45,399] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:19:45,400] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:19:45,400] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:19:45,401] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:19:45,401] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:19:45,401] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:19:45,407] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:45,409] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:45,420] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:45,420] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:45,482] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:19:45,483] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:19:54,944] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:19:54,946] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:19:54,948] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:19:54,949] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:19:54,949] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:19:54,950] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:19:54,950] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:19:54,950] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:19:54,956] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:54,957] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:54,968] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:54,968] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:55,026] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:19:55,027] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:19:59,108] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:19:59,110] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:19:59,112] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:19:59,112] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:19:59,113] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:19:59,114] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:19:59,114] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:19:59,114] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:19:59,120] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:59,121] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:59,131] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:59,135] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:19:59,189] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:19:59,193] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:20:06,387] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:20:06,388] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:20:15,942] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:20:15,945] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:20:58,950] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:20:58,950] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:06,692] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:22:06,694] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:22:06,696] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:22:06,698] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:22:06,698] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:22:06,699] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:22:06,700] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:22:06,701] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:22:06,705] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:06,705] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:06,715] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:06,715] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:06,771] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:22:06,772] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:22:17,605] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:22:17,608] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:22:20,038] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:20,038] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:21,093] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:22:21,093] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:22:21,094] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:22:21,095] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:22:28,691] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:28,691] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:22:29,772] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:22:29,772] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:22:29,772] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:22:29,772] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:23:06,292] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:24:08,258] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:24:08,258] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:24:08,284] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:24:08,284] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:26:58,683] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:27:40,089] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:27:40,090] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:27:41,180] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:27:41,180] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:27:41,181] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:27:41,183] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:27:55,115] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-12 16:27:55,115] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-12 16:27:55,131] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:27:55,132] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:27:55,141] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:27:55,141] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:29:25,547] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:29:25,693] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:29:25,694] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:29:25,694] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:29:25,694] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:29:27,374] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:29:27,375] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:29:27,391] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:29:27,392] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:30:07,864] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:30:08,023] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:30:08,023] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:30:08,023] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:30:08,023] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:30:12,077] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:30:12,079] WARNING django.request Bad Request: /api/users/logout/
+[2025-07-12 16:30:12,080] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 400 32
+[2025-07-12 16:30:12,105] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:30:12,105] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:31:08,275] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:31:08,426] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:31:08,427] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:31:08,427] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:31:08,429] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:31:12,728] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:31:12,729] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:31:12,731] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:31:12,731] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:31:12,738] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:31:12,740] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:31:12,740] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:12,741] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:12,745] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:31:12,745] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:31:12,810] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:12,811] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:12,879] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:31:12,879] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:31:16,421] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:31:16,426] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:31:16,427] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:31:16,428] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:31:16,430] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:31:16,431] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:31:16,432] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:31:16,433] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:31:16,438] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:16,440] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:16,483] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:16,483] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:16,503] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:31:16,578] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:31:19,273] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:31:31,417] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:31:31,419] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:31:31,421] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:31:31,421] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:31:31,426] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:31:31,427] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:31:31,427] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:31:31,428] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:31:31,435] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:31,435] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:31,526] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:31,528] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:31:31,545] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:31:31,549] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:33:29,118] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:33:29,119] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:34:31,757] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:34:31,757] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:34:32,889] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:34:32,892] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:34:32,893] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:34:32,893] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:34:32,911] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:34:32,911] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:37:30,324] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:30,324] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:45,299] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:45,303] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:49,645] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:49,674] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:37:50,113] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:50,114] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:50,135] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:37:50,136] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:37:54,187] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:54,196] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:57,303] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:57,303] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:57,528] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:37:57,665] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:57,674] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:57,683] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:37:57,683] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:37:57,697] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:37:57,697] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:37:59,705] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:37:59,706] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:39:20,170] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:39:20,170] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:40:01,606] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:40:01,610] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:40:03,799] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:40:03,807] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:40:04,857] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:40:04,857] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:40:04,857] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:40:04,857] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:40:09,058] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:40:09,061] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:40:09,063] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:40:09,064] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:40:09,065] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:40:09,065] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:40:09,066] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:40:09,066] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:40:09,072] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:40:09,072] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:40:09,133] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:40:09,138] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:40:09,157] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:40:09,162] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:41:38,979] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:41:38,982] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:42:04,076] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:42:04,079] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:42:04,080] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:42:04,082] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:42:04,083] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:42:04,084] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:42:04,085] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:42:04,085] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:42:04,089] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:04,091] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:04,166] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:04,166] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:04,203] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:42:04,256] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:42:27,680] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:42:27,682] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:42:27,685] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:42:27,685] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:42:27,686] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:42:27,687] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:42:27,687] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:42:27,688] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:42:27,694] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:27,694] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:27,741] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:27,741] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:42:27,760] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:42:27,850] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:42:45,808] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:42:45,811] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:00,406] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:00,407] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:03,463] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:03,463] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:03,697] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:43:03,843] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:03,844] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:03,845] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:03,846] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:10,434] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:43:10,436] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:43:10,437] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:43:10,437] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:43:10,442] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:43:10,443] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:43:10,443] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:43:10,444] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:43:10,448] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:10,450] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:10,516] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:10,517] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:10,537] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:10,595] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:12,915] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:28,371] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:43:28,371] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:43:28,395] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:43:28,396] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:43:32,470] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:43:32,625] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:32,625] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:32,625] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:32,625] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:35,209] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:43:35,209] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:43:35,230] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:43:35,231] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:43:38,955] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:43:39,099] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:39,099] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:39,100] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:39,102] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:42,574] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:42,575] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:43:43,620] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:43,620] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:43,620] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:43:43,620] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:43:55,163] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:43:55,164] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:43:55,200] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:43:55,201] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:44:00,507] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:44:00,656] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:44:00,658] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:44:00,658] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:44:00,658] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:44:02,295] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:44:02,295] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:44:02,317] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:44:02,317] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:44:17,837] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:44:17,838] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-12 16:44:17,858] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:44:17,858] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:44:39,098] INFO django.server "OPTIONS /api/users/ares-justice/ HTTP/1.1" 200 0
+[2025-07-12 16:44:39,370] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4001
+[2025-07-12 16:45:17,345] WARNING django.request Bad Request: /api/users/register/
+[2025-07-12 16:45:17,346] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 49
+[2025-07-12 16:49:39,439] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:49:39,439] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:49:39,440] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:49:39,441] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 58
+[2025-07-12 16:49:39,442] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:49:39,442] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:49:39,443] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:49:39,443] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 58
+[2025-07-12 16:49:39,444] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:39,444] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:39,446] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:39,446] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:39,489] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:39,490] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:39,491] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:39,491] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:47,800] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:49:47,801] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:49:47,815] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:47,815] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:48,399] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:49:48,399] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:49:48,404] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:48,404] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:48,596] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:49:48,597] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:49:48,601] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:48,602] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:53,590] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:49:53,591] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:49:53,592] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:49:53,592] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:49:53,616] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:53,617] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:53,618] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:53,618] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:53,702] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-12 16:49:53,703] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-12 16:49:53,708] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-12 16:49:53,708] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-12 16:49:59,149] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-12 16:49:59,291] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:49:59,292] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:49:59,292] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:49:59,292] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:01,382] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:50:01,382] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:50:01,403] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:50:01,403] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-12 16:50:03,559] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:50:03,559] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-12 16:50:03,565] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:03,566] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-12 16:50:03,568] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-12 16:50:03,569] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-12 16:50:03,569] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-12 16:50:03,571] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:04,637] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:50:04,637] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:04,637] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:04,638] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:50:11,960] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:11,960] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:13,006] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:50:13,008] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:13,009] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:50:13,009] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:21,944] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:50:21,944] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:50:21,948] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-12 16:50:21,949] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-12 16:50:21,952] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:50:21,953] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-12 16:50:21,954] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:50:21,955] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-12 16:50:21,959] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:21,959] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:22,008] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:22,008] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:22,096] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:50:22,097] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:50:25,998] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:30,158] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:30,158] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-12 16:50:31,199] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-12 16:50:31,200] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:31,200] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-12 16:50:31,201] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199

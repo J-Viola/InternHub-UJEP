@@ -11,7 +11,8 @@ function AuthProvider({ children }) {
     const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || null);
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
     const [apiClient] = useState(() => createApiClient()); // Inicializace při vytvoření
-    const { user, setUser, cleanUser } = useUser(); // použití useUser hooku místo UserProvider komponenty
+    const [isInitializing, setIsInitializing] = useState(true); // Loading state
+    const { user, setUser, cleanUser } = useUser(); // použití useUser hooku
     const navigate = useNavigate();
     
     console.log("STORAGE:", localStorage?.getItem("refreshToken"));
@@ -41,6 +42,7 @@ function AuthProvider({ children }) {
                 // USER DATA
                 if (res.data.user) {
                     setUser(res.data.user);
+                    localStorage.setItem("user", JSON.stringify(res.data.user));
                 }
                 return true;
             }
@@ -175,6 +177,11 @@ function AuthProvider({ children }) {
                 
                 if (response.data.refresh) {
                     localStorage.setItem("refreshToken", response.data.refresh);
+                }
+                
+                // Store user data in localStorage
+                if (response.data.user) {
+                    localStorage.setItem("user", JSON.stringify(response.data.user));
                 }
         
                 
