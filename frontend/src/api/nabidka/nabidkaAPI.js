@@ -3,38 +3,17 @@ import { useApi } from "@hooks/useApi";
 
 export const useNabidkaAPI = () => {
     const api = useApi();
-    const practices = api.dummyDB.practices;
+    //const practices = api.dummyDB.practices;
 
     const getNabidky = async (params = {}) => {
         try {
+
+            const response = api.get('/practices/practices/')
             
-            let filteredData = practices;
-            
-            if (Object.keys(params).length > 0) {
-                filteredData = practices.filter(practice => {
-                    return Object.entries(params).every(([key, value]) => {
-                        if (practice.hasOwnProperty(key)) {
-                            // Pro číselné hodnoty (subject, practice_id, atd.)
-                            if (typeof practice[key] === 'number') {
-                                return practice[key] === parseInt(value);
-                            }
-                            // Pro string hodnoty (address, title, atd.)
-                            if (typeof value === 'string' && typeof practice[key] === 'string') {
-                                return practice[key].toLowerCase().includes(value.toLowerCase());
-                            }
-                            // Pro ostatní typy
-                            return practice[key] === value;
-                        }
-                        return false;
-                    });
-                });
+            if (response) {
+                return(response)
             }
 
-            const response = {
-                data: filteredData
-            };
-
-            return response.data;
         } catch (error) {
             console.error("Chyba při získávání nabídek:", error);
             throw error;
@@ -43,8 +22,12 @@ export const useNabidkaAPI = () => {
 
     const getNabidkaById = async (id) => {
         try {
-            const practice = practices.find(practice => practice.practice_id === parseInt(id));
-            return practice || null;
+            const response = api.get(`/practices/practices/${id}`)
+            
+            if (response) {
+                return(response)
+            }
+
         } catch (error) {
             console.error("Chyba při získávání nabídky podle ID:", error);
             throw error;

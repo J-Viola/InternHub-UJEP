@@ -3,63 +3,101 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { createApiClient } from "@api/apiClient";
 import axios from 'axios';
 import { useUser } from "@hooks/UserProvider"; // předpokládám, že máte useUser hook
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
 function AuthProvider({ children }) {
-    const [accessToken, setAccessToken] = useState(null);
+    const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || null);
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
     const [apiClient] = useState(() => createApiClient()); // Inicializace při vytvoření
     const { user, setUser, cleanUser } = useUser(); // použití useUser hooku místo UserProvider komponenty
+    const navigate = useNavigate();
     
     console.log("STORAGE:", localStorage?.getItem("refreshToken"));
 
     // Funkce pro aktualizaci session - refresh tokenu
     const refreshUX = async () => {
-        if (!apiClient || !refreshToken) return;
+        console.log("refreshUX called, apiClient:", !!apiClient, "refreshToken:", !!refreshToken);
+        if (!apiClient || !refreshToken) {
+            console.log("refreshUX: missing apiClient or refreshToken");
+            return;
+        }
         
         try {
+            console.log("Calling refresh endpoint with token:", refreshToken);
             const res = await apiClient.post('/users/token/refresh/', {'refresh': refreshToken}, { withCredentials: true });
-            if (res?.data?.access && res?.data?.refresh) {
+            console.log("Refresh response:", res?.data);
+            
+            if (res?.data?.access) {
+                console.log("Setting new access token:", res.data.access);
                 setAccessToken(res.data.access);
-                setRefreshToken(res.data.refresh);
+                
+                // Pokud je v response i refresh token, aktualizujeme ho
+                if (res.data.refresh) {
+                    setRefreshToken(res.data.refresh);
+                }
+                
                 // USER DATA
                 if (res.data.user) {
                     setUser(res.data.user);
                 }
+                return true;
             }
         } catch (error) {
             console.error('Refresh token failed:', error);
+            return false;
         }
     }
 
     // Mám refresh token v localStorage, tak ho rovnou lognu
     useEffect(() => {
-        if (localStorage.getItem("refreshToken") && window.location.pathname !== '/nabidka') {
-            console.log("Mám refresh token v localStorage, tak ho rovnou lognu");
+        const storedRefreshToken = localStorage.getItem("refreshToken");
+        const currentPath = window.location.pathname;
+        console.log("useEffect check - stored token:", !!storedRefreshToken, "current path:", currentPath);
+        
+        if (storedRefreshToken) {
+            console.log("Mám refresh token v localStorage, volám refreshUX");
             
-            refreshUX();
-            setTimeout(() => {
-                window.location.href = '/nabidka';
-            }, 50000);
-            
+            refreshUX().then((success) => {
+                if (success) {
+                    console.log("Refresh successful");
+                    // Přesměrujeme pouze pokud nejsme už na /nabidka
+                    if (currentPath !== '/nabidka') {
+                        console.log("Redirecting to /nabidka");
+                        setTimeout(() => {
+                            navigate('/nabidka');
+                        }, 1000);
+                    } else {
+                        console.log("Already on /nabidka, no redirect needed");
+                    }
+                } else {
+                    console.log("Refresh failed, staying on current page");
+                }
+            });
         }
-    },[])
+    }, [])
 
     // Aktualizace session pro lepší UX - intervalově
     useEffect(() => {
+        // Spustíme interval pouze pokud máme refresh token
         if (refreshToken) {
-            console.log("Nastavuji interval..");
+            console.log("Nastavuji interval pro refresh token..");
             let intervalId = setInterval(refreshUX, 1000 * 60 * 4.5); // 4.5 minuty
-            return () => clearInterval(intervalId); // odstraním interval při změně refresh tokenu - cleanup funkce
+            return () => {
+                console.log("Clearing refresh interval");
+                clearInterval(intervalId);
+            };
         }
-    }, [refreshToken]);    
+    }, [refreshToken]); // Spustí se při změně refreshToken, ale interval se nastaví pouze jednou    
 
     // Debug logging
     useEffect(() => {
-        console.log("AccessT:", accessToken);
         console.log("RefreshT:", refreshToken);
-    }, [accessToken, refreshToken]);
+        if (accessToken) {
+            console.log("Access Token", accessToken);
+        }
+    }, [refreshToken]);
 
     // Aktualizace API klienta při změně ACCESS tokenu
     useEffect(() => {
@@ -69,7 +107,7 @@ function AuthProvider({ children }) {
         const requestInterceptor = apiClient.interceptors.request.use(
             (config) => {
                 if (accessToken) {
-                    config.headers['Authorization'] = `Bearer ${accessToken}`;
+                    config.headers['Authorization'] = `Bearer ${accessToken ? accessToken : "NENÍ"}`;
                 }
                 return config;
             },
@@ -122,9 +160,14 @@ function AuthProvider({ children }) {
             
             //console.log('Login response:', response.data);  // Debug log
             
-            if (response?.data?.access) {
+            if (response.data) {
+                console.log("RESPONSE", response.data)
+                console.log("Nastavuji access token:", response.data.access);
                 setAccessToken(response.data.access);
                 setRefreshToken(response.data.refresh);
+                
+                // Access token se ukládá pouze do state, ne do localStorage
+                
                 // USER DATA
                 if (response.data.user) {
                     setUser(response.data.user);
@@ -133,11 +176,13 @@ function AuthProvider({ children }) {
                 if (response.data.refresh) {
                     localStorage.setItem("refreshToken", response.data.refresh);
                 }
-                //redirect na nabídku po loginu
-            }
-
-            if (response?.status === 200) {
-                window.location.href = '/nabidka';
+        
+                
+                // Počkáme chvilku než se state aktualizuje a pak redirect
+                setTimeout(() => {
+                    console.log("Redirect na /nabidka");
+                    navigate('/nabidka');
+                }, 100);
             }
             
             return response;
@@ -155,8 +200,9 @@ function AuthProvider({ children }) {
             setAccessToken(null);
             setRefreshToken(null);
             localStorage.removeItem("refreshToken");
+
             cleanUser();
-            window.location.href = '/';
+            navigate('/');
         } catch (error) {
             throw error;
         }

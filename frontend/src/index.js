@@ -23,8 +23,8 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <UserProvider> {/* USE INFO PRO ŘÍZENÍ FE */}
-      <AuthProvider> {/* TOKEN WORK */}
-        <BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider> {/* TOKEN WORK */}
           <Routes>
             <Route path="/" element={<LoginPage />} />
             <Route path="/nabidka" element={<NabidkaPage />} />
@@ -37,8 +37,8 @@ root.render(
             <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
             <Route path="/VytNabidku" element={<VytvoritNabidku />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </UserProvider>
   </React.StrictMode>
 );

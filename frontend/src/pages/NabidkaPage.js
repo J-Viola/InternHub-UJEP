@@ -27,7 +27,7 @@ export default function NabidkaPage() {
 
 
     const initParamLoad = () => {
-        console.log("full url", fullUrl);
+        console.log("initParamLoad called - full url", fullUrl);
         const urlParams = stripUrlParams(fullUrl);
         console.log("URL params", urlParams);
         
@@ -37,20 +37,25 @@ export default function NabidkaPage() {
             console.log("FILTER DATA Z PARAMS", urlParams);
             fetchDataWithParams(urlParams);
         } else {
+            console.log("No URL params, setting empty filter");
             setFilterValue({});
             fetchData();
         }
     }
 
     const initFilterOptions = async() =>{
-        const locations = await codelist.getUniqueLocations();
-        console.log("Locations", locations)
-        setLocations(locations);
+        try {
+            console.log("Initializing filter options...");
+            const locations = await codelist.getUniqueLocations();
+            console.log("Locations", locations)
+            setLocations(locations);
 
-        const subjects = await codelist.getUniqueSubjects();
-        console.log("Subjects", subjects)
-        setSubjects(subjects);
-
+            const subjects = await codelist.getUniqueSubjects();
+            console.log("Subjects", subjects)
+            setSubjects(subjects);
+        } catch (error) {
+            console.error("Error initializing filter options:", error);
+        }
     }
 
     //fetch s parametry
@@ -67,8 +72,9 @@ export default function NabidkaPage() {
     //fetch s aktuálními filtry
     const fetchData = async () => {
         try {
-            console.log("Fetching with current filters:", filterValue);
+            console.log("fetchData called with filters:", filterValue);
             const result = await nabidkaAPI.getNabidky(filterValue);
+            console.log("fetchData result:", result);
             setData(result);
         } catch (error) {
             console.error("Chyba při načítání nabídek:", error);
@@ -78,7 +84,7 @@ export default function NabidkaPage() {
     useEffect(() => {
         initParamLoad();
         initFilterOptions();
-    }, []); 
+    }, []);
 
     useEffect(() => {
         console.log("filter values", filterValue);

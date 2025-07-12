@@ -3,20 +3,26 @@ import { useApi } from "@hooks/useApi";
 
 export const useCodeListAPI = () => {
     const api = useApi();
-    const practices = api.dummyDB.practices;
-    const subjects = api.dummyDB.subjects;
+
+    const getSubjects = async () => {
+        try {
+            const response = await api.get('/subjects/subjects/');
+            
+            if (response?.data) {
+                return response.data;
+            }
+            return [];
+        } catch (error) {
+            console.error("Chyba při získávání předmětů:", error);
+            return [];
+        }
+    };
 
     const getUniqueLocations = async () => {
         try {
-
-            const uniqueAddresses = [...new Set(practices.map(practice => practice.address))];
-            const locations = uniqueAddresses.map((address, index) => ({
-                //id: index + 1,
-                label: address,
-                value: address
-            }));
-
-            return locations;
+            // Prozatím vracíme prázdné pole, dokud nemáme endpoint pro lokace
+            // TODO: Implementovat API endpoint pro lokace
+            return [];
         } catch (error) {
             console.error("Chyba při získávání unikátních lokací:", error);
             return [];
@@ -25,15 +31,13 @@ export const useCodeListAPI = () => {
 
     const getUniqueSubjects = async () => {
         try {
-            const uniqueSubjectIds = [...new Set(practices.map(practice => practice.subject))];
+            const subjects = await getSubjects();
             
-            const subjectOptions = uniqueSubjectIds.map(subjectId => {
-                const subject = subjects.find(s => s.subject_id === subjectId);
-                return {
-                    label: subject ? `${subject.subject_code} - ${subject.subject_name}` : `Subject ${subjectId}`,
-                    value: subjectId
-                };
-            });
+            // Transformujeme data do formátu pro dropdown
+            const subjectOptions = subjects.map(subject => ({
+                label: `${subject.subject_code} - ${subject.subject_name}`,
+                value: subject.subject_id
+            }));
 
             return subjectOptions;
         } catch (error) {
@@ -43,6 +47,7 @@ export const useCodeListAPI = () => {
     };
 
     return {
+        getSubjects,
         getUniqueLocations,
         getUniqueSubjects,
     };

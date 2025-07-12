@@ -48,6 +48,11 @@ export default function LoginPage() {
         try{
             console.log("Organization login")
             const response = await login({email: loginData.email, password: loginData.password});
+            
+            // Po úspěšném loginu se přesměruje na /nabidka
+            if (response?.status === 200) {
+                console.log("Organization login successful, redirecting to /nabidka");
+            }
 
         } catch (error) {
             console.error("Chyba při loginu organizace:", error);

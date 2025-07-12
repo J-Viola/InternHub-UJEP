@@ -1,4 +1,4 @@
-export const DUMMY_MODE = true
+export const DUMMY_MODE = false
 
 class User {
     constructor() {
@@ -8,6 +8,7 @@ class User {
 
     setUser(data) {
         this.role = data.role; // pro FE - DODĚLAT
+        this.id = data.id
     }
 
     // dodělat checks na role, check T/F: má data?
