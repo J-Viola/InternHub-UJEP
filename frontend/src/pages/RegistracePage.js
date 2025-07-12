@@ -11,7 +11,7 @@ import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import { useUserAPI } from "@api/user/userAPI";
 import CompanyForm from "@components/Forms/CompanyForm";
 
-
+// UDĚLAT POLE PRO TITULY - PŘED A ZA + HANDLER NA SUCCESS REGISTRACI
 export default function RegistracePage() {
     const ares = useAresAPI();
     const user = useUserAPI();
@@ -26,7 +26,22 @@ export default function RegistracePage() {
         try {
             const res = await ares.getData(ico);
             console.log("ARES response:", res);
-            res && setEntity(res);
+            if (res) {
+                setEntity(res);
+                // CHATKEM přidané hodnoty přímo z ARESU do dat k zaslání - musíme prodiskutoivat
+                setFormValue(prevValue => ({
+                    ...prevValue,
+                    ico: res.ico,
+                    //company_name: res.obchodniJmeno,
+                    //address: res.sidlo ? 
+                    //    `${res.sidlo.nazevUlice ? res.sidlo.nazevUlice : ''} ${res.sidlo.cisloDomovni}${res.sidlo.cisloOrientacni ? '/' + res.sidlo.cisloOrientacni : ''}, ${res.sidlo.nazevCastiObce}, ${res.sidlo.psc} ${res.sidlo.nazevObce}` : 
+                    //    '',
+                    //dic: res.dic,
+                    //legal_form: res.pravniForma,
+                    //establishment_date: res.datumVzniku,
+                    //financial_office: res.financniUrad
+                }));
+            }
         } catch (error) {
             console.error("Error ARES fetch:", error);
             throw error;
@@ -36,7 +51,6 @@ export default function RegistracePage() {
     const handleFormValues = (value) => {
         setFormValue(prevValue => ({
             ...prevValue,
-            ico: entity?.ico,
             ...value
         }));
     }
@@ -51,6 +65,10 @@ export default function RegistracePage() {
 
     const handleRegistration = async () => {
         try {
+            const dataToSend = {
+                ...formValue,
+                
+            }
             console.log("Sending registration data:", formValue);
             const res = await user.postRegister(formValue);
             console.log("Registration response:", res);

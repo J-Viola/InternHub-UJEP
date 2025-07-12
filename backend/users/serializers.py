@@ -222,7 +222,8 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
             )
             EmployerProfile.objects.create(
                 employer_id=user.id,
-                ico=ares_data.icoId,
+                #ico=ares_data.icoId,
+                ico=ares_data.ico,
                 dic=ares_data.dic,
                 company_name=ares_data.obchodniJmeno,
                 address=ares_data.sidlo.textAdresy,
