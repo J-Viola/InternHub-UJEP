@@ -1,9 +1,9 @@
-from api.models import Department, StagUser, StudentPractice, UserSubjectType
+from api.models import Department, ProfessorUser, StudentPractice, StudentUser, UserSubject, UserSubjectType
 from django.db.models import Prefetch
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-from .serializers import DepartmentSerializer, StudentDetailSerializer
+from .serializers import DepartmentSerializer, ProfessorDetailSerializer, StudentDetailSerializer
 
 
 class DepartmentStudentListView(generics.ListAPIView):
@@ -12,18 +12,22 @@ class DepartmentStudentListView(generics.ListAPIView):
 
     def get_queryset(self):
         # departments where current user has any role
-        dept_ids = Department.objects.filter(user=self.request.user).values_list("department_id", flat=True)
+        dept_ids = (
+            Department.objects.filter(subjects__user_subjects__user=self.request.user).values_list("department_id", flat=True).distinct()
+        )
 
-        # students enrolled in subjects of those departments
-        return (
-            StagUser.objects.filter(usersubject__subject__department_id__in=dept_ids, usersubject__role=UserSubjectType.Student)
+        student_ids = (
+            UserSubject.objects.filter(subject__department_id__in=dept_ids, role=UserSubjectType.Student.value)
+            .values_list("user__user_ptr_id", flat=True)
             .distinct()
-            .select_related("stag_role")
-            .prefetch_related(
-                Prefetch(
-                    "studentpractice_set", queryset=StudentPractice.objects.select_related("practice", "approval_status", "progress_status")
-                )
-            )
+        )
+
+        students = StudentUser.objects.filter(user_id__in=student_ids).distinct()
+
+        print(f"Found {students.count()} student(s)")
+
+        return students.select_related("stag_role").prefetch_related(
+            Prefetch("student_practices", queryset=StudentPractice.objects.select_related("practice"))
         )
 
 
@@ -31,3 +35,22 @@ class DepartmentUserRoleDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     permission_classes = [IsAuthenticated]
+
+
+class DepartmentProfessorListView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ProfessorDetailSerializer
+
+    def get_queryset(self):
+        # departments where current user has any role
+        dept_ids = (
+            Department.objects.filter(subjects__user_subjects__user=self.request.user).values_list("department_id", flat=True).distinct()
+        )
+
+        professors = ProfessorUser.objects.filter(department_id__in=dept_ids, department_role=UserSubjectType.Professor.value).distinct()
+
+        print(f"Found {professors.count()} professor(s)")
+
+        return professors.prefetch_related(
+            Prefetch("user_subjects", queryset=UserSubject.objects.filter(role=UserSubjectType.Professor.value).select_related("subject"))
+        )

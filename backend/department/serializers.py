@@ -43,11 +43,11 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         )
 
     def get_student_practice_id(self, obj):
-        first = obj.studentpractice_set.first()
+        first = obj.practices.first()
         return first.student_practice_id if first else None
 
     def get_practice(self, obj):
-        qs = list(obj.studentpractice_set.all())
+        qs = list(obj.student_practices.all())
         count = len(qs)
         if count > 1:
             logger.warning(f"User {obj.user_id} has {count} practices; only the first will be shown")
@@ -55,7 +55,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         return StudentThisPracticeSerializer(first).data if first else None
 
     def get_department(self, obj):
-        qs = obj.usersubject_set.filter(role=UserSubjectType.Student)
+        qs = obj.user_subjects.filter(role=UserSubjectType.Student)
         dept_names = qs.values_list("subject__department__department_name", flat=True).distinct()
         return dept_names[0] if dept_names else None
 
@@ -81,3 +81,31 @@ class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = "__all__"
+
+class ProfessorSubjectSerializer(serializers.Serializer):
+    subject_name = serializers.CharField(source='subject.subject_name')
+    subject_id = serializers.CharField(source='subject.subject_id')
+
+class ProfessorDetailSerializer(serializers.ModelSerializer):
+    subjects = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentUser
+        fields = (
+            "user_id",
+            "first_name",
+            "last_name",
+            "email",
+            "department",
+            "subjects"
+        )
+
+    def get_subjects(self, obj):
+        professor_subjects = obj.user_subjects.filter(role=UserSubjectType.Professor)
+        return ProfessorSubjectSerializer(professor_subjects, many=True).data
+
+    def get_department(self, obj):
+        qs = obj.user_subjects.filter(role=UserSubjectType.Professor)
+        dept_names = qs.values_list("subject__department__department_name", flat=True).distinct()
+        return list(dept_names) if dept_names else None

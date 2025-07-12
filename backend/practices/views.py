@@ -15,17 +15,8 @@ from users.models import OrganizationRoleEnum, StagRoleEnum
 # PracticeViewSet – CRUD a správa praxí, včetně přihlášení
 # -------------------------------------------------------------
 class PracticeViewSet(viewsets.ModelViewSet):
-    """
-    Endpoint: /api/practices/
-    - GET (list): Vrací veřejný seznam aktivních praxí (volný přístup)
-    - POST: Vytvoří novou praxi (autentizace požadována)
-    - GET /{id}/: Vrací detail praxe (volný přístup)
-    - PUT /{id}/ nebo PATCH /{id}/: Aktualizuje praxi (autentizace požadována)
-    - DELETE /{id}/: Smaže praxi (autentizace požadována)
-    - POST /{id}/apply/: Student se hlásí na praxi (autentizace požadována)
-    """
 
-    queryset = Practice.objects.all().select_related("employer", "practice_type", "status", "approval_status")
+    queryset = Practice.objects.all().select_related("employer", "practice_type")
     serializer_class = PracticeSerializer
     pagination_class = StandardResultsSetPagination
     parser_classes = [MultiPartParser, FormParser]

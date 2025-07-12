@@ -12,7 +12,6 @@ from .models import (
     OrganizationUser,
     Practice,
     PracticeType,
-    PracticeUser,
     ProfessorUser,
     Role,
     StagRole,
@@ -24,6 +23,7 @@ from .models import (
     User,
     UserSubject,
 )
+
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
@@ -92,12 +92,7 @@ class PracticeTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Practice)
 class PracticeAdmin(admin.ModelAdmin):
-    list_display = ("pk", "title", "employer", "subject", "status")
-
-
-@admin.register(PracticeUser)
-class PracticeUserAdmin(admin.ModelAdmin):
-    list_display = ("pk", "practice", "user")
+    list_display = ("pk", "title", "employer", "subject", "progress_status")
 
 
 @admin.register(StudentPractice)
