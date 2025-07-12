@@ -1,5 +1,6 @@
 import requests
 from api.models import (
+    ApprovalStatus,
     EmployerProfile,
     OrganizationRole,
     OrganizationUser,
@@ -70,10 +71,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         email = details.get("email")
         jmeno = details.pop("jmeno")
         prijmeni = details.pop("prijmeni")
-
+        # https://ws.ujep.cz/ws/services/rest2/student/getStudentInfo?osCislo=F22248&outputFormat=JSON&semestr=%20&rok=2024
         stagUserInfos = details.get("stagUserInfo")
         if not stagUserInfos or len(stagUserInfos) == 0:
             raise AuthenticationFailed("No user information returned by STAG")
+        #TODO pro každý info.. se musí asi udělat účet... píče
         stagUserInfo = stagUserInfos[0]
         role = stagUserInfo["role"]
         roleName = stagUserInfo["roleNazev"]
@@ -218,8 +220,6 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
             user = OrganizationUser.objects.create(
                 email=validated_data["email"], organization_role=unregistered_role, is_active=True  # TODO: Remove this
             )
-            # TODO: Must be set in DB (migration maybe?+)
-            status = Status.objects.get(status_name="Pending")
             EmployerProfile.objects.create(
                 employer_id=user.id,
                 ico=ares_data.icoId,
@@ -227,7 +227,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
                 company_name=ares_data.obchodniJmeno,
                 address=ares_data.sidlo.textAdresy,
                 zip_code=ares_data.sidlo.psc,
-                approval_status=status,
+                approval_status=ApprovalStatus.PENDING,
                 # TODO: LOGO
                 logo=validated_data["logo"] if "logo" in validated_data else None,
             )
