@@ -380,7 +380,7 @@ class UploadedDocument(models.Model):
 
 class UserSubjectType(enum.Enum):
     Student = 0
-    Teacher = 1
+    Professor = 1
 
 
 class UserSubject(models.Model):

@@ -400,7 +400,7 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
                 UserSubject.objects.get_or_create(
                     subject=subjInDb,
                     user=user,
-                    defaults={"subject": subjInDb, "user": user, "role": UserSubjectType.Teacher},
+                    defaults={"subject": subjInDb, "user": user, "role": UserSubjectType.Professor},
                 )
     else:
         raise Exception("Failed to fetch STAG roles")

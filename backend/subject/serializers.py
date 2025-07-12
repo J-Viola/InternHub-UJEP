@@ -1,4 +1,4 @@
-from api.models import Department, StagUser, Subject, UserSubject, UserSubjectType
+from api.models import Department, ProfessorUser, Subject, UserSubject, UserSubjectType
 from rest_framework import serializers
 
 
@@ -18,7 +18,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         # Get the primary teacher for this subject (assuming first one found)
-        teacher_relationship = UserSubject.objects.filter(subject=obj, role=UserSubjectType.Teacher).select_related("user").first()
+        teacher_relationship = UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor).select_related("user").first()
 
         if teacher_relationship:
             return TeacherSerializer(teacher_relationship.user).data
@@ -27,5 +27,5 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
-        model = StagUser
+        model = ProfessorUser
         fields = ["user_id", "title_before", "first_name", "last_name", "title_after", "email"]
