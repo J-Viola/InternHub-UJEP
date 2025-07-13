@@ -233,10 +233,6 @@ CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 # Debug settings
 DEBUG = True  # Pro vývoj
 
-# Ensure the logs directory exists
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
-os.makedirs(LOGS_DIR, exist_ok=True)
-
 # Debug and error logging settings
 LOGGING = {
     "version": 1,
@@ -255,13 +251,13 @@ LOGGING = {
         "file_info": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": os.path.join(LOGS_DIR, "django.log"),
+            "filename": BASE_DIR / "logs" / "django.log",
             "formatter": "verbose",
         },
         "file_error": {
             "level": "ERROR",
             "class": "logging.FileHandler",
-            "filename": os.path.join(LOGS_DIR, "django_error.log"),
+            "filename": BASE_DIR / "logs" / "django_error.log",
             "formatter": "verbose",
         },
         "console": {

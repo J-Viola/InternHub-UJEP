@@ -150,6 +150,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         tokens = serializer.validated_data
 
         user = tokens["user"]
+        
+        # Debug: Zkontrolujme role při přihlášení
+        print(f"DEBUG: Login - user type: {type(user)}")
+        print(f"DEBUG: Login - organization_role: {getattr(user, 'organization_role', 'N/A')}")
+        print(f"DEBUG: Login - role property: {user.role}")
+        
         user_info = {
             "id": user.id,
             "email": user.email,

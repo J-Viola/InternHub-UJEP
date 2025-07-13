@@ -159,7 +159,11 @@ class OrganizationUser(User):
 
     @property
     def role(self):
-        return self.organization_role.role
+
+        if self.organization_role is not None:
+            return self.organization_role.name
+        else:
+            return None
 
 
 class StagUser(User):

@@ -12,11 +12,15 @@ export const useUserAPI = () => {
         formData.append('password', data.executivePassword1);
         formData.append('password2', data.executivePassword2);
         formData.append('ico', data.ico);
+        formData.append('dic', data.dic);
+        formData.append('companyName', data.company_name);
         formData.append('first_name', data.executiveName);
         formData.append('last_name', data.executiveSurname);
         formData.append('title_before', data.titleBefore || '');
         formData.append('title_after', data.titleAfter || '');
         formData.append('phone', data.executivePhone || '' )
+        formData.append('address', data.address || '' )
+
 
         if (data.logo) {
             formData.append('logo', data.logo);

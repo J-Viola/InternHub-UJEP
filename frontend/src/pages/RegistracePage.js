@@ -34,10 +34,10 @@ export default function RegistracePage() {
                 setFormValue(prevValue => ({
                     ...prevValue,
                     ico: res.ico, //nepo posílat icoId - to má i tu nulu
+                    dic: res.dic || "", 
                     company_name: res.obchodniJmeno,
-                    address: res.sidlo ? 
-                       `${res.sidlo.nazevUlice ? res.sidlo.nazevUlice : ''} ${res.sidlo.cisloDomovni}${res.sidlo.cisloOrientacni ? '/' + res.sidlo.cisloOrientacni : ''}, ${res.sidlo.nazevCastiObce}, ${res.sidlo.psc} ${res.sidlo.nazevObce}` : 
-                        '',
+                    address: res.sidlo.textovaAdresa || ""
+                       
                     //dic: res.dic,
                     //legal_form: res.pravniForma,
                     //establishment_date: res.datumVzniku,

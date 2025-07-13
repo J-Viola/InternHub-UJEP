@@ -18,16 +18,6 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
         //console.log(ico);
     //},[ico])
 
-    const renderAdress = (entity) => {
-        if (!entity?.sidlo) return '';
-        // v tý entitě sidlo.textAdresy by měl ekvivalent to spodní kdyžtak můžeš smazat (tohle IČO: 06883141 ti tam hodí null jelikož nemá název ulice)
-        if (entity?.sidlo?.textAdresy) {
-            return entity.sidlo.textAdresy;
-        }
-        return `${entity.sidlo.nazevUlice ? entity.sidlo.nazevUlice : ''} ${entity.sidlo.cisloDomovni}${entity.sidlo.cisloOrientacni ? '/' + entity.sidlo.cisloOrientacni : ''}, ${entity.sidlo.nazevCastiObce}, ${entity.sidlo.psc} ${entity.sidlo.nazevObce}`;
-    };
-
-
     return(
             <>
                 <Container property={"grid gap-2 grid-cols-2"}>
@@ -64,7 +54,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         id={"address"}
                         required={true}
                         label={"Adresa"} 
-                        value={renderAdress(entity)}
+                        value={entity?.sidlo?.textovaAdresa || ''}
                         placeholder={"Zadejte adresu"}
                         onChange={(value) => handleFormValues(value)}
                         disabled={true}

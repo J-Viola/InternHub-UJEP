@@ -179,10 +179,13 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
     email = serializers.CharField(write_only=True, required=True)
     phone = serializers.CharField(write_only=True, required=True)
     logo = serializers.ImageField(write_only=True, required=False)
+    companyName = serializers.CharField(write_only=True, required=False)
+    address = serializers.CharField(write_only=True, required=False)
+    dic = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ("email", "phone", "password", "password2", "ico", "first_name", "last_name", "title_before", "title_after", "logo")
+        fields = ("email", "phone", "password", "password2", "ico", "first_name", "last_name", "title_before", "title_after", "logo", "companyName", "address", "dic")
         extra_kwargs = {
             "ico": {"required": True},
             "email": {"required": True},
@@ -199,6 +202,10 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
 
         ico = validated_data.pop("ico")
+        company_name = validated_data.pop("companyName", "")
+        address = validated_data.pop("address", "")
+        dic = validated_data.pop("dic", "")
+        
         ico = str(ico).zfill(8)
         cache_key = f"ares_{ico}"
         ares_data = cache.get(cache_key)
@@ -225,33 +232,29 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
                 organization_role=OrganizationRole.OWNER,
                 is_active=True,  # TODO: Remove this
             )
-            # Handle ares_data as either a Pydantic model or dict
-            if hasattr(ares_data, "icoId"):
-                ico_value = ares_data.icoId
-            elif hasattr(ares_data, "ico"):
-                ico_value = ares_data.ico
-            else:
-                ico_value = ares_data.get("icoId") or ares_data.get("ico")
-
+            
+            # Use frontend data if provided, otherwise fall back to ARES data
             if hasattr(ares_data, "sidlo"):
                 sidlo = ares_data.sidlo
             else:
                 sidlo = ares_data.get("sidlo", {})
 
-            EmployerProfile.objects.create(
+            employer_profile = EmployerProfile.objects.create(
                 employer_id=user.id,
-                ico=ico_value,
-                dic=ares_data.dic if hasattr(ares_data, "dic") else ares_data.get("dic"),
-                company_name=ares_data.obchodniJmeno if hasattr(ares_data, "obchodniJmeno") else ares_data.get("obchodniJmeno"),
-                address=sidlo.textAdresy if hasattr(sidlo, "textAdresy") else sidlo.get("textAdresy", ""),
-                zip_code=sidlo.psc if hasattr(sidlo, "psc") else sidlo.get("psc", ""),
+                ico=ico,
+                dic=dic if dic else (ares_data.dic if hasattr(ares_data, "dic") else ares_data.get("dic", "")),
+                company_name=company_name if company_name else (ares_data.obchodniJmeno if hasattr(ares_data, "obchodniJmeno") else ares_data.get("companyName", "")),
+                address=address if address else (sidlo.textovaAdresa if hasattr(sidlo, "textovaAdresa") else (sidlo.get("address", "") if isinstance(sidlo, dict) else "")),
+                zip_code=sidlo.psc if hasattr(sidlo, "psc") else (sidlo.get("psc", "") if isinstance(sidlo, dict) else ""),
                 approval_status=ApprovalStatus.PENDING,
-                # TODO: LOGO
                 logo=validated_data["logo"] if "logo" in validated_data else None,
             )
+            
+            # Update the user to link to the employer profile
+            user.employer_profile = employer_profile
             user.set_password(validated_data["password"])
             user.save()
-            # TODO: Finish this with activation of the account by VEDENÍ KATEDRY approving and sending activation email?
+
             return user
 
 
@@ -266,7 +269,7 @@ class AresJusticeSerializer(serializers.Serializer):
 class UserInfoSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     email = serializers.EmailField()
-    role = serializers.CharField()
+    role = serializers.CharField(allow_null=True)
     firstName = serializers.CharField()
     lastName = serializers.CharField()
 

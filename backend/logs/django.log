@@ -1043,3 +1043,282 @@
 [2025-07-12 16:50:31,200] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
 [2025-07-12 16:50:31,200] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
 [2025-07-12 16:50:31,201] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 17:38:43,071] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:39:22,780] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:39:37,520] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-13 17:39:37,721] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 655
+[2025-07-13 17:39:37,884] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:39:37,887] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:39:37,888] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:39:37,889] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:40:18,444] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-13 17:40:18,445] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-13 17:40:18,465] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:40:18,466] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:40:18,490] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:40:18,490] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:40:25,451] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 661
+[2025-07-13 17:40:25,597] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:40:25,599] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:40:25,601] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:40:25,601] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:41:07,126] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:41:07,796] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:41:09,522] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:41:09,936] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:41:25,722] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:41:26,215] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:41:39,966] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:41:39,967] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:41:39,986] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:41:39,987] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:41:51,900] ERROR django.request Internal Server Error: /api/users/login/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/users/views.py", line 156, in post
+    "role": user.role,
+            ^^^^^^^^^
+  File "/app/backend/api/models.py", line 162, in role
+    return self.organization_role.role
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OrganizationRole' object has no attribute 'role'
+[2025-07-13 17:41:51,910] ERROR django.server "POST /api/users/login/ HTTP/1.1" 500 98879
+[2025-07-13 17:44:08,389] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:44:08,989] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:44:37,714] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:44:38,117] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:45:04,363] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 655
+[2025-07-13 17:45:04,554] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:45:04,555] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:45:04,557] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:45:04,557] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:45:55,223] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:45:55,631] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:46:01,666] INFO django.utils.autoreload /app/backend/users/views.py changed, reloading.
+[2025-07-13 17:46:02,051] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:46:15,665] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:46:16,249] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:46:16,929] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:46:16,930] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:46:16,947] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:46:16,947] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:46:30,875] INFO django.server "GET / HTTP/1.1" 200 196
+[2025-07-13 17:46:30,901] WARNING django.request Not Found: /favicon.ico
+[2025-07-13 17:46:30,902] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-13 17:46:41,434] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-13 17:46:41,631] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 655
+[2025-07-13 17:46:41,780] INFO django.server "OPTIONS /api/practices/practices/ HTTP/1.1" 200 0
+[2025-07-13 17:46:41,781] INFO django.server "OPTIONS /api/practices/practices/ HTTP/1.1" 200 0
+[2025-07-13 17:46:41,784] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-13 17:46:41,807] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:46:41,811] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:46:41,824] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:46:41,847] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:47:31,271] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:47:31,698] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:47:50,636] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:47:51,092] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:48:01,447] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:48:02,017] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:49:10,432] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:49:11,119] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:50:07,770] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:50:08,219] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:50:08,973] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-13 17:50:08,973] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-13 17:50:09,001] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:50:09,003] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:50:09,061] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:50:09,061] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:50:14,327] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:50:14,766] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:50:16,508] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 661
+[2025-07-13 17:50:16,654] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:50:16,654] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:50:16,655] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:50:16,655] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:50:24,235] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:50:24,646] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:50:39,246] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 17:50:39,649] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:51:22,063] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:51:22,665] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:51:59,751] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:52:00,169] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:52:06,293] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:52:06,294] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:52:06,311] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:52:06,311] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:52:14,912] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 661
+[2025-07-13 17:52:15,056] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:52:15,056] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:52:15,057] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:52:15,057] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:52:28,817] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:52:28,817] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:52:28,836] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:52:28,836] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:52:39,065] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 658
+[2025-07-13 17:52:39,212] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:52:39,212] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:52:39,212] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:52:39,212] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:52:48,857] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:52:48,858] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:52:48,871] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:52:48,871] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:52:57,731] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 658
+[2025-07-13 17:52:57,889] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:52:57,890] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:52:57,890] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:52:57,891] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:53:27,940] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:53:28,342] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:53:31,146] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-13 17:53:31,525] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 17:53:33,483] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:53:33,484] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:53:33,502] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:53:33,503] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:53:45,327] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 658
+[2025-07-13 17:53:45,483] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:53:45,483] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:53:45,483] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:53:45,483] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:53:52,082] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:53:52,083] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 17:53:52,101] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:53:52,102] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:54:23,589] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-13 17:54:23,727] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:54:23,728] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 17:54:23,730] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:54:23,731] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 17:56:13,244] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:56:13,244] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:56:13,245] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:56:13,245] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:56:13,273] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-13 17:56:13,273] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-13 17:56:13,287] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-13 17:56:13,288] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-13 17:56:13,289] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-13 17:56:13,289] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-13 17:56:13,363] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 17:56:13,364] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 17:56:13,375] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-13 17:56:13,375] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-13 17:56:48,447] INFO django.server "OPTIONS /api/users/ares-justice/ HTTP/1.1" 200 0
+[2025-07-13 17:56:48,740] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 3659
+[2025-07-13 17:58:53,610] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-13 18:00:20,797] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 18:00:20,798] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 59
+[2025-07-13 18:00:39,474] WARNING django.request Bad Request: /api/users/ares-justice/
+[2025-07-13 18:00:39,475] WARNING django.server "POST /api/users/ares-justice/ HTTP/1.1" 400 59
+[2025-07-13 18:00:54,819] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 3659
+[2025-07-13 18:00:56,883] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 18:00:56,883] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 59
+[2025-07-13 18:01:15,926] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4416
+[2025-07-13 18:01:17,713] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 18:01:17,713] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 59
+[2025-07-13 18:03:24,523] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-13 18:04:42,709] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:04:43,161] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:04:44,504] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 18:04:44,505] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 46
+[2025-07-13 18:04:53,972] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 18:04:53,973] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 50
+[2025-07-13 18:06:26,189] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:06:26,574] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:06:31,586] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:06:32,006] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:06:34,691] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 18:06:34,918] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 646
+[2025-07-13 18:06:35,117] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:06:35,126] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:06:35,127] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 18:06:35,127] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 18:06:43,962] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:06:44,383] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:07:16,272] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:07:16,931] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:07:20,859] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:07:21,330] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:07:54,658] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-13 18:07:56,639] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:07:57,116] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:08:02,024] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:08:02,448] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:08:24,778] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:08:25,370] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:08:39,026] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:08:39,430] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:08:42,217] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:08:42,732] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:08:54,209] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:08:54,726] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:08:55,652] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 18:08:55,653] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 18:08:55,739] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 18:08:55,740] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 18:09:16,154] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 3376
+[2025-07-13 18:09:38,497] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 18:09:38,707] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 647
+[2025-07-13 18:09:38,905] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 18:09:38,906] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:09:38,910] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:09:38,911] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 18:10:15,654] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-13 18:10:15,656] WARNING django.request Unauthorized: /api/practices/practices/
+[2025-07-13 18:10:15,659] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-13 18:10:15,659] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-13 18:10:15,661] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-13 18:10:15,662] WARNING django.server "GET /api/practices/practices/ HTTP/1.1" 401 58
+[2025-07-13 18:10:15,662] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-13 18:10:15,663] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-13 18:10:15,668] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 18:10:15,669] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 18:10:15,753] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 18:10:15,754] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 18:10:15,776] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:10:15,777] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:10:30,090] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 18:10:30,091] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 18:10:31,142] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:10:31,143] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 18:10:31,143] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 18:10:31,143] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:11:37,482] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:11:38,191] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:12:04,693] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:12:05,100] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:12:08,975] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 18:12:09,377] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 18:12:43,802] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 18:12:43,803] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 18:12:43,829] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 18:12:43,830] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 18:12:53,250] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 2922
+[2025-07-13 18:13:19,623] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 18:13:19,845] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 658
+[2025-07-13 18:13:20,059] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:13:20,059] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 176
+[2025-07-13 18:13:20,060] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 18:13:20,062] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
