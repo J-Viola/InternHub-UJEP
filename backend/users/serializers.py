@@ -6,7 +6,6 @@ from api.models import (
     OrganizationUser,
     ProfessorUser,
     StagRole,
-    Status,
     StudentUser,
     Subject,
     UserSubject,
@@ -75,7 +74,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         stagUserInfos = details.get("stagUserInfo")
         if not stagUserInfos or len(stagUserInfos) == 0:
             raise AuthenticationFailed("No user information returned by STAG")
-        #TODO pro každý info.. se musí asi udělat účet... píče
+        # TODO pro každý info.. se musí asi udělat účet... píče
         stagUserInfo = stagUserInfos[0]
         role = stagUserInfo["role"]
         roleName = stagUserInfo["roleNazev"]
@@ -196,10 +195,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        try:
-            unregistered_role = OrganizationRole.objects.get(role="unregistered")
-        except OrganizationRole.DoesNotExist:
-            raise serializers.ValidationError({"organization_role": "Role 'unregistered' does not exist."})
+
         ico = validated_data.pop("ico")
         ico = str(ico).zfill(8)
         cache_key = f"ares_{ico}"
@@ -218,14 +214,14 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             user = OrganizationUser.objects.create(
-                email=validated_data["email"], organization_role=unregistered_role, is_active=True  # TODO: Remove this
+                email=validated_data["email"], organization_role=OrganizationRole.OWNER, is_active=True  # TODO: Remove this
             )
             EmployerProfile.objects.create(
                 employer_id=user.id,
                 ico=ares_data.icoId,
                 dic=ares_data.dic,
                 company_name=ares_data.obchodniJmeno,
-                address=ares_data.sidlo.textAdresy,
+                address=ares_data.sidlo.textovaAdresa,
                 zip_code=ares_data.sidlo.psc,
                 approval_status=ApprovalStatus.PENDING,
                 # TODO: LOGO

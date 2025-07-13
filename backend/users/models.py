@@ -15,9 +15,3 @@ class UserType(Enum):
 class StagRoleEnum(Enum):
     ST = "st"
     VY = "vy"
-
-
-class OrganizationRoleEnum(Enum):
-    OWNER = "owner"
-    INSERT = "inserter"
-    UNREGISTERED = "unregistered"

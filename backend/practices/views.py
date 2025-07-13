@@ -1,14 +1,16 @@
 from datetime import date
 
 from api.decorators import role_required
-from api.models import Practice, StudentPractice
+from api.models import Department, OrganizationRole, Practice, StudentPractice, StudentUser
 from api.serializers import PracticeSerializer, StudentPracticeSerializer
 from api.views import StandardResultsSetPagination
-from rest_framework import filters, permissions, status, viewsets
+from practices.serializers import RunningPracticeSerializer
+from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from users.models import OrganizationRoleEnum, StagRoleEnum
+from users.models import StagRoleEnum
 
 
 # -------------------------------------------------------------
@@ -43,7 +45,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(practice_obj)
         return Response(serializer.data)
 
-    @role_required([OrganizationRoleEnum.INSERT, OrganizationRoleEnum.OWNER, StagRoleEnum.VY])
+    @role_required([OrganizationRole.INSERTER, OrganizationRole.OWNER, StagRoleEnum.VY])
     def create(self, request, *args, **kwargs):
         # POST /api/practices/
         data = request.data  # Data z frontendu
@@ -52,7 +54,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @role_required([OrganizationRoleEnum.OWNER, OrganizationRoleEnum.INSERT, StagRoleEnum.VY])
+    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def update(self, request, pk=None, *args, **kwargs):
         # PUT /api/practices/{id}/
         partial = kwargs.pop("partial", False)
@@ -63,12 +65,12 @@ class PracticeViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
-    @role_required([OrganizationRoleEnum.OWNER, OrganizationRoleEnum.INSERT, StagRoleEnum.VY])
+    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def partial_update(self, request, pk=None, *args, **kwargs):
         # PATCH /api/practices/{id}/
         return self.update(request, pk, partial=True, *args, **kwargs)
 
-    @role_required([OrganizationRoleEnum.OWNER, OrganizationRoleEnum.INSERT, StagRoleEnum.VY])
+    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def destroy(self, request, pk=None, *args, **kwargs):
         # DELETE /api/practices/{id}/
         instance = self.get_object()
@@ -116,3 +118,30 @@ class PracticeViewSet(viewsets.ModelViewSet):
         practices = Practice.objects.filter(subject_id=subj_id, is_active=True).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
+
+
+class RunningPracticeListView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = RunningPracticeSerializer
+
+    def get_queryset(self):
+        # noqa: E501  # TODO: https://www.figma.com/proto/6MRkTbxu7nvjVRkxLjm8yi/InternHub-n%C3%A1vrh?node-id=3573-3353&p=f&t=2nsdb5rjnw1qMkGY-0&scaling=scale-down&content-scaling=fixed&page-id=3426%3A3813&starting-point-node-id=3564%3A5736&show-proto-sidebar=1
+        # Tohle má být horní část probíhajících praxí, ta spodní se budem muset řešit jinak (asi samostatnej call)
+        # Počet přihlášek
+        head_of_department = True
+        if head_of_department:
+            dept_ids = Department.objects.all().values_list("department_id", flat=True).distinct()
+        else:
+            dept_ids = (
+                Department.objects.filter(subjects__user_subjects__user=self.request.user)
+                .values_list("department_id", flat=True)
+                .distinct()
+            )
+
+        students = StudentUser.objects.filter(user_subjects__subject__department_id__in=dept_ids).distinct()
+        practices = Practice.objects.filter(
+            student_practices__user__in=students,
+            is_active=True,
+        ).distinct()
+
+        return practices
