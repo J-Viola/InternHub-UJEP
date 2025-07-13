@@ -23,8 +23,7 @@ class StudentThisPracticeSerializer(serializers.ModelSerializer):
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
-    student_practice_id = serializers.SerializerMethodField()
-    practice = serializers.SerializerMethodField()
+    student_practice = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
 
     class Meta:
@@ -35,18 +34,11 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "os_cislo",
-            "year_of_study",
-            "field_of_study",
-            "student_practice_id",
-            "practice",
+            "student_practice",
             "department",
         )
 
-    def get_student_practice_id(self, obj):
-        first = obj.practices.first()
-        return first.student_practice_id if first else None
-
-    def get_practice(self, obj):
+    def get_student_practice(self, obj):
         qs = list(obj.student_practices.all())
         count = len(qs)
         if count > 1:
@@ -82,9 +74,11 @@ class DepartmentSerializer(serializers.ModelSerializer):
         model = Department
         fields = "__all__"
 
+
 class ProfessorSubjectSerializer(serializers.Serializer):
-    subject_name = serializers.CharField(source='subject.subject_name')
-    subject_id = serializers.CharField(source='subject.subject_id')
+    subject_name = serializers.CharField(source="subject.subject_name")
+    subject_id = serializers.CharField(source="subject.subject_id")
+
 
 class ProfessorDetailSerializer(serializers.ModelSerializer):
     subjects = serializers.SerializerMethodField()
@@ -92,14 +86,7 @@ class ProfessorDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentUser
-        fields = (
-            "user_id",
-            "first_name",
-            "last_name",
-            "email",
-            "department",
-            "subjects"
-        )
+        fields = ("user_id", "first_name", "last_name", "email", "department", "subjects")
 
     def get_subjects(self, obj):
         professor_subjects = obj.user_subjects.filter(role=UserSubjectType.Professor)
@@ -107,5 +94,5 @@ class ProfessorDetailSerializer(serializers.ModelSerializer):
 
     def get_department(self, obj):
         qs = obj.user_subjects.filter(role=UserSubjectType.Professor)
-        dept_names = qs.values_list("subject__department__department_name", flat=True).distinct()
-        return list(dept_names) if dept_names else None
+        dept_name = qs.values_list("subject__department__department_name", flat=True).distinct().first()
+        return dept_name if dept_name else None

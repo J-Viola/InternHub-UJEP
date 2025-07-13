@@ -2,7 +2,7 @@ import re
 
 import requests
 from api.decorators import role_required
-from api.models import EmployerProfile, ApprovalStatus
+from api.models import ApprovalStatus, EmployerProfile, OrganizationRole
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
@@ -15,7 +15,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
 
-from .models import OrganizationRoleEnum
 from .serializers import (
     AresJusticeSerializer,
     CustomTokenObtainPairSerializer,
@@ -95,7 +94,7 @@ class AresJusticeView(generics.GenericAPIView):
 # TODO not finished endpoint
 @api_view(["POST"])
 @login_required
-@role_required([OrganizationRoleEnum.OWNER])
+@role_required([OrganizationRole.OWNER])
 def update_ares_subject(request):
 
     ico = request.POST.get("ico")
@@ -131,7 +130,7 @@ def update_ares_subject(request):
             ico=ares_data.ico,
             dic=ares_data.dic,
             name=ares_data.obchodniJmeno,
-            street=ares_data.sidlo.textAdresy,
+            street=ares_data.sidlo.textovaAdresa,
             zip_code=ares_data.sidlo.psc,
             approval_status=status,
         )

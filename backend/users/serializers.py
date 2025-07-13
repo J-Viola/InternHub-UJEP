@@ -6,7 +6,6 @@ from api.models import (
     OrganizationUser,
     ProfessorUser,
     StagRole,
-    Status,
     StudentUser,
     Subject,
     UserSubject,
@@ -75,7 +74,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         stagUserInfos = details.get("stagUserInfo")
         if not stagUserInfos or len(stagUserInfos) == 0:
             raise AuthenticationFailed("No user information returned by STAG")
-        #TODO pro každý info.. se musí asi udělat účet... píče
+        # TODO pro každý info.. se musí asi udělat účet... píče
         stagUserInfo = stagUserInfos[0]
         role = stagUserInfo["role"]
         roleName = stagUserInfo["roleNazev"]
@@ -179,10 +178,6 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
     ico = serializers.RegexField(regex=r"^\d{1,8}$", write_only=True, required=True)
     email = serializers.CharField(write_only=True, required=True)
     phone = serializers.CharField(write_only=True, required=True)
-    first_name = serializers.CharField(write_only=True, required=True)
-    last_name = serializers.CharField(write_only=True, required=True)
-    title_before = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    title_after = serializers.CharField(write_only=True, required=False, allow_blank=True)
     logo = serializers.ImageField(write_only=True, required=False)
 
     class Meta:
@@ -202,10 +197,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        try:
-            unregistered_role = OrganizationRole.objects.get(role="unregistered")
-        except OrganizationRole.DoesNotExist:
-            raise serializers.ValidationError({"organization_role": "Role 'unregistered' does not exist."})
+
         ico = validated_data.pop("ico")
         ico = str(ico).zfill(8)
         cache_key = f"ares_{ico}"
@@ -224,35 +216,35 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             user = OrganizationUser.objects.create(
-                email=validated_data["email"], 
+                email=validated_data["email"],
                 first_name=validated_data["first_name"],
                 last_name=validated_data["last_name"],
                 title_before=validated_data.get("title_before", ""),
                 title_after=validated_data.get("title_after", ""),
                 phone=validated_data.get("phone", ""),
-                organization_role=unregistered_role, 
-                is_active=True  # TODO: Remove this
+                organization_role=OrganizationRole.OWNER,
+                is_active=True,  # TODO: Remove this
             )
             # Handle ares_data as either a Pydantic model or dict
-            if hasattr(ares_data, 'icoId'):
+            if hasattr(ares_data, "icoId"):
                 ico_value = ares_data.icoId
-            elif hasattr(ares_data, 'ico'):
+            elif hasattr(ares_data, "ico"):
                 ico_value = ares_data.ico
             else:
-                ico_value = ares_data.get('icoId') or ares_data.get('ico')
-                
-            if hasattr(ares_data, 'sidlo'):
+                ico_value = ares_data.get("icoId") or ares_data.get("ico")
+
+            if hasattr(ares_data, "sidlo"):
                 sidlo = ares_data.sidlo
             else:
-                sidlo = ares_data.get('sidlo', {})
-                
+                sidlo = ares_data.get("sidlo", {})
+
             EmployerProfile.objects.create(
                 employer_id=user.id,
                 ico=ico_value,
-                dic=ares_data.dic if hasattr(ares_data, 'dic') else ares_data.get('dic'),
-                company_name=ares_data.obchodniJmeno if hasattr(ares_data, 'obchodniJmeno') else ares_data.get('obchodniJmeno'),
-                address=sidlo.textAdresy if hasattr(sidlo, 'textAdresy') else sidlo.get('textAdresy', ''),
-                zip_code=sidlo.psc if hasattr(sidlo, 'psc') else sidlo.get('psc', ''),
+                dic=ares_data.dic if hasattr(ares_data, "dic") else ares_data.get("dic"),
+                company_name=ares_data.obchodniJmeno if hasattr(ares_data, "obchodniJmeno") else ares_data.get("obchodniJmeno"),
+                address=sidlo.textAdresy if hasattr(sidlo, "textAdresy") else sidlo.get("textAdresy", ""),
+                zip_code=sidlo.psc if hasattr(sidlo, "psc") else sidlo.get("psc", ""),
                 approval_status=ApprovalStatus.PENDING,
                 # TODO: LOGO
                 logo=validated_data["logo"] if "logo" in validated_data else None,

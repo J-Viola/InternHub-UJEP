@@ -54,20 +54,6 @@ class ProgressStatus(enum.Enum):
     CANCELLED = 3
 
 
-class Status(models.Model):
-    status_id = models.AutoField(primary_key=True)
-    status_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
-    status_name = models.CharField(max_length=100, blank=True, null=True)
-    status_category = models.CharField(max_length=50, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-
-    class Meta:
-        db_table = "statuses"
-
-    def __str__(self):
-        return self.status_name or self.status_code or super().__str__()
-
-
 class Role(models.Model):
     role_id = models.AutoField(primary_key=True)
     role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
@@ -91,19 +77,6 @@ class StagRole(models.Model):
 
     class Meta:
         db_table = "stag_roles"
-
-
-class OrganizationRole(models.Model):
-    id = models.AutoField(primary_key=True)
-    role = models.CharField(unique=True, blank=False, null=False)
-    role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.role_name or self.role or super().__str__()
-
-    class Meta:
-        db_table = "organization_roles"
 
 
 class EmployerProfile(models.Model):
@@ -161,19 +134,28 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     def role(self):
         return None
 
+    @property
+    def full_name(self):
+        return f"{self.title_before or " "} {self.first_name} {self.last_name} {self.title_after or " "}".strip()
+
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
 
 
+class OrganizationRole(enum.Enum):
+    OWNER = 0
+    INSERTER = 1
+
+
 class OrganizationUser(User):
     employer_profile = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True, related_name="organization_users")
-    organization_role = models.ForeignKey(OrganizationRole, models.DO_NOTHING, blank=True, null=True, related_name="organization_users")
+    organization_role = enum.EnumField(OrganizationRole, blank=True, null=True)
 
     class Meta:
         db_table = "organization_users"
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.email})"
+        return f"{self.full_name} ({self.email})"
 
     @property
     def role(self):
@@ -185,9 +167,6 @@ class StagUser(User):
 
     class Meta:
         db_table = "stag_users"
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.email})"
 
     @property
     def role(self):
@@ -214,9 +193,6 @@ class StudentUser(StagUser):
     class Meta:
         db_table = "student_users"
 
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.email})"
-
 
 class DepartmentRole(enum.Enum):
     TEACHER = 0
@@ -230,9 +206,6 @@ class ProfessorUser(StagUser):
 
     class Meta:
         db_table = "professor_users"
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.email})"
 
 
 class ActionLog(models.Model):

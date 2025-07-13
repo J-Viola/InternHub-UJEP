@@ -9,15 +9,14 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class SubjectSerializer(serializers.ModelSerializer):
-    department_details = DepartmentSerializer(source="department", read_only=True)
+    department = DepartmentSerializer(read_only=True)
     teacher = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
-        fields = ["subject_id", "subject_code", "subject_name", "department", "department_details", "hours_required", "teacher"]
+        fields = ["subject_id", "subject_code", "subject_name", "department", "hours_required", "teacher"]
 
     def get_teacher(self, obj):
-        # Get the primary teacher for this subject (assuming first one found)
         teacher_relationship = UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor).select_related("user").first()
 
         if teacher_relationship:
@@ -28,4 +27,4 @@ class SubjectSerializer(serializers.ModelSerializer):
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProfessorUser
-        fields = ["user_id", "title_before", "first_name", "last_name", "title_after", "email"]
+        fields = ["user_id", "full_name", "email"]

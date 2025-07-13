@@ -8,7 +8,6 @@ from .models import (
     Department,
     EmployerInvitation,
     EmployerProfile,
-    OrganizationRole,
     OrganizationUser,
     Practice,
     PracticeType,
@@ -32,11 +31,6 @@ class RoleAdmin(admin.ModelAdmin):
 
 @admin.register(StagRole)
 class StagRoleAdmin(admin.ModelAdmin):
-    list_display = ("pk", "role_name", "role")
-
-
-@admin.register(OrganizationRole)
-class OrganizationRoleAdmin(admin.ModelAdmin):
     list_display = ("pk", "role_name", "role")
 
 
