@@ -71,10 +71,18 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                     />
 
                     <TextField 
+                        id={"titleBefore"}
+                        required={false}
+                        label={"Titul před jménem"} 
+                        placeholder={"např. Ing., Mgr., Dr."}
+                        onChange={(value) => handleFormValues(value)}
+                    />
+
+                    <TextField 
                         id={"executiveName"}
                         required={true}
                         label={"Jméno jednatele"} 
-                        placeholder={"Zadejte jméno a příjmení jednatele"}
+                        placeholder={"Zadejte jméno jednatele"}
                         onChange={(value) => handleFormValues(value)}
                     />
 
@@ -83,6 +91,14 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         required={true}
                         label={"Příjmení jednatele"} 
                         placeholder={"Zadejte příjmení jednatele"}
+                        onChange={(value) => handleFormValues(value)}
+                    />
+
+                    <TextField 
+                        id={"titleAfter"}
+                        required={false}
+                        label={"Titul za jménem"} 
+                        placeholder={"např. Ph.D., MBA"}
                         onChange={(value) => handleFormValues(value)}
                     />
 

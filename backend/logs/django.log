@@ -1302,3 +1302,251 @@ requests.exceptions.SSLError: HTTPSConnectionPool(host='ares.gov.cz', port=443):
 [2025-07-12 18:37:24,854] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
 [2025-07-12 18:37:24,873] WARNING django.request Unauthorized: /api/users/logout/
 [2025-07-12 18:37:24,874] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 06:16:13,761] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:16:22,561] INFO django.server "GET / HTTP/1.1" 200 16
+[2025-07-13 06:16:22,660] WARNING django.request Not Found: /favicon.ico
+[2025-07-13 06:16:22,660] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-13 06:16:26,383] INFO django.server "GET /admin HTTP/1.1" 301 0
+[2025-07-13 06:16:26,404] INFO django.server "GET /admin/ HTTP/1.1" 302 0
+[2025-07-13 06:16:26,424] INFO django.server "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4170
+[2025-07-13 06:16:26,450] INFO django.server "GET /static/admin/css/login.css HTTP/1.1" 200 951
+[2025-07-13 06:16:26,451] INFO django.server "GET /static/admin/css/dark_mode.css HTTP/1.1" 200 2808
+[2025-07-13 06:16:26,452] INFO django.server "GET /static/admin/css/base.css HTTP/1.1" 200 22120
+[2025-07-13 06:16:26,452] INFO django.server "GET /static/admin/js/theme.js HTTP/1.1" 200 1653
+[2025-07-13 06:16:26,452] INFO django.server "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 200 2810
+[2025-07-13 06:16:26,453] INFO django.server "GET /static/admin/css/responsive.css HTTP/1.1" 200 16565
+[2025-07-13 06:16:26,456] INFO django.server "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 200 3063
+[2025-07-13 06:16:33,483] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4343
+[2025-07-13 06:16:46,873] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4342
+[2025-07-13 06:16:50,652] INFO django.server "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4342
+[2025-07-13 06:17:24,553] INFO django.server "GET / HTTP/1.1" 200 196
+[2025-07-13 06:17:24,579] WARNING django.request Not Found: /favicon.ico
+[2025-07-13 06:17:24,580] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-13 06:17:30,323] INFO django.server "GET /admin/ HTTP/1.1" 200 21408
+[2025-07-13 06:17:30,341] INFO django.server "GET /static/admin/css/base.css HTTP/1.1" 304 0
+[2025-07-13 06:17:30,344] INFO django.server "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+[2025-07-13 06:17:30,346] INFO django.server "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+[2025-07-13 06:17:30,346] INFO django.server "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+[2025-07-13 06:17:30,346] INFO django.server "GET /static/admin/css/dashboard.css HTTP/1.1" 304 0
+[2025-07-13 06:17:30,346] INFO django.server "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+[2025-07-13 06:17:30,347] INFO django.server "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+[2025-07-13 06:17:30,398] WARNING django.request Not Found: /favicon.ico
+[2025-07-13 06:17:30,399] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-13 06:17:30,399] INFO django.server "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+[2025-07-13 06:17:30,401] INFO django.server "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+[2025-07-13 06:17:38,987] INFO django.server "GET /admin/api/practice/ HTTP/1.1" 200 18765
+[2025-07-13 06:17:39,011] INFO django.server "GET /static/admin/js/jquery.init.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,012] INFO django.server "GET /static/admin/js/core.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,012] INFO django.server "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,012] INFO django.server "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,012] INFO django.server "GET /static/admin/css/changelists.css HTTP/1.1" 304 0
+[2025-07-13 06:17:39,014] INFO django.server "GET /static/admin/js/actions.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,015] INFO django.server "GET /static/admin/js/prepopulate.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,015] INFO django.server "GET /static/admin/js/urlify.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,015] INFO django.server "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,020] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:17:39,021] INFO django.server "GET /static/admin/js/filters.js HTTP/1.1" 304 0
+[2025-07-13 06:17:39,068] INFO django.server "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+[2025-07-13 06:17:45,839] INFO django.server "GET /api/schema/swagger-ui/ HTTP/1.1" 200 4649
+[2025-07-13 06:17:46,166] INFO django.server "GET /api/schema/ HTTP/1.1" 200 76674
+[2025-07-13 06:21:27,503] INFO django.server "OPTIONS /api/users/ares-justice/ HTTP/1.1" 200 0
+[2025-07-13 06:21:27,708] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4048
+[2025-07-13 06:23:20,203] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:23:20,203] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 136
+[2025-07-13 06:23:35,614] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:23:35,614] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 48
+[2025-07-13 06:23:58,821] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 3901
+[2025-07-13 06:24:00,839] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:24:00,840] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 48
+[2025-07-13 06:25:43,484] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 3901
+[2025-07-13 06:25:59,720] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:25:59,720] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 46
+[2025-07-13 06:26:15,994] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:26:15,994] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 83
+[2025-07-13 06:26:36,183] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:26:36,184] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 48
+[2025-07-13 06:27:56,953] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:27:56,953] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 48
+[2025-07-13 06:28:25,111] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4154
+[2025-07-13 06:28:27,536] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:28:27,537] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 48
+[2025-07-13 06:29:19,268] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:29:19,865] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:29:28,058] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:29:28,420] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:29:39,734] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:29:40,106] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:29:48,225] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:29:48,602] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:29:51,359] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:29:51,773] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:30:07,332] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:30:07,728] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:30:15,892] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:30:16,250] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:30:20,103] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:30:20,454] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:31:50,700] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 06:31:50,707] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-13 06:31:50,709] WARNING django.request Unauthorized: /api/users/login/
+[2025-07-13 06:31:50,710] WARNING django.server "POST /api/users/login/ HTTP/1.1" 401 75
+[2025-07-13 06:31:50,765] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-13 06:31:50,791] WARNING django.request Bad Request: /api/users/token/refresh/
+[2025-07-13 06:31:50,792] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 400 43
+[2025-07-13 06:32:22,729] WARNING django.request Bad Request: /api/users/register/
+[2025-07-13 06:32:22,730] WARNING django.server "POST /api/users/register/ HTTP/1.1" 400 135
+[2025-07-13 06:32:38,388] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4081
+[2025-07-13 06:32:40,050] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 06:32:40,272] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 667
+[2025-07-13 06:32:40,470] INFO django.server "OPTIONS /api/practices/practices/ HTTP/1.1" 200 0
+[2025-07-13 06:32:40,470] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-13 06:32:40,490] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:32:40,491] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:32:40,537] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:32:40,539] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:33:51,399] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:33:51,975] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:33:53,733] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:33:54,094] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:33:56,801] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:33:57,186] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:33:59,938] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:34:00,309] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:34:14,544] INFO django.server "GET /admin/api/usersubject/ HTTP/1.1" 200 16757
+[2025-07-13 06:34:14,570] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:34:19,569] INFO django.server "GET /admin/api/user/ HTTP/1.1" 200 24902
+[2025-07-13 06:34:19,593] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:34:19,606] INFO django.server "GET /static/admin/img/icon-no.svg HTTP/1.1" 200 560
+[2025-07-13 06:34:19,606] INFO django.server "GET /static/admin/img/search.svg HTTP/1.1" 200 458
+[2025-07-13 06:34:19,607] INFO django.server "GET /static/admin/img/icon-yes.svg HTTP/1.1" 200 436
+[2025-07-13 06:34:19,607] INFO django.server "GET /static/admin/img/sorting-icons.svg HTTP/1.1" 200 1097
+[2025-07-13 06:34:19,608] INFO django.server "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+[2025-07-13 06:34:28,957] INFO django.server "GET /admin/api/user/27/change/ HTTP/1.1" 200 33082
+[2025-07-13 06:34:28,976] INFO django.server "GET /static/admin/css/forms.css HTTP/1.1" 304 0
+[2025-07-13 06:34:28,979] INFO django.server "GET /static/admin/js/SelectBox.js HTTP/1.1" 304 0
+[2025-07-13 06:34:28,979] INFO django.server "GET /static/admin/js/SelectFilter2.js HTTP/1.1" 304 0
+[2025-07-13 06:34:28,980] INFO django.server "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+[2025-07-13 06:34:28,981] INFO django.server "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+[2025-07-13 06:34:28,982] INFO django.server "GET /static/admin/css/widgets.css HTTP/1.1" 200 11991
+[2025-07-13 06:34:28,984] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:34:29,035] INFO django.server "GET /static/admin/img/selector-icons.svg HTTP/1.1" 200 3291
+[2025-07-13 06:34:53,345] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-13 06:34:53,345] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-13 06:34:53,392] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:34:53,393] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:34:53,424] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 06:34:53,425] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 06:34:59,834] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 3940
+[2025-07-13 06:35:24,526] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 06:35:24,722] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 649
+[2025-07-13 06:35:24,864] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:35:24,865] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:35:24,868] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:35:24,870] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:35:30,202] INFO django.server "GET /admin/api/user/ HTTP/1.1" 200 25441
+[2025-07-13 06:35:30,232] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:35:34,148] INFO django.server "GET /admin/api/user/28/change/ HTTP/1.1" 200 33010
+[2025-07-13 06:35:34,173] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:35:54,419] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-13 06:35:54,419] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-13 06:35:54,426] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:35:54,426] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:35:54,431] INFO django.server "OPTIONS /api/practices/practices/1/ HTTP/1.1" 200 0
+[2025-07-13 06:35:54,506] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-13 06:35:54,522] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-13 06:36:03,671] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:36:03,671] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:36:03,677] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 06:36:03,677] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 06:36:03,707] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-13 06:36:03,708] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-13 06:36:03,709] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-13 06:36:03,709] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-13 06:36:04,747] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:36:04,750] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:36:04,750] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:36:04,750] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:36:14,211] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:36:14,211] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:36:14,233] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-13 06:36:14,233] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62428
+[2025-07-13 06:36:15,601] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:36:15,601] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-13 06:36:15,606] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 06:36:15,609] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 06:36:15,634] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-13 06:36:15,634] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-13 06:36:15,635] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-13 06:36:15,635] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-13 06:36:16,671] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:36:16,672] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:36:16,672] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:36:16,672] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:36:22,698] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:36:22,698] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:36:22,720] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 06:36:22,721] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 06:36:34,449] INFO django.server "GET /admin/api/user/28/password/ HTTP/1.1" 200 18260
+[2025-07-13 06:36:34,466] INFO django.server "GET /static/admin/js/unusable_password_field.js HTTP/1.1" 200 1480
+[2025-07-13 06:36:34,466] INFO django.server "GET /static/admin/css/unusable_password_field.css HTTP/1.1" 200 663
+[2025-07-13 06:36:44,613] INFO django.server "POST /admin/api/user/28/password/ HTTP/1.1" 302 0
+[2025-07-13 06:36:44,643] INFO django.server "GET /admin/api/organizationuser/28/change/ HTTP/1.1" 200 35627
+[2025-07-13 06:36:44,679] INFO django.server "GET /static/admin/js/calendar.js HTTP/1.1" 304 0
+[2025-07-13 06:36:44,679] INFO django.server "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 304 0
+[2025-07-13 06:36:44,686] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:36:44,705] INFO django.server "GET /static/admin/img/icon-clock.svg HTTP/1.1" 200 677
+[2025-07-13 06:36:44,705] INFO django.server "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1086
+[2025-07-13 06:36:57,913] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 649
+[2025-07-13 06:36:58,066] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:36:58,066] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:36:58,066] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:36:58,066] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:38:13,098] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:38:13,643] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:38:18,625] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:38:19,157] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:39:05,827] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:39:06,293] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:39:07,688] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:39:07,689] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:39:07,714] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 06:39:07,715] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 06:39:19,542] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 4405
+[2025-07-13 06:39:56,731] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 06:39:56,928] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 666
+[2025-07-13 06:39:57,121] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:39:57,126] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:39:57,127] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:39:57,129] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:40:01,730] INFO django.server "GET /admin/api/user/ HTTP/1.1" 200 26011
+[2025-07-13 06:40:01,756] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:40:11,513] INFO django.server "GET /admin/api/user/ HTTP/1.1" 200 26011
+[2025-07-13 06:40:11,533] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:40:23,033] INFO django.server "GET /admin/api/user/ HTTP/1.1" 200 26011
+[2025-07-13 06:40:23,057] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:40:29,596] INFO django.server "GET /admin/api/user/29/change/ HTTP/1.1" 200 33078
+[2025-07-13 06:40:29,619] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:40:37,463] INFO django.server "GET /admin/api/organizationuser/ HTTP/1.1" 200 23848
+[2025-07-13 06:40:37,485] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:40:41,771] INFO django.server "GET /admin/api/organizationuser/29/change/ HTTP/1.1" 200 35559
+[2025-07-13 06:40:41,795] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:40:50,601] INFO django.server "GET /admin/api/actionlog/ HTTP/1.1" 200 16743
+[2025-07-13 06:40:50,625] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-13 06:44:25,094] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:44:25,507] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:44:26,998] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-13 06:44:27,181] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:44:27,560] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:44:29,239] INFO django.utils.autoreload /app/backend/users/serializers.py changed, reloading.
+[2025-07-13 06:44:29,659] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-13 06:44:32,482] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:44:32,485] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-13 06:44:32,535] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-13 06:44:32,536] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-13 06:44:42,397] INFO django.server "POST /api/users/ares-justice/ HTTP/1.1" 200 2813
+[2025-07-13 06:45:12,362] INFO django.server "POST /api/users/register/ HTTP/1.1" 201 42
+[2025-07-13 06:45:12,827] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 653
+[2025-07-13 06:45:13,101] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:45:13,111] INFO django.server "GET /api/practices/practices/ HTTP/1.1" 200 62480
+[2025-07-13 06:45:13,458] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
+[2025-07-13 06:45:13,459] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 199
