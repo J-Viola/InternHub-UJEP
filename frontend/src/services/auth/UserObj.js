@@ -48,6 +48,18 @@ class User {
         return this.hasRole("AD");
     }
 
+    isOrganizationUser() {
+        return this.hasRole("OWNER") || this.hasRole("INSERTOR") 
+    }
+
+    isOwner() {
+        return this.hasRole("OWNER")
+    }
+
+    isInsertor() {
+        return this.hasRole("INSERTOR")
+    }
+
     // Check if user has any data
     hasData() {
         return this.isAuthenticated && this.id && this.role;

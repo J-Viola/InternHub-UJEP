@@ -1,18 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
 import { FaAngleDown, FaAngleUp, FaBars, FaTimes } from "react-icons/fa";
 import Button from "@core/Button/Button";
+import { useUser } from "@hooks/UserProvider";
 
 
-const USER = {
-    "name": "Aleš",
-    "faculty": "PřF"
-}
-
+// submenu render
 function SubMenu({ items, title }) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [ isOpen, setIsOpen ] = useState(false);
+    const { user } = useUser();
 
     return (
         <Container property="relative inline-block" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
@@ -23,7 +21,7 @@ function SubMenu({ items, title }) {
                 </Container>
             </Button>
             {isOpen && (
-                <Container property="absolute bg-facultyCol px-2 py-2 shadow-lg rounded-md min-w-[150px] max-w-[200px] z-50">
+                <Container property="absolute bg-facultyCol px-2 py-2 shadow-lg rounded-md min-w-[300px] max-w-[350px] z-50">
                     {Object.entries(items).map(([key, value]) => (
                         <Link 
                             key={key} 
@@ -39,6 +37,7 @@ function SubMenu({ items, title }) {
     );
 }
 
+// linknav render
 function LinkNav({navigationDict, isMobile = false}) {
     return (
         <Container property={`${isMobile ? "flex flex-col items-start gap-4" : "flex items-center gap-8"}`}>
@@ -57,10 +56,12 @@ function LinkNav({navigationDict, isMobile = false}) {
     );
 }
 
-function Nav({user=USER}) {
+function Nav({}) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    
-    const navigationDict = {
+    const { user } = useUser();
+    const [ navigationDict, setNaviagation ] = useState({});
+
+    const studentDict = {
         "Nabídka praxí": "/nabidka",
         "Účet": "/",
         "Praxe": "/praxe",
@@ -71,6 +72,29 @@ function Nav({user=USER}) {
         "Odhlásit se": "/logout",
         "Profil": "/profil",
     };
+
+    const ownerDict = {
+        "Správa organizace" : {
+            "Uživatelské účty organizace" : "#",
+            "Účet organizace" : "#",
+            "Stáže - form" : "/VytNabidku",
+            "Přihlášky" : "#",
+            "Odeslané pozvánky" : "#",
+        },
+        "Nabídka praxí": "/nabidka",
+        "Studenti": "#",
+        "Praxe": "/praxe",
+        "Odhlásit se": "/logout",
+        //"Profil": "/profil",
+    };
+
+    useEffect(() => {
+        if (user.isOwner()) {
+            setNaviagation(ownerDict);
+        } else if (user.isStudent()) {
+            setNaviagation(studentDict);
+        }
+    }, [user]);
 
     return(
         <>
