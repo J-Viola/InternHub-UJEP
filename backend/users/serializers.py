@@ -182,11 +182,13 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("email", "phone", "password", "password2", "ico", "logo")
+        fields = ("email", "phone", "password", "password2", "ico", "first_name", "last_name", "title_before", "title_after", "logo")
         extra_kwargs = {
             "ico": {"required": True},
             "email": {"required": True},
             "phone": {"required": True},
+            "first_name": {"required": True},
+            "last_name": {"required": True},
         }
 
     def validate(self, attrs):
@@ -214,15 +216,35 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             user = OrganizationUser.objects.create(
-                email=validated_data["email"], organization_role=OrganizationRole.OWNER, is_active=True  # TODO: Remove this
+                email=validated_data["email"],
+                first_name=validated_data["first_name"],
+                last_name=validated_data["last_name"],
+                title_before=validated_data.get("title_before", ""),
+                title_after=validated_data.get("title_after", ""),
+                phone=validated_data.get("phone", ""),
+                organization_role=OrganizationRole.OWNER,
+                is_active=True,  # TODO: Remove this
             )
+            # Handle ares_data as either a Pydantic model or dict
+            if hasattr(ares_data, "icoId"):
+                ico_value = ares_data.icoId
+            elif hasattr(ares_data, "ico"):
+                ico_value = ares_data.ico
+            else:
+                ico_value = ares_data.get("icoId") or ares_data.get("ico")
+
+            if hasattr(ares_data, "sidlo"):
+                sidlo = ares_data.sidlo
+            else:
+                sidlo = ares_data.get("sidlo", {})
+
             EmployerProfile.objects.create(
                 employer_id=user.id,
-                ico=ares_data.icoId,
-                dic=ares_data.dic,
-                company_name=ares_data.obchodniJmeno,
-                address=ares_data.sidlo.textovaAdresa,
-                zip_code=ares_data.sidlo.psc,
+                ico=ico_value,
+                dic=ares_data.dic if hasattr(ares_data, "dic") else ares_data.get("dic"),
+                company_name=ares_data.obchodniJmeno if hasattr(ares_data, "obchodniJmeno") else ares_data.get("obchodniJmeno"),
+                address=sidlo.textAdresy if hasattr(sidlo, "textAdresy") else sidlo.get("textAdresy", ""),
+                zip_code=sidlo.psc if hasattr(sidlo, "psc") else sidlo.get("psc", ""),
                 approval_status=ApprovalStatus.PENDING,
                 # TODO: LOGO
                 logo=validated_data["logo"] if "logo" in validated_data else None,

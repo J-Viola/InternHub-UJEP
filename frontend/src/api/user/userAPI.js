@@ -6,15 +6,17 @@ export const useUserAPI = () => {
     const postRegister = async (data) => {
         const formData = new FormData();
         
+        // data k předání
         formData.append('email', data.executiveEmail);
         formData.append('phone', data.executivePhone);
         formData.append('password', data.executivePassword1);
         formData.append('password2', data.executivePassword2);
-        formData.append('ico', data.ico.toString());
-        formData.append('companyName', data.companyName);
-        formData.append('address', data.address);
-        formData.append('executiveName', data.executiveName);
-        formData.append('executiveSurname', data.executiveSurname);
+        formData.append('ico', data.ico);
+        formData.append('first_name', data.executiveName);
+        formData.append('last_name', data.executiveSurname);
+        formData.append('title_before', data.titleBefore || '');
+        formData.append('title_after', data.titleAfter || '');
+        formData.append('phone', data.executivePhone || '' )
 
         if (data.logo) {
             formData.append('logo', data.logo);

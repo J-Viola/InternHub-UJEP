@@ -26,7 +26,7 @@ class Adresa(BaseModel):
     cisloOrientacniPismeno: Optional[str] = Field(None, description="Písmeno čísla orientačního")
     kodAdresnihoMista: Optional[int] = Field(None, description="Kód adresního místa")
     psc: Optional[int] = Field(None, description="PSČ")
-    textAdresy: Optional[str] = Field(None, description="Textová podoba adresy")
+    textovaAdresa: Optional[str] = Field(None, description="Textová podoba adresy")
 
 
 class AdresaDorucovaci(BaseModel):

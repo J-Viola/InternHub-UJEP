@@ -10,13 +10,15 @@ import Button from "@components/core/Button/Button";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import { useUserAPI } from "@api/user/userAPI";
 import CompanyForm from "@components/Forms/CompanyForm";
+import { useAuth } from "src/services/auth/Auth";
 
-
+// UDĚLAT POLE PRO TITULY - PŘED A ZA + HANDLER NA SUCCESS REGISTRACI
 export default function RegistracePage() {
     const ares = useAresAPI();
     const user = useUserAPI();
     const [entity, setEntity] = useState(null);
     const [formValue, setFormValue] = useState({});
+    const { login } = useAuth();
 
     useEffect(() => {
         console.log("Form value:", formValue);
@@ -26,7 +28,22 @@ export default function RegistracePage() {
         try {
             const res = await ares.getData(ico);
             console.log("ARES response:", res);
-            res && setEntity(res);
+            if (res) {
+                setEntity(res);
+                // CHATKEM přidané hodnoty přímo z ARESU do dat k zaslání - musíme prodiskutoivat
+                setFormValue(prevValue => ({
+                    ...prevValue,
+                    ico: res.ico, //nepo posílat icoId - to má i tu nulu
+                    company_name: res.obchodniJmeno,
+                    address: res.sidlo ? 
+                       `${res.sidlo.nazevUlice ? res.sidlo.nazevUlice : ''} ${res.sidlo.cisloDomovni}${res.sidlo.cisloOrientacni ? '/' + res.sidlo.cisloOrientacni : ''}, ${res.sidlo.nazevCastiObce}, ${res.sidlo.psc} ${res.sidlo.nazevObce}` : 
+                        '',
+                    //dic: res.dic,
+                    //legal_form: res.pravniForma,
+                    //establishment_date: res.datumVzniku,
+                    //financial_office: res.financniUrad
+                }));
+            }
         } catch (error) {
             console.error("Error ARES fetch:", error);
             throw error;
@@ -36,7 +53,6 @@ export default function RegistracePage() {
     const handleFormValues = (value) => {
         setFormValue(prevValue => ({
             ...prevValue,
-            ico: entity?.ico,
             ...value
         }));
     }
@@ -55,6 +71,15 @@ export default function RegistracePage() {
             const res = await user.postRegister(formValue);
             console.log("Registration response:", res);
             res && setEntity(res);
+            
+            // po registraci zavolám login - UPRAVIT
+            const logData = {
+                "email": formValue.executiveEmail,
+                "password": formValue.executivePassword1   
+            };
+            const loginRes = await login(logData);
+            console.log("Login Res Organizace", loginRes);
+
         } catch (error) {
             console.error("Error registration fetch:", error);
             throw error;
