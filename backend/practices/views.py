@@ -136,6 +136,10 @@ class PracticeViewSet(viewsets.ModelViewSet):
         if title:
             queryset = queryset.filter(title__icontains=title)
 
+        address = request.query_params.get("address")
+        if address:
+            queryset = queryset.filter(employer__address__icontains=address)
+
         queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
         if page is not None:

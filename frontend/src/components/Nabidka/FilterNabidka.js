@@ -22,7 +22,7 @@ export default function FilterNabidka({
                     value={filterValue?.title}
                     placeholder={"Název"}
                     onChange={handleFilterChange}
-                    onClear={onSearchClear}
+                    onClear={() => onSearchClear("title")}
                 />
                 <Button 
                     onClick={onSearchSubmit} 
@@ -33,19 +33,17 @@ export default function FilterNabidka({
                 </Button>
             </Container>
 
-
-            {/* DRUHÝ ŘÁDEK - DALŠÍ FILTRY */}
-            <Container property="flex justify-center gap-16 inline-block">
-                <DropDown
-                    id="address"
-                    label="Místo:"
-                    value={filterValue?.address}
-                    placeholder="Všechna místa"
-                    variant="facultyGreen"
-                    options={locations}
-                    onChange={(dict) => handleFilterChange(null, "address", dict.address, true)}
-                    property="w-full"
-                />
+            {/* FILTRY V JEDNOM ŘÁDKU */}
+            <Container property="flex flex-row items-center justify-center gap-6 mb-4 inline-block">
+                <Container property={"w-full mt-6"}>
+                    <SearchBar 
+                        id="address"
+                        value={filterValue?.address}
+                        placeholder={"Adresa"}
+                        onChange={(val) => handleFilterChange(null, "address", val.target.value, true)}
+                        onClear={() => onSearchClear("address")}
+                    />
+                </Container>
 
                 <DropDown
                     id="subject"
@@ -57,10 +55,8 @@ export default function FilterNabidka({
                     onChange={(dict) => handleFilterChange(null, "subject", dict.subject, true)}
                     property="w-32"
                 />
-
             </Container>
-
-            {/* ODDĚLOVAČ */}
+            
             <Container property="border-t border-gray-300 my-4"></Container>
             
         </Container>

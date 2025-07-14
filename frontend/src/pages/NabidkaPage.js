@@ -110,11 +110,12 @@ export default function NabidkaPage() {
         });
     };
 
-    const handleSearchClear = () => {
-        setFilterValue(prev => ({
-            ...prev,
-            title: ""
-        }));
+    const handleSearchClear = (id) => {
+        setFilterValue(prev => {
+            const updated = { ...prev };
+            delete updated[id];
+            return updated;
+        });
     };
 
     const handleSearchSubmit = () => {
