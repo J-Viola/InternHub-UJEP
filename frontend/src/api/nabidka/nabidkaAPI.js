@@ -7,7 +7,7 @@ export const useNabidkaAPI = () => {
 
     const getNabidky = async (params = {}) => {
         try {
-            const response = await api.get('/practices/practices/')
+            const response = await api.get('/practices/practices/search/', { params })
             
             if (response && response.data) {
                 return response.data.results || response.data

@@ -119,6 +119,31 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
+    # SEARCH ENDPOINT - pro parametry v requestu
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    def search(self, request):
+        """
+        GET /api/practices/search/
+        Vrací praxe s filtry z query parametrů
+        """
+        queryset = self.queryset.filter(is_active=True)
+
+        subject_id = request.query_params.get("subject")
+        if subject_id:
+            queryset = queryset.filter(subject_id=subject_id)
+
+        title = request.query_params.get("title")
+        if title:
+            queryset = queryset.filter(title__icontains=title)
+
+        queryset = self.filter_queryset(queryset)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class RunningPracticeListView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
