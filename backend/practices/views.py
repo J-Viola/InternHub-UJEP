@@ -1,4 +1,5 @@
 from datetime import date
+from datetime import datetime
 
 from api.decorators import role_required
 from api.models import Department, OrganizationRole, Practice, StudentPractice, StudentUser
@@ -47,8 +48,36 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
     @role_required([OrganizationRole.INSERTER, OrganizationRole.OWNER, StagRoleEnum.VY])
     def create(self, request, *args, **kwargs):
-        # POST /api/practices/
-        data = request.data  # Data z frontendu
+        data = request.data.copy()
+        user = request.user
+
+        # Fix date format for start_date and end_date
+        for date_field in ["start_date", "end_date"]:
+            if date_field in data and isinstance(data[date_field], str):
+                try:
+                    if "." in data[date_field]:
+                        parsed = datetime.strptime(data[date_field], "%d.%m.%Y")
+                        data[date_field] = parsed.strftime("%Y-%m-%d")
+                except Exception:
+                    pass
+
+        # Nastav employer_id podle přihlášeného uživatele, pokud není v datech
+        if not data.get('employer_id') and hasattr(user, 'employer_profile') and user.employer_profile:
+            data['employer_id'] = user.employer_profile.employer_id
+            # Nastav logo z employer profilu
+            if user.employer_profile.logo:
+                import base64
+                import mimetypes
+                if hasattr(user.employer_profile.logo, 'path'):
+                    mime_type, _ = mimetypes.guess_type(user.employer_profile.logo.path)
+                    prefix = f"data:{mime_type or 'image/png'};base64,"
+                    with open(user.employer_profile.logo.path, "rb") as img_file:
+                        data['image_base64'] = prefix + base64.b64encode(img_file.read()).decode('utf-8')
+
+        if not data.get('approval_status'):
+            data['approval_status'] = 0
+        if not data.get('progress_status'):
+            data['progress_status'] = 0
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

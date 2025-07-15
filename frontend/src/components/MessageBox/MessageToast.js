@@ -11,14 +11,14 @@ function MessageToast() {
   const getTypeStyles = (type) => {
     switch (type) {
       case 'S':
-        return 'bg-green-300';
+        return 'bg-green-400';
       case 'E':
-        return 'bg-red-300';
+        return 'bg-red-400';
       case 'W':
-        return 'bg-yellow-300';  
+        return 'bg-yellow-400';  
       default:
         // neutral
-        return 'bg-blue-300';
+        return 'bg-blue-400';
     }
   };
 

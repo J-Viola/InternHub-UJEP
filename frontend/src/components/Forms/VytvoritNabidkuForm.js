@@ -8,7 +8,7 @@ import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 
-export default function VytvoritNabidkuForm() {
+export default function VytvoritNabidkuForm({organizationUsers, subjects, formData, handleChange, handleSubmit}) {
 
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -17,70 +17,64 @@ export default function VytvoritNabidkuForm() {
             <>
                 <Container property={"grid gap-2 grid-cols-2"}>
                     <CustomDatePicker
-                        id={"startDate"}
-                        selected={startDate}
+                        id={"start_date"}
+                        selected={formData?.start_date}
                         label={"Čas období od"}
                         required={true}
-                        onChange={(value) => console.log(value)}
+                        onChange={handleChange}
                     />
 
                     <CustomDatePicker
-                        id={"endDate"}
-                        selected={endDate}
+                        id={"end_date"}
+                        selected={formData?.end_date}
                         label={"Čas období do"}
                         required={true}
-                        onChange={(value) => console.log(value)}
+                        onChange={handleChange}
                     />
 
                     <DropDown
-                        id={"spravceInzeratu"}
+                        id={"contact_user"}
                         required={true}
                         label={"Správce inzerátu"}
                         icon={"user"}
-                        options={[
-                            { value: "1", label: "volba1" },
-                            { value: "2", label: "volba2" }
-                        ]}
-                        onChange={(value) => console.log(value)}
+                        options={organizationUsers}
+                        onChange={handleChange}
                     />
 
                     <DropDown
-                        id={"predmet"}
+                        id={"subject_id"}
                         required={true}
                         label={"Přiřazený předmět"}
                         icon={"book"}
-                        options={[
-                            { value: "1", label: "volba1" },
-                            { value: "2", label: "volba2" }
-                        ]}
-                        onChange={(value) => console.log(value)}
+                        options={subjects}
+                        onChange={handleChange}
                     />
                 </Container>
 
                 <Container property={"w-full gap-2 mt-2 flex-cols"}>
 
                     <TextField 
-                        id={"nazev"}
+                        id={"title"}
                         required={true}
                         label={"Název"} 
                         placeholder={"Název stáže"}
-                        onChange={(value) => console.log(value)}
+                        onChange={handleChange}
                     />
 
                     <TextBox
-                        id={"popisStaze"}
+                        id={"description"}
                         required={true}
                         label={"Popis stáže"}
                         placeholder={"Napište popis stáže"}
-                        onChange={(value) => console.log(value)}
+                        onChange={handleChange}
                     />
 
                     <TextBox
-                        id={"odpovednostStaze"}
+                        id={"responsibilities"}
                         required={true}
                         label={"Odpovědnost stáže"}
                         placeholder={"Popište odpovědnost stáže"}
-                        onChange={(value) => console.log(value)}
+                        onChange={handleChange}
                     />
                 </Container>
 
@@ -89,7 +83,7 @@ export default function VytvoritNabidkuForm() {
                 <Container property={"flex w-full justify-end ml-auto"}>
                     <Button 
                         property={"mt-2 px-16"} 
-                        onClick={() => console.log("Vytvářim nabídku")}
+                        onClick={() => handleSubmit()}
                     >
                         Vytvořit
                     </Button>

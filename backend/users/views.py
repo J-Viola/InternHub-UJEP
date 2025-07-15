@@ -2,7 +2,7 @@ import re
 
 import requests
 from api.decorators import role_required
-from api.models import ApprovalStatus, EmployerProfile, OrganizationRole
+from api.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
@@ -14,6 +14,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
+from rest_framework.views import APIView
+from users.models import UserType, StagRoleEnum
 
 from .serializers import (
     AresJusticeSerializer,
@@ -173,3 +175,41 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         )
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class OrganizationUserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        employer_profile = getattr(user, 'employer_profile', None)
+        if not employer_profile:
+            return Response({'detail': 'Uživatel nemá přiřazenou organizaci.'}, status=status.HTTP_400_BAD_REQUEST)
+        org_id = employer_profile.employer_id
+        users = OrganizationUser.objects.filter(employer_profile_id=org_id)
+        data = []
+        for u in users:
+            role = None
+            if u.organization_role is not None:
+                # Pokud je to integer, převedeme na enum
+                if isinstance(u.organization_role, int):
+                    try:
+                        role = OrganizationRole(u.organization_role).name
+                    except Exception:
+                        role = str(u.organization_role)
+                # Pokud je to enum
+                elif hasattr(u.organization_role, 'name'):
+                    role = u.organization_role.name
+                # Pokud je to ForeignKey na OrganizationRole model
+                elif hasattr(u.organization_role, 'role_name') and u.organization_role.role_name:
+                    role = u.organization_role.role_name
+                elif hasattr(u.organization_role, 'role') and u.organization_role.role:
+                    role = u.organization_role.role
+                else:
+                    role = str(u.organization_role)
+            data.append({
+                'id': u.id,
+                'name': f"{u.first_name} {u.last_name}",
+                'role': role
+            })
+        return Response(data)

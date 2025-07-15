@@ -45,7 +45,6 @@ function AuthProvider({ children }) {
                     setUser(res.data.user);
                     localStorage.setItem("user", JSON.stringify(res.data.user));
                 }
-                addMessage(`Uživatel ${user.email ? user.email : ""} byl úspěšně přihlášen`)
                 return true;
             }
         } catch (error) {
