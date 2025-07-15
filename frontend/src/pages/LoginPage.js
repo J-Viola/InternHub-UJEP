@@ -7,6 +7,7 @@ import LoginForm from "@login/LoginForm";
 import { STAGLogin, getParams } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
 
+
 export default function LoginPage() {
     const [ticket, setTicket] = useState(null);
     const { login } = useAuth();

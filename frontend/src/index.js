@@ -14,34 +14,39 @@ import VytvorenePraxe from '@pages/VytvorenePraxePage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
 import RegistracePage from '@pages/RegistracePage';
 import LogoutUser from '@services/auth/Logout';
+import MessageToast from '@components/MessageBox/MessageToast';
 
 import reportWebVitals from './reportWebVitals';
 
 import UserProvider from '@hooks/UserProvider';
 import AuthProvider from '@services/auth/Auth';
+import { MessageProvider}  from '@hooks/MessageContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <UserProvider> {/* USE INFO PRO ŘÍZENÍ FE */}
-      <BrowserRouter>
-        <AuthProvider> {/* TOKEN WORK */}
-          <Routes>
-            <Route path="/" element={<LoginPage />} />
-            <Route path="/nabidka" element={<NabidkaPage />} />
-            <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
-            <Route path="/profil" element={<ProfilPage />} />
-            <Route path="/registrace" element={<RegistracePage />} />
-            <Route path="/praxe" element={<PraxePage />} />
-            <Route path="/TEST" element={<TextEditor />} />
-            <Route path="/Students" element={<StudentPage />} />
-            <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
-            <Route path="/VytNabidku" element={<VytvoritNabidku />} />
-            <Route path="/logout" element={<LogoutUser />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </UserProvider>
+    <MessageProvider>
+      <UserProvider> {/* USE INFO PRO ŘÍZENÍ FE */}
+        <BrowserRouter>
+          <AuthProvider> {/* TOKEN WORK */}
+            <MessageToast/> {/* PRO ZOBRAZENÍ MESSAGE BOXU */}
+            <Routes>
+              <Route path="/" element={<LoginPage />} />
+              <Route path="/nabidka" element={<NabidkaPage />} />
+              <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
+              <Route path="/profil" element={<ProfilPage />} />
+              <Route path="/registrace" element={<RegistracePage />} />
+              <Route path="/praxe" element={<PraxePage />} />
+              <Route path="/TEST" element={<TextEditor />} />
+              <Route path="/Students" element={<StudentPage />} />
+              <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
+              <Route path="/VytNabidku" element={<VytvoritNabidku />} />
+              <Route path="/logout" element={<LogoutUser />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </UserProvider>
+    </MessageProvider>
   </React.StrictMode>
 );
 

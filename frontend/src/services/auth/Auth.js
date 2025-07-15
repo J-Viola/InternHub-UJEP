@@ -1,9 +1,9 @@
-//https://medium.com/@gahrmicc/basic-implementation-of-interceptors-in-react-js-using-axios-222bf0db6c3f
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { createApiClient } from "@api/apiClient";
 import axios from 'axios';
 import { useUser } from "@hooks/UserProvider"; // předpokládám, že máte useUser hook
 import { useNavigate } from "react-router-dom";
+import { useMessage } from "@hooks/MessageContext";
 
 const AuthContext = createContext(null);
 
@@ -14,6 +14,7 @@ function AuthProvider({ children }) {
     const [isInitializing, setIsInitializing] = useState(true); // Loading state
     const { user, setUser, cleanUser } = useUser(); // použití useUser hooku
     const navigate = useNavigate();
+    const { addMessage } = useMessage();
     
     console.log("STORAGE:", localStorage?.getItem("refreshToken"));
 
@@ -44,6 +45,7 @@ function AuthProvider({ children }) {
                     setUser(res.data.user);
                     localStorage.setItem("user", JSON.stringify(res.data.user));
                 }
+                addMessage(`Uživatel ${user.email ? user.email : ""} byl úspěšně přihlášen`)
                 return true;
             }
         } catch (error) {
@@ -173,6 +175,10 @@ function AuthProvider({ children }) {
                 // USER DATA
                 if (response.data.user) {
                     setUser(response.data.user);
+                    sessionStorage.setItem("pendingMessage", JSON.stringify({
+                        text: `Uživatel ${user?.email ? user.email : ""} byl úspěšně přihlášen`,
+                        type: "S"
+                    }));
                 }
                 
                 if (response.data.refresh) {
