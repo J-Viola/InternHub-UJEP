@@ -39,7 +39,25 @@ export const useUserAPI = () => {
         }
     };
 
+    const getOrganizationUsers = async () => {
+        try {
+            const response = await api.get('/users/organization-users/');
+
+            const dropDownData = response.data.map(res => ({
+                label: `${res.name}`,
+                value: res.id
+            }));
+            console.log(dropDownData);
+            return dropDownData
+
+        } catch (error) {
+            console.error('Chyba při získávání uživatelů organizace:', error);
+            throw error;
+        }
+    };
+
     return {
-        postRegister
+        postRegister,
+        getOrganizationUsers
     };
 };

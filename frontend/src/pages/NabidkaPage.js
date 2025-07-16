@@ -7,6 +7,7 @@ import FilterNabidka from "@components/Nabidka/FilterNabidka";
 import { makeQuery, useCurrentUrl, useSetParams, useFullUrl, useClearParams, useStripParams } from "@hooks/SearchParams"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useCodeListAPI } from "@api/code_list/code_listAPI";
+import { useMessage } from "@hooks/MessageContext";
 
 
 export default function NabidkaPage() {
@@ -21,10 +22,10 @@ export default function NabidkaPage() {
     const [data, setData] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
     const codelist = useCodeListAPI();
+    const { addMessage } = useMessage();
 
     const [ uniqueLocations, setLocations ] = useState([])
     const [ uniqueSubjects, setSubjects ] = useState([])
-
 
     const initParamLoad = () => {
         console.log("initParamLoad called - full url", fullUrl);
@@ -84,6 +85,15 @@ export default function NabidkaPage() {
     useEffect(() => {
         initParamLoad();
         initFilterOptions();
+
+        const pending = sessionStorage.getItem("pendingMessage");
+        console.log("pendingMessage v NabidkaPage:", pending);
+        if (pending) {
+            const { text, type } = JSON.parse(pending);
+            console.log("Volám addMessage:", text, type);
+            addMessage(text, type);
+            sessionStorage.removeItem("pendingMessage");
+        }
     }, []);
 
     useEffect(() => {

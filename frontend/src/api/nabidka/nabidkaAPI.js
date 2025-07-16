@@ -1,8 +1,10 @@
 import { useApi } from "@hooks/useApi";
+import { useMessage } from "@hooks/MessageContext";
 //import { createParams } from "@api/createParams";
 
 export const useNabidkaAPI = () => {
     const api = useApi();
+    const { addMessage } = useMessage(); 
     //const practices = api.dummyDB.practices;
 
     const getNabidky = async (params = {}) => {
@@ -37,8 +39,37 @@ export const useNabidkaAPI = () => {
         }
     }
 
+    const createNabidka = async (data) => {
+        try {
+            const formData = new FormData();
+            
+            Object.keys(data).forEach(key => {
+                formData.append(key, data[key]);
+            });
+
+            const response = await api.post('/practices/practices/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
+            if (response && response.data) {
+                sessionStorage.setItem("pendingMessage", JSON.stringify({
+                    text: `Nabídka byla úspěšně vytvořena`,
+                    type: "S"
+                }));
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při vytváření nabídky:", error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
-        getNabidkaById
+        getNabidkaById,
+        createNabidka
     };
 };
