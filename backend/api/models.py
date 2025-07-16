@@ -299,6 +299,7 @@ class Practice(models.Model):
     contact_user = models.ForeignKey(OrganizationUser, models.DO_NOTHING, blank=True, null=True, related_name="practices")
     is_active = models.BooleanField(blank=True, null=True)
     image_base64 = models.TextField(blank=True, null=True)
+    # image = models.ImageField(upload_to=settings.STORAGE_URL + "images/practices", blank=True, null=True)
     practice_type = models.ForeignKey(PracticeType, models.DO_NOTHING, blank=True, null=True, related_name="practices")
 
     def __str__(self):
