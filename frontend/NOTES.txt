@@ -1,0 +1,6 @@
+VYTVOŘIT NABÍDKU - do formuláře přidat do dropdown na úvazek - 0.5/1 
+    - dopočet do konce praxe podle pracovního kalendáře (najít API) => hodit do datepickeru, který bude locked pro usera. Výstu API dosadím do formulářových hodnot
+
+STUDENT PRACTICES - spojovačka pro studenta s praxé - přihlášky
+
+SCHVALOVACÍ KOLEČKO - practice má pending, stav mění škola
