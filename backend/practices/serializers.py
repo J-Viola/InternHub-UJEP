@@ -1,6 +1,7 @@
 from datetime import date
 
 from api.models import ApprovalStatus, EmployerProfile, Practice, ProgressStatus, StudentPractice
+from api.serializers import FormattedDateField
 from rest_framework import serializers
 
 
@@ -39,6 +40,8 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
     approved_student_count = serializers.SerializerMethodField()
     pending_student_count = serializers.SerializerMethodField()
     completed_student_count = serializers.SerializerMethodField()
+    start_date = FormattedDateField()
+    end_date = FormattedDateField()
 
     class Meta:
         model = Practice
