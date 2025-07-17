@@ -2,7 +2,7 @@ from datetime import date
 from datetime import datetime
 
 from api.decorators import role_required
-from api.models import Department, OrganizationRole, Practice, StudentPractice, StudentUser
+from api.models import Department, OrganizationRole, Practice, StudentPractice, StudentUser, ApprovalStatus
 from api.serializers import PracticeSerializer, StudentPracticeSerializer
 from api.views import StandardResultsSetPagination
 from practices.serializers import RunningPracticeSerializer
@@ -203,3 +203,22 @@ class RunningPracticeListView(generics.ListAPIView):
         ).distinct()
 
         return practices
+
+
+
+class PracticesForApprovingListView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = PracticeSerializer
+
+    def get_queryset(self):
+        dept_ids = (
+            Department.objects.filter(professor_users=self.request.user).values_list("department_id", flat=True).distinct()
+        )
+
+        practices_to_approve = (
+           Practice.objects.filter(subject__department_id__in=dept_ids, approval_status=ApprovalStatus.PENDING)
+        )
+
+        print(f"Found {practices_to_approve.count()} for approval")
+
+        return practices_to_approve
