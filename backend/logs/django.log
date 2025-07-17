@@ -3015,3 +3015,391 @@ DETAIL:  Failing row contains (6, 2025-07-17, 0, null, 0, null, 1, 0, null, null
 [2025-07-17 15:57:22,718] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 136775
 [2025-07-17 15:57:22,734] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 136775
 [2025-07-17 15:57:24,122] INFO django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 201 285
+[2025-07-17 15:58:54,863] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:59:44,390] INFO django.server "GET /api/schema/swagger-ui/ HTTP/1.1" 200 4649
+[2025-07-17 15:59:45,020] INFO django.server "GET /api/schema/ HTTP/1.1" 200 88470
+[2025-07-17 16:02:19,858] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:02:20,598] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:03:28,702] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:04:15,702] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:04:16,112] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:06:47,912] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:06:48,326] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:07:58,924] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:08:13,184] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-17 16:08:13,752] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:12:29,448] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:13:52,186] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:13:52,558] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:14:01,846] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:14:02,220] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:14:18,959] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:14:19,383] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:14:23,264] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:14:23,642] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:14:35,132] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:14:35,520] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:16:59,463] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:19:28,480] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:19:28,480] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:19:29,535] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:19:29,538] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:19:29,545] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:19:29,545] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:20:19,552] INFO django.server "OPTIONS /api/practices/get_practice_user_relations/ HTTP/1.1" 200 0
+[2025-07-17 16:20:19,558] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:20:19,559] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 9501
+[2025-07-17 16:21:23,673] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:21:24,361] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:21:27,476] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:21:27,479] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:21:27,480] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:21:27,481] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:21:27,497] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:21:27,497] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:21:28,552] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:21:28,558] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:21:28,566] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:21:28,570] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:21:33,697] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:21:33,700] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:21:33,700] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:21:33,701] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:22:07,345] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:22:07,793] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:22:10,592] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:22:11,051] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:22:11,915] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:22:11,916] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:22:11,916] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:22:11,918] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:22:11,938] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:11,938] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:12,988] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:22:12,989] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:22:12,997] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:22:12,997] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:22:22,187] WARNING django.request Unauthorized: /api/practices/practices/search/
+[2025-07-17 16:22:22,190] WARNING django.request Unauthorized: /api/practices/practices/search/
+[2025-07-17 16:22:22,193] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-17 16:22:22,194] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-17 16:22:22,195] WARNING django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 401 58
+[2025-07-17 16:22:22,195] WARNING django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 401 58
+[2025-07-17 16:22:22,196] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-17 16:22:22,196] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-17 16:22:22,201] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:22,203] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:22,270] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:22,274] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:22,295] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:22:22,299] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:22:23,713] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:22:23,715] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:22:23,716] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:22:23,716] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:22:56,260] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:22:56,265] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:22:56,265] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:22:56,265] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:22:56,271] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:56,271] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:22:57,353] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:22:57,356] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:22:57,362] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:22:57,363] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:23:00,482] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:23:00,485] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:23:00,486] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:23:00,486] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:23:27,006] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 16:23:27,576] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 16:23:37,461] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:23:37,461] WARNING django.request Not Found: /api/practices/get_practice_user_relations/
+[2025-07-17 16:23:37,461] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:23:37,462] WARNING django.server "GET /api/practices/get_practice_user_relations/ HTTP/1.1" 404 10375
+[2025-07-17 16:24:43,438] INFO django.server "OPTIONS /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 0
+[2025-07-17 16:24:43,438] INFO django.server "OPTIONS /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 0
+[2025-07-17 16:24:43,465] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:24:43,465] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:27:07,326] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:27:07,329] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:27:07,331] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:27:07,332] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:27:07,341] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:27:07,343] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:27:08,408] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:27:08,410] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:27:08,420] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:27:08,421] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:27:25,911] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:27:25,914] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:27:49,325] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:27:49,325] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:31:40,577] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:32:51,362] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:32:51,362] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:36:10,603] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:37:14,303] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:37:14,303] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:40:40,602] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:45:08,495] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:45:08,495] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:45:10,608] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:49:06,691] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:49:06,707] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:49:31,321] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:49:31,321] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:49:31,580] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-17 16:49:31,745] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:49:31,745] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:49:31,751] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:49:31,755] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:49:32,050] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 16:49:32,050] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 16:49:32,072] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 16:49:32,072] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 16:49:32,422] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:49:32,424] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:49:32,428] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:49:32,432] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:49:33,759] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:49:33,759] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:49:40,833] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:50:48,857] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:50:48,858] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:50:48,860] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:50:48,860] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:50:48,869] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:50:48,869] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:50:49,950] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:50:49,953] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:50:49,957] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:50:49,958] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:50:52,616] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:50:52,619] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:50:54,416] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:50:54,418] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:50:54,419] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:50:54,420] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:50:54,430] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:50:54,431] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:50:55,469] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:50:55,472] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:50:55,478] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:50:55,478] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:50:58,970] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:50:58,971] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:10,208] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:51:10,210] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:51:10,212] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:51:10,212] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:51:10,221] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:51:10,221] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:51:11,270] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:51:11,273] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:51:11,274] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:51:11,278] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:51:18,533] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:18,535] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:27,670] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:51:27,672] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:51:27,674] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:51:27,674] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:51:27,684] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:51:27,684] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:51:28,722] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:51:28,723] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:51:28,728] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:51:28,731] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:51:33,146] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:51:33,147] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:51:34,028] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:34,028] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:34,262] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:51:34,262] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:51:34,269] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:51:34,269] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:51:35,341] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:35,341] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:37,377] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:51:37,377] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:53:52,414] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:53:52,415] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:53:52,419] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:53:52,419] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:53:52,428] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:53:52,428] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:53:53,549] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:53:53,554] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:53:53,557] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:53:53,557] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:53:59,359] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:53:59,362] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:54:10,966] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:54:31,097] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:54:31,099] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 16:54:31,100] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:54:31,101] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 16:54:31,109] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:54:31,109] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:54:32,148] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:54:32,149] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:54:32,156] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:54:32,156] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:54:34,847] WARNING django.request Unauthorized: /api/practices/practices/search/
+[2025-07-17 16:54:34,849] WARNING django.request Unauthorized: /api/practices/practices/search/
+[2025-07-17 16:54:34,852] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-17 16:54:34,853] WARNING django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 401 58
+[2025-07-17 16:54:34,854] WARNING django.request Unauthorized: /api/subjects/subjects/
+[2025-07-17 16:54:34,854] WARNING django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 401 58
+[2025-07-17 16:54:34,854] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-17 16:54:34,855] WARNING django.server "GET /api/subjects/subjects/ HTTP/1.1" 401 172
+[2025-07-17 16:54:34,863] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:54:34,863] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:54:34,870] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:54:34,871] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:54:34,928] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:54:34,932] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:54:37,056] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:54:37,056] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:56:55,393] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:57:20,808] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:57:20,808] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:57:21,873] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:57:21,875] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:57:21,878] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:57:21,881] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:57:23,630] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:57:23,630] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:57:40,771] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:57:40,771] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 16:57:41,852] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:57:41,853] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 16:57:41,858] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:57:41,862] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 16:57:43,857] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:57:43,857] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 16:58:40,968] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:01:54,820] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 17:01:54,822] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 17:01:54,824] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 17:01:54,824] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 17:01:54,831] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:01:54,835] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:01:55,883] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:01:55,886] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:01:55,892] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:01:55,897] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:01:57,878] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 17:01:57,878] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 17:02:10,380] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 17:02:10,382] WARNING django.request Unauthorized: /api/practices/practices/get_practice_user_relations/
+[2025-07-17 17:02:10,383] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 17:02:10,383] WARNING django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 401 58
+[2025-07-17 17:02:10,392] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:02:10,392] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:02:11,442] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:02:11,443] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:02:11,449] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:02:11,450] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:02:13,109] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:02:13,109] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:02:14,041] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 17:02:14,041] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 17:02:14,152] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:02:14,154] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:02:14,159] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:02:14,163] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:02:15,203] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 17:02:15,203] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 259774
+[2025-07-17 17:03:11,805] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:03:58,548] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:03:58,550] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 17:03:58,557] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:03:58,558] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 17:03:59,543] INFO django.server "OPTIONS /api/practices/practices/6 HTTP/1.1" 200 0
+[2025-07-17 17:03:59,544] INFO django.server "OPTIONS /api/practices/practices/6 HTTP/1.1" 200 0
+[2025-07-17 17:03:59,550] INFO django.server "GET /api/practices/practices/6 HTTP/1.1" 301 0
+[2025-07-17 17:03:59,550] INFO django.server "GET /api/practices/practices/6 HTTP/1.1" 301 0
+[2025-07-17 17:03:59,554] INFO django.server "OPTIONS /api/practices/practices/6/ HTTP/1.1" 200 0
+[2025-07-17 17:03:59,555] INFO django.server "OPTIONS /api/practices/practices/6/ HTTP/1.1" 200 0
+[2025-07-17 17:03:59,616] INFO django.server "GET /api/practices/practices/6/ HTTP/1.1" 200 136784
+[2025-07-17 17:03:59,616] INFO django.server "GET /api/practices/practices/6/ HTTP/1.1" 200 136784
+[2025-07-17 17:04:01,134] INFO django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 201 285
+[2025-07-17 17:04:02,942] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:04:02,943] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:06:43,262] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:07:42,506] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:09:36,118] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:10:12,767] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:10:12,770] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:11:13,263] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:12:13,005] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:12:33,143] INFO django.server "OPTIONS /api/practices/practices/undefined HTTP/1.1" 200 0
+[2025-07-17 17:12:33,143] INFO django.server "OPTIONS /api/practices/practices/undefined HTTP/1.1" 200 0
+[2025-07-17 17:12:33,148] INFO django.server "GET /api/practices/practices/undefined HTTP/1.1" 301 0
+[2025-07-17 17:12:33,151] INFO django.server "GET /api/practices/practices/undefined HTTP/1.1" 301 0
+[2025-07-17 17:12:33,155] INFO django.server "OPTIONS /api/practices/practices/undefined/ HTTP/1.1" 200 0
+[2025-07-17 17:12:33,156] INFO django.server "OPTIONS /api/practices/practices/undefined/ HTTP/1.1" 200 0
+[2025-07-17 17:12:33,232] WARNING django.request Not Found: /api/practices/practices/undefined/
+[2025-07-17 17:12:33,233] WARNING django.request Not Found: /api/practices/practices/undefined/
+[2025-07-17 17:12:33,233] WARNING django.server "GET /api/practices/practices/undefined/ HTTP/1.1" 404 23
+[2025-07-17 17:12:33,234] WARNING django.server "GET /api/practices/practices/undefined/ HTTP/1.1" 404 23
+[2025-07-17 17:12:35,889] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:12:35,890] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:12:37,409] INFO django.server "GET /api/practices/practices/undefined HTTP/1.1" 301 0
+[2025-07-17 17:12:37,409] INFO django.server "GET /api/practices/practices/undefined HTTP/1.1" 301 0
+[2025-07-17 17:12:37,422] WARNING django.request Not Found: /api/practices/practices/undefined/
+[2025-07-17 17:12:37,422] WARNING django.request Not Found: /api/practices/practices/undefined/
+[2025-07-17 17:12:37,423] WARNING django.server "GET /api/practices/practices/undefined/ HTTP/1.1" 404 23
+[2025-07-17 17:12:37,423] WARNING django.server "GET /api/practices/practices/undefined/ HTTP/1.1" 404 23
+[2025-07-17 17:13:04,884] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:13:04,886] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 395983
+[2025-07-17 17:14:38,611] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 17:14:39,294] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 17:14:43,244] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 17:14:43,671] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 17:14:45,449] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 17:14:45,887] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 17:14:47,658] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 17:14:48,052] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 17:14:56,222] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 17:14:56,653] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 17:14:58,009] INFO django.server "GET /api/practices/practices/undefined HTTP/1.1" 301 0
+[2025-07-17 17:14:58,009] INFO django.server "GET /api/practices/practices/undefined HTTP/1.1" 301 0
+[2025-07-17 17:14:58,031] WARNING django.request Not Found: /api/practices/practices/undefined/
+[2025-07-17 17:14:58,031] WARNING django.request Not Found: /api/practices/practices/undefined/
+[2025-07-17 17:14:58,032] WARNING django.server "GET /api/practices/practices/undefined/ HTTP/1.1" 404 23
+[2025-07-17 17:14:58,032] WARNING django.server "GET /api/practices/practices/undefined/ HTTP/1.1" 404 23
+[2025-07-17 17:15:00,276] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:00,276] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:02,959] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:02,959] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:13,535] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 17:15:13,950] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 17:15:23,093] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 17:15:23,093] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 17:15:23,121] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 17:15:23,121] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 17:15:25,144] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:25,144] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:26,516] INFO django.server "GET /api/practices/practices/6 HTTP/1.1" 301 0
+[2025-07-17 17:15:26,516] INFO django.server "GET /api/practices/practices/6 HTTP/1.1" 301 0
+[2025-07-17 17:15:26,537] INFO django.server "GET /api/practices/practices/6/ HTTP/1.1" 200 136784
+[2025-07-17 17:15:26,537] INFO django.server "GET /api/practices/practices/6/ HTTP/1.1" 200 136784
+[2025-07-17 17:15:27,478] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:27,478] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:28,541] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-17 17:15:28,542] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-17 17:15:28,564] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 136775
+[2025-07-17 17:15:28,564] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 136775
+[2025-07-17 17:15:29,530] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:29,530] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:40,042] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 17:15:40,043] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 17:15:40,062] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 17:15:40,063] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 17:15:41,282] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:41,282] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 396047
+[2025-07-17 17:15:43,361] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 17:16:43,887] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372

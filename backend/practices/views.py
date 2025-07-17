@@ -13,8 +13,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from users.models import StagRoleEnum
-from api.models import ApprovalStatus, ProgressStatus, SemesterType
-
+from api.models import ApprovalStatus, ProgressStatus, SemesterType, EmployerInvitation
 
 # -------------------------------------------------------------
 # PracticeViewSet – CRUD a správa praxí, včetně přihlášení
@@ -107,7 +106,49 @@ class PracticeViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
+    
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    def get_practice_user_relations(self, request, pk=None, *args, **kwargs):
+        # GET /api/practices/get_practice_user_relations/
+        user = request.user
+        user_id = user.pk
+        if (user.pk):
+            # Získej všechny student_practice záznamy pro uživatele
+            student_practices = StudentPractice.objects.filter(user=user).select_related('practice', 'practice__employer')
+            
+            # Získej všechny employer invitations pro uživatele
+            from api.models import EmployerInvitation
+            employer_invitations = EmployerInvitation.objects.filter(user=user).select_related('practice', 'employer')
+            
+            # Serializuj student_practice - pouze základní info
+            student_practice_data = []
+            for sp in student_practices:
+                student_practice_data.append({
+                    "practice_id": sp.practice.practice_id,
+                    "practice_title": sp.practice.title,
+                    "company_logo": sp.practice.image_base64,
+                    "application_date": sp.application_date,
+                    "status": sp.approval_status
+                })
+            
+            # Serializuj employer invitations - pouze základní info
+            employer_invitation_data = []
+            for ei in employer_invitations:
+                employer_invitation_data.append({
+                    "practice_id": ei.practice.practice_id if ei.practice else None,
+                    "practice_title": ei.practice.title if ei.practice else None,
+                    "company_logo": ei.practice.image_base64 if ei.practice else None,
+                    "submission_date": ei.submission_date,
+                    "status": ei.status
+                })
+            
+            # Vrať zjednodušený JSON
+            return Response({
+                "student_practices": student_practice_data,
+                "employer_invitations": employer_invitation_data
+            })
+        else:
+            return Response({"detail": "Uživatel nebyl nalezen"}, status=status.HTTP_404_NOT_FOUND)
 
     # PODÁNÍ PŘIHLÁŠKY STUDENTEM
     @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])

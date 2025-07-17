@@ -91,10 +91,26 @@ export const useNabidkaAPI = () => {
         }
     }
 
+    const getPracticeUserRelations = async () => {
+        try {
+            const response = await api.get('/practices/practices/get_practice_user_relations/');
+
+            if (response && response.data) {
+                return response.data;
+            }
+            return null
+
+        } catch (error) {
+            console.error('Chyba při získávání uživatelů organizace:', error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
         getNabidkaById,
         createNabidka,
-        applyNabidka
+        applyNabidka,
+        getPracticeUserRelations
     };
 };

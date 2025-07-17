@@ -1,6 +1,10 @@
 VYTVOŘIT NABÍDKU - do formuláře přidat do dropdown na úvazek - 0.5/1 
     - dopočet do konce praxe podle pracovního kalendáře (najít API) => hodit do datepickeru, který bude locked pro usera. Výstu API dosadím do formulářových hodnot
 
-STUDENT PRACTICES - spojovačka pro studenta s praxé - přihlášky
+STUDENT PRACTICES - spojovačka pro studenta s praxé - přihlášky - HOTOVO
+
+API -> podle access tokenu mi vrátí veškeré podané přihlášky a případné pozvánky od firem
 
 SCHVALOVACÍ KOLEČKO - practice má pending, stav mění škola
+
+PŘÍZNAK PRO GET NABÍDKY PODLE ID - potřebuji znát vztah mezi přihlášeným uživatelem a příslušnou nabídkou kvůli UI
