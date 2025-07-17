@@ -67,9 +67,34 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const applyNabidka = async (data) => {
+        try {
+            const formData = new FormData();
+            
+            Object.keys(data).forEach(key => {
+                formData.append(key, data[key]);
+            });
+
+            const response = await api.post('/practices/practices/apply_student_practice/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
+            if (response && response.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při vytváření nabídky:", error);
+            throw error;
+        }
+    }
+
     return {
         getNabidky,
         getNabidkaById,
-        createNabidka
+        createNabidka,
+        applyNabidka
     };
 };

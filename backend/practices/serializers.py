@@ -14,6 +14,7 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "student_practice_id",
             "user",
             "user_info",
+            "practice",
             "application_date",
             "approval_status",
             "progress_status",

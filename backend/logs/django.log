@@ -2220,3 +2220,798 @@ AttributeError: 'EmployerProfile' object has no attribute 'id'
 [2025-07-15 14:49:59,517] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 348
 [2025-07-15 14:49:59,519] INFO django.server "GET /api/practices/practices/search/?subject=2 HTTP/1.1" 200 273614
 [2025-07-15 14:49:59,520] INFO django.server "GET /api/practices/practices/search/?subject=2 HTTP/1.1" 200 273614
+[2025-07-17 15:22:29,529] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:23:09,254] INFO django.server "GET / HTTP/1.1" 200 196
+[2025-07-17 15:23:09,282] WARNING django.request Not Found: /favicon.ico
+[2025-07-17 15:23:09,282] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-17 15:23:13,395] INFO django.server "GET /admin/ HTTP/1.1" 200 22002
+[2025-07-17 15:23:13,416] INFO django.server "GET /static/admin/css/base.css HTTP/1.1" 304 0
+[2025-07-17 15:23:13,417] INFO django.server "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+[2025-07-17 15:23:13,418] INFO django.server "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+[2025-07-17 15:23:13,419] INFO django.server "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+[2025-07-17 15:23:13,420] INFO django.server "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+[2025-07-17 15:23:13,425] INFO django.server "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+[2025-07-17 15:23:13,425] INFO django.server "GET /static/admin/css/responsive.css HTTP/1.1" 200 16565
+[2025-07-17 15:23:13,472] INFO django.server "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+[2025-07-17 15:23:13,472] INFO django.server "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+[2025-07-17 15:23:13,520] WARNING django.request Not Found: /favicon.ico
+[2025-07-17 15:23:13,520] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3696
+[2025-07-17 15:23:56,215] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-17 15:23:56,215] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-17 15:23:56,225] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-17 15:23:56,242] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-17 15:23:56,243] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 272
+[2025-07-17 15:23:56,550] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-17 15:23:56,704] INFO django.server "OPTIONS /api/practices/practices/search/?title= HTTP/1.1" 200 0
+[2025-07-17 15:23:56,707] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-17 15:23:56,721] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 15:23:56,737] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 15:23:56,737] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 15:23:56,758] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 15:23:59,032] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-17 15:23:59,032] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-17 15:23:59,038] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 15:23:59,038] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 15:23:59,043] INFO django.server "OPTIONS /api/practices/practices/1/ HTTP/1.1" 200 0
+[2025-07-17 15:23:59,098] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 15:23:59,112] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 15:28:27,484] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:28:53,149] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:28:53,610] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:29:10,755] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:29:11,176] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:31:33,633] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:31:34,053] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:31:52,869] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:31:53,294] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:32:57,718] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:33:48,644] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:33:49,242] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:33:51,044] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:33:51,499] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:34:34,036] INFO django.utils.autoreload /app/backend/api/serializers.py changed, reloading.
+[2025-07-17 15:34:34,433] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:34:39,384] INFO django.utils.autoreload /app/backend/api/serializers.py changed, reloading.
+[2025-07-17 15:34:39,859] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:34:48,045] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:34:48,403] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:37:28,294] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:39:56,931] INFO django.server "OPTIONS /api/practices/practices/apply_student_practice/ HTTP/1.1" 200 0
+[2025-07-17 15:39:56,997] ERROR django.request Internal Server Error: /api/practices/practices/apply_student_practice/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.NotNullViolation: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (1, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 135, in apply_student_practice
+    serializer.save()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 210, in save
+    self.instance = self.create(validated_data)
+                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/app/backend/api/serializers.py", line 331, in create
+    return super().create(validated_data)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 991, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 663, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 1868, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.IntegrityError: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (1, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+[2025-07-17 15:39:57,009] ERROR django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 500 211652
+[2025-07-17 15:41:58,285] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:43:58,948] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:43:59,578] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:44:05,654] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:44:06,064] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:44:23,898] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:44:24,289] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:44:30,482] ERROR django.request Internal Server Error: /api/practices/practices/apply_student_practice/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.NotNullViolation: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (2, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 136, in apply_student_practice
+    serializer.save()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 210, in save
+    self.instance = self.create(validated_data)
+                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/app/backend/api/serializers.py", line 331, in create
+    return super().create(validated_data)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 991, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 663, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 1868, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.IntegrityError: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (2, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+[2025-07-17 15:44:30,494] ERROR django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 500 211949
+[2025-07-17 15:45:24,309] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 15:45:24,315] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 15:45:24,318] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-17 15:45:24,320] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-17 15:45:24,322] WARNING django.request Unauthorized: /api/practices/practices/1/
+[2025-07-17 15:45:24,323] WARNING django.server "GET /api/practices/practices/1/ HTTP/1.1" 401 58
+[2025-07-17 15:45:24,323] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:45:24,326] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:45:25,372] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 15:45:25,375] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 15:45:25,387] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 15:45:25,388] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 15:45:32,238] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 15:45:32,238] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 15:45:32,265] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 15:45:32,266] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 15:45:33,742] ERROR django.request Internal Server Error: /api/practices/practices/apply_student_practice/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.NotNullViolation: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (3, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 136, in apply_student_practice
+    serializer.save()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 210, in save
+    self.instance = self.create(validated_data)
+                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/app/backend/api/serializers.py", line 331, in create
+    return super().create(validated_data)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 991, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 663, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 1868, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.IntegrityError: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (3, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+[2025-07-17 15:45:33,748] ERROR django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 500 211949
+[2025-07-17 15:46:29,857] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:46:30,261] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:46:44,853] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-17 15:46:45,258] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:46:50,162] ERROR django.request Internal Server Error: /api/practices/practices/apply_student_practice/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.NotNullViolation: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (4, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 136, in apply_student_practice
+    serializer.save()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 210, in save
+    self.instance = self.create(validated_data)
+                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/app/backend/api/serializers.py", line 331, in create
+    return super().create(validated_data)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 991, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 663, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 1868, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.IntegrityError: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (4, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+[2025-07-17 15:46:50,173] ERROR django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 500 211949
+[2025-07-17 15:47:17,748] ERROR django.request Internal Server Error: /api/practices/practices/apply_student_practice/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.NotNullViolation: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (5, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 136, in apply_student_practice
+    serializer.save()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 210, in save
+    self.instance = self.create(validated_data)
+                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/app/backend/api/serializers.py", line 331, in create
+    return super().create(validated_data)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 991, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 663, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 1868, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.IntegrityError: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (5, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+[2025-07-17 15:47:17,754] ERROR django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 500 211949
+[2025-07-17 15:47:31,333] INFO django.utils.autoreload /app/backend/api/models.py changed, reloading.
+[2025-07-17 15:47:31,796] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:48:45,714] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:48:46,197] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:48:53,422] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:48:53,833] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:49:00,178] ERROR django.request Internal Server Error: /api/practices/practices/apply_student_practice/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.NotNullViolation: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (6, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 136, in apply_student_practice
+    serializer.save()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 210, in save
+    self.instance = self.create(validated_data)
+                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/app/backend/api/serializers.py", line 331, in create
+    return super().create(validated_data)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 991, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 663, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 1868, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.IntegrityError: null value in column "semester" of relation "student_practices" violates not-null constraint
+DETAIL:  Failing row contains (6, 2025-07-17, 0, null, 0, null, 1, 0, null, null, null).
+
+[2025-07-17 15:49:00,189] ERROR django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 500 211481
+[2025-07-17 15:49:54,302] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:50:05,878] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:50:06,329] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:50:19,891] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:50:20,573] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:50:26,733] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:50:27,127] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:50:28,849] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:50:29,305] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:50:36,447] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:50:36,905] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:50:40,571] INFO django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 201 271
+[2025-07-17 15:51:45,663] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:51:46,367] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:52:23,793] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:52:24,240] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:52:31,653] INFO django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 201 271
+[2025-07-17 15:53:02,875] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:53:03,497] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:53:48,289] INFO django.utils.autoreload /app/backend/practices/serializers.py changed, reloading.
+[2025-07-17 15:53:48,685] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:53:54,726] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:53:55,127] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:53:56,832] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:53:57,223] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:53:58,916] INFO django.utils.autoreload /app/backend/practices/views.py changed, reloading.
+[2025-07-17 15:53:59,329] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-17 15:54:04,637] INFO django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 201 284
+[2025-07-17 15:54:24,853] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-17 15:55:38,312] WARNING django.request Bad Request: /api/practices/practices/apply_student_practice/
+[2025-07-17 15:55:38,313] WARNING django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 400 53
+[2025-07-17 15:57:19,830] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-17 15:57:19,857] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 62434
+[2025-07-17 15:57:21,985] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 15:57:21,985] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 347
+[2025-07-17 15:57:21,994] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 15:57:21,998] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 336047
+[2025-07-17 15:57:22,617] INFO django.server "OPTIONS /api/practices/practices/5 HTTP/1.1" 200 0
+[2025-07-17 15:57:22,617] INFO django.server "OPTIONS /api/practices/practices/5 HTTP/1.1" 200 0
+[2025-07-17 15:57:22,624] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-17 15:57:22,624] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-17 15:57:22,631] INFO django.server "OPTIONS /api/practices/practices/5/ HTTP/1.1" 200 0
+[2025-07-17 15:57:22,718] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 136775
+[2025-07-17 15:57:22,734] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 136775
+[2025-07-17 15:57:24,122] INFO django.server "POST /api/practices/practices/apply_student_practice/ HTTP/1.1" 201 285

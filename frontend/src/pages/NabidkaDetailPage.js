@@ -13,6 +13,7 @@ import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
+import { useMessage } from "@hooks/MessageContext";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -20,6 +21,7 @@ export default function NabidkaDetailPage() {
     const [ entity, setEntity ] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
     const { user } = useUser();
+    const { addMessage } = useMessage();
 
     const fetchData = async () => {
         try {
@@ -44,8 +46,14 @@ export default function NabidkaDetailPage() {
         setPopUp(!popUp);
     }
 
-    const onSubmit = () => {
-        console.log("Přihláška podána");
+    const onSubmit = async() => {
+        const res = await nabidkaAPI.applyNabidka({
+            "practice" : id
+        })
+        if (res) {
+            addMessage("Přihláška byla úspěšně podána", "S")
+            handlePopUp(!popUp)
+        }
     }
 
     const onReject = () => {

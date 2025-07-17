@@ -331,7 +331,7 @@ class StudentPractice(models.Model):
         null=True,
     )
     year = models.IntegerField(blank=True, null=True)
-    semester = enum.EnumField(SemesterType)
+    semester = enum.EnumField(SemesterType, null=True)
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"
