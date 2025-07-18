@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import AresJusticeView, CustomTokenObtainPairView, LogoutView, OrganizationUserListView, RegisterView, StudentProfileView
+from .views import AresJusticeView, CustomTokenObtainPairView, LogoutView, OrganizationUserListView, RegisterView, StudentProfileView, CurrentUserProfileView
 
 app_name = "users"
 
@@ -13,5 +13,6 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("organization-users/", OrganizationUserListView.as_view(), name="organization_users"),
     path("student-profile/<int:student_id>", StudentProfileView.as_view(), name="student_profile"),
+    path("profile/", CurrentUserProfileView.as_view(), name="current_user_profile"),
     # path('verification/', include('verify_email.urls')),
 ]

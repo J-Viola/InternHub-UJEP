@@ -2,7 +2,7 @@ import re
 
 import requests
 from api.decorators import role_required
-from api.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser
+from api.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser, StudentUser, ProfessorUser
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
@@ -23,6 +23,10 @@ from .serializers import (
     OrganizationRegisterSerializer,
     StudentProfileSerializer,
     TokenResponseSerializer,
+    UserProfileSerializer,
+    StudentUserProfileSerializer,
+    ProfessorUserProfileSerializer,
+    OrganizationUserProfileSerializer,
 )
 
 
@@ -224,4 +228,24 @@ class StudentProfileView(APIView):
             return Response({"detail": "Student nenalezen."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = StudentProfileSerializer(student)
+        return Response(serializer.data)
+
+
+class CurrentUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses={200: UserProfileSerializer})
+    def get(self, request):
+        user = request.user
+        
+        # Vybereme správný serializer podle typu uživatele
+        if isinstance(user, StudentUser):
+            serializer = StudentUserProfileSerializer(user)
+        elif isinstance(user, ProfessorUser):
+            serializer = ProfessorUserProfileSerializer(user)
+        elif isinstance(user, OrganizationUser):
+            serializer = OrganizationUserProfileSerializer(user)
+        else:
+            serializer = UserProfileSerializer(user)
+        
         return Response(serializer.data)

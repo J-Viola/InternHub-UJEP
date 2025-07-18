@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Button from "@core/Button/Button";
@@ -6,8 +6,62 @@ import BackButton from "@core/Button/BackButton";
 import Headings from "@core/Text/Headings";
 import Nav from "@core/Nav";
 import Paragraph from "@components/core/Text/Paragraph";
+import { useUserAPI } from "@api/user/userAPI";
 
 export default function ProfilPage() {
+    const { getCurrentUserProfile } = useUserAPI();
+    const [userData, setUserData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const handleEditProfile = () => {
+        console.log("Upravit profil pro uživatele:", userData?.id);
+        alert("Funkce pro úpravu profilu bude implementována později");
+    };
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                setLoading(true);
+                const data = await getCurrentUserProfile();
+                setUserData(data);
+            } catch (error) {
+                console.error("Chyba při načítání profilu:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    if (loading) {
+        return (
+            <Container property="min-h-screen">
+                <Nav/>
+                <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
+                    <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
+                        <BackButton/>
+                        <Headings sizeTag={"h2"}>Načítání profilu...</Headings>
+                    </ContainerForEntity>
+                </Container>
+            </Container>
+        );
+    }
+
+    if (!userData) {
+        return (
+            <Container property="min-h-screen">
+                <Nav/>
+                <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
+                    <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
+                        <BackButton/>
+                        <Headings sizeTag={"h2"}>Chyba při načítání profilu</Headings>
+                    </ContainerForEntity>
+                </Container>
+            </Container>
+        );
+    }
+
     return(
         <Container property="min-h-screen">
             <Nav/>
@@ -17,56 +71,192 @@ export default function ProfilPage() {
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-8">
                         
                         {/* PROFILE PIC */}
-                        <Container property="w-md bg-blue-600 rounded-lg p-4 flex items-center justify-center">
-                            <Headings sizeTag="h4" property="text-white">
-                                {"PROFILE PIC"}
-                            </Headings>
+                        <Container property="w-32 h-32 bg-blue-600 rounded-lg p-4 flex items-center justify-center">
+                            {userData.profile_picture ? (
+                                <img 
+                                    src={userData.profile_picture} 
+                                    alt="Profilový obrázek" 
+                                    className="w-full h-full object-cover rounded-lg"
+                                />
+                            ) : (
+                                <Headings sizeTag="h4" property="text-white">
+                                    {userData.first_name?.charAt(0) || "U"}
+                                </Headings>
+                            )}
                         </Container>
 
                         {/* USER NAME */}
-                        <Headings sizeTag={"h2"} property={"mt-2"}>Profil uživatele</Headings>
+                        <Container property="flex flex-col justify-center">
+                            <Headings sizeTag={"h2"} property={"mb-2"}>
+                                {userData.full_name || `${userData.first_name} ${userData.last_name}`}
+                            </Headings>
+                            <Paragraph property="text-gray-600">
+                                {userData.email}
+                            </Paragraph>
+                            {userData.role && (
+                                <Paragraph property="text-blue-600 font-medium">
+                                    {userData.role}
+                                </Paragraph>
+                            )}
+                        </Container>
 
                     </Container>
 
-                    <Container property={"w-full mt-2 grid-cols-1"}>
+                    <Container property={"w-full mt-2 grid-cols-1 space-y-6"}>
 
                         {/* NĚCO O MĚ */}
-                        <Container property="p-1 space-y-1 mb-4">
-                            <Headings sizeTag={"h4"}>Něco o mě</Headings>
-                            <Paragraph>
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut dolor semper, congue lacus malesuada, gravida ipsum. Aenean porta porttitor risus at aliquet. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Integer leo ante, gravida ac ipsum vel, rhoncus congue felis. Sed rhoncus ornare scelerisque.
-                            </Paragraph>
-                        </Container>
+                        {userData.additional_info && (
+                            <Container property="p-1 space-y-1 mb-4">
+                                <Headings sizeTag={"h4"}>Něco o mě</Headings>
+                                <Paragraph>
+                                    {userData.additional_info}
+                                </Paragraph>
+                            </Container>
+                        )}
 
                         {/* OSOBNÍ ÚDAJE */}
                         <Container property="p-1 space-y-1">
                             <Headings sizeTag={"h4"}>Osobní údaje</Headings>
-                            <Paragraph>
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut dolor semper, congue lacus malesuada, gravida ipsum. Aenean porta porttitor risus at aliquet. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Integer leo ante, gravida ac ipsum vel, rhoncus congue felis. Sed rhoncus ornare scelerisque.
-                            </Paragraph>
-                        </Container>
-
-                        {/* SKILLS */}
-                        <Container property="p-1 space-y-1">
-                            <Headings sizeTag={"h4"}>Skills</Headings>
-                            <Container property={"flex flex-wrap gap-2"}>
-
-                                <Button pointer={false} variant="blueSmallNoHover">
-                                    {"Skill 1"}
-                                </Button>
-
-                                <Button pointer={false} variant="blueSmallNoHover">
-                                    {"Skill 2"}
-                                </Button>
-                                
+                            <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Container>
+                                    <Paragraph property="font-medium">Jméno:</Paragraph>
+                                    <Paragraph>{userData.first_name}</Paragraph>
+                                </Container>
+                                <Container>
+                                    <Paragraph property="font-medium">Příjmení:</Paragraph>
+                                    <Paragraph>{userData.last_name}</Paragraph>
+                                </Container>
+                                <Container>
+                                    <Paragraph property="font-medium">Email:</Paragraph>
+                                    <Paragraph>{userData.email}</Paragraph>
+                                </Container>
+                                {userData.phone && (
+                                    <Container>
+                                        <Paragraph property="font-medium">Telefon:</Paragraph>
+                                        <Paragraph>{userData.phone}</Paragraph>
+                                    </Container>
+                                )}
+                                {userData.title_before && (
+                                    <Container>
+                                        <Paragraph property="font-medium">Titul před:</Paragraph>
+                                        <Paragraph>{userData.title_before}</Paragraph>
+                                    </Container>
+                                )}
+                                {userData.title_after && (
+                                    <Container>
+                                        <Paragraph property="font-medium">Titul za:</Paragraph>
+                                        <Paragraph>{userData.title_after}</Paragraph>
+                                    </Container>
+                                )}
                             </Container>
                         </Container>
 
-                        <Container property="p-1 space-y-1">
-                            <Headings sizeTag={"h4"}>CV</Headings>
-                            <Button icon="download">Stáhnout</Button>
-                        </Container>
+                        {/* ADRESA - pouze pro studenty */}
+                        {userData.user_type === 'student' && (userData.street || userData.city) && (
+                            <Container property="p-1 space-y-1">
+                                <Headings sizeTag={"h4"}>Adresa</Headings>
+                                <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {userData.street && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Ulice:</Paragraph>
+                                            <Paragraph>{userData.street} {userData.street_number}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.city && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Město:</Paragraph>
+                                            <Paragraph>{userData.city}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.zip_code && (
+                                        <Container>
+                                            <Paragraph property="font-medium">PSČ:</Paragraph>
+                                            <Paragraph>{userData.zip_code}</Paragraph>
+                                        </Container>
+                                    )}
+                                </Container>
+                            </Container>
+                        )}
 
+                        {/* STUDIJNÍ INFORMACE - pouze pro studenty */}
+                        {userData.user_type === 'student' && (userData.field_of_study || userData.specialization) && (
+                            <Container property="p-1 space-y-1">
+                                <Headings sizeTag={"h4"}>Studijní informace</Headings>
+                                <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {userData.field_of_study && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Obor:</Paragraph>
+                                            <Paragraph>{userData.field_of_study}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.specialization && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Specializace:</Paragraph>
+                                            <Paragraph>{userData.specialization}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.year_of_study && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Ročník:</Paragraph>
+                                            <Paragraph>{userData.year_of_study}</Paragraph>
+                                        </Container>
+                                    )}
+                                </Container>
+                            </Container>
+                        )}
+
+                        {/* ORGANIZACE - pouze pro organizační uživatele */}
+                        {userData.user_type === 'organization' && userData.employer_profile && (
+                            <Container property="p-1 space-y-1">
+                                <Headings sizeTag={"h4"}>Organizace</Headings>
+                                <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {userData.employer_profile.company_name && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Název firmy:</Paragraph>
+                                            <Paragraph>{userData.employer_profile.company_name}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.employer_profile.ico && (
+                                        <Container>
+                                            <Paragraph property="font-medium">IČO:</Paragraph>
+                                            <Paragraph>{userData.employer_profile.ico}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.employer_profile.address && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Adresa:</Paragraph>
+                                            <Paragraph>{userData.employer_profile.address}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.employer_profile.city && (
+                                        <Container>
+                                            <Paragraph property="font-medium">Město:</Paragraph>
+                                            <Paragraph>{userData.employer_profile.city}</Paragraph>
+                                        </Container>
+                                    )}
+                                </Container>
+                            </Container>
+                        )}
+
+                        {/* CV - pouze pro studenty */}
+                        {userData.user_type === 'student' && userData.resume && (
+                            <Container property="p-1 space-y-1">
+                                <Headings sizeTag={"h4"}>CV</Headings>
+                                <Button icon="download">Stáhnout</Button>
+                            </Container>
+                        )}
+
+                    </Container>
+
+                    {/* EDIT PROFILE BUTTON */}
+                    <Container property="flex items-center justify-end">
+                        <Button 
+                            onClick={() => handleEditProfile()} 
+                            icon={"edit"}
+                            property="ml-auto"
+                        >
+                            Upravit profil
+                        </Button>
                     </Container>
 
                 </ContainerForEntity>

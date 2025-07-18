@@ -56,8 +56,19 @@ export const useUserAPI = () => {
         }
     };
 
+    const getCurrentUserProfile = async () => {
+        try {
+            const response = await api.get('/users/profile/');
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při získávání profilu uživatele:', error);
+            throw error;
+        }
+    };
+
     return {
         postRegister,
-        getOrganizationUsers
+        getOrganizationUsers,
+        getCurrentUserProfile
     };
 };

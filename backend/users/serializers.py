@@ -472,3 +472,86 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "city",
             "specialization",
         ]
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(read_only=True)
+    user_type = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "phone",
+            "full_name",
+            "title_before",
+            "title_after",
+            "first_name",
+            "last_name",
+            "user_type",
+            "role",
+        ]
+    
+    def get_user_type(self, obj):
+        if isinstance(obj, StudentUser):
+            return "student"
+        elif isinstance(obj, ProfessorUser):
+            return "professor"
+        elif isinstance(obj, OrganizationUser):
+            return "organization"
+        else:
+            return "unknown"
+    
+    def get_role(self, obj):
+        return obj.role
+
+
+class StudentUserProfileSerializer(UserProfileSerializer):
+    class Meta(UserProfileSerializer.Meta):
+        model = StudentUser
+        fields = UserProfileSerializer.Meta.fields + [
+            "profile_picture",
+            "resume",
+            "additional_info",
+            "street",
+            "street_number",
+            "zip_code",
+            "city",
+            "specialization",
+            "field_of_study",
+            "year_of_study",
+            "os_cislo",
+        ]
+
+
+class ProfessorUserProfileSerializer(UserProfileSerializer):
+    class Meta(UserProfileSerializer.Meta):
+        model = ProfessorUser
+        fields = UserProfileSerializer.Meta.fields + [
+            "ucit_idno",
+        ]
+
+
+class OrganizationUserProfileSerializer(UserProfileSerializer):
+    employer_profile = serializers.SerializerMethodField()
+    
+    class Meta(UserProfileSerializer.Meta):
+        model = OrganizationUser
+        fields = UserProfileSerializer.Meta.fields + [
+            "employer_profile",
+        ]
+    
+    def get_employer_profile(self, obj):
+        if hasattr(obj, 'employer_profile') and obj.employer_profile:
+            return {
+                "id": obj.employer_profile.employer_id,
+                "company_name": obj.employer_profile.company_name,
+                "ico": obj.employer_profile.ico,
+                "city": obj.employer_profile.city,
+                "address": obj.employer_profile.address,
+                "zip_code": obj.employer_profile.zip_code,
+                "logo": obj.employer_profile.logo.url if obj.employer_profile.logo else None,
+            }
+        return None
