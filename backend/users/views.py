@@ -11,17 +11,17 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
-from rest_framework.views import APIView
-from users.models import UserType, StagRoleEnum
 
 from .serializers import (
     AresJusticeSerializer,
     CustomTokenObtainPairSerializer,
     LogoutSerializer,
     OrganizationRegisterSerializer,
+    StudentProfileSerializer,
     TokenResponseSerializer,
 )
 
@@ -152,12 +152,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         tokens = serializer.validated_data
 
         user = tokens["user"]
-        
+
         # Debug: Zkontrolujme role při přihlášení
         print(f"DEBUG: Login - user type: {type(user)}")
         print(f"DEBUG: Login - organization_role: {getattr(user, 'organization_role', 'N/A')}")
         print(f"DEBUG: Login - role property: {user.role}")
-        
+
         user_info = {
             "id": user.id,
             "email": user.email,
@@ -182,9 +182,9 @@ class OrganizationUserListView(APIView):
 
     def get(self, request):
         user = request.user
-        employer_profile = getattr(user, 'employer_profile', None)
+        employer_profile = getattr(user, "employer_profile", None)
         if not employer_profile:
-            return Response({'detail': 'Uživatel nemá přiřazenou organizaci.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Uživatel nemá přiřazenou organizaci."}, status=status.HTTP_400_BAD_REQUEST)
         org_id = employer_profile.employer_id
         users = OrganizationUser.objects.filter(employer_profile_id=org_id)
         data = []
@@ -198,18 +198,30 @@ class OrganizationUserListView(APIView):
                     except Exception:
                         role = str(u.organization_role)
                 # Pokud je to enum
-                elif hasattr(u.organization_role, 'name'):
+                elif hasattr(u.organization_role, "name"):
                     role = u.organization_role.name
                 # Pokud je to ForeignKey na OrganizationRole model
-                elif hasattr(u.organization_role, 'role_name') and u.organization_role.role_name:
+                elif hasattr(u.organization_role, "role_name") and u.organization_role.role_name:
                     role = u.organization_role.role_name
-                elif hasattr(u.organization_role, 'role') and u.organization_role.role:
+                elif hasattr(u.organization_role, "role") and u.organization_role.role:
                     role = u.organization_role.role
                 else:
                     role = str(u.organization_role)
-            data.append({
-                'id': u.id,
-                'name': f"{u.first_name} {u.last_name}",
-                'role': role
-            })
+            data.append({"id": u.id, "name": f"{u.first_name} {u.last_name}", "role": role})
         return Response(data)
+
+
+class StudentProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses={200: StudentProfileSerializer})
+    def get(self, request, student_id):
+        try:
+            from api.models import StudentUser
+
+            student = StudentUser.objects.get(pk=student_id)
+        except StudentUser.DoesNotExist:
+            return Response({"detail": "Student nenalezen."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = StudentProfileSerializer(student)
+        return Response(serializer.data)
