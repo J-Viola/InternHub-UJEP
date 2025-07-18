@@ -1,27 +1,9 @@
-from datetime import date, datetime
+from datetime import date
 
 from rest_framework import serializers
+from student_practices.serializers import StudentPracticeStatusSerializer
 
 from .models import ApprovalStatus, Department, EmployerProfile, Practice, PracticeType, ProgressStatus, StudentPractice, Subject, User
-
-
-class FormattedDateField(serializers.DateField):
-    # Metoda pro převod data na string ve formátu DD-MM-YYYY při serializaci
-    def to_representation(self, value):
-        if value:
-            return value.strftime("%d.%m.%Y")
-        return None
-
-    # Metoda pro převod stringu na datum při deserializaci
-    def to_internal_value(self, value):
-        if value:
-            if isinstance(value, datetime):
-                return value.date()
-            try:
-                return datetime.strptime(value, "%d.%m.%Y").date()
-            except ValueError:
-                raise serializers.ValidationError("Invalid date format. Use DD.MM.YYYY")
-        return None
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -201,6 +183,8 @@ class PracticeSerializer(serializers.ModelSerializer):
         queryset=PracticeType.objects.all(), source="practice_type", write_only=True, required=False
     )
 
+    student_practice_status = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Practice
         fields = [
@@ -223,6 +207,7 @@ class PracticeSerializer(serializers.ModelSerializer):
             "image_base64",
             "practice_type",
             "practice_type_id",
+            "student_practice_status",
         ]
         read_only_fields = ["practice_id", "is_active"]
 
@@ -232,6 +217,23 @@ class PracticeSerializer(serializers.ModelSerializer):
                 "user_id": obj.contact_user.user_id,
                 "username": obj.contact_user.username,
             }
+        return None
+
+        # Add this method
+
+    def get_student_practice_status(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return None
+
+        # Check if the user is a StudentUser
+        if hasattr(request.user, "studentuser"):
+            try:
+                student_practice = StudentPractice.objects.get(user=request.user.studentuser, practice=obj)
+                return StudentPracticeStatusSerializer(student_practice).data
+            except StudentPractice.DoesNotExist:
+                pass
+
         return None
 
     def validate(self, data):

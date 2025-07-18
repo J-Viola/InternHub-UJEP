@@ -1,7 +1,7 @@
 from datetime import date
 
+from api.helpers import FormattedDateField
 from api.models import ApprovalStatus, EmployerProfile, Practice, ProgressStatus, StudentPractice
-from api.serializers import FormattedDateField
 from rest_framework import serializers
 
 

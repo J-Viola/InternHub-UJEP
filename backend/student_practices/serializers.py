@@ -1,5 +1,5 @@
+from api.helpers import FormattedDateField
 from api.models import Practice, StudentPractice
-from api.serializers import FormattedDateField
 from rest_framework import serializers
 
 
@@ -61,4 +61,17 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "student_practice_id",
             "practice_title",
             "application_date",
+        ]
+
+
+class StudentPracticeStatusSerializer(serializers.ModelSerializer):
+    application_date = FormattedDateField(read_only=True, allow_null=True)
+
+    class Meta:
+        model = StudentPractice
+        fields = [
+            "application_date",
+            "approval_status",
+            "progress_status",
+            "hours_completed",
         ]
