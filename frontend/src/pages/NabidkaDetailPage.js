@@ -66,8 +66,11 @@ export default function NabidkaDetailPage() {
             <Nav/>
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
-                {/* PODLE PŘÍZNAKU */}
-                <DocsPanel/>
+                {/* DOCS PANEL */}
+                {entity?.student_practice_status?.approval_status !== undefined &&
+                 entity.student_practice_status.approval_status !== 0 && (
+                    <DocsPanel/>
+                )}
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     {/*<BackButton/>*/}
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
@@ -104,7 +107,8 @@ export default function NabidkaDetailPage() {
                     </Container>
 
                     <Container property={"grid grid-cols-1 gap-8 mt-4"}>
-                        {user && user.role === "ST" && (
+                        {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
+                        {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 0) && (
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
