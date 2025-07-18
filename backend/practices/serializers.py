@@ -106,18 +106,30 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
 
 
 class PracticeApprovalSerializer(serializers.ModelSerializer):
-    subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
-    subject_code = serializers.CharField(source='subject.subject_code', read_only=True)
-    department_name = serializers.CharField(source='subject.department.department_name', read_only=True)
-    contact_user_full_name = serializers.CharField(source='contact_user.full_name', read_only=True)
-    contact_user_email = serializers.CharField(source='contact_user.email', read_only=True)
-    created_at = FormattedDateField(source='created_at', read_only=True)
+    subject_name = serializers.CharField(source="subject.subject_name", read_only=True)
+    subject_code = serializers.CharField(source="subject.subject_code", read_only=True)
+    department_name = serializers.CharField(source="subject.department.department_name", read_only=True)
+    contact_user_full_name = serializers.CharField(source="contact_user.full_name", read_only=True)
+    contact_user_email = serializers.CharField(source="contact_user.email", read_only=True)
+    created_at = FormattedDateField(read_only=True)
+
     class Meta:
         model = Practice
         fields = [
-            'practice_id', 'title', 'created_at',
-            'subject_name', 'subject_code',
-            'department_name',
-            'contact_user_id', 'contact_user_email',
-            'contact_user_full_name'
+            "practice_id",
+            "title",
+            "created_at",
+            "subject_name",
+            "subject_code",
+            "department_name",
+            "contact_user_id",
+            "contact_user_email",
+            "contact_user_full_name",
         ]
+
+
+class PracticeApprovalStatusSerializer(serializers.Serializer):
+    approval_status = serializers.ChoiceField(
+        choices=[choice for choice in ApprovalStatus.choices() if choice[0] != ApprovalStatus.PENDING],
+        help_text="Status schválení praxe (pouze pro schválení nebo zamítnutí)",
+    )
