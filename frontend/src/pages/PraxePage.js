@@ -8,14 +8,17 @@ import PraxeEntity from "@components/Praxe/PraxeEntity";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
+import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
 
 export default function PraxePage() {
 
     const [ selectedEntity, setSelectedEntity ] = useState({});
     const nabidkaAPI  = useNabidkaAPI();
+    const studentPraciceAPI = useStudentPracticeAPI();
     const [ data, setData]  = useState(null);
     const [ popUp, setPopUp ] = useState(false);
     const navigate = useNavigate();
+
 
     useEffect(() => {
         const initFetch = async() => {
@@ -59,6 +62,14 @@ export default function PraxePage() {
         }
     }
 
+    const handleInvivtaion = async (action) => {
+        if (action) {
+            const res = await studentPraciceAPI.manageEmployerInvitation(selectedEntity.invitation_id, action);
+            handlePopUp();
+        }
+        
+    }
+
     // Pop Up render
     const renderPopUp = () => {
         return (
@@ -66,8 +77,8 @@ export default function PraxePage() {
                 title={selectedEntity.title} 
                 onClose={handlePopUp} 
                 text={"Opravdu si přejete zahájit tuto praxi?"}
-                onSubmit={() => console.log("Submit")}
-                onReject={handlePopUp}
+                onSubmit={() => handleInvivtaion("accept")}
+                onReject={() => handleInvivtaion("reject")}
             />
         )
     }

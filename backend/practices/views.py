@@ -10,6 +10,7 @@ from api.models import (
     ProgressStatus,
     StudentPractice,
     StudentUser,
+    EmployerInvitationStatus
 )
 from api.serializers import PracticeSerializer
 from api.views import StandardResultsSetPagination
@@ -130,7 +131,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
             student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
 
             # Získej všechny employer invitations pro uživatele
-            employer_invitations = EmployerInvitation.objects.filter(user=user).select_related("practice", "employer")
+            employer_invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related("practice", "employer")
 
             # Serializuj student_practice - pouze základní info
             student_practice_data = []
@@ -150,6 +151,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
             for ei in employer_invitations:
                 employer_invitation_data.append(
                     {
+                        "invitation_id": ei.invitation_id,
                         "practice_id": ei.practice.practice_id if ei.practice else None,
                         "practice_title": ei.practice.title if ei.practice else None,
                         "company_logo": ei.practice.image_base64 if ei.practice else None,

@@ -1,6 +1,11 @@
 from api.helpers import FormattedDateField
-from api.models import Practice, StudentPractice
+from api.models import Practice, StudentPractice, EmployerInvitation
 from rest_framework import serializers
+
+
+class EmployerInvitationApprovalSerializer(serializers.Serializer):
+    invitation_id = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=['accept', 'reject'])
 
 
 class StudentPracticeSerializer(serializers.ModelSerializer):
