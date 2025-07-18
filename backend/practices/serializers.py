@@ -21,7 +21,6 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "hours_completed",
             "cancellation_reason",
             "year",
-            "semester",
         ]
 
     def get_user_info(self, obj):
@@ -40,7 +39,6 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
     student_count = serializers.SerializerMethodField()
     approved_student_count = serializers.SerializerMethodField()
     pending_student_count = serializers.SerializerMethodField()
-    completed_student_count = serializers.SerializerMethodField()
     start_date = FormattedDateField()
     end_date = FormattedDateField()
 
@@ -57,7 +55,6 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
             "student_count",
             "approved_student_count",
             "pending_student_count",
-            "completed_student_count",
             "available_positions",
         ]
         read_only_fields = ["practice_id", "is_active"]
@@ -80,9 +77,6 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
 
     def get_pending_student_count(self, obj):
         return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
-
-    def get_completed_student_count(self, obj):
-        return obj.student_practices.filter(progress_status=ProgressStatus.COMPLETED).count()
 
     def validate(self, data):
         start = data.get("start_date")

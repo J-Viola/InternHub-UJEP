@@ -8,7 +8,6 @@ from api.models import (
     OrganizationRole,
     Practice,
     ProgressStatus,
-    SemesterType,
     StudentPractice,
     StudentUser,
 )
@@ -187,8 +186,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         data["progress_status"] = ProgressStatus.NOT_STARTED.value
         data["hours_completed"] = 0
         data["year"] = date.today().year
-        if "semester" not in data:
-            data["semester"] = SemesterType.WINTER.value
+
         serializer = StudentPracticeSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

@@ -316,11 +316,6 @@ class Practice(models.Model):
         db_table = "practices"
 
 
-class SemesterType(enum.Enum):
-    WINTER = 0
-    SUMMER = 1
-
-
 class StudentPractice(models.Model):
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(StudentUser, models.DO_NOTHING, blank=True, null=True, related_name="student_practices")
@@ -338,7 +333,6 @@ class StudentPractice(models.Model):
         null=True,
     )
     year = models.IntegerField(blank=True, null=True)
-    semester = enum.EnumField(SemesterType, null=True)
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"

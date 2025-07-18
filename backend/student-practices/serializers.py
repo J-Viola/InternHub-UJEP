@@ -18,7 +18,6 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "hours_completed",
             "cancellation_reason",
             "year",
-            "semester",
         ]
 
     def get_user_info(self, obj):
