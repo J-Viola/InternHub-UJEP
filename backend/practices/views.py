@@ -1,10 +1,25 @@
 from datetime import date, datetime
 
 from api.decorators import role_required
-from api.models import ApprovalStatus, Department, OrganizationRole, Practice, StudentPractice, StudentUser
-from api.serializers import PracticeSerializer, StudentPracticeSerializer
+from api.models import (
+    ApprovalStatus,
+    Department,
+    EmployerInvitation,
+    OrganizationRole,
+    Practice,
+    ProgressStatus,
+    SemesterType,
+    StudentPractice,
+    StudentUser,
+)
+from api.serializers import PracticeSerializer
 from api.views import StandardResultsSetPagination
-from practices.serializers import PracticeApprovalSerializer, PracticeApprovalStatusSerializer, RunningPracticeSerializer
+from practices.serializers import (
+    PracticeApprovalSerializer,
+    PracticeApprovalStatusSerializer,
+    RunningPracticeSerializer,
+    StudentPracticeSerializer,
+)
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -107,18 +122,76 @@ class PracticeViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
-    def apply(self, request, pk=None):
-        # POST /api/practices/{id}/apply/
-        practice_obj = self.get_object()
-        data = request.data  # Data z frontendu (např. user_id, cover_letter apod.)
-        # Vytvoření záznamu StudentPractice s logikou: pokud už je student přihlášen, vrací chybu
-        existing = StudentPractice.objects.filter(practice=practice_obj, user=request.user).first()
-        if existing:
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    def get_practice_user_relations(self, request, pk=None, *args, **kwargs):
+        # GET /api/practices/get_practice_user_relations/
+        user = request.user
+        if user.pk:
+            # Získej všechny student_practice záznamy pro uživatele
+            student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
+
+            # Získej všechny employer invitations pro uživatele
+            employer_invitations = EmployerInvitation.objects.filter(user=user).select_related("practice", "employer")
+
+            # Serializuj student_practice - pouze základní info
+            student_practice_data = []
+            for sp in student_practices:
+                student_practice_data.append(
+                    {
+                        "practice_id": sp.practice.practice_id,
+                        "practice_title": sp.practice.title,
+                        "company_logo": sp.practice.image_base64,
+                        "application_date": sp.application_date,
+                        "status": sp.approval_status,
+                    }
+                )
+
+            # Serializuj employer invitations - pouze základní info
+            employer_invitation_data = []
+            for ei in employer_invitations:
+                employer_invitation_data.append(
+                    {
+                        "practice_id": ei.practice.practice_id if ei.practice else None,
+                        "practice_title": ei.practice.title if ei.practice else None,
+                        "company_logo": ei.practice.image_base64 if ei.practice else None,
+                        "submission_date": ei.submission_date,
+                        "status": ei.status,
+                    }
+                )
+
+            # Vrať zjednodušený JSON
+            return Response({"student_practices": student_practice_data, "employer_invitations": employer_invitation_data})
+        else:
+            return Response({"detail": "Uživatel nebyl nalezen"}, status=status.HTTP_404_NOT_FOUND)
+
+    # PODÁNÍ PŘIHLÁŠKY STUDENTEM
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def apply_student_practice(self, request):
+        """
+        POST /api/practices/apply_student_practice/
+        Vytvoří záznam StudentPractice pro aktuálního uživatele a zadanou praxi.
+        Očekává v těle: {"practice": <practice_id>}
+        """
+        user = request.user
+        data = request.data.copy()
+        practice_id = data.get("practice")
+        if not practice_id:
+            return Response({"detail": "Chybí practice (id praxe)"}, status=status.HTTP_400_BAD_REQUEST)
+        # Zkontroluj, zda už není přihlášen
+        if StudentPractice.objects.filter(practice_id=practice_id, user=user).exists():
             return Response({"detail": "Již jste přihlášen(a) na tuto praxi."}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = StudentPracticeSerializer(data={"practice": practice_obj.id, **data})
+        # Nastav povinné hodnoty
+        data["user"] = user.pk
+        data["application_date"] = date.today()
+        data["approval_status"] = ApprovalStatus.PENDING.value
+        data["progress_status"] = ProgressStatus.NOT_STARTED.value
+        data["hours_completed"] = 0
+        data["year"] = date.today().year
+        if "semester" not in data:
+            data["semester"] = SemesterType.WINTER.value
+        serializer = StudentPracticeSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get"], permission_classes=[permissions.AllowAny])
