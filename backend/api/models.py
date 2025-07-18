@@ -90,6 +90,8 @@ class EmployerProfile(models.Model):
     company_profile = models.TextField(blank=True, null=True)
     approval_status = enum.EnumField(ApprovalStatus)
     logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.company_name or super().__str__()
@@ -264,6 +266,8 @@ class EmployerInvitation(models.Model):
     expiration_date = models.DateField(blank=True, null=True)
     message = models.TextField(blank=True, null=True)
     status = enum.EnumField(EmployerInvitationStatus)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Invitation {self.invitation_id} for {self.user} to {self.practice}"
@@ -299,7 +303,10 @@ class Practice(models.Model):
     contact_user = models.ForeignKey(OrganizationUser, models.DO_NOTHING, blank=True, null=True, related_name="practices")
     is_active = models.BooleanField(blank=True, null=True)
     image_base64 = models.TextField(blank=True, null=True)
+    # image = models.ImageField(upload_to=settings.STORAGE_URL + "images/practices", blank=True, null=True)
     practice_type = models.ForeignKey(PracticeType, models.DO_NOTHING, blank=True, null=True, related_name="practices")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
 
@@ -307,11 +314,6 @@ class Practice(models.Model):
 
     class Meta:
         db_table = "practices"
-
-
-class SemesterType(enum.Enum):
-    WINTER = 0
-    SUMMER = 1
 
 
 class StudentPractice(models.Model):
@@ -331,7 +333,6 @@ class StudentPractice(models.Model):
         null=True,
     )
     year = models.IntegerField(blank=True, null=True)
-    semester = enum.EnumField(SemesterType, null=True)
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"

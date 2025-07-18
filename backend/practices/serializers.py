@@ -1,7 +1,7 @@
 from datetime import date
 
-from api.models import ApprovalStatus, EmployerProfile, Practice, PracticeType, ProgressStatus, StudentPractice, Subject, User
-from api.serializers import EmployerProfileSerializer, PracticeTypeSerializer, SubjectSerializer
+from api.helpers import FormattedDateField
+from api.models import ApprovalStatus, EmployerProfile, Practice, ProgressStatus, StudentPractice
 from rest_framework import serializers
 
 
@@ -21,7 +21,6 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "hours_completed",
             "cancellation_reason",
             "year",
-            "semester",
         ]
 
     def get_user_info(self, obj):
@@ -31,56 +30,32 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
 
 
 class RunningPracticeSerializer(serializers.ModelSerializer):
-    employer = EmployerProfileSerializer(read_only=True)
     employer_id = serializers.PrimaryKeyRelatedField(
         queryset=EmployerProfile.objects.all(), source="employer", write_only=True, required=True
     )
-
-    subject = SubjectSerializer(read_only=True)
-    subject_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), source="subject", write_only=True, required=True)
-
-    contact_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
-    contact_user_info = serializers.SerializerMethodField(read_only=True)
-
-    practice_type = PracticeTypeSerializer(read_only=True)
-    practice_type_id = serializers.PrimaryKeyRelatedField(
-        queryset=PracticeType.objects.all(), source="practice_type", write_only=True, required=False
-    )
-
+    subject_code = serializers.CharField(source="subject.subject_code", read_only=True)
+    contact_user_name = serializers.CharField(source="contact_user.full_name", read_only=True)
     # Add student practice related fields
-    student_practices = StudentPracticeSerializer(many=True, read_only=True)
     student_count = serializers.SerializerMethodField()
     approved_student_count = serializers.SerializerMethodField()
     pending_student_count = serializers.SerializerMethodField()
-    completed_student_count = serializers.SerializerMethodField()
+    start_date = FormattedDateField()
+    end_date = FormattedDateField()
 
     class Meta:
         model = Practice
         fields = [
             "practice_id",
-            "employer",
             "employer_id",
-            "subject",
-            "subject_id",
+            "subject_code",
             "title",
-            "description",
-            "responsibilities",
-            "available_positions",
             "start_date",
             "end_date",
-            "progress_status",
-            "approval_status",
-            "contact_user",
-            "contact_user_info",
-            "is_active",
-            "image_base64",
-            "practice_type",
-            "practice_type_id",
-            "student_practices",
+            "contact_user_name",
             "student_count",
             "approved_student_count",
             "pending_student_count",
-            "completed_student_count",
+            "available_positions",
         ]
         read_only_fields = ["practice_id", "is_active"]
 
@@ -103,13 +78,7 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
     def get_pending_student_count(self, obj):
         return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
 
-    def get_completed_student_count(self, obj):
-        return obj.student_practices.filter(progress_status=ProgressStatus.COMPLETED).count()
-
     def validate(self, data):
-        """
-        Zkontroluje, zda end_date není před start_date, a že start_date >= dnešek.
-        """
         start = data.get("start_date")
         end = data.get("end_date")
         if start and end and end < start:
@@ -119,9 +88,6 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        """
-        Nastaví výchozí hodnotu is_active=True a případně status a approval_status.
-        """
         if "is_active" not in validated_data:
             validated_data["is_active"] = True
         if "progress_status" not in validated_data:
@@ -132,3 +98,33 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
+
+
+class PracticeApprovalSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source="subject.subject_name", read_only=True)
+    subject_code = serializers.CharField(source="subject.subject_code", read_only=True)
+    department_name = serializers.CharField(source="subject.department.department_name", read_only=True)
+    contact_user_full_name = serializers.CharField(source="contact_user.full_name", read_only=True)
+    contact_user_email = serializers.CharField(source="contact_user.email", read_only=True)
+    created_at = FormattedDateField(read_only=True)
+
+    class Meta:
+        model = Practice
+        fields = [
+            "practice_id",
+            "title",
+            "created_at",
+            "subject_name",
+            "subject_code",
+            "department_name",
+            "contact_user_id",
+            "contact_user_email",
+            "contact_user_full_name",
+        ]
+
+
+class PracticeApprovalStatusSerializer(serializers.Serializer):
+    approval_status = serializers.ChoiceField(
+        choices=[choice for choice in ApprovalStatus.choices() if choice[0] != ApprovalStatus.PENDING],
+        help_text="Status schválení praxe (pouze pro schválení nebo zamítnutí)",
+    )

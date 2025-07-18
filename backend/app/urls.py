@@ -34,6 +34,7 @@ urlpatterns = [
     path("api/documents/<path:path>/", serve_user_file, name="serve_user_file"),
     path("api/departments/", include("department.urls")),
     path("api/subjects/", include("subject.urls")),
+    path("api/student-practices/", include("student_practices.urls")),
 ]
 
 # TODO: Remove this in production

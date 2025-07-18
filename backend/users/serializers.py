@@ -185,7 +185,21 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("email", "phone", "password", "password2", "ico", "first_name", "last_name", "title_before", "title_after", "logo", "companyName", "address", "dic")
+        fields = (
+            "email",
+            "phone",
+            "password",
+            "password2",
+            "ico",
+            "first_name",
+            "last_name",
+            "title_before",
+            "title_after",
+            "logo",
+            "companyName",
+            "address",
+            "dic",
+        )
         extra_kwargs = {
             "ico": {"required": True},
             "email": {"required": True},
@@ -205,7 +219,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
         company_name = validated_data.pop("companyName", "")
         address = validated_data.pop("address", "")
         dic = validated_data.pop("dic", "")
-        
+
         ico = str(ico).zfill(8)
         cache_key = f"ares_{ico}"
         ares_data = cache.get(cache_key)
@@ -232,7 +246,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
                 organization_role=OrganizationRole.OWNER,
                 is_active=True,  # TODO: Remove this
             )
-            
+
             # Use frontend data if provided, otherwise fall back to ARES data
             if hasattr(ares_data, "sidlo"):
                 sidlo = ares_data.sidlo
@@ -243,13 +257,25 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
                 employer_id=user.id,
                 ico=ico,
                 dic=dic if dic else (ares_data.dic if hasattr(ares_data, "dic") else ares_data.get("dic", "")),
-                company_name=company_name if company_name else (ares_data.obchodniJmeno if hasattr(ares_data, "obchodniJmeno") else ares_data.get("companyName", "")),
-                address=address if address else (sidlo.textovaAdresa if hasattr(sidlo, "textovaAdresa") else (sidlo.get("address", "") if isinstance(sidlo, dict) else "")),
+                company_name=(
+                    company_name
+                    if company_name
+                    else (ares_data.obchodniJmeno if hasattr(ares_data, "obchodniJmeno") else ares_data.get("companyName", ""))
+                ),
+                address=(
+                    address
+                    if address
+                    else (
+                        sidlo.textovaAdresa
+                        if hasattr(sidlo, "textovaAdresa")
+                        else (sidlo.get("address", "") if isinstance(sidlo, dict) else "")
+                    )
+                ),
                 zip_code=sidlo.psc if hasattr(sidlo, "psc") else (sidlo.get("psc", "") if isinstance(sidlo, dict) else ""),
                 approval_status=ApprovalStatus.PENDING,
                 logo=validated_data["logo"] if "logo" in validated_data else None,
             )
-            
+
             # Update the user to link to the employer profile
             user.employer_profile = employer_profile
             user.set_password(validated_data["password"])
@@ -425,3 +451,24 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
                 )
     else:
         raise Exception("Failed to fetch STAG roles")
+
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = StudentUser
+        fields = [
+            "id",
+            "email",
+            "phone",
+            "full_name",
+            "profile_picture",
+            "resume",
+            "additional_info",
+            "street",
+            "street_number",
+            "zip_code",
+            "city",
+            "specialization",
+        ]
