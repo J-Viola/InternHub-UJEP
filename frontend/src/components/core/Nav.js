@@ -63,14 +63,10 @@ function Nav({}) {
 
     const studentDict = {
         "Nabídka praxí": "/nabidka",
-        "Účet": "/",
+        //"Účet": "/",
         "Praxe": "/praxe",
-        "TEST STRÁNEK": {
-            "SprInPrihlaseni": "/SprInPrihlaseni",
-            "VytStáže": "/VytNabidku"
-        },
-        "Odhlásit se": "/logout",
         "Profil": "/profil",
+        "Odhlásit se": "/logout",
     };
 
     const ownerDict = {
