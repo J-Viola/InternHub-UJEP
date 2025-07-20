@@ -60,7 +60,22 @@ class PracticeViewSet(viewsets.ModelViewSet):
         # GET /api/practices/{id}/
         practice_obj = self.get_object()
         serializer = self.get_serializer(practice_obj)
-        return Response(serializer.data)
+        
+        contact_user_info = None
+        if practice_obj.contact_user:
+            contact_user_info = {
+                "user_id": practice_obj.contact_user.user_id,
+                "username": practice_obj.contact_user.username,
+                "first_name": practice_obj.contact_user.first_name,
+                "last_name": practice_obj.contact_user.last_name,
+                "email": practice_obj.contact_user.email,
+                "phone": practice_obj.contact_user.phone,
+            }
+        
+        response_data = serializer.data
+        response_data['contact_user_info'] = contact_user_info
+        
+        return Response(response_data)
 
     @role_required([OrganizationRole.INSERTER, OrganizationRole.OWNER, StagRoleEnum.VY])
     def create(self, request, *args, **kwargs):

@@ -68,7 +68,7 @@ export default function NabidkaDetailPage() {
                 <BackButton/>
                 {/* DOCS PANEL */}
                 {entity?.student_practice_status?.approval_status !== undefined &&
-                 entity.student_practice_status.approval_status !== 0 && (
+                 entity.student_practice_status.approval_status === 1 && (
                     <DocsPanel/>
                 )}
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
@@ -106,9 +106,40 @@ export default function NabidkaDetailPage() {
                         <Paragraph>{entity?.responsibilities}</Paragraph>
                     </Container>
 
+                    {/* CONTACT USER INFO */}
+                    {entity.contact_user_info && (
+                        <Container property={"editor-content mt-2"}>
+                            <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
+                            {entity.contact_user_info.username && (
+                                <Paragraph property="mb-2">
+                                    <span className="font-semibold">Uživatelské jméno:</span> {entity.contact_user_info.username}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.first_name && (
+                                <Paragraph property="mb-2">
+                                    <span className="font-semibold">Jméno:</span> {entity.contact_user_info.first_name}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.last_name && (
+                                <Paragraph property="mb-2">
+                                    <span className="font-semibold">Příjmení:</span> {entity.contact_user_info.last_name}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.email && (
+                                <Paragraph property="mb-2">
+                                    <span className="font-semibold">Email:</span> {entity.contact_user_info.email}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.phone && (
+                                <Paragraph property="mb-2">
+                                    <span className="font-semibold">Telefon:</span> {entity.contact_user_info.phone}
+                                </Paragraph>
+                            )}
+                        </Container>
+                    )}
                     <Container property={"grid grid-cols-1 gap-8 mt-4"}>
                         {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
-                        {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 0) && (
+                        {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
