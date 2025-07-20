@@ -53,7 +53,7 @@ export default function DocsPanel() {
     const STATUS = true;
 
     return(
-        <ContainerForEntity property={"mb-2"}>
+        <ContainerForEntity property={"pl-8 pr-8 mb-2"}>
             <Container property={"flex flex-cols gap-1 inline-block"}>
                 <Paragraph>Kontrola dokumentu:</Paragraph>
                 {STATUS ? 

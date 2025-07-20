@@ -14,6 +14,7 @@ import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
+import ProgressPanel from "@components/Nabidka/ProgressBar";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -72,7 +73,6 @@ export default function NabidkaDetailPage() {
                     <DocsPanel/>
                 )}
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
-                    {/*<BackButton/>*/}
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
                             
                         {/* LOGO */}
@@ -107,32 +107,32 @@ export default function NabidkaDetailPage() {
                     </Container>
 
                     {/* CONTACT USER INFO */}
-                    {entity.contact_user_info && (
+                    {entity && entity.contact_user_info && (
                         <Container property={"editor-content mt-2"}>
                             <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
                             {entity.contact_user_info.username && (
                                 <Paragraph property="mb-2">
-                                    <span className="font-semibold">Uživatelské jméno:</span> {entity.contact_user_info.username}
+                                    Uživatelské jméno: {entity.contact_user_info.username}
                                 </Paragraph>
                             )}
                             {entity.contact_user_info.first_name && (
                                 <Paragraph property="mb-2">
-                                    <span className="font-semibold">Jméno:</span> {entity.contact_user_info.first_name}
+                                    Jméno: {entity.contact_user_info.first_name}
                                 </Paragraph>
                             )}
                             {entity.contact_user_info.last_name && (
                                 <Paragraph property="mb-2">
-                                    <span className="font-semibold">Příjmení:</span> {entity.contact_user_info.last_name}
+                                    Příjmení: {entity.contact_user_info.last_name}
                                 </Paragraph>
                             )}
                             {entity.contact_user_info.email && (
                                 <Paragraph property="mb-2">
-                                    <span className="font-semibold">Email:</span> {entity.contact_user_info.email}
+                                    Email: {entity.contact_user_info.email}
                                 </Paragraph>
                             )}
                             {entity.contact_user_info.phone && (
                                 <Paragraph property="mb-2">
-                                    <span className="font-semibold">Telefon:</span> {entity.contact_user_info.phone}
+                                    Telefon: {entity.contact_user_info.phone}
                                 </Paragraph>
                             )}
                         </Container>
@@ -148,7 +148,18 @@ export default function NabidkaDetailPage() {
                         )}
                     </Container>
                 </ContainerForEntity>
-                
+
+                {entity?.student_practice_status?.approval_status !== undefined &&
+                 entity.student_practice_status.approval_status === 1 && (
+                    <Container property={"mt-2"}>
+                        <ProgressPanel
+                            subject={entity.subject?.subject_code}
+                            goalValueSingle={entity.subject?.hours_required}
+                            currentValueSingle={entity.student_practice_status?.hours_completed}
+                        />
+                    </Container>
+                )}
+                  
             </Container>
 
             {/* PODÁNÍ PŘIHLÁŠKY */}
