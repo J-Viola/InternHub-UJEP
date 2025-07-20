@@ -2,31 +2,36 @@ import re
 
 import requests
 from api.decorators import role_required
-from api.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser, StudentUser, ProfessorUser
+from api.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser, ProfessorUser, StudentUser
+from api.views import StandardResultsSetPagination
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
+from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.dtos.dtos import EkonomickySubjektDTO
 
+from .models import StagRoleEnum
 from .serializers import (
+    AdminOrganizationSerializer,
     AresJusticeSerializer,
     CustomTokenObtainPairSerializer,
     LogoutSerializer,
     OrganizationRegisterSerializer,
+    OrganizationUserProfileSerializer,
+    ProfessorUserProfileSerializer,
     StudentProfileSerializer,
+    StudentUserProfileSerializer,
     TokenResponseSerializer,
     UserProfileSerializer,
-    StudentUserProfileSerializer,
-    ProfessorUserProfileSerializer,
-    OrganizationUserProfileSerializer,
 )
 
 
@@ -231,13 +236,71 @@ class StudentProfileView(APIView):
         return Response(serializer.data)
 
 
+class AdminOrganizationViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = AdminOrganizationSerializer
+
+    queryset = EmployerProfile.objects.all()
+    pagination_class = StandardResultsSetPagination
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        return [permissions.IsAuthenticated()]
+
+    def list(self, request, *args, **kwargs):
+        # GET /api/admin-department/
+        departments = self.queryset
+        page = self.paginate_queryset(departments)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(departments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        # GET /api/admin-department/{id}/
+        department = self.get_object()
+        serializer = self.get_serializer(department)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
+    def update(self, request, pk=None, *args, **kwargs):
+        # PUT /api/admin-department/{id}/
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        data = request.data
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
+    def partial_update(self, request, pk=None, *args, **kwargs):
+        # PATCH /api/admin-department/{id}/
+        return self.update(request, pk, partial=True, *args, **kwargs)
+
+    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
+    def destroy(self, request, pk=None, *args, **kwargs):
+        # DELETE /api/practices/{id}/
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class CurrentUserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(responses={200: UserProfileSerializer})
     def get(self, request):
         user = request.user
-        
+
         # Vybereme správný serializer podle typu uživatele
         if isinstance(user, StudentUser):
             serializer = StudentUserProfileSerializer(user)
@@ -247,5 +310,5 @@ class CurrentUserProfileView(APIView):
             serializer = OrganizationUserProfileSerializer(user)
         else:
             serializer = UserProfileSerializer(user)
-        
+
         return Response(serializer.data)

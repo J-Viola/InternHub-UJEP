@@ -65,7 +65,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class DepartmentSerializer(serializers.ModelSerializer):
+class DepartmentUserSerializer(serializers.ModelSerializer):
     user = StudentDetailSerializer(read_only=True)
     department = serializers.StringRelatedField()
     role = serializers.StringRelatedField()
@@ -96,3 +96,10 @@ class ProfessorDetailSerializer(serializers.ModelSerializer):
         qs = obj.user_subjects.filter(role=UserSubjectType.Professor)
         dept_name = qs.values_list("subject__department__department_name", flat=True).distinct().first()
         return dept_name if dept_name else None
+
+
+class AdminDepartmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Department
+        fields = "__all__"

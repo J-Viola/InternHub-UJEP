@@ -5,12 +5,12 @@ from api.models import (
     ApprovalStatus,
     Department,
     EmployerInvitation,
+    EmployerInvitationStatus,
     OrganizationRole,
     Practice,
     ProgressStatus,
     StudentPractice,
     StudentUser,
-    EmployerInvitationStatus
 )
 from api.serializers import PracticeSerializer
 from api.views import StandardResultsSetPagination
@@ -131,7 +131,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
             student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
 
             # Získej všechny employer invitations pro uživatele
-            employer_invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related("practice", "employer")
+            employer_invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related(
+                "practice", "employer"
+            )
 
             # Serializuj student_practice - pouze základní info
             student_practice_data = []
@@ -219,6 +221,18 @@ class PracticeViewSet(viewsets.ModelViewSet):
         if not subj_id:
             return Response({"detail": "Chybí subject_id"}, status=status.HTTP_400_BAD_REQUEST)
         practices = Practice.objects.filter(subject_id=subj_id, is_active=True).order_by("start_date")
+        serializer = self.get_serializer(practices, many=True)
+        return Response(serializer.data)
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.AllowAny], url_path="by_employer_profile/(?P<employer_id>[^/.]+)"
+    )
+    def by_employer_profile(self, request, employer_id):
+        """
+        GET /api/practices/by_employer_profile/{employer_id}
+        Vrací praxe patřící k dané organizaci
+        """
+        practices = Practice.objects.filter(employer=employer_id, is_active=True).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 

@@ -1,11 +1,25 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework import routers
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import AresJusticeView, CustomTokenObtainPairView, LogoutView, OrganizationUserListView, RegisterView, StudentProfileView, CurrentUserProfileView
+from .views import (
+    AdminOrganizationViewSet,
+    AresJusticeView,
+    CurrentUserProfileView,
+    CustomTokenObtainPairView,
+    LogoutView,
+    OrganizationUserListView,
+    RegisterView,
+    StudentProfileView,
+)
 
 app_name = "users"
 
+router = routers.DefaultRouter()
+router.register(r"admin-organization-users", AdminOrganizationViewSet, basename="admin_organization_users")
+
 urlpatterns = [
+    path("", include(router.urls)),
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("logout/", LogoutView.as_view(), name="logout"),

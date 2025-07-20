@@ -474,11 +474,27 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         ]
 
 
+class EmployerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployerProfile
+        fields = [
+            "employer_id",
+            "ico",
+            "dic",
+            "company_name",
+            "address",
+            "zip_code",
+            "approval_status",
+            "logo",
+        ]
+        read_only_fields = ["employer_id", "approval_status"]
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     user_type = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
         fields = [
@@ -493,7 +509,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "user_type",
             "role",
         ]
-    
+
     def get_user_type(self, obj):
         if isinstance(obj, StudentUser):
             return "student"
@@ -503,7 +519,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return "organization"
         else:
             return "unknown"
-    
+
     def get_role(self, obj):
         return obj.role
 
@@ -536,15 +552,15 @@ class ProfessorUserProfileSerializer(UserProfileSerializer):
 
 class OrganizationUserProfileSerializer(UserProfileSerializer):
     employer_profile = serializers.SerializerMethodField()
-    
+
     class Meta(UserProfileSerializer.Meta):
         model = OrganizationUser
         fields = UserProfileSerializer.Meta.fields + [
             "employer_profile",
         ]
-    
+
     def get_employer_profile(self, obj):
-        if hasattr(obj, 'employer_profile') and obj.employer_profile:
+        if hasattr(obj, "employer_profile") and obj.employer_profile:
             return {
                 "id": obj.employer_profile.employer_id,
                 "company_name": obj.employer_profile.company_name,
@@ -553,5 +569,23 @@ class OrganizationUserProfileSerializer(UserProfileSerializer):
                 "address": obj.employer_profile.address,
                 "zip_code": obj.employer_profile.zip_code,
                 "logo": obj.employer_profile.logo.url if obj.employer_profile.logo else None,
+            }
+        return None
+
+
+class AdminOrganizationSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployerProfile
+        fields = ["employer_id", "ico", "dic", "company_name", "address", "zip_code", "approval_status", "logo", "owner"]
+
+    def get_owner(self, obj):
+        owner = OrganizationUser.objects.filter(employer_profile=obj, organization_role=OrganizationRole.OWNER).first()
+        if owner:
+            return {
+                "id": owner.id,
+                "email": owner.email,
+                "full_name": owner.full_name,
             }
         return None
