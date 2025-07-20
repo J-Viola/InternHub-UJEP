@@ -29,6 +29,34 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
         return None
 
 
+class OrganizationPracticeSerializer(serializers.ModelSerializer):
+    """Serializer pro zobrazení praxí organizace"""
+    contact_user_full_name = serializers.CharField(source="contact_user.full_name", read_only=True)
+    created_at = FormattedDateField(read_only=True)
+    
+    # Statistiky studentů
+    approved_applications = serializers.SerializerMethodField()
+    pending_applications = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Practice
+        fields = [
+            "practice_id",
+            "title",
+            "contact_user_full_name",
+            "created_at",
+            "available_positions",
+            "approved_applications",
+            "pending_applications",
+        ]
+
+    def get_approved_applications(self, obj):
+        return obj.student_practices.filter(approval_status=ApprovalStatus.APPROVED).count()
+
+    def get_pending_applications(self, obj):
+        return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
+
+
 class RunningPracticeSerializer(serializers.ModelSerializer):
     employer_id = serializers.PrimaryKeyRelatedField(
         queryset=EmployerProfile.objects.all(), source="employer", write_only=True, required=True

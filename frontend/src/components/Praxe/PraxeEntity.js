@@ -35,24 +35,120 @@ export default function PraxeEntity({type, entity, onClick, onView}) {
         }
     }
 
-    return(
-        <ContainerForEntity variant={getStatusColor(entity.status, type)} property={"pl-8 pt-2 pb-2 pr-4"}>
-            <Container property={"grid grid-cols-5 gap-2 items-center"}>
-                <Image width={"50px"} height={"50px"} src={entity.company_logo}/>
-                <Paragraph variant={"baseBold"}>{entity.practice_title}</Paragraph>
-                <Paragraph>Datum podání: {entity.application_date}</Paragraph>
-                <Paragraph>Status: {statusToText(entity.status)}</Paragraph>
-                {/* POKUD BUDE ZAMÍTNUTÁ, TAK NEBUDE MÍT IKONU */}
+    // Render pro organizační praxe
+    if (type === "organization_practices") {
+        return (
+            <ContainerForEntity property={"pl-8 pt-4 pb-4 pr-4"}>
+                <Container property={"flex items-center justify-between"}>
+                    <Container property={"flex items-center gap-6 flex-1"}>
+                        <Container property={"min-w-[200px]"}>
+                            <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                                Kontaktní osoba
+                            </Paragraph>
+                            <Paragraph property={"font-medium"}>
+                                {entity.contact_user_full_name || "Není uvedena"}
+                            </Paragraph>
+                        </Container>
+                        <Container property={"flex-1"}>
+                            <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                                Název stáže
+                            </Paragraph>
+                            <Headings sizeTag={"h3"} property={"text-lg font-semibold"}>
+                                {entity.title}
+                            </Headings>
+                        </Container>
+                        <Container property={"min-w-[150px]"}>
+                            <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                                Datum vytvoření
+                            </Paragraph>
+                            <Paragraph property={"font-medium"}>
+                                {entity.created_at}
+                            </Paragraph>
+                        </Container>
+                        <Container property={"min-w-[150px]"}>
+                            <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                                Podané přihlášky
+                            </Paragraph>
+                            <Paragraph property={"font-medium"}>
+                                {entity.approved_applications}/{entity.pending_applications}/{entity.available_positions || 0}
+                            </Paragraph>
+                        </Container>
+                    </Container>
+                    <Container property={"flex items-center gap-4 ml-4"}>
+                        <Button 
+                            noVariant={true}
+                            onClick={onView}
+                            title="Zobrazit přihlášky"
+                            icon={"users"}
+                            iconColor={"gray"}
+                            iconSize={"24"}
+                        />
+                        <Button 
+                            noVariant={true}
+                            onClick={onClick}
+                            title="Upravit stáž"
+                            icon={"edit"}
+                            iconColor={"gray"}
+                            iconSize={"24"}
+                        />
+                    </Container>
+                </Container>
+            </ContainerForEntity>
+        );
+    }
 
-                <Container property={"flex flex-row gap-4 inline-block justify-end"}>
-                    <Button noVariant={true} icon="eye" iconColor={"text-black"} iconSize={"24"} onClick={onView}></Button>
+    // Původní render pro studenty a pozvánky
+    return(
+        <ContainerForEntity variant={getStatusColor(entity.status, type)} property={"pl-8 pt-4 pb-4 pr-4"}>
+            <Container property={"flex items-center justify-between"}>
+                <Container property={"flex items-center gap-6 flex-1"}>
+                    <Container property={"min-w-[60px]"}>
+                        <Image width={"50px"} height={"50px"} src={entity.company_logo}/>
+                    </Container>
+                    <Container property={"flex-1 min-w-0"}>
+                        <Paragraph variant={"baseBold"} property={"truncate"}>
+                            {entity.practice_title}
+                        </Paragraph>
+                    </Container>
+                    <Container property={"min-w-[150px]"}>
+                        <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                            Datum podání
+                        </Paragraph>
+                        <Paragraph property={"font-medium"}>
+                            {entity.application_date}
+                        </Paragraph>
+                    </Container>
+                    <Container property={"min-w-[120px]"}>
+                        <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                            Status
+                        </Paragraph>
+                        <Paragraph property={"font-medium"}>
+                            {statusToText(entity.status)}
+                        </Paragraph>
+                    </Container>
+                                    </Container>
+                <Container property={"flex items-center gap-4 ml-16"}>
+                    <Button 
+                        noVariant={true} 
+                        icon="eye" 
+                        iconColor={"gray"} 
+                        iconSize={"24"} 
+                        onClick={onView}
+                        title="Zobrazit detail"
+                    />
                     
                     {entity.status === "Pozvánka" && 
-                        <Button noVariant={true} icon="manage" iconColor={"text-black"} iconSize={"24"} onClick={onClick}></Button>
+                        <Button 
+                            noVariant={true} 
+                            icon="manage" 
+                            iconColor={"gray"} 
+                            iconSize={"24"} 
+                            onClick={onClick}
+                            title="Spravovat pozvánku"
+                        />
                     }
-                    </Container>
-
+                </Container>
             </Container>
-    </ContainerForEntity>
+        </ContainerForEntity>
     )
 }

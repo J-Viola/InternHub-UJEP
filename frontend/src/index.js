@@ -40,7 +40,7 @@ root.render(
               <Route path="/TEST" element={<TextEditor />} />
               <Route path="/Students" element={<StudentPage />} />
               <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
-              <Route path="/VytNabidku" element={<VytvoritNabidku />} />
+              <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
               <Route path="/logout" element={<LogoutUser />} />
             </Routes>
           </AuthProvider>

@@ -106,11 +106,27 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const getOrganizationPractices = async () => {
+        try {
+            const response = await api.get('/practices/practices/organization_practices/');
+
+            if (response && response.data) {
+                return response.data;
+            }
+            return []
+
+        } catch (error) {
+            console.error('Chyba při získávání praxí organizace:', error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
         getNabidkaById,
         createNabidka,
         applyNabidka,
-        getPracticeUserRelations
+        getPracticeUserRelations,
+        getOrganizationPractices
     };
 };

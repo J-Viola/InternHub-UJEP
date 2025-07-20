@@ -73,13 +73,13 @@ function Nav({}) {
         "Správa organizace" : {
             "Uživatelské účty organizace" : "#",
             "Účet organizace" : "#",
-            "Stáže - form" : "/VytNabidku",
+            "Stáže" : "/praxe",
             "Přihlášky" : "#",
             "Odeslané pozvánky" : "#",
         },
         "Nabídka praxí": "/nabidka",
         "Studenti": "#",
-        "Praxe": "/praxe",
+        //"Praxe": "/praxe",
         "Odhlásit se": "/logout",
         //"Profil": "/profil",
     };

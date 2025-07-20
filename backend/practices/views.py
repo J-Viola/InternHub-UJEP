@@ -19,6 +19,7 @@ from practices.serializers import (
     PracticeApprovalStatusSerializer,
     RunningPracticeSerializer,
     StudentPracticeSerializer,
+    OrganizationPracticeSerializer,
 )
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -220,6 +221,35 @@ class PracticeViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Chybí subject_id"}, status=status.HTTP_400_BAD_REQUEST)
         practices = Practice.objects.filter(subject_id=subj_id, is_active=True).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    def organization_practices(self, request):
+        """
+        GET /api/practices/organization_practices/
+        Vrací všechny praxe vytvořené organizací přihlášeného uživatele
+        """
+        user = request.user
+        
+        # Kontrola, zda je uživatel organizace
+        if not hasattr(user, 'employer_profile') or not user.employer_profile:
+            return Response(
+                {"detail": "Přístup odepřen. Pouze uživatelé organizací mohou přistupovat k tomuto endpointu."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Získání praxí podle employer_profile uživatele
+        practices = Practice.objects.filter(
+            employer=user.employer_profile
+        ).select_related(
+            'subject', 
+            'subject__department', 
+            'contact_user'
+        ).prefetch_related(
+            'student_practices'
+        ).order_by('-created_at')
+        
+        serializer = OrganizationPracticeSerializer(practices, many=True)
         return Response(serializer.data)
 
     # SEARCH ENDPOINT - pro parametry v requestu

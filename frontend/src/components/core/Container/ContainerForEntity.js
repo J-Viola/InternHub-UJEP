@@ -10,6 +10,7 @@ export default function ContainerForEntity({id, children, property, onClick, var
         "red": "bg-red-50 " + defaultClass,
         "green": "bg-green-50 " + defaultClass,
         "blue": "bg-blue-50 " + defaultClass,
+        "white": "bg-white " + defaultClass,
     }
 
     return(
