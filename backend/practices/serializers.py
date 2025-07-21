@@ -48,6 +48,7 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
             "available_positions",
             "approved_applications",
             "pending_applications",
+            "approval_status"
         ]
 
     def get_approved_applications(self, obj):

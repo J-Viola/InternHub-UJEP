@@ -59,6 +59,14 @@ export default function PraxeEntity({type, entity, onClick, onView}) {
                         </Container>
                         <Container property={"min-w-[150px]"}>
                             <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                                Stav
+                            </Paragraph>
+                            <Paragraph property={"font-medium"}>
+                                {statusToText(entity.approval_status)}
+                            </Paragraph>
+                        </Container>
+                        <Container property={"min-w-[150px]"}>
+                            <Paragraph property={"text-sm text-gray-500 mb-1"}>
                                 Datum vytvoření
                             </Paragraph>
                             <Paragraph property={"font-medium"}>
@@ -75,22 +83,47 @@ export default function PraxeEntity({type, entity, onClick, onView}) {
                         </Container>
                     </Container>
                     <Container property={"flex items-center gap-4 ml-4"}>
-                        <Button 
-                            noVariant={true}
-                            onClick={onView}
-                            title="Zobrazit přihlášky"
-                            icon={"users"}
-                            iconColor={"gray"}
-                            iconSize={"24"}
-                        />
-                        <Button 
-                            noVariant={true}
-                            onClick={onClick}
-                            title="Upravit stáž"
-                            icon={"edit"}
-                            iconColor={"gray"}
-                            iconSize={"24"}
-                        />
+                        {entity.approval_status !== 0 ? (
+                            <>
+                                <Button 
+                                    noVariant={true}
+                                    onClick={onView}
+                                    title="Zobrazit přihlášky"
+                                    icon={"users"}
+                                    iconColor={"gray"}
+                                    iconSize={"24"}
+                                />
+                                <Button 
+                                    noVariant={true}
+                                    onClick={onClick}
+                                    title="Upravit stáž"
+                                    icon={"edit"}
+                                    iconColor={"gray"}
+                                    iconSize={"24"}
+                                />
+                            </>
+                        ) : (
+                                // PAK DOLADIT VIEW
+                            <>
+                                <Button 
+                                    noVariant={true}
+                                    onClick={onView}
+                                    title="Zobrazit přihlášky"
+                                    icon={"eye"}
+                                    iconColor={"gray"}
+                                    iconSize={"24"}
+                                />  
+
+                                <Button 
+                                    noVariant={true}
+                                    onClick={onClick}
+                                    title="Upravit stáž"
+                                    icon={"edit"}
+                                    iconColor={"gray"}
+                                    iconSize={"24"}
+                                />
+                            </>
+                        )}
                     </Container>
                 </Container>
             </ContainerForEntity>

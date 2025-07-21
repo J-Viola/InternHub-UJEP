@@ -71,7 +71,7 @@ function Nav({}) {
 
     const ownerDict = {
         "Správa organizace" : {
-            "Uživatelské účty organizace" : "#",
+            "Uživatelské účty organizace" : "/users/org",
             "Účet organizace" : "#",
             "Stáže" : "/praxe",
             "Přihlášky" : "#",

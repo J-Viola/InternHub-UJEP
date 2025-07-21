@@ -12,23 +12,26 @@ import Headings from "@core/Text/Headings";
 export default function UserEntity({entity, attributes, buttons, status="gray"}) {
 
     return (
-        <ContainerForEntity variant={status} property={"pl-8 pt-2 pb-2 pr-4 mt-2"}>
-            <Container property="flex flex-row gap-8 items-center">
-                <Container property="w-64">
+        <ContainerForEntity variant={status} property={"pl-8 pt-4 pb-4 pr-4 mt-2"}>
+            <Container property="flex flex-row items-center gap-8 w-full">
+                {/* Jméno */}
+                <Container property="flex-shrink-0 min-w-[200px]">
                     <Paragraph variant={"baseBold"}>
-                        {entity.titles?.before} {entity.name} {entity.surname} {entity.titles?.after}
+                        {entity.titles || entity.surname
+                            ? `${entity.titles?.before || ''} ${entity.name || ''} ${entity.surname || ''} ${entity.titles?.after || ''}`.trim()
+                            : entity.name}
                     </Paragraph>
                 </Container>
-                
-                <Container property="flex-1 flex flex-row gap-12 items-center">
+                {/* Atributy */}
+                <Container property="flex-1 flex flex-row flex-wrap gap-x-12 gap-y-2 items-center">
                     {Object.entries(attributes).map(([key, value]) => (
-                        <Container key={key} property="w-32">
-                        {key !=="" ? <Paragraph>{key}: {entity[value]}</Paragraph> : <Paragraph>{entity[value]}</Paragraph>}                            
+                        <Container key={key} property="min-w-[120px]">
+                            {key !=="" ? <Paragraph>{key}: {entity[value]}</Paragraph> : <Paragraph>{entity[value]}</Paragraph>}                            
                         </Container>
                     ))}
                 </Container>
-
-                <Container property="flex flex-row gap-4 justify-end">
+                {/* Tlačítka */}
+                <Container property="flex flex-row gap-4 justify-end flex-shrink-0">
                     {buttons.map(btn => (
                         <Button 
                             key={btn.icon}
