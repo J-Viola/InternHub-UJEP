@@ -1,5 +1,5 @@
 from datetime import date, datetime
-
+from django.db.models import Q
 from api.decorators import role_required
 from api.models import (
     ApprovalStatus,
@@ -10,7 +10,9 @@ from api.models import (
     ProgressStatus,
     StudentPractice,
     StudentUser,
-    EmployerInvitationStatus
+    EmployerInvitationStatus,
+    UserSubjectType,
+    ProfessorUser
 )
 from api.serializers import PracticeSerializer
 from api.views import StandardResultsSetPagination
@@ -295,6 +297,66 @@ class PracticeViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    def by_user_department(self, request):
+        """
+        GET /api/practices/by_user_department/
+        Vrátí praxe podle katedry přihlášeného uživatele rozdělené na schválené a čekající na schválení.
+        """
+        user_id = request.user.id
+        if not user_id:
+            return Response({"detail": "Chybí user_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Nejprve zkus najít katedru přes ProfessorUser
+        professor = ProfessorUser.objects.filter(user_ptr_id=user_id).first()
+        if professor and professor.department:
+            dept_ids = [professor.department.department_id]
+        else:
+            # Pokud není profesor, použij původní logiku přes UserSubject
+            dept_ids = Department.objects.filter(
+                subjects__user_subjects__user_id=user_id,
+                subjects__user_subjects__role__in=[UserSubjectType.Student.value, UserSubjectType.Professor.value]
+            ).values_list("department_id", flat=True).distinct()
+
+        if not dept_ids:
+            return Response({"detail": "Uživatel nemá přiřazenou žádnou katedru."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Najdi všechny praxe, které jsou přes předmět přiřazeny do těchto kateder
+        practices = Practice.objects.filter(subject__department_id__in=dept_ids, is_active=True)
+
+        # Rozděl na schválené a čekající na schválení
+        approved = practices.filter(approval_status=ApprovalStatus.APPROVED)
+        to_approve = practices.filter(approval_status=ApprovalStatus.PENDING)
+
+        serializer = PracticeSerializer
+        approved_data = serializer(approved, many=True, context={"request": request}).data
+        to_approve_data = serializer(to_approve, many=True, context={"request": request}).data
+
+        def enrich_contact_user(practice):
+            user = getattr(practice, 'contact_user', None)
+            if user:
+                return {
+                    "user_id": user.user_id,
+                    "username": getattr(user, "username", None),
+                    "first_name": getattr(user, "first_name", None),
+                    "last_name": getattr(user, "last_name", None),
+                    "email": getattr(user, "email", None),
+                    "phone": getattr(user, "phone", None),
+                }
+            return None
+
+        for item in approved_data:
+            practice = approved.get(practice_id=item["practice_id"])
+            item["contact_user_info"] = enrich_contact_user(practice)
+        for item in to_approve_data:
+            practice = to_approve.get(practice_id=item["practice_id"])
+            item["contact_user_info"] = enrich_contact_user(practice)
+
+        return Response({
+            "approved_practices": approved_data,
+            "to_approve_practices": to_approve_data
+        })
 
 
 class RunningPracticeListView(generics.ListAPIView):
