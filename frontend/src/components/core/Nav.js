@@ -84,11 +84,24 @@ function Nav({}) {
         //"Profil": "/profil",
     };
 
+    const departmentDict = {
+        "Admin menu" : {
+            "Studentské účty" : "#",
+            "Předměty" : "#",
+            "Správa stáží" : "/sprava-stazi"
+        },
+        "Nabídka praxí" : "/nabidka",
+        "Profil" : "#",
+        "Odhlásit se" : "/logout",
+    }
+
     useEffect(() => {
         if (user.isOwner()) {
             setNaviagation(ownerDict);
         } else if (user.isStudent()) {
             setNaviagation(studentDict);
+        } else if (user.isDepartmentMg()) {
+            setNaviagation(departmentDict);
         }
     }, [user]);
 
