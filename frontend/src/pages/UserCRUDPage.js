@@ -21,29 +21,24 @@ export default function UserCRUDPage() {
     const rolesTranslator = {"OWNER" : "Jednatel firmy", "INSERTER" : "Správce inzerátů"}
     const headings = {"org":"Uživatelské účty organizace"}
 
+    const translateRoles = (dataArr) => {
+        return dataArr.map(entity => ({
+            ...entity,
+            roleText: rolesTranslator[entity.role] || entity.role
+        }));
+    }
 
     useEffect(() => {
         const initFetch = async() => {
             const res = await userAPI.getOrganizationUsers(false)
             if (res) {
-                setData(res);
+                setData(translateRoles(res));
             }
         }
         initFetch();
     },[])
 
-    useEffect(() => {
-        if (data && Array.isArray(data)) {
-            try {
-                data.forEach(entity => {
-                    const roleText = rolesTranslator[entity.role];
-                    entity.roleText = roleText;
-                });
-            } catch (error) {
-                throw error;
-            }
-        }
-    }, [data])
+    // useEffect pro překlad už není potřeba
 
     
     return(
