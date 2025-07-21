@@ -4,7 +4,7 @@ import { FiBook, FiEdit, FiSearch, FiFilter, FiPlus, FiEye, FiEyeOff, FiSettings
 import { TbUsers } from "react-icons/tb";
 import { RxCross1, RxCheck } from "react-icons/rx";
 import { FaAngleDown, FaAngleUp, FaLock, FaUser, FaArrowLeft, FaSave, FaDownload, FaUpload, FaCalendarAlt } from "react-icons/fa";
-import { MdOutlineManageAccounts } from "react-icons/md";
+import { MdOutlineManageAccounts, MdPersonOutline  } from "react-icons/md";
 
 export default function Button({id, children, text, property, onClick, textSize = "base", pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false }) {
 
@@ -22,7 +22,7 @@ export default function Button({id, children, text, property, onClick, textSize 
         cross: <RxCross1 size={iconSize} className={iconColor} />,
         check: <RxCheck size={iconSize} className={iconColor} />,
         users: <TbUsers size={iconSize} className={iconColor} />,
-        user: <FaUser size={iconSize} className={iconColor} />,
+        user: <MdPersonOutline  size={iconSize} className={iconColor} />,
         eye: <FiEye size={iconSize} className={iconColor} />,
         arrowLeft: <FaArrowLeft  size={iconSize} className={iconColor} />,
         "eye-slash": <FiEyeOff size={iconSize} className={iconColor} />,

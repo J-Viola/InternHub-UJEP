@@ -74,7 +74,7 @@ function Nav({}) {
             "Uživatelské účty organizace" : "/users/org",
             "Účet organizace" : "#",
             "Stáže" : "/praxe",
-            "Přihlášky" : "#",
+            "Přihlášky" : "/prihlasky",
             "Odeslané pozvánky" : "#",
         },
         "Nabídka praxí": "/nabidka",

@@ -16,9 +16,8 @@ import RegistracePage from '@pages/RegistracePage';
 import LogoutUser from '@services/auth/Logout';
 import MessageToast from '@components/MessageBox/MessageToast';
 import UserCRUDPage from '@pages/UserCRUDPage';
-
+import PrihlaskyPage from '@pages/PrihlaskyPage';
 import reportWebVitals from './reportWebVitals';
-
 import UserProvider from '@hooks/UserProvider';
 import AuthProvider from '@services/auth/Auth';
 import { MessageProvider}  from '@hooks/MessageContext';
@@ -44,6 +43,7 @@ root.render(
               <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
               <Route path="/logout" element={<LogoutUser />} />
               <Route path="/users/:type" element={<UserCRUDPage/>} />
+              <Route path="/prihlasky" element={<PrihlaskyPage/>} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

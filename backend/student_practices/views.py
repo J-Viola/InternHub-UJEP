@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 from rest_framework import generics
 from django.db import transaction
 from django.http import JsonResponse
+from rest_framework.generics import get_object_or_404
+from rest_framework import serializers
 
 from api.models import (
     ApprovalStatus,
@@ -110,3 +112,42 @@ class StudentPracticeListView(generics.ListAPIView):
 
         # Filter student practices by practice_id
         return StudentPractice.objects.filter(practice=practice).all()
+
+
+class OrganizationApplicationsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Zjisti employer_profile id z přihlášeného uživatele (OrganizationUser)
+        employer_profile = getattr(user, 'employer_profile', None)
+        if not employer_profile:
+            return Response({"detail": "Uživatel není přiřazen k žádné organizaci."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Najdi všechny praxe patřící této organizaci
+        practices = Practice.objects.filter(employer=employer_profile)
+        # Najdi všechny přihlášky na tyto praxe, pouze s approval_status PENDING
+        student_practices = StudentPractice.objects.filter(practice__in=practices, approval_status=ApprovalStatus.PENDING)
+
+        serializer = ListStudentPracticeSerializer(student_practices, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentPractice
+        fields = ["approval_status", "progress_status"]
+        extra_kwargs = {
+            "approval_status": {"required": False},
+            "progress_status": {"required": False},
+        }
+
+class StudentPracticeStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, student_practice_id):
+        student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
+        serializer = StudentPracticeStatusUpdateSerializer(student_practice, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

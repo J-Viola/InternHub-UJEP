@@ -17,9 +17,38 @@ export const useStudentPracticeAPI = () => {
         }
     };
 
- 
+    // PATCH /api/student-practices/<id>/status/ - Změna stavu přihlášky
+    // action: "approve" | "reject"
+    const updateStudentPracticeStatus = async (studentPracticeId, action) => {
+        let approval_status = null;
+        if (action === "approve") approval_status = 1; // APPROVED
+        if (action === "reject") approval_status = 2; // REJECTED
+        if (approval_status === null) throw new Error("Neplatná akce");
+        try {
+            const response = await api.patch(`/student-practices/student-practices/${studentPracticeId}/status/`, {
+                approval_status
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při změně stavu přihlášky:', error);
+            throw error;
+        }
+    };
+
+    // GET /api/student-practices/organization-applications/ - Získání všech přihlášek na nabídky organizace
+    const getOrganizationApplications = async () => {
+        try {
+            const response = await api.get('/student-practices/organization-applications/');
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při získávání přihlášek organizace:', error);
+            throw error;
+        }
+    };
 
     return {
         manageEmployerInvitation,
+        getOrganizationApplications,
+        updateStudentPracticeStatus,
     };
 };
