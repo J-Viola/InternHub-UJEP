@@ -55,7 +55,7 @@ export default function UserCRUDPage() {
             <Container>
                 <Button 
                     onClick={() => console.log("Handle na vytvoření")}
-                    icon={"Založit uživatele"}
+                    icon={"plus"}
                 >
                     Založit uživatele
                 </Button>
