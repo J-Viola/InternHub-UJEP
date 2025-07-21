@@ -63,36 +63,45 @@ function Nav({}) {
 
     const studentDict = {
         "Nabídka praxí": "/nabidka",
-        "Účet": "/",
+        //"Účet": "/",
         "Praxe": "/praxe",
-        "TEST STRÁNEK": {
-            "SprInPrihlaseni": "/SprInPrihlaseni",
-            "VytStáže": "/VytNabidku"
-        },
-        "Odhlásit se": "/logout",
         "Profil": "/profil",
+        "Odhlásit se": "/logout",
     };
 
     const ownerDict = {
         "Správa organizace" : {
-            "Uživatelské účty organizace" : "#",
+            "Uživatelské účty organizace" : "/users/org",
             "Účet organizace" : "#",
-            "Stáže - form" : "/VytNabidku",
-            "Přihlášky" : "#",
+            "Stáže" : "/praxe",
+            "Přihlášky" : "/prihlasky",
             "Odeslané pozvánky" : "#",
         },
         "Nabídka praxí": "/nabidka",
         "Studenti": "#",
-        "Praxe": "/praxe",
+        //"Praxe": "/praxe",
         "Odhlásit se": "/logout",
         //"Profil": "/profil",
     };
+
+    const departmentDict = {
+        "Admin menu" : {
+            "Studentské účty" : "#",
+            "Předměty" : "#",
+            "Správa stáží" : "/sprava-stazi"
+        },
+        "Nabídka praxí" : "/nabidka",
+        "Profil" : "#",
+        "Odhlásit se" : "/logout",
+    }
 
     useEffect(() => {
         if (user.isOwner()) {
             setNaviagation(ownerDict);
         } else if (user.isStudent()) {
             setNaviagation(studentDict);
+        } else if (user.isDepartmentMg()) {
+            setNaviagation(departmentDict);
         }
     }, [user]);
 

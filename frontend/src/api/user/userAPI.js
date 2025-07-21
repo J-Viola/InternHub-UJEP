@@ -39,17 +39,20 @@ export const useUserAPI = () => {
         }
     };
 
-    const getOrganizationUsers = async () => {
+    const getOrganizationUsers = async (dropdown = true) => {
         try {
             const response = await api.get('/users/organization-users/');
-
-            const dropDownData = response.data.map(res => ({
-                label: `${res.name}`,
-                value: res.id
-            }));
-            console.log(dropDownData);
-            return dropDownData
-
+            if (dropdown) {
+                const dropDownData = response.data.map(res => ({
+                    label: `${res.name}`,
+                    value: res.id
+                }));
+                console.log(dropDownData);
+                return dropDownData;
+            } else {
+                //console.log("RESPONSE DROPDOWN FALSE", response.data)
+                return response.data;
+            }
         } catch (error) {
             console.error('Chyba při získávání uživatelů organizace:', error);
             throw error;

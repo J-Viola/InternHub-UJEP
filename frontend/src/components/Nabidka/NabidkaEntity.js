@@ -47,7 +47,7 @@ export default function NabidkaEntity({ entity }) {
                         <Container property="flex justify-between items-center">
                             <Container property="bg-blue-400 px-2 p-1 rounded-lg">
                                 <Paragraph variant="small" property="text-white">
-                                    {entity.address}
+                                    {entity.employer.address}
                                 </Paragraph>
                             </Container>
                         </Container>

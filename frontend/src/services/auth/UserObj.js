@@ -40,6 +40,10 @@ class User {
         return this.hasRole("PR");
     }
 
+    isDepartmentMg() {
+        return this.hasRole("VK");
+    }
+
     isEmployer() {
         return this.hasRole("EM");
     }

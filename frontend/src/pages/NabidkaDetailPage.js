@@ -14,6 +14,7 @@ import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
+import ProgressPanel from "@components/Nabidka/ProgressBar";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -68,11 +69,10 @@ export default function NabidkaDetailPage() {
                 <BackButton/>
                 {/* DOCS PANEL */}
                 {entity?.student_practice_status?.approval_status !== undefined &&
-                 entity.student_practice_status.approval_status !== 0 && (
+                 entity.student_practice_status.approval_status === 1 && (
                     <DocsPanel/>
                 )}
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
-                    {/*<BackButton/>*/}
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
                             
                         {/* LOGO */}
@@ -90,7 +90,7 @@ export default function NabidkaDetailPage() {
                         <Container>
                             <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
                             <Container property={"flex flex-row gap-2 mt-2"}>
-                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.address}</Button>
+                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer.address}</Button>
                                 <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
                             </Container>
                         </Container>
@@ -106,9 +106,40 @@ export default function NabidkaDetailPage() {
                         <Paragraph>{entity?.responsibilities}</Paragraph>
                     </Container>
 
+                    {/* CONTACT USER INFO */}
+                    {entity && entity.contact_user_info && (
+                        <Container property={"editor-content mt-2"}>
+                            <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
+                            {entity.contact_user_info.username && (
+                                <Paragraph property="mb-2">
+                                    Uživatelské jméno: {entity.contact_user_info.username}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.first_name && (
+                                <Paragraph property="mb-2">
+                                    Jméno: {entity.contact_user_info.first_name}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.last_name && (
+                                <Paragraph property="mb-2">
+                                    Příjmení: {entity.contact_user_info.last_name}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.email && (
+                                <Paragraph property="mb-2">
+                                    Email: {entity.contact_user_info.email}
+                                </Paragraph>
+                            )}
+                            {entity.contact_user_info.phone && (
+                                <Paragraph property="mb-2">
+                                    Telefon: {entity.contact_user_info.phone}
+                                </Paragraph>
+                            )}
+                        </Container>
+                    )}
                     <Container property={"grid grid-cols-1 gap-8 mt-4"}>
                         {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
-                        {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 0) && (
+                        {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
@@ -117,7 +148,18 @@ export default function NabidkaDetailPage() {
                         )}
                     </Container>
                 </ContainerForEntity>
-                
+
+                {entity?.student_practice_status?.approval_status !== undefined &&
+                 entity.student_practice_status.approval_status === 1 && (
+                    <Container property={"mt-2"}>
+                        <ProgressPanel
+                            subject={entity.subject?.subject_code}
+                            goalValueSingle={entity.subject?.hours_required}
+                            currentValueSingle={entity.student_practice_status?.hours_completed}
+                        />
+                    </Container>
+                )}
+                  
             </Container>
 
             {/* PODÁNÍ PŘIHLÁŠKY */}

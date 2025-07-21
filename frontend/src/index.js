@@ -15,9 +15,12 @@ import VytvoritNabidku from '@pages/VytvoritNabidku';
 import RegistracePage from '@pages/RegistracePage';
 import LogoutUser from '@services/auth/Logout';
 import MessageToast from '@components/MessageBox/MessageToast';
+import UserCRUDPage from '@pages/UserCRUDPage';
+import PrihlaskyPage from '@pages/PrihlaskyPage';
+import SpravaStaziPage from '@pages/SpravaStaziPage';
+
 
 import reportWebVitals from './reportWebVitals';
-
 import UserProvider from '@hooks/UserProvider';
 import AuthProvider from '@services/auth/Auth';
 import { MessageProvider}  from '@hooks/MessageContext';
@@ -40,8 +43,11 @@ root.render(
               <Route path="/TEST" element={<TextEditor />} />
               <Route path="/Students" element={<StudentPage />} />
               <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
-              <Route path="/VytNabidku" element={<VytvoritNabidku />} />
+              <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
               <Route path="/logout" element={<LogoutUser />} />
+              <Route path="/users/:type" element={<UserCRUDPage/>} />
+              <Route path="/prihlasky" element={<PrihlaskyPage/>} />
+              <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

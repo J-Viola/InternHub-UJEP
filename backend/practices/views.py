@@ -19,6 +19,7 @@ from practices.serializers import (
     PracticeApprovalStatusSerializer,
     RunningPracticeSerializer,
     StudentPracticeSerializer,
+    OrganizationPracticeSerializer,
 )
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -59,7 +60,22 @@ class PracticeViewSet(viewsets.ModelViewSet):
         # GET /api/practices/{id}/
         practice_obj = self.get_object()
         serializer = self.get_serializer(practice_obj)
-        return Response(serializer.data)
+        
+        contact_user_info = None
+        if practice_obj.contact_user:
+            contact_user_info = {
+                "user_id": practice_obj.contact_user.user_id,
+                "username": practice_obj.contact_user.username,
+                "first_name": practice_obj.contact_user.first_name,
+                "last_name": practice_obj.contact_user.last_name,
+                "email": practice_obj.contact_user.email,
+                "phone": practice_obj.contact_user.phone,
+            }
+        
+        response_data = serializer.data
+        response_data['contact_user_info'] = contact_user_info
+        
+        return Response(response_data)
 
     @role_required([OrganizationRole.INSERTER, OrganizationRole.OWNER, StagRoleEnum.VY])
     def create(self, request, *args, **kwargs):
@@ -224,6 +240,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
+      
     @action(
         detail=False, methods=["get"], permission_classes=[permissions.AllowAny], url_path="by_employer_profile/(?P<employer_id>[^/.]+)"
     )
@@ -234,6 +251,35 @@ class PracticeViewSet(viewsets.ModelViewSet):
         """
         practices = Practice.objects.filter(employer=employer_id, is_active=True).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
+
+        
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    def organization_practices(self, request):
+        """
+        GET /api/practices/organization_practices/
+        Vrací všechny praxe vytvořené organizací přihlášeného uživatele
+        """
+        user = request.user
+        
+        # Kontrola, zda je uživatel organizace
+        if not hasattr(user, 'employer_profile') or not user.employer_profile:
+            return Response(
+                {"detail": "Přístup odepřen. Pouze uživatelé organizací mohou přistupovat k tomuto endpointu."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Získání praxí podle employer_profile uživatele
+        practices = Practice.objects.filter(
+            employer=user.employer_profile
+        ).select_related(
+            'subject', 
+            'subject__department', 
+            'contact_user'
+        ).prefetch_related(
+            'student_practices'
+        ).order_by('-created_at')
+        
+        serializer = OrganizationPracticeSerializer(practices, many=True)
         return Response(serializer.data)
 
     # SEARCH ENDPOINT - pro parametry v requestu
