@@ -86,7 +86,7 @@ function Nav({}) {
 
     const departmentDict = {
         "Admin menu" : {
-            "Studentské účty" : "#",
+            "Studentské účty" : "/students",
             "Předměty" : "#",
             "Správa stáží" : "/sprava-stazi"
         },
