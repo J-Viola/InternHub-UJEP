@@ -134,6 +134,18 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const changeStatus = async (id, status) => {
+        try {
+            const response = await api.post(`/practices/${id}/change-pending/`, status);
+            if (response && response.data) {
+                return response.data;
+            }
+        } catch (error) {
+            console.error('Chyba při změně stavu nabídky:', error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
         getNabidkaById,
@@ -142,5 +154,6 @@ export const useNabidkaAPI = () => {
         getPracticeUserRelations,
         getOrganizationPractices,
         getNabidkyByUserDepartment,
+        changeStatus
     };
 };

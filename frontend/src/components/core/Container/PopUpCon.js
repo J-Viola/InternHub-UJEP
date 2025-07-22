@@ -5,7 +5,7 @@ import Button from "@core/Button/Button";
 import Headings from "@core/Text/Headings";
 import Paragraph from "../Text/Paragraph";
 
-export default function PopUpCon({children, onClose, title, text, onSubmit, onReject, variant = "gray"}) {
+export default function PopUpCon({children, onClose, title, text, onSubmit, onReject, onSubmitText = "Ano", onRejectText = "Ne", variant = "gray"}) {
     return(
         <Container property={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
             <ContainerForEntity property={"w-1/2 max-w-2xl"} variant={variant}>
@@ -23,8 +23,8 @@ export default function PopUpCon({children, onClose, title, text, onSubmit, onRe
 
                 {/* BUTTONY */}
                 <Container property={"flex justify-between ml-4 mr-4 gap-4"}>
-                    <Button property={"w-full"} onClick={onSubmit}>Ano</Button>
-                    <Button variant={"red"} property={"w-full"} onClick={onReject}>Ne</Button>
+                    <Button property={"w-full"} onClick={onSubmit}>{onSubmitText}</Button>
+                    <Button variant={"red"} property={"w-full"} onClick={onReject}>{onRejectText}</Button>
                 </Container>
 
 

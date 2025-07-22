@@ -5,9 +5,6 @@ import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
 import Nav from "@components/core/Nav";
-import { useParams } from "react-router-dom";
-import { useStudentPracticeAPI } from "@api/student_practice/student_pracitceAPI";
-import PrihlaskaEntity from "@components/Prihlasky/PrihlaskaEntity";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
@@ -18,18 +15,56 @@ export default function SpravaStaziPage() {
     const [toApprove, setToApprove] = useState([]);
     const nabidkaAPI = useNabidkaAPI();
     const navigate = useNavigate();
+    const [ showPop, setPop ] = useState(false);
+    const [selectedEntity, setSelectedEntity] = useState(null);
+
+
+    const fetchData = async () => {
+        try {
+            const res = await nabidkaAPI.getNabidkyByUserDepartment();
+            setApproved(res.approved_practices || []);
+            setToApprove(res.to_approve_practices || []);
+        } catch (error) {
+            setApproved([]);
+            setToApprove([]);
+        }
+    };
+
+    const handlePop = () => {
+        setPop(!showPop);
+    }
+
+
+    const handleApprove = async () => {
+        if (!selectedEntity) return;
+        const newStatus = {
+            "approval_status": 1
+        }
+        await nabidkaAPI.changeStatus(selectedEntity.practice_id, newStatus);
+        setPop(false);
+        setSelectedEntity(null);
+        fetchData();
+    };
+
+
+    const handleReject = async () => {
+        if (!selectedEntity) return;
+        const newStatus = {
+            "approval_status": 2
+        }
+        await nabidkaAPI.changeStatus(selectedEntity.practice_id, newStatus);
+        setPop(false);
+        setSelectedEntity(null);
+        fetchData();
+    };
+
+
+    const handleClosePop = () => {
+        setPop(false);
+        setSelectedEntity(null);
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await nabidkaAPI.getNabidkyByUserDepartment();
-                setApproved(res.approved_practices || []);
-                setToApprove(res.to_approve_practices || []);
-            } catch (error) {
-                setApproved([]);
-                setToApprove([]);
-            }
-        };
         fetchData();
     }, []);
 
@@ -43,9 +78,13 @@ export default function SpravaStaziPage() {
         
     }
 
-    const handleClick = (type, entity) =>{
-        // dodělat handle na přihlášené a manage -> změna stavu
-        console.log("Click")
+    const handleClick = (type, entity = null) => {
+        if (type === "to_approve_practices") {
+            console.log("To to_approve_practices")
+            setSelectedEntity(entity)
+            setPop(true);
+        }
+        
     }
 
     return(
@@ -59,7 +98,7 @@ export default function SpravaStaziPage() {
                         Probíhající stáže
                     </Headings>
                 </Container>
-                <Container property={"mb-8"}>
+                <Container property={"mb-8 space-y-4"}>
                     {approved.length === 0 ? (
                         <Paragraph property="text-center text-gray-500 py-8">
                             Žádné schválené stáže.
@@ -80,7 +119,7 @@ export default function SpravaStaziPage() {
                         Schvalovací kolečko
                     </Headings>
                 </Container>
-                <Container property={"mt-4 mb-8"}>
+                <Container property={"mt-4 mb-8 space-y-4"}>
                     {toApprove.length === 0 ? (
                         <Paragraph property="text-center text-gray-500 py-8">
                             Žádné stáže čekající na schválení.
@@ -91,11 +130,25 @@ export default function SpravaStaziPage() {
                                 key={entity.practice_id} 
                                 entity={entity} 
                                 onView={() => handleView("to_approve_practices", entity)}
+                                onClick={() => handleClick("to_approve_practices", entity)}
                                 type="to_approve" />
                             ))
                     )}
                 </Container>
             </Container>
+            {showPop && 
+                <PopUpCon
+                    onClose={handleClosePop}
+                    onSubmit={handleApprove}
+                    onSubmitText={"Schválit"}
+                    onReject={handleReject}
+                    onRejectText={"Zamítnout"}
+                    title="Opravdu chcete změnit stav nabídky?"
+                    text={`Chcete změnit stav nabídky: ${selectedEntity?.title || ""}?`}
+                />
+            }
+
+
         </Container>
     )
 }

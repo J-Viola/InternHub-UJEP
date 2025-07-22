@@ -20321,3 +20321,4 @@ api.models.StudentUser.DoesNotExist: StudentUser matching query does not exist.
 [2025-07-21 17:39:02,590] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 22309
 [2025-07-21 17:39:02,590] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 22309
 [2025-07-21 17:39:15,586] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-22 05:42:31,701] INFO django.utils.autoreload Watching for file changes with StatReloader
