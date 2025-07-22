@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from users.models import StagRoleEnum
 
-from .serializers import AdminDepartmentSerializer, DepartmentSerializer, ProfessorDetailSerializer, StudentDetailSerializer
+from .serializers import AdminDepartmentSerializer, DepartmentUserSerializer, ProfessorDetailSerializer, StudentDetailSerializer
 
 
 class DepartmentStudentListView(generics.ListAPIView):
@@ -44,7 +44,7 @@ class DepartmentStudentListView(generics.ListAPIView):
 
 class DepartmentUserRoleDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Department.objects.all()
-    serializer_class = DepartmentSerializer
+    serializer_class = DepartmentUserSerializer
     permission_classes = [IsAuthenticated]
 
 
