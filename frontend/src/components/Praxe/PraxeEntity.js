@@ -53,9 +53,9 @@ export default function PraxeEntity({type, entity, onClick, onView}) {
                             <Paragraph property={"text-sm text-gray-500 mb-1"}>
                                 Název stáže
                             </Paragraph>
-                            <Headings sizeTag={"h3"} property={"text-lg font-semibold"}>
+                            <Paragraph property={"font-medium"}>
                                 {entity.title}
-                            </Headings>
+                            </Paragraph>
                         </Container>
                         <Container property={"min-w-[150px]"}>
                             <Paragraph property={"text-sm text-gray-500 mb-1"}>
@@ -139,8 +139,11 @@ export default function PraxeEntity({type, entity, onClick, onView}) {
                         <Image width={"50px"} height={"50px"} src={entity.company_logo}/>
                     </Container>
                     <Container property={"flex-1 min-w-0"}>
-                        <Paragraph variant={"baseBold"} property={"truncate"}>
-                            {entity.practice_title}
+                        <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                            Název stáže
+                        </Paragraph>
+                        <Paragraph property={"font-medium"}>
+                            {entity.practice_title || "-"}
                         </Paragraph>
                     </Container>
                     <Container property={"min-w-[150px]"}>

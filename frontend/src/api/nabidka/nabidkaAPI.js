@@ -121,12 +121,39 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const getNabidkyByUserDepartment = async () => {
+        try {
+            const response = await api.get('/practices/practices/by_user_department/');
+            if (response && response.data) {
+                return response.data;
+            }
+            return { approved_practices: [], to_approve_practices: [] };
+        } catch (error) {
+            console.error('Chyba při získávání nabídek podle katedry uživatele:', error);
+            throw error;
+        }
+    };
+
+    const changeStatus = async (id, status) => {
+        try {
+            const response = await api.post(`/practices/${id}/change-pending/`, status);
+            if (response && response.data) {
+                return response.data;
+            }
+        } catch (error) {
+            console.error('Chyba při změně stavu nabídky:', error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
         getNabidkaById,
         createNabidka,
         applyNabidka,
         getPracticeUserRelations,
-        getOrganizationPractices
+        getOrganizationPractices,
+        getNabidkyByUserDepartment,
+        changeStatus
     };
 };

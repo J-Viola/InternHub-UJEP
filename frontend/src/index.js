@@ -41,7 +41,7 @@ root.render(
               <Route path="/registrace" element={<RegistracePage />} />
               <Route path="/praxe" element={<PraxePage />} />
               <Route path="/TEST" element={<TextEditor />} />
-              <Route path="/Students" element={<StudentPage />} />
+              <Route path="/students" element={<StudentPage />} />
               <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
               <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
               <Route path="/logout" element={<LogoutUser />} />
