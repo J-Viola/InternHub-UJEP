@@ -69,9 +69,20 @@ export const useUserAPI = () => {
         }
     };
 
+    const getStudentProfile = async (id) => {
+        try {
+            const response = await api.get(`/users/student-profile/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při získávání profilu uživatele:', error);
+            throw error;
+        }
+    };
+
     return {
         postRegister,
         getOrganizationUsers,
-        getCurrentUserProfile
+        getCurrentUserProfile,
+        getStudentProfile
     };
 };

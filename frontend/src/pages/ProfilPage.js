@@ -7,11 +7,13 @@ import Headings from "@core/Text/Headings";
 import Nav from "@core/Nav";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useUserAPI } from "@api/user/userAPI";
+import { useParams } from "react-router-dom";
 
 export default function ProfilPage() {
-    const { getCurrentUserProfile } = useUserAPI();
+    const { getCurrentUserProfile, getStudentProfile } = useUserAPI();
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { id } = useParams();
     // přidělat check na param id -> pak bud tahadam data ciziho profilu, nebo svůj
 
     const handleEditProfile = () => {
@@ -23,10 +25,18 @@ export default function ProfilPage() {
         const fetchUserData = async () => {
             try {
                 setLoading(true);
-                const data = await getCurrentUserProfile();
-                setUserData(data);
+
+                let data;
+                if (id) {
+                    console.log("Mám user id", id);
+                    data = await getStudentProfile(id);
+                } else {
+                    data = await getCurrentUserProfile();
+                }
+                if (data) setUserData(data);
             } catch (error) {
-                console.error("Chyba při načítání profilu:", error);
+                // případně ošetři chybu
+                console.error(error);
             } finally {
                 setLoading(false);
             }

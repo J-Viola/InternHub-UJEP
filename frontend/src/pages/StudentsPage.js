@@ -23,11 +23,11 @@ export default function StudentPage() {
         });
     }, []);
 
-    const getButtonDict = (approval_status) => {
+    const getButtonDict = (approval_status, entity) => {
         const hasPractice = [
             {
                 icon: "eye",
-                btnfunction: () => navigate("#") //zde route na profile page podle id v param
+                btnfunction: () => navigate(`/profil/${entity?.user_id}`) // použij správný parametr
             },
             {
                 icon: "user",
@@ -109,7 +109,7 @@ export default function StudentPage() {
                             key={entity.user_id}
                             entity={entity}
                             attributes={attributes}
-                            buttons={getButtonDict(entity.approved_practice?.approval_status)}
+                            buttons={getButtonDict(entity.approved_practice?.approval_status, entity)}
                         />
                     ))}
                 </Container>
