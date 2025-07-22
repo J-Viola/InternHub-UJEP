@@ -6,10 +6,16 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or
 # field names.
+import datetime
+import hashlib
+from datetime import timezone
+
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.core.files import File
 from django.db import models
+from django.db.models import OneToOneRel
 from django_enumfield import enum
 from polymorphic.models import PolymorphicManager, PolymorphicModel
 
@@ -316,7 +322,54 @@ class Practice(models.Model):
         db_table = "practices"
 
 
+class DocumentType(enum.Enum):
+    CONTRACT = 0
+    CONTENT = 1
+    FEEDBACK = 2
+
+
+class UploadedDocument(models.Model):
+    document_id = models.AutoField(primary_key=True)
+    document = models.FileField(upload_to=settings.STORAGE_URL + "documents", blank=True, null=True)
+    uploaded_at = models.DateTimeField(blank=True, null=True)
+    document_type = enum.EnumField(DocumentType)
+
+    @property
+    def student_practice(self):
+        """Vrátí StudentPractice nezávisle na tom jaký typ dokumentu to je."""
+        for rel in self._meta.get_fields():
+            if isinstance(rel, OneToOneRel) and rel.related_model is StudentPractice:
+                related_object = getattr(self, rel.get_accessor_name(), None)
+                if related_object is not None:
+                    return related_object
+        return None
+
+    def __str__(self):
+        return self.document.name or super().__str__()
+
+    class Meta:
+        db_table = "uploaded_documents"
+
+
 class StudentPractice(models.Model):
+    def validate_contract_document_type(document):
+        if document and document.contract_document.document_type != DocumentType.CONTRACT:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError("Document must be of type CONTRACT")
+
+    def validate_feedback_document_type(document):
+        if document and document.contract_document.document_type != DocumentType.FEEDBACK:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError("Document must be of type CONTENT")
+
+    def validate_content_document_type(document):
+        if document and document.contract_document.document_type != DocumentType.CONTENT:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError("Document must be of type FEEDBACK")
+
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(StudentUser, models.DO_NOTHING, blank=True, null=True, related_name="student_practices")
     practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True, related_name="student_practices")
@@ -333,6 +386,34 @@ class StudentPractice(models.Model):
         null=True,
     )
     year = models.IntegerField(blank=True, null=True)
+    contract_document = models.OneToOneField(
+        UploadedDocument,
+        models.DO_NOTHING,
+        related_name="student_practice_contract",
+        limit_choices_to={"document_type": DocumentType.CONTRACT},
+        validators=[validate_contract_document_type],
+    )
+    content_document = models.OneToOneField(
+        UploadedDocument,
+        models.DO_NOTHING,
+        related_name="student_practice_content",
+        limit_choices_to={"document_type": DocumentType.CONTENT},
+        validators=[validate_content_document_type],
+    )
+    feedback_document = models.OneToOneField(
+        UploadedDocument,
+        models.DO_NOTHING,
+        related_name="student_practice_feedback",
+        limit_choices_to={"document_type": DocumentType.FEEDBACK},
+        validators=[validate_feedback_document_type],
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.pk is None:
+            self.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT)
+            self.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT)
+            self.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK)
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"
@@ -340,20 +421,6 @@ class StudentPractice(models.Model):
     class Meta:
         db_table = "student_practices"
         unique_together = (("user", "practice"),)
-
-
-class UploadedDocument(models.Model):
-    document_id = models.AutoField(primary_key=True)
-    practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True, related_name="documents")
-    document = models.FileField(upload_to=settings.STORAGE_URL + "documents", blank=True, null=True)
-    uploaded_at = models.DateTimeField(blank=True, null=True)
-    document_type = models.CharField(max_length=50, blank=True, null=True)
-
-    def __str__(self):
-        return self.document.name or super().__str__()
-
-    class Meta:
-        db_table = "uploaded_documents"
 
 
 class UserSubjectType(enum.Enum):
@@ -373,3 +440,33 @@ class UserSubject(models.Model):
     class Meta:
         db_table = "user_subjects"
         unique_together = (("user", "subject"),)
+
+
+class DocumentHelper:
+    @staticmethod
+    def create_default_document(document_type: DocumentType, user_id: int):
+        if document_type == DocumentType.CONTRACT:
+            file_path = f"{settings.BASE_DIR}/storage/default_documents/default_contract.docx"
+            document_file = File(open(file_path, "rb"))
+
+        elif document_type == DocumentType.FEEDBACK:
+            file_path = f"{settings.BASE_DIR}/storage/default_documents/default_feedback.docx"
+            document_file = File(open(file_path, "rb"))
+        elif document_type == DocumentType.CONTENT:
+            file_path = f"{settings.BASE_DIR}/storage/default_documents/default_content.docx"
+            document_file = File(open(file_path, "rb"))
+        else:
+            raise ValueError(f"Unsupported document type: {document_type}")
+
+        document_file.name = f"default_{DocumentHelper.create_name_for_document(document_type, user_id, document_file.name)}"
+
+        document = UploadedDocument(document_type=document_type, document=document_file, uploaded_at=datetime.datetime.now())
+        document.save()
+        return document
+
+    @staticmethod
+    def create_name_for_document(document_type: DocumentType, user_id: int, file_name: str):
+        timestamp = datetime.datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        ext = file_name.rsplit(".", 1)[-1].lower()
+        user_id_hash = hashlib.md5(str(user_id).encode()).hexdigest()[:8]
+        return f"{document_type.name.lower()}_{user_id_hash}_{timestamp}.{ext}"

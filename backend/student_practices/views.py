@@ -1,30 +1,32 @@
+import datetime
 from datetime import date
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import generics
-from django.db import transaction
-from django.http import JsonResponse
-from rest_framework.generics import get_object_or_404
-from rest_framework import serializers
 
 from api.models import (
     ApprovalStatus,
+    DepartmentRole,
+    DocumentHelper,
     EmployerInvitation,
     EmployerInvitationStatus,
+    Practice,
+    ProfessorUser,
     ProgressStatus,
     StudentPractice,
     StudentUser,
-    Practice,
+    UploadedDocument,
+    UserSubjectType,
 )
-from .serializers import (
-    EmployerInvitationApprovalSerializer,
-    StudentPracticeSerializer,
-    ListStudentPracticeSerializer,
-    StudentPracticeStatusSerializer,
-)
+from django.db import transaction
+from django.http import FileResponse, JsonResponse
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import generics, serializers, status
+from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .serializers import EmployerInvitationApprovalSerializer, ListStudentPracticeSerializer
 
 
 class EmployerInvitationApprovalView(APIView):
@@ -36,35 +38,26 @@ class EmployerInvitationApprovalView(APIView):
         """
         serializer = EmployerInvitationApprovalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        invitation_id = serializer.validated_data['invitation_id']
-        action = serializer.validated_data['action']
-        
+
+        invitation_id = serializer.validated_data["invitation_id"]
+        action = serializer.validated_data["action"]
+
         try:
             # Najdi invitation
-            invitation = EmployerInvitation.objects.get(
-                invitation_id=invitation_id,
-                user=request.user
-            )
+            invitation = EmployerInvitation.objects.get(invitation_id=invitation_id, user=request.user)
         except EmployerInvitation.DoesNotExist:
-            return Response(
-                {"detail": "Pozvánka nebyla nalezena nebo k ní nemáte přístup."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
+            return Response({"detail": "Pozvánka nebyla nalezena nebo k ní nemáte přístup."}, status=status.HTTP_404_NOT_FOUND)
+
         # Zkontroluj, že invitation je ve stavu PENDING
         if invitation.status != EmployerInvitationStatus.PENDING:
-            return Response(
-                {"detail": "Pozvánka již byla zpracována."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
+            return Response({"detail": "Pozvánka již byla zpracována."}, status=status.HTTP_400_BAD_REQUEST)
+
         with transaction.atomic():
-            if action == 'accept':
+            if action == "accept":
                 # Změň status invitation na ACCEPTED
                 invitation.status = EmployerInvitationStatus.ACCEPTED
                 invitation.save()
-                
+
                 # Vytvoř StudentPractice záznam
                 student_practice = StudentPractice.objects.create(
                     user=request.user,
@@ -73,26 +66,21 @@ class EmployerInvitationApprovalView(APIView):
                     approval_status=ApprovalStatus.APPROVED,  # Automaticky schváleno
                     progress_status=ProgressStatus.IN_PROGRESS,  # Probíhá
                     hours_completed=0,
-                    year=date.today().year
+                    year=date.today().year,
                 )
-                
-                return Response({
-                    "detail": "Pozvánka byla přijata a praxe byla zahájena.",
-                    "student_practice_id": student_practice.student_practice_id
-                }, status=status.HTTP_200_OK)
-                
-            elif action == 'reject':
+
+                return Response(
+                    {"detail": "Pozvánka byla přijata a praxe byla zahájena.", "student_practice_id": student_practice.student_practice_id},
+                    status=status.HTTP_200_OK,
+                )
+
+            elif action == "reject":
                 invitation.status = EmployerInvitationStatus.REJECTED
                 invitation.save()
-                
-                return Response({
-                    "detail": "Pozvánka byla zamítnuta."
-                }, status=status.HTTP_200_OK)
-        
-        return Response(
-            {"detail": "Neplatná akce."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+
+                return Response({"detail": "Pozvánka byla zamítnuta."}, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Neplatná akce."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class StudentPracticeListView(generics.ListAPIView):
@@ -120,7 +108,7 @@ class OrganizationApplicationsView(APIView):
     def get(self, request):
         user = request.user
         # Zjisti employer_profile id z přihlášeného uživatele (OrganizationUser)
-        employer_profile = getattr(user, 'employer_profile', None)
+        employer_profile = getattr(user, "employer_profile", None)
         if not employer_profile:
             return Response({"detail": "Uživatel není přiřazen k žádné organizaci."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -142,6 +130,7 @@ class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
             "progress_status": {"required": False},
         }
 
+
 class StudentPracticeStatusUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -151,3 +140,100 @@ class StudentPracticeStatusUpdateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UploadedDocument
+        fields = ("document",)
+
+    def validate_document(self, uploaded_file):
+        ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
+        if ext not in ("doc", "docx"):
+            raise serializers.ValidationError("Jenom Word (.doc, .docx) dokumenty jsou povoleny.")
+        return uploaded_file
+
+    def update(self, instance, validated_data):
+        if instance.document:
+            instance.document.delete(save=False)
+
+        file = validated_data["document"]
+        file.name = DocumentHelper.create_name_for_document(instance.document_type, instance.student_practice.user.user_id, file.name)
+        instance.document = file
+        instance.uploaded_at = datetime.datetime.now()
+        instance.save()
+        return instance
+
+
+class HasDocumentAccessMixin:
+    def _has_document_access(self, user, document):
+        if user.is_superuser:
+            return True
+        if isinstance(user, StudentUser):
+            return document.student_practice.user == user
+        elif isinstance(user, ProfessorUser):
+            user_subjects = document.student_practice.practice.subject.user_subjects
+            is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
+            if is_professor_for_subject:
+                return True
+            is_head_of_department = (
+                document.student_practice.practice.subject.department == user.department and user.department_role == DepartmentRole.HEAD
+            )
+            return is_head_of_department
+        return False
+
+
+class StudentPracticeUploadDocumentView(APIView, HasDocumentAccessMixin):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Upload a document for a student practice",
+        description="Uploads a file and attaches it to the specified StudentPractice record.",
+        parameters=[
+            OpenApiParameter(name="document_id", location=OpenApiParameter.PATH, type=int, description="ID of the student practice"),
+        ],
+        request=StudentPracticeUploadDocumentSerializer,
+        responses={
+            201: OpenApiResponse(description="Document successfully uploaded"),
+            400: OpenApiResponse(description="Bad request"),
+            403: OpenApiResponse(description="Permission denied"),
+            404: OpenApiResponse(description="StudentPractice not found"),
+        },
+    )
+    def post(self, request, document_id):
+        document = get_object_or_404(UploadedDocument, pk=document_id)
+
+        if not self._has_document_access(request.user, document):
+            return Response({"detail": "Nemáte oprávnění nahrát dokument k této praxi."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = StudentPracticeUploadDocumentSerializer(document, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"detail": "Dokument byl úspěšně nahrán."}, status=status.HTTP_201_CREATED)
+
+
+class StudentPracticeDownloadDocumentView(APIView, HasDocumentAccessMixin):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Download a document",
+        description="Streams the file associated with the given UploadedDocument ID.",
+        parameters=[
+            OpenApiParameter(name="document_id", location=OpenApiParameter.PATH, type=int, description="ID of the uploaded document"),
+        ],
+        responses={
+            200: OpenApiResponse(response=OpenApiTypes.BINARY, description="Binary stream of the requested file"),
+            403: OpenApiResponse(description="Permission denied"),
+            404: OpenApiResponse(description="UploadedDocument not found"),
+        },
+    )
+    def get(self, request, document_id):
+        document = get_object_or_404(UploadedDocument, pk=document_id)
+
+        if not self._has_document_access(request.user, document):
+            return Response({"detail": "Nemáte oprávnění stáhnout dokument k této praxi."}, status=status.HTTP_403_FORBIDDEN)
+
+        file_handle = document.document.open("rb")
+        return FileResponse(file_handle, as_attachment=True, filename=document.document.name)
