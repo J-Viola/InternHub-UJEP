@@ -1,4 +1,4 @@
-from api.models import Department, Practice, StudentPractice, StudentUser, UserSubjectType, StudentUser, ProfessorUser
+from api.models import Department, Practice, ProfessorUser, StudentPractice, StudentUser, UserSubjectType
 from django.core.handlers.base import logger
 from rest_framework import serializers
 
@@ -133,3 +133,10 @@ class DepartmentUserSerializer(serializers.Serializer):
 
     class Meta:
         fields = ("user_type", "data")
+
+
+class AdminDepartmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Department
+        fields = "__all__"

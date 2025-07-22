@@ -1,27 +1,27 @@
 from datetime import date, datetime
-from django.db.models import Q
+
 from api.decorators import role_required
 from api.models import (
     ApprovalStatus,
     Department,
     EmployerInvitation,
+    EmployerInvitationStatus,
     OrganizationRole,
     Practice,
+    ProfessorUser,
     ProgressStatus,
     StudentPractice,
     StudentUser,
-    EmployerInvitationStatus,
     UserSubjectType,
-    ProfessorUser
 )
 from api.serializers import PracticeSerializer
 from api.views import StandardResultsSetPagination
 from practices.serializers import (
+    OrganizationPracticeSerializer,
     PracticeApprovalSerializer,
     PracticeApprovalStatusSerializer,
     RunningPracticeSerializer,
     StudentPracticeSerializer,
-    OrganizationPracticeSerializer,
 )
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -62,7 +62,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         # GET /api/practices/{id}/
         practice_obj = self.get_object()
         serializer = self.get_serializer(practice_obj)
-        
+
         contact_user_info = None
         if practice_obj.contact_user:
             contact_user_info = {
@@ -73,10 +73,10 @@ class PracticeViewSet(viewsets.ModelViewSet):
                 "email": practice_obj.contact_user.email,
                 "phone": practice_obj.contact_user.phone,
             }
-        
+
         response_data = serializer.data
-        response_data['contact_user_info'] = contact_user_info
-        
+        response_data["contact_user_info"] = contact_user_info
+
         return Response(response_data)
 
     @role_required([OrganizationRole.INSERTER, OrganizationRole.OWNER, StagRoleEnum.VY])
@@ -149,7 +149,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
             student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
 
             # Získej všechny employer invitations pro uživatele
-            employer_invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related("practice", "employer")
+            employer_invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related(
+                "practice", "employer"
+            )
 
             # Serializuj student_practice - pouze základní info
             student_practice_data = []
@@ -240,6 +242,18 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.AllowAny], url_path="by_employer_profile/(?P<employer_id>[^/.]+)"
+    )
+    def by_employer_profile(self, request, employer_id):
+        """
+        GET /api/practices/by_employer_profile/{employer_id}
+        Vrací praxe patřící k dané organizaci
+        """
+        practices = Practice.objects.filter(employer=employer_id, is_active=True).order_by("start_date")
+        serializer = self.get_serializer(practices, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def organization_practices(self, request):
         """
@@ -247,25 +261,22 @@ class PracticeViewSet(viewsets.ModelViewSet):
         Vrací všechny praxe vytvořené organizací přihlášeného uživatele
         """
         user = request.user
-        
+
         # Kontrola, zda je uživatel organizace
-        if not hasattr(user, 'employer_profile') or not user.employer_profile:
+        if not hasattr(user, "employer_profile") or not user.employer_profile:
             return Response(
-                {"detail": "Přístup odepřen. Pouze uživatelé organizací mohou přistupovat k tomuto endpointu."}, 
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "Přístup odepřen. Pouze uživatelé organizací mohou přistupovat k tomuto endpointu."},
+                status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Získání praxí podle employer_profile uživatele
-        practices = Practice.objects.filter(
-            employer=user.employer_profile
-        ).select_related(
-            'subject', 
-            'subject__department', 
-            'contact_user'
-        ).prefetch_related(
-            'student_practices'
-        ).order_by('-created_at')
-        
+        practices = (
+            Practice.objects.filter(employer=user.employer_profile)
+            .select_related("subject", "subject__department", "contact_user")
+            .prefetch_related("student_practices")
+            .order_by("-created_at")
+        )
+
         serializer = OrganizationPracticeSerializer(practices, many=True)
         return Response(serializer.data)
 
@@ -314,10 +325,14 @@ class PracticeViewSet(viewsets.ModelViewSet):
             dept_ids = [professor.department.department_id]
         else:
             # Pokud není profesor, použij původní logiku přes UserSubject
-            dept_ids = Department.objects.filter(
-                subjects__user_subjects__user_id=user_id,
-                subjects__user_subjects__role__in=[UserSubjectType.Student.value, UserSubjectType.Professor.value]
-            ).values_list("department_id", flat=True).distinct()
+            dept_ids = (
+                Department.objects.filter(
+                    subjects__user_subjects__user_id=user_id,
+                    subjects__user_subjects__role__in=[UserSubjectType.Student.value, UserSubjectType.Professor.value],
+                )
+                .values_list("department_id", flat=True)
+                .distinct()
+            )
 
         if not dept_ids:
             return Response({"detail": "Uživatel nemá přiřazenou žádnou katedru."}, status=status.HTTP_404_NOT_FOUND)
@@ -334,7 +349,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         to_approve_data = serializer(to_approve, many=True, context={"request": request}).data
 
         def enrich_contact_user(practice):
-            user = getattr(practice, 'contact_user', None)
+            user = getattr(practice, "contact_user", None)
             if user:
                 return {
                     "user_id": user.user_id,
@@ -353,10 +368,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
             practice = to_approve.get(practice_id=item["practice_id"])
             item["contact_user_info"] = enrich_contact_user(practice)
 
-        return Response({
-            "approved_practices": approved_data,
-            "to_approve_practices": to_approve_data
-        })
+        return Response({"approved_practices": approved_data, "to_approve_practices": to_approve_data})
 
 
 class RunningPracticeListView(generics.ListAPIView):
