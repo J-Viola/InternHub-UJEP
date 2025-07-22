@@ -37,7 +37,7 @@ root.render(
               <Route path="/" element={<LoginPage />} />
               <Route path="/nabidka" element={<NabidkaPage />} />
               <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
-              <Route path="/profil" element={<ProfilPage />} />
+              <Route path="/profil/:id?" element={<ProfilPage />} />
               <Route path="/registrace" element={<RegistracePage />} />
               <Route path="/praxe" element={<PraxePage />} />
               <Route path="/TEST" element={<TextEditor />} />
