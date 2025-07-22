@@ -15,12 +15,14 @@ import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
+import { useDocumentsAPI } from "src/api/documents/documentsAPI";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
     const [ popUp, setPopUp ] = useState(false);
     const [ entity, setEntity ] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
+    const documentAPI = useDocumentsAPI();
     const { user } = useUser();
     const { addMessage } = useMessage();
 
