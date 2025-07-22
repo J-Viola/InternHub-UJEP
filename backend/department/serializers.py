@@ -1,4 +1,4 @@
-from api.models import Department, Practice, StudentPractice, StudentUser, UserSubjectType
+from api.models import Department, Practice, StudentPractice, StudentUser, UserSubjectType, StudentUser, ProfessorUser
 from django.core.handlers.base import logger
 from rest_framework import serializers
 
@@ -23,8 +23,11 @@ class StudentThisPracticeSerializer(serializers.ModelSerializer):
 
 
 class StudentDetailSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="first_name")
+    surname = serializers.CharField(source="last_name")
     student_practice = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
+    approved_practice = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentUser
@@ -32,10 +35,13 @@ class StudentDetailSerializer(serializers.ModelSerializer):
             "user_id",
             "first_name",
             "last_name",
+            "name",
+            "surname",
             "email",
             "os_cislo",
             "student_practice",
             "department",
+            "approved_practice",
         )
 
     def get_student_practice(self, obj):
@@ -50,6 +56,15 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         qs = obj.user_subjects.filter(role=UserSubjectType.Student)
         dept_names = qs.values_list("subject__department__department_name", flat=True).distinct()
         return dept_names[0] if dept_names else None
+
+    def get_approved_practice(self, obj):
+        approved = obj.student_practices.filter(approval_status=1).first()
+        if approved:
+            return {
+                "student_practice_id": approved.student_practice_id,
+                "approval_status": approved.approval_status,
+            }
+        return None
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -96,3 +111,25 @@ class ProfessorDetailSerializer(serializers.ModelSerializer):
         qs = obj.user_subjects.filter(role=UserSubjectType.Professor)
         dept_name = qs.values_list("subject__department__department_name", flat=True).distinct().first()
         return dept_name if dept_name else None
+
+
+class DepartmentUserSerializer(serializers.Serializer):
+    user_type = serializers.SerializerMethodField()
+    data = serializers.SerializerMethodField()
+
+    def get_user_type(self, obj):
+        if isinstance(obj, StudentUser):
+            return "student"
+        elif isinstance(obj, ProfessorUser):
+            return "professor"
+        return "unknown"
+
+    def get_data(self, obj):
+        if isinstance(obj, StudentUser):
+            return StudentDetailSerializer(obj).data
+        elif isinstance(obj, ProfessorUser):
+            return ProfessorDetailSerializer(obj).data
+        return {}
+
+    class Meta:
+        fields = ("user_type", "data")

@@ -12,6 +12,7 @@ export default function ProfilPage() {
     const { getCurrentUserProfile } = useUserAPI();
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
+    // přidělat check na param id -> pak bud tahadam data ciziho profilu, nebo svůj
 
     const handleEditProfile = () => {
         console.log("Upravit profil pro uživatele:", userData?.id);

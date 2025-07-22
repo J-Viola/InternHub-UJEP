@@ -4,7 +4,6 @@ import { useMessage } from "@hooks/MessageContext";
 
 export const useDepartmentAPI = () => {
     const api = useApi();
-    const { addMessage } = useMessage(); 
     //const practices = api.dummyDB.practices;
 
     const getNabidky = async (params = {}) => {
@@ -23,9 +22,21 @@ export const useDepartmentAPI = () => {
         }
     };
 
+    const getDepartmentStudents = async () => {
+        try {
+            const response = await api.get('/departments/department-students/');
+            if (response && response.data) {
+                return response.data;
+            }
+            return [];
+        } catch (error) {
+            throw error;
+        }
+    };
 
 
     return {
         getNabidky,
+        getDepartmentStudents,
     };
 };

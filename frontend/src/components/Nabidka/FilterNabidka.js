@@ -18,7 +18,8 @@ export default function FilterNabidka({
         <Container property="w-full mb-8">
             {/* PRVNÍ ŘÁDEK - VYHLEDÁVÁNÍ */}
             <Container property="flex items-center justify-center mb-4">
-                <SearchBar 
+                <SearchBar
+                    id="title"
                     value={filterValue?.title}
                     placeholder={"Název"}
                     onChange={handleFilterChange}
