@@ -411,9 +411,9 @@ class StudentPractice(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.pk is None:
-            self.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT)
-            self.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT)
-            self.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK)
+            self.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT, self.user.user_id)
+            self.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, self.user.user_id)
+            self.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, self.user.user_id)
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"

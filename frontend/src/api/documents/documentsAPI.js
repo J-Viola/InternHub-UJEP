@@ -5,7 +5,7 @@ export const useDocumentsAPI = () => {
 
     const downloadDocument = async (documentId) => {
         try {
-            const res = await api.get(`/api/student-practices/download-document/${documentId}`, { responseType: "blob" });
+            const res = await api.get(`/student-practices/download-document/${documentId}`, { responseType: "blob" });
             return res.data;
         } catch (error) {
             throw error;
@@ -14,7 +14,7 @@ export const useDocumentsAPI = () => {
 
     const uploadDocument = async (documentId, formData) => {
         try {
-            const res = await api.post(`/api/student-practices/upload-document/${documentId}`, formData, {
+            const res = await api.post(`/student-practices/upload-document/${documentId}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
             return res.data;

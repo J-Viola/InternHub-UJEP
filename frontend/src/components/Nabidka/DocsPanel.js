@@ -5,52 +5,47 @@ import Nav from "@components/core/Nav";
 import Paragraph from "@components/core/Text/Paragraph"
 import Headings from "@core/Text/Headings"
 import Button from "@core/Button/Button";
+import { useUser } from "@hooks/UserProvider";
 
 
-function DocContainer({doc_type}) {
+function DocContainer({doc_info, handleDownload, handleUpload}) {
+
+    const renderTitle = () => {
+        if(doc_info.type === "contract") {
+            return "Návrh smlouvy"
+        }
+        else if(doc_info.type === "content") {
+            return "Náplň stáže"
+        }
+        else if(doc_info.type === "feedback") {
+            return "Zpětná vazba"
+        }
+    }
     return(
         <ContainerForEntity property={"mb-2"}>
             <Container property={"flex flex-col w-full gap-4 p-4 bg-gray-50 rounded-lg"}>
-                <Headings sizeTag={"h4"}>{doc_type.title}</Headings>
+                <Headings sizeTag={"h4"}>{renderTitle()}</Headings>
                 {/*STÁHNOUT SOUBOR*/}
-                <Button onClick={() => console.log(doc_type.download_api)} property={"w-full"} disabled={!doc_type.download_api}>
+                <Button onClick={() => handleDownload(doc_info.id)} property={"w-full"} disabled={!doc_info.id}>
                     Stáhnout soubor
                 </Button>
                 {/*NAHRÁT SOUBOR*/}
-                <Button onClick={() => console.log(doc_type.upload_api)} property={"w-full"} disabled={!doc_type.upload_api}>
+                <Button onClick={() => handleUpload(doc_info.id)} property={"w-full"} disabled={!doc_info.id}>
                     Nahrát soubor
                 </Button>
+
             </Container>
         </ContainerForEntity>
     )
 }
 
 
-export default function DocsPanel() {
-    // udělat podle rolí jednotlivé layouty souborů a vlastnosti tlačítek (to načtu podle user => bud pres prop, nebo načtu hook)
-    const doc_types = [
-        {
-            "title": "Návrh smlouvy",
-            "download_api": "localhost:8000/api/docs/download/navrh_smlouvy",
-            //"upload_api": "TADY BUDE FUNKCE NA VÝBĚR SOUBORU A PAK API CALL"
-        
-        },
-        {
-            "title": "Náplň stáže",
-            "download_api": "localhost:8000/api/docs/download/napln_staze",
-            "upload_api": "TADY BUDE FUNKCE NA VÝBĚR SOUBORU A PAK API CALL"
-        
-        },
-        {
-            "title": "Zpětná vazba",
-            //"download_api": "localhost:8000/api/docs/download/zpetna_vatba",
-            "upload_api": "TADY BUDE FUNKCE NA VÝBĚR SOUBORU A PAK API CALL"
-        
-        }
-    ]
+export default function DocsPanel({ docData, handleDownload, handleUpload }) {
 
-    // zatim
     const STATUS = true;
+    const { user } = useUser();
+
+    if (!Array.isArray(docData)) return null;
 
     return(
         <ContainerForEntity property={"pl-8 pr-8 mb-2"}>
@@ -67,9 +62,21 @@ export default function DocsPanel() {
 
             {/* CONTAINERY DOKUMENTŮ */}
             <Container property={"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4"}>
-                {doc_types.map((doc_type, index) => (
-                    <DocContainer key={index} doc_type={doc_type} />
+                {docData.map((doc_info, index) => (
+                    <DocContainer key={index} doc_info={doc_info} handleDownload={handleDownload} handleUpload={handleUpload} />
                 ))}
+            </Container>
+
+            <Container property={"w-full mt-2 mb-2 flex justify-end"}>
+                {/* KONTROLA DOKUMENTŮ . debug -> pro studenta */}
+                {user.isStudent() && (
+                    <Button variant={"yellow"} 
+                        onClick={() => {
+                        console.log("Kontrola dokumentů")
+                    }}>
+                        Kontrola dokumentů
+                    </Button>
+                )}
             </Container>
         </ContainerForEntity>
     )

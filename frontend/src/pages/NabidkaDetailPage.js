@@ -26,12 +26,16 @@ export default function NabidkaDetailPage() {
     const { user } = useUser();
     const { addMessage } = useMessage();
 
+    // MOCK: Získání dat o dokumentech (nahraďte reálnými daty podle potřeby)
+    const [docs, setDocs] = useState([]);
+
     const fetchData = async () => {
         try {
             console.log("Fetching nabídka with ID:", id);
             const result = await nabidkaAPI.getNabidkaById(id);
             console.log("result", result)
             setEntity(result);
+            setDocs(result.student_practice_documents || []);
         } catch (error) {
             console.error("Chyba při načítání nabídky:", error);
         }
@@ -44,6 +48,41 @@ export default function NabidkaDetailPage() {
         }
     }, [id]);
 
+    // Handler pro stahování dokumentu
+    const handleDownload = async (documentId) => {
+        try {
+            const blob = await documentAPI.downloadDocument(documentId);
+            const url = window.URL.createObjectURL(new Blob([blob]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `dokument_${documentId}`); // nebo použijte název z API
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            addMessage("Chyba při stahování dokumentu", "E");
+        }
+    };
+
+    // Handler pro nahrávání dokumentu
+    const handleUpload = async (documentId) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.doc,.docx';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('document', file);
+            try {
+                await documentAPI.uploadDocument(documentId, formData);
+                addMessage("Dokument úspěšně nahrán", "S");
+            } catch (error) {
+                addMessage("Chyba při nahrávání dokumentu", "E");
+            }
+        };
+        input.click();
+    };
 
     const handlePopUp = () => {
         setPopUp(!popUp);
@@ -63,7 +102,6 @@ export default function NabidkaDetailPage() {
         console.log("Přihláška odmítnuta");
     }
 
-    //
     return(
         <Container property="min-h-screen">
             <Nav/>
@@ -72,7 +110,7 @@ export default function NabidkaDetailPage() {
                 {/* DOCS PANEL */}
                 {entity?.student_practice_status?.approval_status !== undefined &&
                  entity.student_practice_status.approval_status === 1 && (
-                    <DocsPanel/>
+                    <DocsPanel docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
                 )}
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
