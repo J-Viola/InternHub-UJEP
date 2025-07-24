@@ -23,6 +23,7 @@ from practices.serializers import (
     RunningPracticeSerializer,
     StudentPracticeSerializer,
 )
+from practices.utils import calculate_end_date
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -208,7 +209,8 @@ class PracticeViewSet(viewsets.ModelViewSet):
         data["progress_status"] = ProgressStatus.NOT_STARTED.value
         data["hours_completed"] = 0
         data["year"] = date.today().year
-
+        start_date = data["start_date"]
+        data["end_date"] = calculate_end_date(datetime.strptime(start_date, "%d.%m.%Y").date()).strftime("%d.%m.%Y")
         serializer = StudentPracticeSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

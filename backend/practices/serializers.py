@@ -7,6 +7,8 @@ from rest_framework import serializers
 
 class StudentPracticeSerializer(serializers.ModelSerializer):
     user_info = serializers.SerializerMethodField()
+    start_date = FormattedDateField()
+    end_date = FormattedDateField()
 
     class Meta:
         model = StudentPractice
@@ -21,6 +23,8 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "hours_completed",
             "cancellation_reason",
             "year",
+            "start_date",
+            "end_date",
         ]
 
     def get_user_info(self, obj):
@@ -31,9 +35,10 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
 
 class OrganizationPracticeSerializer(serializers.ModelSerializer):
     """Serializer pro zobrazení praxí organizace"""
+
     contact_user_full_name = serializers.CharField(source="contact_user.full_name", read_only=True)
     created_at = FormattedDateField(read_only=True)
-    
+
     # Statistiky studentů
     approved_applications = serializers.SerializerMethodField()
     pending_applications = serializers.SerializerMethodField()
@@ -48,7 +53,7 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
             "available_positions",
             "approved_applications",
             "pending_applications",
-            "approval_status"
+            "approval_status",
         ]
 
     def get_approved_applications(self, obj):
