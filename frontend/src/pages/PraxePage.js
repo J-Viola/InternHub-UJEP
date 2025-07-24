@@ -173,7 +173,7 @@ export default function PraxePage() {
                                         />
                                     ))}
                                     
-                                    <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Pozávnky od firem
+                                    <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Pozvánky od firem
                                         {data.employer_invitations ? (" " + `(${data.employer_invitations.length})`) : ""}
                                     </Headings>
                                     {/* Employer Invitations */}
