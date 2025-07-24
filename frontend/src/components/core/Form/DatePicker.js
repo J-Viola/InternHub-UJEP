@@ -7,7 +7,7 @@ import Button from "@core/Button/Button";
 import Paragraph from "@components/core/Text/Paragraph";
 import { format } from "date-fns";
 
-export default function CustomDatePicker({ id, property, value, required=false, label, onChange, children }) {
+export default function CustomDatePicker({ id, property, value, required=false, label, onChange, children, locked=false }) {
     const [date, setDate] = useState(value ? new Date(value) : null);
     const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
@@ -20,6 +20,29 @@ export default function CustomDatePicker({ id, property, value, required=false, 
             onChange({ [id]: formattedDate });
         }
     }, [id, onChange]);
+
+    if (locked) {
+        return (
+            <Container property={"w-full"}>
+                <Container property="flex items-center w-full">
+                    {labelEntity}
+                    {required && requiredLabel}
+                </Container>
+                <Container property="relative">
+                    <input
+                        type="text"
+                        value={date ? format(date, 'dd.MM.yyyy') : ''}
+                        readOnly
+                        disabled
+                        className="w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 pl-10 opacity-60 cursor-not-allowed"
+                    />
+                    <Container property="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <Button icon={"calendar"} pointer={false} noVariant={true} iconColor={"text-gray-900"} />
+                    </Container>
+                </Container>
+            </Container>
+        );
+    }
 
     return (
         <Container property={"w-full"}>
