@@ -90,9 +90,17 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     contact_user_info = serializers.SerializerMethodField()
     practice_type = serializers.SerializerMethodField()
     student_practice_status = serializers.SerializerMethodField()
+    title = serializers.CharField(source="practice.title", read_only=True)
+    description = serializers.CharField(source="practice.description", read_only=True)
+    responsibilities = serializers.CharField(source="practice.responsibilities", read_only=True)
+    available_positions = serializers.IntegerField(source="practice.available_positions", read_only=True)
+    start_date = FormattedDateField(source="practice.start_date", read_only=True)
+    end_date = FormattedDateField(read_only=True)
+    is_active = serializers.BooleanField(source="practice.is_active", read_only=True)
+    image_base64 = serializers.CharField(source="practice.image_base64", read_only=True)
 
     class Meta:
-        model = Practice
+        model = StudentPractice
         fields = [
             "employer",
             "subject",
@@ -110,7 +118,6 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "practice_type",
             "student_practice_status",
         ]
-        read_only_fields = ["practice_id", "is_active"]
 
     def get_contact_user_info(self, obj):
         if obj.practice.contact_user:

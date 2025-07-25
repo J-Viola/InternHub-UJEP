@@ -66,7 +66,7 @@ class ActionLogAdmin(admin.ModelAdmin):
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ("pk", "department_name")
+    list_display = ("pk", "department_name", "department_code")
 
 
 @admin.register(Subject)
