@@ -85,10 +85,13 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
 
 
 class StudentPracticeUploadedDocumentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="document_id", read_only=True)
+    type = serializers.IntegerField(source="document_type", read_only=True)
+
     class Meta:
         model = UploadedDocument
-        fields = ["document_id", "document_type"]
-        read_only_fields = ["document_id", "document_type"]
+        fields = ["id", "type"]
+        read_only_fields = ["id", "type"]
 
 
 class StudentPracticeCardSerializer(serializers.ModelSerializer):
