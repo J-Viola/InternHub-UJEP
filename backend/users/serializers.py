@@ -1,6 +1,8 @@
 import requests
 from api.models import (
     ApprovalStatus,
+    Department,
+    DepartmentRole,
     EmployerProfile,
     OrganizationRole,
     OrganizationUser,
@@ -9,7 +11,7 @@ from api.models import (
     StudentUser,
     Subject,
     UserSubject,
-    UserSubjectType, Department, DepartmentRole,
+    UserSubjectType,
 )
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -20,7 +22,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.dtos.dtos import EkonomickySubjektDTO
-from users.models import UserType, StagRoleEnum
+from users.models import StagRoleEnum, UserType
 
 User = get_user_model()
 
@@ -99,8 +101,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             sync_stag_subjects_for_student(ticket, osCislo, user)
         if ucitIdno:
             katedra = stagUserInfo.get("katedra")
-            department = Department.objects.get(name=katedra)
-            if not department:
+            try:
+                department = Department.objects.get(department_code=katedra)
+            except Department.DoesNotExist:
                 raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
             department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
             user, _ = ProfessorUser.objects.get_or_create(
@@ -114,7 +117,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     "is_active": True,
                     "department": department,
                     "department_role": department_role,
-
                 },
             )
             sync_stag_roles_for_teacher(ticket, ucitIdno, user)
@@ -420,7 +422,6 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
                 )
     else:
         raise Exception("Failed to fetch STAG roles")
-
 
 
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
