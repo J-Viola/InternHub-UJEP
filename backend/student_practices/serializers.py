@@ -1,5 +1,5 @@
 from api.helpers import FormattedDateField
-from api.models import Practice, StudentPractice
+from api.models import Practice, StudentPractice, UploadedDocument
 from rest_framework import serializers
 
 
@@ -84,6 +84,13 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
         ]
 
 
+class StudentPracticeUploadedDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UploadedDocument
+        fields = ["document_id", "document_type"]
+        read_only_fields = ["document_id", "document_type"]
+
+
 class StudentPracticeCardSerializer(serializers.ModelSerializer):
     employer = serializers.SerializerMethodField()
     subject = serializers.SerializerMethodField()
@@ -98,6 +105,9 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     end_date = FormattedDateField(read_only=True)
     is_active = serializers.BooleanField(source="practice.is_active", read_only=True)
     image_base64 = serializers.CharField(source="practice.image_base64", read_only=True)
+    contract_document = serializers.SerializerMethodField()
+    content_document = serializers.SerializerMethodField()
+    feedback_document = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice
@@ -117,6 +127,9 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "image_base64",
             "practice_type",
             "student_practice_status",
+            "contract_document",
+            "content_document",
+            "feedback_document",
         ]
 
     def get_contact_user_info(self, obj):
@@ -144,3 +157,12 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
         from api.serializers import PracticeTypeSerializer
 
         return PracticeTypeSerializer(obj.practice.practice_type).data
+
+    def get_contract_document(self, obj):
+        return StudentPracticeUploadedDocumentSerializer(obj.contract_document).data
+
+    def get_content_document(self, obj):
+        return StudentPracticeUploadedDocumentSerializer(obj.content_document).data
+
+    def get_feedback_document(self, obj):
+        return StudentPracticeUploadedDocumentSerializer(obj.feedback_document).data
