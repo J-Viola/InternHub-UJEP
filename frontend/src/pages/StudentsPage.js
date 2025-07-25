@@ -7,7 +7,8 @@ import Paragraph from "@components/core/Text/Paragraph";
 import BackButton from "@core/Button/BackButton";
 import SearchBar from "@components/Filter/SearchBar";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
-import { useNavigate } from "react-router-dom";
+import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
+import { useNavigate, useParams } from "react-router-dom";
 
 
 
@@ -16,13 +17,28 @@ export default function StudentPage() {
     const [entities, setEntities] = useState([]);
     const [ filterValues, setFilterValue ] = useState({"name" : ""})
     const navigate = useNavigate()
+    const { getStudentsByPracticeId } = useStudentPracticeAPI()
+    const { id } = useParams();
 
     useEffect(() => {
+        if (id) {
+            console.log("Mám id", id);
+            const fetchedStudents = getStudentsByPracticeId(id).then(fetchedStudents =>{
+                const translatedStudents = fetchedStudents.map(student => ({
+                    ...student,
+                    approval_status: approvalStatusMap[student.approval_status],
+                    progress_status: progressStatusMap[student.progress_status]
+                    }));
+                    setEntities(translatedStudents);
+            })
+            return
+        }
         getDepartmentStudents().then(res => {
             setEntities(res);
         });
     }, []);
 
+    // podle approval status - pro katedry
     const getButtonDict = (approval_status, entity) => {
         const hasPractice = [
             {
@@ -50,6 +66,23 @@ export default function StudentPage() {
         }
     }
 
+    const getButtonDictStudentPractice = (entity) => {
+        const buttonLayout = [
+            {
+                icon: "eye",
+                btnfunction: () => navigate(`/karta-praxe/${entity?.student_practice_id}`) 
+            },
+            {
+                icon: "user",
+                btnfunction: () => navigate(`/profil/${entity?.user_id}`)
+            }
+        ]
+
+        return buttonLayout
+
+    }
+
+
 
     const handleClear = () => {
         setFilterValue({
@@ -65,9 +98,32 @@ export default function StudentPage() {
         }));
     }
 
-    const attributes = {
+    const attributes = 
+    !id ? {
         "Osobní číslo": "os_cislo", 
-    }
+    } :
+    {
+        //"Název praxe": "practice_title",
+        //"Katedra": "department_name",
+        "Datum podání": "application_date",
+        "Stav": "approval_status",
+        "Průběh": "progress_status",
+        "Hodiny": "hours_completed"
+      }
+
+    const approvalStatusMap = {
+    0: "Čeká na schválení",
+    1: "Schváleno",
+    2: "Zamítnuto"
+    };
+
+    const progressStatusMap = {
+    0: "Nezahájeno",
+    1: "Probíhá",
+    2: "Dokončeno",
+    3: "Zrušeno"
+    };
+
 
     // Filtrování podle jména
     const filteredEntities = entities.filter(entity => {
@@ -75,12 +131,26 @@ export default function StudentPage() {
         const search = filterValues.name.toLowerCase();
         
         return (
+            (entity.student_full_name && entity.student_full_name.toLowerCase().includes(search)) ||
             (entity.first_name && entity.first_name.toLowerCase().includes(search)) ||
             (entity.last_name && entity.last_name.toLowerCase().includes(search)) ||
             (entity.name && entity.name.toLowerCase().includes(search)) ||
             (entity.surname && entity.surname.toLowerCase().includes(search))
         );
     });
+
+
+    let titleGenerator = "";
+    if (!id) {
+      if (entities[0] && entities[0].department) {
+        titleGenerator = ` ${entities[0].department}`;
+      }
+    } else {
+      if (entities[0] && entities[0].practice_title) {
+        titleGenerator = entities[0].practice_title;
+      }
+    }
+
 
     return(
         <Container property="min-h-screen">
@@ -89,8 +159,8 @@ export default function StudentPage() {
                 <BackButton/>
                 <Container property={"flex items-center justify-between mb-6 mt-4"}>
                     <Headings sizeTag={"h3"} property={"mt-2"}>
-                        Studenti
-                        {entities[0] && entities[0].department && ` - ${entities[0].department}`}
+                        {id ? "Přihlášení - " : "Studenti - "}
+                        {titleGenerator}
                     </Headings>
 
                 </Container>
@@ -109,7 +179,7 @@ export default function StudentPage() {
                             key={entity.user_id}
                             entity={entity}
                             attributes={attributes}
-                            buttons={getButtonDict(entity.approved_practice?.approval_status, entity)}
+                            buttons={!id ? getButtonDict(entity.approved_practice?.approval_status, entity) : getButtonDictStudentPractice(entity)}
                         />
                     ))}
                 </Container>

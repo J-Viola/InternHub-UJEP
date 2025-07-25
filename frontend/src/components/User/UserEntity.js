@@ -17,9 +17,12 @@ export default function UserEntity({entity, attributes, buttons, status="gray"})
                 {/* Jméno */}
                 <Container property="flex-shrink-0 min-w-[200px]">
                     <Paragraph variant={"baseBold"}>
-                        {entity.titles || entity.surname
-                            ? `${entity.titles?.before || ''} ${entity.name || ''} ${entity.surname || ''} ${entity.titles?.after || ''}`.trim()
-                            : entity.name}
+                        {entity.student_full_name
+                            ? entity.student_full_name
+                            : (entity.titles || entity.surname
+                                ? `${entity.titles?.before || ''} ${entity.name || ''} ${entity.surname || ''} ${entity.titles?.after || ''}`.trim()
+                                : entity.name)
+                        }
                     </Paragraph>
                 </Container>
                 {/* Atributy */}

@@ -12,6 +12,11 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const uvazek = [
+        {"label": 0.5, "value" : "0.5"},
+        {"label": 1, "value" : "1"}
+    ]
+
 
     return(
             <>
@@ -24,8 +29,18 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
                         onChange={handleChange}
                     />
 
+                    
+                    <DropDown
+                        id={"employment_load"}
+                        required={true}
+                        label={"Úvazek"}
+                        options={uvazek}
+                        onChange={handleChange}
+                    />
+
                     <CustomDatePicker
                         id={"end_date"}
+                        locked={true}
                         selected={formData?.end_date}
                         label={"Čas období do"}
                         required={true}
