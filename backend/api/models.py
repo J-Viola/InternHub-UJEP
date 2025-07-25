@@ -240,11 +240,12 @@ class ActionLog(models.Model):
 
 class Department(models.Model):
     department_id = models.AutoField(primary_key=True)
-    department_name = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    department_name = models.CharField(unique=True, max_length=100)
+    department_code = models.CharField(unique=True, max_length=100)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.department_name or super().__str__()
+        return f"{self.department_name} ({self.department_code})"
 
     class Meta:
         db_table = "departments"
