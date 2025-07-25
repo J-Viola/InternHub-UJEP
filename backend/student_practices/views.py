@@ -26,7 +26,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import EmployerInvitationApprovalSerializer, ListStudentPracticeSerializer
+from .serializers import EmployerInvitationApprovalSerializer, ListStudentPracticeSerializer, StudentPracticeCardSerializer
 
 
 class EmployerInvitationApprovalView(APIView):
@@ -237,3 +237,25 @@ class StudentPracticeDownloadDocumentView(APIView, HasDocumentAccessMixin):
 
         file_handle = document.document.open("rb")
         return FileResponse(file_handle, as_attachment=True, filename=document.document.name)
+
+
+class StudentPracticeCardView(APIView):
+
+    @extend_schema(
+        summary="Get student practice card",
+        description="Returns detailed information about a specific student practice.",
+        parameters=[
+            OpenApiParameter(
+                name="student_practice_id", location=OpenApiParameter.PATH, type=int, description="ID of the student practice"
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=StudentPracticeCardSerializer, description="Student practice details"),
+            404: OpenApiResponse(description="StudentPractice not found"),
+        },
+    )
+    def get(self, request, student_practice_id):
+        student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
+
+        serializer = StudentPracticeCardSerializer(student_practice)
+        return Response(serializer.data, status=status.HTTP_200_OK)

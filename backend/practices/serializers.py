@@ -162,3 +162,12 @@ class PracticeApprovalStatusSerializer(serializers.Serializer):
         choices=[choice for choice in ApprovalStatus.choices() if choice[0] != ApprovalStatus.PENDING],
         help_text="Status schválení praxe (pouze pro schválení nebo zamítnutí)",
     )
+
+
+class EndDateRequestSerializer(serializers.Serializer):
+    start_date = FormattedDateField(help_text="Start date")
+    coefficient = serializers.FloatField(help_text="Coefficient to calculate practice duration")
+
+
+class EndDateResponseSerializer(serializers.Serializer):
+    end_date = FormattedDateField(help_text="Calculated end date")

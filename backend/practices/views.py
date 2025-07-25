@@ -16,7 +16,10 @@ from api.models import (
 )
 from api.serializers import PracticeSerializer
 from api.views import StandardResultsSetPagination
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from practices.serializers import (
+    EndDateRequestSerializer,
+    EndDateResponseSerializer,
     OrganizationPracticeSerializer,
     PracticeApprovalSerializer,
     PracticeApprovalStatusSerializer,
@@ -159,6 +162,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
             for sp in student_practices:
                 student_practice_data.append(
                     {
+                        "student_practice_id": sp.id,
                         "practice_id": sp.practice.practice_id,
                         "practice_title": sp.practice.title,
                         "company_logo": sp.practice.image_base64,
@@ -440,3 +444,25 @@ class ChangePendingView(APIView):
         practice_obj.save()
         serializer = PracticeSerializer(practice_obj)
         return Response(serializer.data)
+
+
+class GetEndDateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary="Calculate end date of practice",
+        description="Returns the calculated end date based on the start date and coefficient",
+        request=EndDateRequestSerializer,
+        responses={
+            200: EndDateResponseSerializer,
+            400: OpenApiResponse(description="Bad request"),
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = EndDateRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        start_date = serializer.validated_data["start_date"]
+        coefficient = serializer.validated_data["coefficient"]
+        end_date = calculate_end_date(start_date, coefficient)
+        output = {"end_date": end_date}
+        return Response(EndDateResponseSerializer(output).data, status=status.HTTP_200_OK)
