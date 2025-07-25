@@ -69,7 +69,7 @@ export default function DocsPanel({ docData, handleDownload, handleUpload }) {
 
             <Container property={"w-full mt-2 mb-2 flex justify-end"}>
                 {/* KONTROLA DOKUMENTŮ . debug -> pro studenta */}
-                {user.isStudent() && (
+                {user.isDepartmentMg() && (
                     <Button variant={"yellow"} 
                         onClick={() => {
                         console.log("Kontrola dokumentů")

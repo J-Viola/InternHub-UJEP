@@ -6,7 +6,7 @@ import { RxCross1, RxCheck } from "react-icons/rx";
 import { FaAngleDown, FaAngleUp, FaLock, FaUser, FaArrowLeft, FaSave, FaDownload, FaUpload, FaCalendarAlt } from "react-icons/fa";
 import { MdOutlineManageAccounts, MdPersonOutline  } from "react-icons/md";
 
-export default function Button({id, children, text, property, onClick, textSize = "base", pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false }) {
+export default function Button({id, children, text, property, onClick, textSize = "base", hover=true ,pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false }) {
 
     const baseClassBig = "px-4 py-2 rounded-lg transition-colors duration-200";
     const baseClassSmall = "px-2 py-1 rounded-lg transition-colors duration-200";
@@ -42,14 +42,18 @@ export default function Button({id, children, text, property, onClick, textSize 
     const baseText = text ? <Paragraph variant={textSize}>{text}</Paragraph> : null;
     
     const variants = {
-        primary: "bg-facultyCol text-white hover:bg-gray-400 " + baseClassBig,
-        blue: "bg-blue-300 text-white hover:bg-gray-400 " + baseClassBig,
-        red: "bg-red-400 text-white hover:bg-gray-400 " + baseClassBig,
-        yellow: "bg-yellow-300 text-white hover:bg-gray-400 " + baseClassBig,
-        primarySmall: "bg-facultyCol text-white hover:bg-gray-400 " + baseClassSmall,
-        blueSmall: "bg-blue-300 text-white   hover:bg-gray-400 " + baseClassSmall,
-        redSmall: "bg-red-400 text-white hover:bg-gray-400 " + baseClassSmall,
-        yellowSmall: "bg-yellow-300 text-white hover:bg-gray-400 " + baseClassSmall,
+        primary: "bg-facultyCol text-white " + baseClassBig,
+        blue: "bg-blue-300 text-white " + baseClassBig,
+        red: "bg-red-400 text-white " + baseClassBig,
+        yellow: "bg-yellow-300 text-white " + baseClassBig,
+        green: "bg-green-300 text-white " + baseClassBig,
+        gray: "bg-gray-300 text-white " + baseClassBig,
+        primarySmall: "bg-facultyCol text-white " + baseClassSmall,
+        blueSmall: "bg-blue-300 text-white " + baseClassSmall,
+        redSmall: "bg-red-400 text-white " + baseClassSmall,
+        yellowSmall: "bg-yellow-300 text-white " + baseClassSmall,
+        greenSmall: "bg-green-300 text-white " + baseClassSmall,
+        graySmall: "bg-gray-300 text-white " + baseClassSmall,
         blueSmallNoHover: "bg-blue-300 text-gray-800" + baseClassSmall,
     };
 
@@ -60,6 +64,7 @@ export default function Button({id, children, text, property, onClick, textSize 
             className={`
                 ${noVariant ? "" : variants[variant]} 
                 ${!noVariant && (buttonSize === "big" ? baseClassBig : baseClassSmall)} 
+                ${hover ? "hover:bg-gray-400" : ""}
                 ${property || ''} 
                 ${!disabled ? (pointer ? "cursor-pointer" : "cursor-default") : ("opacity-50 cursor-not-allowed")}
 
