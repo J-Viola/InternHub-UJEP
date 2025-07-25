@@ -108,9 +108,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     end_date = FormattedDateField(read_only=True)
     is_active = serializers.BooleanField(source="practice.is_active", read_only=True)
     image_base64 = serializers.CharField(source="practice.image_base64", read_only=True)
-    contract_document = serializers.SerializerMethodField()
-    content_document = serializers.SerializerMethodField()
-    feedback_document = serializers.SerializerMethodField()
+    student_practice_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice
@@ -133,6 +131,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "contract_document",
             "content_document",
             "feedback_document",
+            "student_practice_documents",
         ]
 
     def get_contact_user_info(self, obj):
@@ -161,11 +160,9 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
 
         return PracticeTypeSerializer(obj.practice.practice_type).data
 
-    def get_contract_document(self, obj):
-        return StudentPracticeUploadedDocumentSerializer(obj.contract_document).data
-
-    def get_content_document(self, obj):
-        return StudentPracticeUploadedDocumentSerializer(obj.content_document).data
-
-    def get_feedback_document(self, obj):
-        return StudentPracticeUploadedDocumentSerializer(obj.feedback_document).data
+    def get_student_practice_documents(self, obj):
+        student_practice_documents = []
+        student_practice_documents.append({"id": obj.contract_document.document_id, "type": "contract"})
+        student_practice_documents.append({"id": obj.content_document.document_id, "type": "content"})
+        student_practice_documents.append({"id": obj.feedback_document.document_id, "type": "feedback"})
+        return student_practice_documents
