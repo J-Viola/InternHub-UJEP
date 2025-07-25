@@ -18,3 +18,4 @@ pillow
 django-verify-email
 drf-spectacular
 django-enumfield
+holidays

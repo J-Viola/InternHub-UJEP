@@ -7,6 +7,8 @@ from rest_framework import serializers
 
 class StudentPracticeSerializer(serializers.ModelSerializer):
     user_info = serializers.SerializerMethodField()
+    start_date = FormattedDateField()
+    end_date = FormattedDateField()
 
     class Meta:
         model = StudentPractice
@@ -21,6 +23,8 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "hours_completed",
             "cancellation_reason",
             "year",
+            "start_date",
+            "end_date",
         ]
 
     def get_user_info(self, obj):
@@ -31,9 +35,10 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
 
 class OrganizationPracticeSerializer(serializers.ModelSerializer):
     """Serializer pro zobrazení praxí organizace"""
+
     contact_user_full_name = serializers.CharField(source="contact_user.full_name", read_only=True)
     created_at = FormattedDateField(read_only=True)
-    
+
     # Statistiky studentů
     approved_applications = serializers.SerializerMethodField()
     pending_applications = serializers.SerializerMethodField()
@@ -48,7 +53,7 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
             "available_positions",
             "approved_applications",
             "pending_applications",
-            "approval_status"
+            "approval_status",
         ]
 
     def get_approved_applications(self, obj):
@@ -157,3 +162,12 @@ class PracticeApprovalStatusSerializer(serializers.Serializer):
         choices=[choice for choice in ApprovalStatus.choices() if choice[0] != ApprovalStatus.PENDING],
         help_text="Status schválení praxe (pouze pro schválení nebo zamítnutí)",
     )
+
+
+class EndDateRequestSerializer(serializers.Serializer):
+    start_date = FormattedDateField(help_text="Start date")
+    coefficient = serializers.FloatField(help_text="Coefficient to calculate practice duration")
+
+
+class EndDateResponseSerializer(serializers.Serializer):
+    end_date = FormattedDateField(help_text="Calculated end date")

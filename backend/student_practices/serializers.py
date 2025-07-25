@@ -1,11 +1,11 @@
 from api.helpers import FormattedDateField
-from api.models import Practice, StudentPractice, EmployerInvitation
+from api.models import Practice, StudentPractice
 from rest_framework import serializers
 
 
 class EmployerInvitationApprovalSerializer(serializers.Serializer):
     invitation_id = serializers.IntegerField()
-    action = serializers.ChoiceField(choices=['accept', 'reject'])
+    action = serializers.ChoiceField(choices=["accept", "reject"])
 
 
 class StudentPracticeSerializer(serializers.ModelSerializer):
@@ -82,3 +82,70 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
             "progress_status",
             "hours_completed",
         ]
+
+
+class StudentPracticeCardSerializer(serializers.ModelSerializer):
+    employer = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+    contact_user_info = serializers.SerializerMethodField()
+    practice_type = serializers.SerializerMethodField()
+    student_practice_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Practice
+        fields = [
+            "employer",
+            "subject",
+            "title",
+            "description",
+            "responsibilities",
+            "available_positions",
+            "start_date",
+            "end_date",
+            "progress_status",
+            "approval_status",
+            "contact_user_info",
+            "is_active",
+            "image_base64",
+            "practice_type",
+            "student_practice_status",
+        ]
+        read_only_fields = ["practice_id", "is_active"]
+
+    def get_contact_user_info(self, obj):
+        if obj.practice.contact_user:
+            return {
+                "user_id": obj.practice.contact_user.user_id,
+                "username": obj.practice.contact_user.username,
+            }
+        return None
+
+    def get_student_practice_status(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return None
+
+        # Check if the user is a StudentUser
+        if hasattr(request.user, "studentuser"):
+            try:
+                student_practice = StudentPractice.objects.get(user=request.user.studentuser, practice=obj)
+                return StudentPracticeStatusSerializer(student_practice).data
+            except StudentPractice.DoesNotExist:
+                pass
+
+        return None
+
+    def get_employer(self, obj):
+        from api.serializers import EmployerProfileSerializer
+
+        return EmployerProfileSerializer(obj.practice.employer).data
+
+    def get_subject(self, obj):
+        from api.serializers import SubjectSerializer
+
+        return SubjectSerializer(obj.practice.subject).data
+
+    def get_practice_type(self, obj):
+        from api.serializers import PracticeTypeSerializer
+
+        return PracticeTypeSerializer(obj.practice.practice_type).data

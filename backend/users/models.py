@@ -15,3 +15,4 @@ class UserType(Enum):
 class StagRoleEnum(Enum):
     ST = "st"
     VY = "vy"
+    VK = "vk"
