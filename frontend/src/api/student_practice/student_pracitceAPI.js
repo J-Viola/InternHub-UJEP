@@ -49,7 +49,17 @@ export const useStudentPracticeAPI = () => {
     // GET /api/student-practices/<practice_id> - Získání všech studentů přihlášených na konkrétní praxi
     const getStudentsByPracticeId = async (practiceId) => {
         try {
-            const response = await api.get(`/student-practices/student-practices/${practiceId}`);
+            const response = await api.get(`/student-practices/student-practices/by-practice/${practiceId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při získávání studentů pro praxi:', error);
+            throw error;
+        }
+    };
+
+    const getStudentPracticeCard = async (student_practiceId) => {
+        try {
+            const response = await api.get(`/student-practices/student-practices/${student_practiceId}`);
             return response.data;
         } catch (error) {
             console.error('Chyba při získávání studentů pro praxi:', error);
@@ -62,5 +72,6 @@ export const useStudentPracticeAPI = () => {
         getOrganizationApplications,
         updateStudentPracticeStatus,
         getStudentsByPracticeId,
+        getStudentPracticeCard
     };
 };

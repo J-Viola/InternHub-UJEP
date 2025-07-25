@@ -178,7 +178,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
             for sp in student_practices:
                 student_practice_data.append(
                     {
-                        "student_practice_id": sp.id,
+                        "student_practice_id": sp.student_practice_id,
                         "practice_id": sp.practice.practice_id,
                         "practice_title": sp.practice.title,
                         "company_logo": sp.practice.image_base64,

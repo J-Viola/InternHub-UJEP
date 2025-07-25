@@ -18,6 +18,7 @@ import MessageToast from '@components/MessageBox/MessageToast';
 import UserCRUDPage from '@pages/UserCRUDPage';
 import PrihlaskyPage from '@pages/PrihlaskyPage';
 import SpravaStaziPage from '@pages/SpravaStaziPage';
+import PraxeDetailPage from '@pages/PraxeDetailPage';
 
 
 import reportWebVitals from './reportWebVitals';
@@ -40,6 +41,7 @@ root.render(
               <Route path="/profil/:id?" element={<ProfilPage />} />
               <Route path="/registrace" element={<RegistracePage />} />
               <Route path="/praxe" element={<PraxePage />} />
+              <Route path="/karta-praxe/:id" element={<PraxeDetailPage />} />
               <Route path="/TEST" element={<TextEditor />} />
               <Route path="/students/:id?" element={<StudentPage />} />
               <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
