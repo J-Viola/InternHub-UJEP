@@ -48,6 +48,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source="practice.subject.department.department_name", read_only=True)
     application_date = FormattedDateField(read_only=True)
     student_full_name = serializers.CharField(source="user.full_name", read_only=True)
+    user_id = serializers.IntegerField(source="user.user_id", read_only=True)
 
     class Meta:
         model = StudentPractice
@@ -56,6 +57,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "student_practice_id",
             "department_name",
             "student_full_name",
+            "user_id",
             "practice_title",
             "application_date",
             "approval_status",

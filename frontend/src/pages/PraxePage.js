@@ -78,8 +78,6 @@ export default function PraxePage() {
             navigate(`/nabidka/${entity.practice_id}`);
         } else if (type === "student_practices") {
             navigate(`/nabidka/${entity.practice_id}`);
-        } else if (type === "organization_practices") {
-            navigate(`/nabidka/${entity.practice_id}`);
         }
     }
 
@@ -143,7 +141,11 @@ export default function PraxePage() {
                                             key={`practice-${entity.practice_id}`}
                                             entity={entity}
                                             onClick={() => handleClick(entity, "organization_practices")}
-                                            onView={() => handleView(entity, "organization_practices")}
+                                            onView={() =>
+                                                entity.approval_status !== 0
+                                                    ? navigate(`/students/${entity.practice_id}`)
+                                                    : navigate(`/nabidka/${entity.practice_id}`)
+                                            }
                                         />
                                     ))}
                                 </Container>

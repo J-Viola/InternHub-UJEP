@@ -980,3 +980,535 @@ ValueError: Cannot query "asd asd asdasdasd asdasd (test@email.cz)": Must be "St
 [2025-07-23 08:25:50,969] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
 [2025-07-23 08:25:51,005] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 226398
 [2025-07-23 08:25:51,005] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 226398
+[2025-07-25 06:34:54,152] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-25 06:38:09,202] INFO django.server "OPTIONS /api/student-practices/2 HTTP/1.1" 200 0
+[2025-07-25 06:38:09,210] WARNING django.request Not Found: /api/student-practices/2
+[2025-07-25 06:38:09,210] WARNING django.server "GET /api/student-practices/2 HTTP/1.1" 404 5717
+[2025-07-25 06:38:12,270] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:38:12,270] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:38:13,802] WARNING django.request Not Found: /api/student-practices/2
+[2025-07-25 06:38:13,804] WARNING django.request Not Found: /api/student-practices/2
+[2025-07-25 06:38:13,805] WARNING django.server "GET /api/student-practices/2 HTTP/1.1" 404 5717
+[2025-07-25 06:38:13,805] WARNING django.server "GET /api/student-practices/2 HTTP/1.1" 404 5717
+[2025-07-25 06:38:39,266] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-25 06:38:39,266] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-25 06:38:39,278] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:38:39,279] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:38:40,324] INFO django.server "OPTIONS /api/practices/practices/search/?title= HTTP/1.1" 200 0
+[2025-07-25 06:38:40,324] INFO django.server "OPTIONS /api/practices/practices/search/?title= HTTP/1.1" 200 0
+[2025-07-25 06:38:40,328] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-25 06:38:40,349] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:38:40,352] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:38:40,352] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:38:40,364] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:38:41,670] INFO django.server "OPTIONS /api/practices/practices/organization_practices/ HTTP/1.1" 200 0
+[2025-07-25 06:38:41,686] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:38:41,702] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:38:43,162] INFO django.server "OPTIONS /api/student-practices/2 HTTP/1.1" 200 0
+[2025-07-25 06:38:43,162] INFO django.server "OPTIONS /api/student-practices/2 HTTP/1.1" 200 0
+[2025-07-25 06:38:43,166] WARNING django.request Not Found: /api/student-practices/2
+[2025-07-25 06:38:43,168] WARNING django.request Not Found: /api/student-practices/2
+[2025-07-25 06:38:43,168] WARNING django.server "GET /api/student-practices/2 HTTP/1.1" 404 5717
+[2025-07-25 06:38:43,168] WARNING django.server "GET /api/student-practices/2 HTTP/1.1" 404 5717
+[2025-07-25 06:39:18,229] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:39:18,229] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:39:19,824] INFO django.server "OPTIONS /api/student-practices/student-practices/2 HTTP/1.1" 200 0
+[2025-07-25 06:39:19,824] INFO django.server "OPTIONS /api/student-practices/student-practices/2 HTTP/1.1" 200 0
+[2025-07-25 06:39:19,840] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:39:19,840] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:44:05,321] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:44:05,322] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:44:05,369] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:44:05,370] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:44:05,378] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:44:05,380] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:44:06,473] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:44:06,474] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:44:06,474] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:44:06,476] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:44:09,266] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:44:09,267] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:44:10,732] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:44:10,732] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:48:10,979] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:48:10,980] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:48:10,982] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:48:10,984] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:48:11,801] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:48:11,802] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:48:27,648] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:48:27,651] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:48:27,653] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:48:27,653] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:48:27,661] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:48:27,662] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:48:32,852] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:48:32,853] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:48:56,893] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-25 06:48:56,893] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-25 06:48:56,905] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:48:56,905] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:48:57,932] INFO django.server "OPTIONS /api/practices/practices/search/?title= HTTP/1.1" 200 0
+[2025-07-25 06:48:57,932] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-25 06:48:57,950] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:48:57,954] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:48:57,965] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:48:57,973] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:48:59,185] INFO django.server "OPTIONS /api/practices/practices/organization_practices/ HTTP/1.1" 200 0
+[2025-07-25 06:48:59,200] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:48:59,217] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:49:00,847] INFO django.server "OPTIONS /api/student-practices/student-practices/2 HTTP/1.1" 200 0
+[2025-07-25 06:49:00,847] INFO django.server "OPTIONS /api/student-practices/student-practices/2 HTTP/1.1" 200 0
+[2025-07-25 06:49:00,862] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:49:00,862] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:50:06,974] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:50:06,977] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:50:06,979] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:50:06,979] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:50:06,986] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:50:06,988] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:50:08,030] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:50:08,030] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:50:08,035] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:50:08,035] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:50:11,412] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:50:11,413] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:50:12,332] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:50:12,333] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:50:24,860] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:50:24,860] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:50:24,865] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:50:24,865] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:50:26,345] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:50:26,345] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:50:27,468] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:50:27,468] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:51:35,840] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:51:35,843] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:51:35,846] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:51:35,846] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:51:39,190] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:51:39,190] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:51:41,300] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:51:41,301] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:52:36,609] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:52:36,611] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:52:36,612] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:52:36,612] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:52:36,620] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:52:36,620] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:52:37,665] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:52:37,668] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:52:37,671] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:52:37,671] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:52:40,631] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:52:40,632] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:52:41,577] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:52:41,577] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:55:59,422] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:55:59,422] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:56:00,486] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:56:00,490] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:56:00,493] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:56:00,493] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:56:01,913] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:56:01,913] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:56:02,718] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:56:02,719] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:56:10,742] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:56:10,744] WARNING django.request Unauthorized: /api/student-practices/student-practices/2
+[2025-07-25 06:56:10,746] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:56:10,746] WARNING django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 401 58
+[2025-07-25 06:56:10,754] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:56:10,755] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:56:11,919] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:56:11,920] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:56:11,921] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:56:11,922] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:56:12,426] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:56:12,427] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 06:56:13,464] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:56:13,467] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 06:56:13,469] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:56:13,469] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 06:56:16,211] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:56:16,211] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 06:56:17,048] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:56:17,048] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:59:47,746] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 06:59:47,747] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 300
+[2025-07-25 07:00:42,439] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 07:01:25,351] INFO django.utils.autoreload /app/backend/student_practices/serializers.py changed, reloading.
+[2025-07-25 07:01:25,872] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-25 07:01:30,959] INFO django.utils.autoreload /app/backend/student_practices/serializers.py changed, reloading.
+[2025-07-25 07:01:31,365] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-25 07:01:33,193] INFO django.utils.autoreload /app/backend/student_practices/serializers.py changed, reloading.
+[2025-07-25 07:01:33,545] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-25 07:01:35,308] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:01:35,313] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:01:35,315] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 07:01:35,317] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 07:01:36,159] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 07:01:36,159] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 07:01:37,070] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:01:37,070] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:01:39,512] INFO django.server "OPTIONS /api/users/student-profile/3 HTTP/1.1" 200 0
+[2025-07-25 07:01:39,522] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-25 07:01:39,532] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-25 07:01:40,982] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:01:40,982] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:01:43,097] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:01:43,097] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:01:58,403] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-25 07:01:58,403] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-25 07:01:58,422] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-25 07:01:58,423] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-25 07:01:58,432] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-25 07:01:58,433] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-25 07:02:10,672] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-25 07:02:13,977] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-25 07:02:16,410] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-25 07:02:16,646] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 853
+[2025-07-25 07:02:16,792] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:02:16,792] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:02:16,798] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37900
+[2025-07-25 07:02:16,798] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37900
+[2025-07-25 07:02:19,800] INFO django.server "OPTIONS /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 0
+[2025-07-25 07:02:19,814] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 33719
+[2025-07-25 07:02:19,830] INFO django.server "GET /api/practices/practices/get_practice_user_relations/ HTTP/1.1" 200 33719
+[2025-07-25 07:02:30,610] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-25 07:02:30,611] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-25 07:02:30,619] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-25 07:02:30,620] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-25 07:02:33,915] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 639
+[2025-07-25 07:02:34,076] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:02:34,077] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:02:34,080] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 07:02:34,081] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 07:02:35,185] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 07:02:35,185] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 07:02:36,025] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:02:36,025] INFO django.server "GET /api/student-practices/student-practices/2 HTTP/1.1" 200 312
+[2025-07-25 07:03:32,377] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 07:03:32,377] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 270
+[2025-07-25 07:03:33,419] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:03:33,419] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:03:33,423] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 07:03:33,426] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 37633
+[2025-07-25 07:03:42,369] INFO django.server "GET /admin/ HTTP/1.1" 200 22106
+[2025-07-25 07:03:42,397] WARNING django.request Not Found: /favicon.ico
+[2025-07-25 07:03:42,398] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 3861
+[2025-07-25 07:03:42,408] INFO django.server "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 200 392
+[2025-07-25 07:03:42,408] INFO django.server "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+[2025-07-25 07:03:42,409] INFO django.server "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+[2025-07-25 07:03:45,529] INFO django.server "GET /admin/api/studentpractice/ HTTP/1.1" 200 19464
+[2025-07-25 07:03:45,553] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-25 07:03:45,564] INFO django.server "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+[2025-07-25 07:03:48,810] INFO django.server "GET /admin/api/studentpractice/7/change/ HTTP/1.1" 200 35090
+[2025-07-25 07:03:48,827] INFO django.server "GET /static/admin/css/forms.css HTTP/1.1" 200 8525
+[2025-07-25 07:03:48,830] INFO django.server "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+[2025-07-25 07:03:48,831] INFO django.server "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+[2025-07-25 07:03:48,834] INFO django.server "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-07-25 07:03:48,836] INFO django.server "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+[2025-07-25 07:03:48,888] INFO django.server "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1086
+[2025-07-25 07:03:53,326] ERROR django.request Internal Server Error: /admin/api/studentpractice/7/change/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/contrib/admin/options.py", line 719, in wrapper
+    return self.admin_site.admin_view(view)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/usr/local/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/contrib/admin/sites.py", line 246, in inner
+    return view(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1987, in change_view
+    return self.changeform_view(request, object_id, form_url, extra_context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/usr/local/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1843, in changeform_view
+    return self._changeform_view(request, object_id, form_url, extra_context)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1888, in _changeform_view
+    form_validated = form.is_valid()
+  File "/usr/local/lib/python3.13/site-packages/django/forms/forms.py", line 206, in is_valid
+    return self.is_bound and not self.errors
+                                 ^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/forms/forms.py", line 201, in errors
+    self.full_clean()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/django/forms/forms.py", line 339, in full_clean
+    self._post_clean()
+    ~~~~~~~~~~~~~~~~^^
+  File "/usr/local/lib/python3.13/site-packages/django/forms/models.py", line 498, in _post_clean
+    self.instance.full_clean(exclude=exclude, validate_unique=False)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1647, in full_clean
+    self.clean_fields(exclude=exclude)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/base.py", line 1702, in clean_fields
+    setattr(self, f.attname, f.clean(raw_value, self))
+                             ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/fields/__init__.py", line 837, in clean
+    self.run_validators(value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/fields/__init__.py", line 789, in run_validators
+    v(value)
+    ~^^^^^^^
+  File "/app/backend/api/models.py", line 356, in validate_contract_document_type
+    if document and document.contract_document.document_type != DocumentType.CONTRACT:
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'contract_document'
+[2025-07-25 07:03:53,334] ERROR django.server "POST /admin/api/studentpractice/7/change/ HTTP/1.1" 500 160498
+[2025-07-25 07:03:56,276] INFO django.server "GET /admin/api/studentpractice/7/change/ HTTP/1.1" 200 35090
+[2025-07-25 07:04:14,934] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 07:04:14,934] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 706
+[2025-07-25 07:04:15,789] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-25 07:04:15,790] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-25 07:04:15,800] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-25 07:04:15,800] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-25 07:04:21,897] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 851
+[2025-07-25 07:04:22,051] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:04:22,051] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:04:22,115] ERROR django.request Internal Server Error: /api/practices/practices/search/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 324, in search
+    return self.get_paginated_response(serializer.data)
+                                       ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 540, in to_representation
+    ret[field.field_name] = field.to_representation(attribute)
+                            ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/fields.py", line 1870, in to_representation
+    return method(value)
+  File "/app/backend/api/serializers.py", line 230, in get_student_practice_status
+    if hasattr(request.user, "studentuser"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/polymorphic/models.py", line 198, in accessor_function
+    attr = objects.get(pk=self.pk)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.models.StudentUser.DoesNotExist: StudentUser matching query does not exist.
+[2025-07-25 07:04:22,125] ERROR django.request Internal Server Error: /api/practices/practices/search/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 324, in search
+    return self.get_paginated_response(serializer.data)
+                                       ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 540, in to_representation
+    ret[field.field_name] = field.to_representation(attribute)
+                            ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/fields.py", line 1870, in to_representation
+    return method(value)
+  File "/app/backend/api/serializers.py", line 230, in get_student_practice_status
+    if hasattr(request.user, "studentuser"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/polymorphic/models.py", line 198, in accessor_function
+    attr = objects.get(pk=self.pk)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.models.StudentUser.DoesNotExist: StudentUser matching query does not exist.
+[2025-07-25 07:04:22,135] ERROR django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 500 169771
+[2025-07-25 07:04:22,141] ERROR django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 500 169771
+[2025-07-25 07:04:24,684] INFO django.server "OPTIONS /api/departments/department-students/ HTTP/1.1" 200 0
+[2025-07-25 07:04:24,684] INFO django.server "OPTIONS /api/departments/department-students/ HTTP/1.1" 200 0
+[2025-07-25 07:04:24,702] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-25 07:04:24,703] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-25 07:04:24,707] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-25 07:04:24,707] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-25 07:04:27,500] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-25 07:04:27,500] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-25 07:04:28,583] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-25 07:04:28,583] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-25 07:04:28,587] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-25 07:04:28,587] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-25 07:05:35,436] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-25 07:05:35,436] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-25 07:05:35,451] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-25 07:05:35,451] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 372
+[2025-07-25 07:05:36,500] INFO django.server "OPTIONS /api/practices/practices/search/?title= HTTP/1.1" 200 0
+[2025-07-25 07:05:36,500] INFO django.server "OPTIONS /api/practices/practices/search/?title= HTTP/1.1" 200 0
+[2025-07-25 07:05:36,501] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-25 07:05:36,528] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:05:36,549] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-25 07:05:36,597] ERROR django.request Internal Server Error: /api/practices/practices/search/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 324, in search
+    return self.get_paginated_response(serializer.data)
+                                       ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 540, in to_representation
+    ret[field.field_name] = field.to_representation(attribute)
+                            ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/fields.py", line 1870, in to_representation
+    return method(value)
+  File "/app/backend/api/serializers.py", line 230, in get_student_practice_status
+    if hasattr(request.user, "studentuser"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/polymorphic/models.py", line 198, in accessor_function
+    attr = objects.get(pk=self.pk)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.models.StudentUser.DoesNotExist: StudentUser matching query does not exist.
+[2025-07-25 07:05:36,608] ERROR django.request Internal Server Error: /api/practices/practices/search/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/app/backend/practices/views.py", line 324, in search
+    return self.get_paginated_response(serializer.data)
+                                       ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/serializers.py", line 540, in to_representation
+    ret[field.field_name] = field.to_representation(attribute)
+                            ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/rest_framework/fields.py", line 1870, in to_representation
+    return method(value)
+  File "/app/backend/api/serializers.py", line 230, in get_student_practice_status
+    if hasattr(request.user, "studentuser"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/polymorphic/models.py", line 198, in accessor_function
+    attr = objects.get(pk=self.pk)
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.models.StudentUser.DoesNotExist: StudentUser matching query does not exist.
+[2025-07-25 07:05:36,612] ERROR django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 500 169771
+[2025-07-25 07:05:36,619] ERROR django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 500 169771
+[2025-07-25 07:05:38,028] INFO django.server "OPTIONS /api/departments/department-students/ HTTP/1.1" 200 0
+[2025-07-25 07:05:38,028] INFO django.server "OPTIONS /api/departments/department-students/ HTTP/1.1" 200 0
+[2025-07-25 07:05:38,047] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-25 07:05:38,048] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-25 07:05:38,052] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-25 07:05:38,052] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
