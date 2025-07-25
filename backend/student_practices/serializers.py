@@ -128,9 +128,6 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "image_base64",
             "practice_type",
             "student_practice_status",
-            "contract_document",
-            "content_document",
-            "feedback_document",
             "student_practice_documents",
         ]
 
