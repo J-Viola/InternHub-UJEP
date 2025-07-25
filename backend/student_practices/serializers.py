@@ -128,19 +128,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
         return None
 
     def get_student_practice_status(self, obj):
-        request = self.context.get("request")
-        if not request or not request.user.is_authenticated:
-            return None
-
-        # Check if the user is a StudentUser
-        if hasattr(request.user, "studentuser"):
-            try:
-                student_practice = StudentPractice.objects.get(user=request.user.studentuser, practice=obj)
-                return StudentPracticeStatusSerializer(student_practice).data
-            except StudentPractice.DoesNotExist:
-                pass
-
-        return None
+        return StudentPracticeStatusSerializer(obj).data
 
     def get_employer(self, obj):
         from api.serializers import EmployerProfileSerializer
