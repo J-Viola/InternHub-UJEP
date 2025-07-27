@@ -1,5 +1,6 @@
 from datetime import date
 
+from practices.utils import calculate_end_date
 from rest_framework import serializers
 from student_practices.serializers import StudentPracticeStatusSerializer
 
@@ -209,7 +210,7 @@ class PracticeSerializer(serializers.ModelSerializer):
             "practice_type_id",
             "student_practice_status",
         ]
-        read_only_fields = ["practice_id", "is_active"]
+        read_only_fields = ["practice_id", "is_active", "end_date"]
 
     def get_contact_user_info(self, obj):
         if obj.contact_user:
@@ -241,7 +242,7 @@ class PracticeSerializer(serializers.ModelSerializer):
         Zkontroluje, zda end_date není před start_date, a že start_date >= dnešek.
         """
         start = data.get("start_date")
-        end = data.get("end_date")
+        end = calculate_end_date(start)
         if start and end and end < start:
             raise serializers.ValidationError("Datum ukončení nemůže být před datem zahájení.")
         if start and start < date.today():
@@ -262,6 +263,9 @@ class PracticeSerializer(serializers.ModelSerializer):
             pending_status = ApprovalStatus.PENDING
             if pending_status:
                 validated_data["approval_status"] = pending_status
+        practice_type = validated_data.get("practice_type")
+
+        validated_data["end_date"] = calculate_end_date(validated_data.get("start_date"), practice_type.coefficient)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):

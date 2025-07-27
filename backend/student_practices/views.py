@@ -3,7 +3,6 @@ from datetime import date
 
 from api.models import (
     ApprovalStatus,
-    DepartmentRole,
     DocumentHelper,
     EmployerInvitation,
     EmployerInvitationStatus,
@@ -176,10 +175,6 @@ class HasDocumentAccessMixin:
             is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
             if is_professor_for_subject:
                 return True
-            is_head_of_department = (
-                document.student_practice.practice.subject.department == user.department and user.department_role == DepartmentRole.HEAD
-            )
-            return is_head_of_department
         return False
 
 

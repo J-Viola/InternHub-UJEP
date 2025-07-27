@@ -84,7 +84,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
             except StudentUser.DoesNotExist:
                 student = None
             if student:
-                approved_practices = StudentPractice.objects.filter(user=student, practice=practice_obj, approval_status=ApprovalStatus.APPROVED)
+                approved_practices = StudentPractice.objects.filter(
+                    user=student, practice=practice_obj, approval_status=ApprovalStatus.APPROVED
+                )
                 for sp in approved_practices:
                     if sp.contract_document_id:
                         student_practice_documents.append({"id": sp.contract_document_id, "type": "contract"})
@@ -99,7 +101,6 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
         return Response(response_data)
 
-    @role_required([OrganizationRole.INSERTER, OrganizationRole.OWNER, StagRoleEnum.VY])
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
         user = request.user
@@ -222,6 +223,10 @@ class PracticeViewSet(viewsets.ModelViewSet):
         # Zkontroluj, zda už není přihlášen
         if StudentPractice.objects.filter(practice_id=practice_id, user=user).exists():
             return Response({"detail": "Již jste přihlášen(a) na tuto praxi."}, status=status.HTTP_400_BAD_REQUEST)
+
+        practice = Practice.objects.filter(practice_id=practice_id, is_active=True).first()
+        if not practice:
+            return Response({"detail": "Praxe nenalezena nebo není aktivní."}, status=status.HTTP_404_NOT_FOUND)
         # Nastav povinné hodnoty
         data["user"] = user.pk
         data["application_date"] = date.today()
@@ -229,8 +234,8 @@ class PracticeViewSet(viewsets.ModelViewSet):
         data["progress_status"] = ProgressStatus.NOT_STARTED.value
         data["hours_completed"] = 0
         data["year"] = date.today().year
-        start_date = data["start_date"]
-        data["end_date"] = calculate_end_date(datetime.strptime(start_date, "%d.%m.%Y").date()).strftime("%d.%m.%Y")
+        data["start_date"] = practice.start_date.strftime("%d.%m.%Y")
+        data["end_date"] = practice.end_date.strftime("%d.%m.%Y")
         serializer = StudentPracticeSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
