@@ -207,7 +207,7 @@ export default function NabidkaDetailPage() {
                                     Přihlášení studenti
                                 </Button>
 
-                                <Button variant={"blue"} icon={"gear"} property={"px-8"} onClick={handlePopUp}>Spravovat</Button>
+                                <Button variant={"blue"} icon={"gear"} property={"px-8"} onClick={console.log("Spravovat nabídku")}>Spravovat</Button>
                             </>
                        )}
 

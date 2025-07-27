@@ -68,6 +68,10 @@ export default function SpravaStaziPage() {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        console.log(selectedEntity);
+    }, [selectedEntity])
+
     const handleView = (type, entity) => {
         if (type === "approved_practices") {
             navigate(`/nabidka/${entity.practice_id}`)
@@ -83,6 +87,12 @@ export default function SpravaStaziPage() {
             console.log("To to_approve_practices")
             setSelectedEntity(entity)
             setPop(true);
+        }
+
+        if (type === "approved_practices") {
+            console.log("To approved_practices")
+            navigate(`/students/${entity?.practice_id}`)
+
         }
         
     }
@@ -110,6 +120,8 @@ export default function SpravaStaziPage() {
                                 entity={entity} 
                                 type="approved"
                                 onView={() => handleView("approved_practices", entity)}
+                                onClick={() => handleClick("approved_practices", entity)
+                                }
                             />
                         ))
                     )}

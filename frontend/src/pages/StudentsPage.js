@@ -42,12 +42,12 @@ export default function StudentPage() {
     const getButtonDict = (approval_status, entity) => {
         const hasPractice = [
             {
-                icon: "eye",
-                btnfunction: () => navigate(`/profil/${entity?.user_id}`) // použij správný parametr
+                icon: "doc",
+                btnfunction: () => navigate(`/karta-praxe/${entity?.student_practice.student_practice_id}`) // použij správný parametr
             },
             {
                 icon: "user",
-                btnfunction: () => console.log("Karta")
+                btnfunction: () => navigate(`/profil/${entity?.user_id}`)
             }
         ]
     
@@ -69,7 +69,7 @@ export default function StudentPage() {
     const getButtonDictStudentPractice = (entity) => {
         const buttonLayout = [
             {
-                icon: "eye",
+                icon: "doc",
                 btnfunction: () => navigate(`/karta-praxe/${entity?.student_practice_id}`) 
             },
             {

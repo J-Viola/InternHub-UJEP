@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
 import { FaAngleDown, FaAngleUp, FaBars, FaTimes } from "react-icons/fa";
 import Button from "@core/Button/Button";
+import { useNavigate } from "react-router-dom";
+import Paragraph from "./Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
 
 
@@ -11,6 +13,7 @@ import { useUser } from "@hooks/UserProvider";
 function SubMenu({ items, title }) {
     const [ isOpen, setIsOpen ] = useState(false);
     const { user } = useUser();
+    const location = useLocation();
 
     return (
         <Container property="relative inline-block" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
@@ -26,7 +29,11 @@ function SubMenu({ items, title }) {
                         <Link 
                             key={key} 
                             to={value} 
-                            className="block text-white hover:text-gray-200 mt-2 transition-colors"
+                            className={`block mt-2 transition-colors ${
+                                location.pathname === value 
+                                    ? "text-gray-200 font-semibold" 
+                                    : "text-white hover:text-gray-200"
+                            }`}
                         >
                             {key}
                         </Link>
@@ -39,14 +46,24 @@ function SubMenu({ items, title }) {
 
 // linknav render
 function LinkNav({navigationDict, isMobile = false}) {
+    const location = useLocation();
+    
     return (
-        <Container property={`${isMobile ? "flex flex-col items-start gap-4" : "flex items-center gap-8"}`}>
+        <Container property={`${isMobile ? "flex flex-col items-start gap-4" : "flex items-center gap-6"}`}>
             {Object.entries(navigationDict).map(([key, value]) => {
                 if (typeof value === 'object' && Object.keys(value).length > 1) {
                     return <SubMenu key={key} title={key} items={value} />;
                 } else {
                     return (
-                        <Link key={key} to={value} className="text-white hover:text-gray-200 transition-colors">
+                        <Link 
+                            key={key} 
+                            to={value} 
+                            className={`transition-colors ${
+                                location.pathname === value 
+                                    ? "text-gray-200 border-b-2 border-gray-200" 
+                                    : "text-white hover:text-gray-200"
+                            }`}
+                        >
                             {key}
                         </Link>
                     );
@@ -60,6 +77,7 @@ function Nav({}) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user } = useUser();
     const [ navigationDict, setNaviagation ] = useState({});
+    const navigate = useNavigate();
 
     const studentDict = {
         "Nabídka praxí": "/nabidka",
@@ -85,11 +103,9 @@ function Nav({}) {
     };
 
     const departmentDict = {
-        "Admin menu" : {
-            "Studentské účty" : "/students",
-            "Předměty" : "#",
-            "Správa stáží" : "/sprava-stazi"
-        },
+        "Studentské účty" : "/students",
+        "Předměty" : "#",
+        "Správa stáží" : "/sprava-stazi",
         "Nabídka praxí" : "/nabidka",
         "Profil" : "#",
         "Odhlásit se" : "/logout",
@@ -105,19 +121,40 @@ function Nav({}) {
         }
     }, [user]);
 
+    const handleLogoClick = () => {
+        navigate("/nabidka");
+    };
+
     return(
         <>
         <Container property={"w-full bg-facultyCol"}>
             <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"}>
                 <Container property={"flex items-center justify-between h-16"}>
                     {/* Logo */}
-                    <Container property={"flex items-center"}>
+                    <Container 
+                        property={"flex items-center cursor-pointer"} 
+                        onClick={handleLogoClick}
+                    >
                         <Headings sizeTag="h4" property={"text-white"}>InternHub</Headings>
                     </Container>
 
                     {/* Desktop Menu */}
-                    <Container property={"hidden md:flex items-center"}>
+                    <Container property={"w-full flex hidden md:flex justify-end mr-8"}>
                         <LinkNav navigationDict={navigationDict} />
+                    </Container>
+
+                    {/* User Info */}
+                    <Container property={"hidden md:flex bg-white bg-opacity-20 px-2 py-1 rounded text-xs"}>
+                        {user.hasData() && (
+                            <Container property={"flex items-center gap-2 text-white text-sm"}>
+                                <Paragraph property={"text-white text-sm"}>
+                                    {user.email}
+                                </Paragraph>
+                                <Container property={""}>
+                                    {user.role}
+                                </Container>
+                            </Container>
+                        )}
                     </Container>
 
                     {/* Mobile menu button */}

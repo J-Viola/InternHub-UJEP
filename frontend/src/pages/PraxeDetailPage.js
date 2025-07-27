@@ -110,23 +110,39 @@ export default function PraxeDetailPage() {
             <Nav/>
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
+
+                {/* INFORMACE O STUDENTOVI, JEHOŽ KARTA JE OTEVŘENA */}
+                <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8 mb-2 mt-4"}>
+                    <Headings sizeTag={"h3"} property={""}>Student</Headings>
+                    <Paragraph property={"mt-2"}>
+                        {entity?.student_practice_status.student_info.full_name}
+                    </Paragraph>
+                    <Paragraph>
+                        {`Osobní číslo: ${entity?.student_practice_status.student_info.os_cislo}`}
+                    </Paragraph>
+                    <Paragraph>
+                        {`Email: ${entity?.student_practice_status.student_info.email}`}
+                    </Paragraph>
+
+                </ContainerForEntity>
+
                 {/* DOCS PANEL */}
                 {entity?.student_practice_status?.approval_status !== undefined &&
                  entity.student_practice_status.approval_status === 1 && (
                     <DocsPanel docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
                 )}
+
+
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
                             
                         {/* LOGO */}
                         <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
-                            <Headings sizeTag="h4" property="text-white">
-                                <Image
-                                    src={entity?.image_base64}
-                                    alt={entity?.title}
-                                    objectFit="cover"
-                                />
-                            </Headings>
+                            <Image
+                                src={entity?.image_base64}
+                                alt={entity?.title}
+                                objectFit="cover"
+                            />
                         </Container>
 
                         {/* TITLE */}

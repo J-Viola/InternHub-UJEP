@@ -93,7 +93,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                                 noVariant={true}
                                 onClick={onClick}
                                 title="Změnit stav nabídky"
-                                icon="manage"
+                                icon="gear"
                                 iconColor={"gray"}
                                 iconSize={"24"}
                             />

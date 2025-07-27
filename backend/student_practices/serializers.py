@@ -73,6 +73,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
 
 class StudentPracticeStatusSerializer(serializers.ModelSerializer):
     application_date = FormattedDateField(read_only=True, allow_null=True)
+    student_info = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice
@@ -81,7 +82,20 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
             "approval_status",
             "progress_status",
             "hours_completed",
+            "student_info",
         ]
+
+    def get_student_info(self, obj):
+        if obj.user:
+            return {
+                "user_id": obj.user.user_id,
+                "first_name": obj.user.first_name,
+                "last_name": obj.user.last_name,
+                "full_name": obj.user.full_name,
+                "email": obj.user.email,
+                "os_cislo": obj.user.os_cislo if hasattr(obj.user, 'os_cislo') else None,
+            }
+        return None
 
 
 class StudentPracticeUploadedDocumentSerializer(serializers.ModelSerializer):
