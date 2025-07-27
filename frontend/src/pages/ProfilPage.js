@@ -8,6 +8,7 @@ import Nav from "@core/Nav";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useUserAPI } from "@api/user/userAPI";
 import { useParams } from "react-router-dom";
+import handleToDoAlert from "@utils/ToDoAlert"
 
 export default function ProfilPage() {
     const { getCurrentUserProfile, getStudentProfile } = useUserAPI();
@@ -15,11 +16,6 @@ export default function ProfilPage() {
     const [loading, setLoading] = useState(true);
     const { id } = useParams();
     // přidělat check na param id -> pak bud tahadam data ciziho profilu, nebo svůj
-
-    const handleEditProfile = () => {
-        console.log("Upravit profil pro uživatele:", userData?.id);
-        alert("Funkce pro úpravu profilu bude implementována později");
-    };
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -262,7 +258,7 @@ export default function ProfilPage() {
                     {/* EDIT PROFILE BUTTON */}
                     <Container property="flex items-center justify-end">
                         <Button 
-                            onClick={() => handleEditProfile()} 
+                            onClick={() => handleToDoAlert()} 
                             icon={"edit"}
                             property="ml-auto"
                         >

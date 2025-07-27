@@ -6,6 +6,7 @@ import Paragraph from "@components/core/Text/Paragraph"
 import Headings from "@core/Text/Headings"
 import Button from "@core/Button/Button";
 import { useUser } from "@hooks/UserProvider";
+import handleToDoAlert from "@utils/ToDoAlert"
 
 
 function DocContainer({doc_info, handleDownload, handleUpload}) {
@@ -40,9 +41,9 @@ function DocContainer({doc_info, handleDownload, handleUpload}) {
 }
 
 
-export default function DocsPanel({ docData, handleDownload, handleUpload }) {
+export default function DocsPanel({ entity, docData, handleDownload, handleUpload }) {
 
-    const STATUS = true;
+    const STATUS = entity.progress_status;
     const { user } = useUser();
 
     if (!Array.isArray(docData)) return null;
@@ -72,7 +73,7 @@ export default function DocsPanel({ docData, handleDownload, handleUpload }) {
                 {user.isDepartmentMg() && (
                     <Button variant={"yellow"} 
                         onClick={() => {
-                        console.log("Kontrola dokumentů")
+                        handleToDoAlert()
                     }}>
                         Kontrola dokumentů
                     </Button>

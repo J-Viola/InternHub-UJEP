@@ -20,16 +20,12 @@ export default function StudentPage() {
     const { getStudentsByPracticeId } = useStudentPracticeAPI()
     const { id } = useParams();
 
+
     useEffect(() => {
         if (id) {
             console.log("Mám id", id);
             const fetchedStudents = getStudentsByPracticeId(id).then(fetchedStudents =>{
-                const translatedStudents = fetchedStudents.map(student => ({
-                    ...student,
-                    approval_status: approvalStatusMap[student.approval_status],
-                    progress_status: progressStatusMap[student.progress_status]
-                    }));
-                    setEntities(translatedStudents);
+                setEntities(fetchedStudents);
             })
             return
         }
@@ -82,6 +78,9 @@ export default function StudentPage() {
 
     }
 
+    const handleProfileView = (entity) =>{
+        navigate(`/profil/${entity?.user_id}`)
+    }
 
 
     const handleClear = () => {
@@ -105,24 +104,10 @@ export default function StudentPage() {
     {
         //"Název praxe": "practice_title",
         //"Katedra": "department_name",
-        "Datum podání": "application_date",
+        "Podání": "application_date",
         "Stav": "approval_status",
-        "Průběh": "progress_status",
         "Hodiny": "hours_completed"
       }
-
-    const approvalStatusMap = {
-    0: "Čeká na schválení",
-    1: "Schváleno",
-    2: "Zamítnuto"
-    };
-
-    const progressStatusMap = {
-    0: "Nezahájeno",
-    1: "Probíhá",
-    2: "Dokončeno",
-    3: "Zrušeno"
-    };
 
 
     // Filtrování podle jména
@@ -179,6 +164,7 @@ export default function StudentPage() {
                             key={entity.user_id}
                             entity={entity}
                             attributes={attributes}
+                            onClick={() => handleProfileView(entity)}
                             buttons={!id ? getButtonDict(entity.approved_practice?.approval_status, entity) : getButtonDictStudentPractice(entity)}
                         />
                     ))}

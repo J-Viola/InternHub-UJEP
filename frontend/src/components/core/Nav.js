@@ -107,7 +107,7 @@ function Nav({}) {
         "Předměty" : "#",
         "Správa stáží" : "/sprava-stazi",
         "Nabídka praxí" : "/nabidka",
-        "Profil" : "#",
+        //"Profil" : "#",
         "Odhlásit se" : "/logout",
     }
 
@@ -146,13 +146,21 @@ function Nav({}) {
                     {/* User Info */}
                     <Container property={"hidden md:flex bg-white bg-opacity-20 px-2 py-1 rounded text-xs"}>
                         {user.hasData() && (
-                            <Container property={"flex items-center gap-2 text-white text-sm"}>
-                                <Paragraph property={"text-white text-sm"}>
-                                    {user.email}
-                                </Paragraph>
-                                <Container property={""}>
-                                    {user.role}
+                            <Container property={"flex flex-col items-end gap-1 text-white text-sm"}>
+                                <Container property={"flex items-center gap-2"}>
+                                    <Paragraph property={"text-white text-sm"}>
+                                        {user.email}
+                                    </Paragraph>
+                                    <Container property={""}>
+                                        {user.role}
+                                    </Container>
                                 </Container>
+                                {/* INFO o katedře uživatele */}
+                                {user.isDepartmentMg() && user.department && (
+                                    <Paragraph property={"text-white text-xs opacity-75"}>
+                                        {user.department}
+                                    </Paragraph>
+                                )}
                             </Container>
                         )}
                     </Container>

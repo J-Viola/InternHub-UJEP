@@ -129,7 +129,7 @@ export default function PraxeDetailPage() {
                 {/* DOCS PANEL */}
                 {entity?.student_practice_status?.approval_status !== undefined &&
                  entity.student_practice_status.approval_status === 1 && (
-                    <DocsPanel docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
+                    <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
                 )}
 
 

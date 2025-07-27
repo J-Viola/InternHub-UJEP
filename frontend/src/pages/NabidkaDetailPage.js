@@ -143,7 +143,7 @@ export default function NabidkaDetailPage() {
                 {/* DOCS PANEL */}
                 {entity?.student_practice_status?.approval_status !== undefined &&
                  entity.student_practice_status.approval_status === 1 && (
-                    <DocsPanel docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
+                    <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
                 )}
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
