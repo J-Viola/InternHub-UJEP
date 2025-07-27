@@ -191,7 +191,7 @@ export default function NabidkaDetailPage() {
 
                     <Container property={"flex flex-row  justify-end gap-8 mt-4"}>
                         {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
-                        {user && user.isStudent() && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
+                        {user && user.isStudent() && (!entity?.student_practice_status) && (
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 

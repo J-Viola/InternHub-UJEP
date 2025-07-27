@@ -144,7 +144,7 @@ function Nav({}) {
                     </Container>
 
                     {/* User Info */}
-                    <Container property={"hidden md:flex bg-white bg-opacity-20 px-2 py-1 rounded text-xs"}>
+                    {user.hasData() && <Container property={"hidden md:flex bg-white bg-opacity-20 px-2 py-1 rounded text-xs"}>
                         {user.hasData() && (
                             <Container property={"flex flex-col items-end gap-1 text-white text-sm"}>
                                 <Container property={"flex items-center gap-2"}>
@@ -163,7 +163,7 @@ function Nav({}) {
                                 )}
                             </Container>
                         )}
-                    </Container>
+                    </Container>}
 
                     {/* Mobile menu button */}
                     <Container property={"md:hidden"}>
