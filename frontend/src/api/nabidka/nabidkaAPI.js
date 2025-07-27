@@ -146,6 +146,23 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const calculateEndDate = async (startDate, employmentLoad) => {
+        try {
+            const response = await api.post('/practices/get-end-date/', {
+                start_date: startDate,
+                coefficient: employmentLoad
+            });
+            
+            if (response && response.data) {
+                return response.data.end_date;
+            }
+            return null;
+        } catch (error) {
+            console.error('Chyba při výpočtu koncového data:', error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
         getNabidkaById,
@@ -154,6 +171,7 @@ export const useNabidkaAPI = () => {
         getPracticeUserRelations,
         getOrganizationPractices,
         getNabidkyByUserDepartment,
-        changeStatus
+        changeStatus,
+        calculateEndDate
     };
 };

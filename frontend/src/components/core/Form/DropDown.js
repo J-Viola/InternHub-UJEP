@@ -15,7 +15,7 @@ export default function DropDown({id, property, label, placeholder, icon = false
 
     const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
-    const iconEntity = icon && <Button noVariant={true} pointer={false} icon={icon} iconColor={"text-black"} onClick={onIconClick}></Button>
+    const iconEntity = icon && <Button noVariant={true} hover={false} pointer={false} icon={icon} iconColor={"text-black"} onClick={onIconClick}></Button>
 
     const variants = {
         default: "w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 border-gray-300",

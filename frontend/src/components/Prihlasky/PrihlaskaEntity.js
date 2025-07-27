@@ -7,7 +7,7 @@ export default function ApplicationEntity({ entity, onSettings, onProfile }) {
     return (
         <ContainerForEntity
             variant="yellow"
-            property="flex flex-row items-center gap-4 w-full bg-yellow-50 border border-gray-300 rounded-xl px-6 py-3 mt-2"
+            property="flex flex-row items-center gap-4 w-full bg-yellow-50 border rounded-xl px-6 py-3 mt-2"
         >
             {/* Jméno studenta */}
             <Container property="flex-shrink-0 min-w-[180px]">

@@ -34,9 +34,6 @@ export default function VytvoritNabidku() {
         initFetch();
     },[])
 
-    useEffect(()=> {
-        console.log("FormData", formData);
-    },[formData])
 
     const handleCreation = async () => {
         const res = await nabidkaAPI.createNabidka(formData);
@@ -50,6 +47,30 @@ export default function VytvoritNabidku() {
             ...inputObj
         }));
     };
+
+    const handleCalc = async(startDate, empLoad) => {
+        if (startDate && empLoad) {
+            const endDate = await nabidkaAPI.calculateEndDate(startDate, empLoad);
+            if (endDate) {
+                setFormData(prev => ({
+                    ...prev,
+                    end_date: endDate
+                }));
+            }
+        }
+    }
+
+    useEffect(() => {
+        console.log("Form", formData);
+    },[formData])
+
+
+    useEffect(() => {
+        if (formData.coefficient && formData.start_date) {
+            console.log("Volám API na endDate")
+            handleCalc(formData.start_date, formData.coefficient);
+        }
+    }, [formData.coefficient, formData.start_date]);
 
     return(
         <Container property="min-h-screen">

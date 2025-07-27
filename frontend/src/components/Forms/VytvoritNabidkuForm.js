@@ -17,13 +17,26 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
         {"label": 1, "value" : "1"}
     ]
 
+    const availablePositions = [
+        {"label": 1, "value": "1"},
+        {"label": 2, "value": "2"},
+        {"label": 3, "value": "3"},
+        {"label": 4, "value": "4"},
+        {"label": 5, "value": "5"},
+        {"label": 6, "value": "6"},
+        {"label": 7, "value": "7"},
+        {"label": 8, "value": "8"},
+        {"label": 9, "value": "9"},
+        {"label": 10, "value": "10"}
+    ]
+
 
     return(
             <>
                 <Container property={"grid gap-2 grid-cols-2"}>
                     <CustomDatePicker
                         id={"start_date"}
-                        selected={formData?.start_date}
+                        value={formData?.start_date}
                         label={"Čas období od"}
                         required={true}
                         onChange={handleChange}
@@ -31,7 +44,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
                     
                     <DropDown
-                        id={"employment_load"}
+                        id={"coefficient"}
                         required={true}
                         label={"Úvazek"}
                         options={uvazek}
@@ -41,7 +54,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
                     <CustomDatePicker
                         id={"end_date"}
                         locked={true}
-                        selected={formData?.end_date}
+                        value={formData?.end_date}
                         label={"Čas období do"}
                         required={true}
                         onChange={handleChange}
@@ -62,6 +75,15 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
                         label={"Přiřazený předmět"}
                         icon={"book"}
                         options={subjects}
+                        onChange={handleChange}
+                    />
+
+                    <DropDown
+                        id={"available_positions"}
+                        required={true}
+                        label={"Počet volných míst"}
+                        icon={"users"}
+                        options={availablePositions}
                         onChange={handleChange}
                     />
                 </Container>
