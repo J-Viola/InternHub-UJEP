@@ -284,18 +284,6 @@ class EmployerInvitation(models.Model):
         db_table = "employer_invitations"
 
 
-class PracticeType(models.Model):
-    practice_type_id = models.AutoField(primary_key=True)
-    name = models.CharField(unique=True, max_length=100, blank=True, null=True)
-    coefficient = models.FloatField(blank=True, null=True)
-
-    def __str__(self):
-        return self.name or super().__str__()
-
-    class Meta:
-        db_table = "practice_types"
-
-
 class Practice(models.Model):
     practice_id = models.AutoField(primary_key=True)
     employer = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True, related_name="practices")
@@ -312,7 +300,7 @@ class Practice(models.Model):
     is_active = models.BooleanField(blank=True, null=True)
     image_base64 = models.TextField(blank=True, null=True)
     # image = models.ImageField(upload_to=settings.STORAGE_URL + "images/practices", blank=True, null=True)
-    practice_type = models.ForeignKey(PracticeType, models.DO_NOTHING, blank=True, null=True, related_name="practices")
+    coefficient = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

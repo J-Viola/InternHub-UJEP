@@ -4,7 +4,7 @@ from practices.utils import calculate_end_date
 from rest_framework import serializers
 from student_practices.serializers import StudentPracticeStatusSerializer
 
-from .models import ApprovalStatus, Department, EmployerProfile, Practice, PracticeType, ProgressStatus, StudentPractice, Subject, User
+from .models import ApprovalStatus, Department, EmployerProfile, Practice, ProgressStatus, StudentPractice, Subject, User
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -120,28 +120,6 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
 
 
 # ------------------------------------------------------------
-# 11. PracticeTypeSerializer
-# ------------------------------------------------------------
-class PracticeTypeSerializer(serializers.ModelSerializer):
-    """
-    Serializer pro model PracticeType
-    - practice_type_id: primární klíč (read-only)
-    - name: název typu praxe
-    - description: popis typu praxe
-    """
-
-    class Meta:
-        model = PracticeType
-        fields = "__all__"
-        read_only_fields = ["practice_type_id"]
-
-    def validate_name(self, value):
-        if PracticeType.objects.filter(name=value).exists():
-            raise serializers.ValidationError("Tento typ praxe již existuje.")
-        return value
-
-
-# ------------------------------------------------------------
 # 12. PracticeSerializer
 # ------------------------------------------------------------
 class PracticeSerializer(serializers.ModelSerializer):
@@ -178,12 +156,6 @@ class PracticeSerializer(serializers.ModelSerializer):
 
     contact_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
     contact_user_info = serializers.SerializerMethodField(read_only=True)
-
-    practice_type = PracticeTypeSerializer(read_only=True)
-    practice_type_id = serializers.PrimaryKeyRelatedField(
-        queryset=PracticeType.objects.all(), source="practice_type", write_only=True, required=False
-    )
-
     student_practice_status = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -206,8 +178,7 @@ class PracticeSerializer(serializers.ModelSerializer):
             "contact_user_info",
             "is_active",
             "image_base64",
-            "practice_type",
-            "practice_type_id",
+            "coefficient",
             "student_practice_status",
         ]
         read_only_fields = ["practice_id", "is_active", "end_date"]
@@ -263,9 +234,8 @@ class PracticeSerializer(serializers.ModelSerializer):
             pending_status = ApprovalStatus.PENDING
             if pending_status:
                 validated_data["approval_status"] = pending_status
-        practice_type = validated_data.get("practice_type")
 
-        validated_data["end_date"] = calculate_end_date(validated_data.get("start_date"), practice_type.coefficient)
+        validated_data["end_date"] = calculate_end_date(validated_data.get("start_date"), validated_data.get("coefficient"))
         return super().create(validated_data)
 
     def update(self, instance, validated_data):

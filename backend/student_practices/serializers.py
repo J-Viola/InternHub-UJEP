@@ -93,7 +93,7 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
                 "last_name": obj.user.last_name,
                 "full_name": obj.user.full_name,
                 "email": obj.user.email,
-                "os_cislo": obj.user.os_cislo if hasattr(obj.user, 'os_cislo') else None,
+                "os_cislo": obj.user.os_cislo if hasattr(obj.user, "os_cislo") else None,
             }
         return None
 
@@ -140,7 +140,6 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "contact_user_info",
             "is_active",
             "image_base64",
-            "practice_type",
             "student_practice_status",
             "student_practice_documents",
         ]
@@ -165,11 +164,6 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
         from api.serializers import SubjectSerializer
 
         return SubjectSerializer(obj.practice.subject).data
-
-    def get_practice_type(self, obj):
-        from api.serializers import PracticeTypeSerializer
-
-        return PracticeTypeSerializer(obj.practice.practice_type).data
 
     def get_student_practice_documents(self, obj):
         student_practice_documents = []

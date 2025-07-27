@@ -10,7 +10,6 @@ from .models import (
     EmployerProfile,
     OrganizationUser,
     Practice,
-    PracticeType,
     ProfessorUser,
     Role,
     StagRole,
@@ -77,11 +76,6 @@ class SubjectAdmin(admin.ModelAdmin):
 @admin.register(EmployerInvitation)
 class EmployerInvitationAdmin(admin.ModelAdmin):
     list_display = ("pk", "user", "practice", "status")
-
-
-@admin.register(PracticeType)
-class PracticeTypeAdmin(admin.ModelAdmin):
-    list_display = ("pk", "name")
 
 
 @admin.register(Practice)
