@@ -112,7 +112,6 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     employer = serializers.SerializerMethodField()
     subject = serializers.SerializerMethodField()
     contact_user_info = serializers.SerializerMethodField()
-    practice_type = serializers.SerializerMethodField()
     student_practice_status = serializers.SerializerMethodField()
     title = serializers.CharField(source="practice.title", read_only=True)
     description = serializers.CharField(source="practice.description", read_only=True)

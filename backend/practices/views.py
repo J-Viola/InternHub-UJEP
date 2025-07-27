@@ -41,7 +41,7 @@ from users.models import StagRoleEnum
 # -------------------------------------------------------------
 class PracticeViewSet(viewsets.ModelViewSet):
 
-    queryset = Practice.objects.all().select_related("employer", "practice_type")
+    queryset = Practice.objects.all().select_related("employer")
     serializer_class = PracticeSerializer
     pagination_class = StandardResultsSetPagination
     parser_classes = [MultiPartParser, FormParser]
