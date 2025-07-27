@@ -5,7 +5,7 @@ export default function ContainerForEntity({id, children, property, onClick, var
     const defaultClass = "border border-black rounded-lg p-2"
 
     const variants = {
-        "yellow": "bg-yellow-100 " + defaultClass,
+        "yellow": "bg-yellow-50 " + defaultClass,
         "gray": "bg-gray-50 " + defaultClass,
         "red": "bg-red-50 " + defaultClass,
         "green": "bg-green-50 " + defaultClass,

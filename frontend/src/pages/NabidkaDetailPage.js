@@ -16,6 +16,7 @@ import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "src/api/documents/documentsAPI";
+import { useNavigate } from "react-router-dom";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -25,6 +26,7 @@ export default function NabidkaDetailPage() {
     const documentAPI = useDocumentsAPI();
     const { user } = useUser();
     const { addMessage } = useMessage();
+    const navigate = useNavigate();
 
     // MOCK: Získání dat o dokumentech (nahraďte reálnými daty podle potřeby)
     const [docs, setDocs] = useState([]);
@@ -102,6 +104,37 @@ export default function NabidkaDetailPage() {
         console.log("Přihláška odmítnuta");
     }
 
+    const renderContactInfo = () => {
+    return (<Container property={"editor-content mt-2"}>
+                <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
+                {entity.contact_user_info.username && (
+                    <Paragraph property="mb-2">
+                        Uživatelské jméno: {entity.contact_user_info.username}
+                    </Paragraph>
+                )}
+                {entity.contact_user_info.first_name && (
+                    <Paragraph property="mb-2">
+                        Jméno: {entity.contact_user_info.first_name}
+                    </Paragraph>
+                )}
+                {entity.contact_user_info.last_name && (
+                    <Paragraph property="mb-2">
+                        Příjmení: {entity.contact_user_info.last_name}
+                    </Paragraph>
+                )}
+                {entity.contact_user_info.email && (
+                    <Paragraph property="mb-2">
+                        Email: {entity.contact_user_info.email}
+                    </Paragraph>
+                )}
+                {entity.contact_user_info.phone && (
+                    <Paragraph property="mb-2">
+                        Telefon: {entity.contact_user_info.phone}
+                    </Paragraph>
+                )}
+        </Container>)
+    }
+
     return(
         <Container property="min-h-screen">
             <Nav/>
@@ -146,46 +179,60 @@ export default function NabidkaDetailPage() {
                         <Paragraph>{entity?.responsibilities}</Paragraph>
                     </Container>
 
-                    {/* CONTACT USER INFO */}
-                    {entity && entity.contact_user_info && (
-                        <Container property={"editor-content mt-2"}>
-                            <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
-                            {entity.contact_user_info.username && (
-                                <Paragraph property="mb-2">
-                                    Uživatelské jméno: {entity.contact_user_info.username}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.first_name && (
-                                <Paragraph property="mb-2">
-                                    Jméno: {entity.contact_user_info.first_name}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.last_name && (
-                                <Paragraph property="mb-2">
-                                    Příjmení: {entity.contact_user_info.last_name}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.email && (
-                                <Paragraph property="mb-2">
-                                    Email: {entity.contact_user_info.email}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.phone && (
-                                <Paragraph property="mb-2">
-                                    Telefon: {entity.contact_user_info.phone}
-                                </Paragraph>
-                            )}
-                        </Container>
+                    {/* RENDER - STUDENTS */}
+                    {entity && entity.contact_user_info && user.isStudent() && entity.student_practice_status && (
+                        renderContactInfo()
                     )}
-                    <Container property={"grid grid-cols-1 gap-8 mt-4"}>
+
+                    {/* RENDER - DEPARTMENT */}
+                    {entity && entity.contact_user_info && user.isDepartmentMg() && (
+                        renderContactInfo()
+                    )}
+
+                    <Container property={"flex flex-row  justify-end gap-8 mt-4"}>
                         {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
-                        {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
+                        {user && user.isStudent() && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
-                        {user && user.role === "VY" && (
-                            <Button variant={"red"} property={"col-start-1 justify-self-end"} onClick={handlePopUp}>Spravovat</Button>
-                        )}
+
+                        {user && user.isDepartmentMg() && entity?.approval_status === 1 && (
+                            <>
+                                <Button 
+                                    variant={"primary"} 
+                                    icon={"users"} 
+                                    property={"px-8"} 
+                                    onClick={() => navigate(`/students/${entity.practice_id}`)}
+                                >
+                                    Přihlášení studenti
+                                </Button>
+
+                                <Button variant={"blue"} icon={"gear"} property={"px-8"} onClick={handlePopUp}>Spravovat</Button>
+                            </>
+                       )}
+
+                        {user && user.isDepartmentMg() && entity?.approval_status === 0 && (
+                            <>
+                                <Button 
+                                    variant={"yellow"} 
+                                    icon={"gear"} 
+                                    property={"px-8"} 
+                                    onClick={() => navigate(`/sprava-stazi`)}
+                                >
+                                    Spravovat nabídku
+                                </Button>
+
+                                <Button 
+                                    variant={"primary"} 
+                                    icon={"edit"} 
+                                    property={"px-8"} 
+                                    onClick={() => console.log("Úprava nabídky")}
+                                >
+                                    Upravit inzerát
+                                </Button>
+                            </>
+                       )}
+
                     </Container>
                 </ContainerForEntity>
 
