@@ -145,16 +145,6 @@ class PracticeViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         data = request.data.copy()
 
-        # Fix date format for start_date and end_date
-        for date_field in ["start_date", "end_date"]:
-            if date_field in data and isinstance(data[date_field], str):
-                try:
-                    if "." in data[date_field]:
-                        parsed = datetime.strptime(data[date_field], "%d.%m.%Y")
-                        data[date_field] = parsed.strftime("%Y-%m-%d")
-                except Exception:
-                    pass
-
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
