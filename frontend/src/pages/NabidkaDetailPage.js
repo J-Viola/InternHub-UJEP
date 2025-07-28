@@ -17,6 +17,7 @@ import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "src/api/documents/documentsAPI";
 import { useNavigate } from "react-router-dom";
+import handleToDoAlert from "@utils/ToDoAlert";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -207,7 +208,7 @@ export default function NabidkaDetailPage() {
                                     Přihlášení studenti
                                 </Button>
 
-                                <Button variant={"blue"} icon={"gear"} property={"px-8"} onClick={console.log("Spravovat nabídku")}>Spravovat</Button>
+                                <Button variant={"blue"} icon={"gear"} property={"px-8"} onClick={() => handleToDoAlert()}>Spravovat</Button>
                             </>
                        )}
 
@@ -226,7 +227,7 @@ export default function NabidkaDetailPage() {
                                     variant={"primary"} 
                                     icon={"edit"} 
                                     property={"px-8"} 
-                                    onClick={() => console.log("Úprava nabídky")}
+                                    onClick={() => handleToDoAlert()}
                                 >
                                     Upravit inzerát
                                 </Button>
