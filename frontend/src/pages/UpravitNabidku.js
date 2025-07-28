@@ -15,6 +15,7 @@ import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
 import { useNavigate, useParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
 import handleToDoAlert from "@utils/ToDoAlert";
+import { useUser } from "@hooks/UserProvider";
 
 export default function UpravitNabidku() {
     const [ formData, setFormData ] = useState({})
@@ -27,19 +28,20 @@ export default function UpravitNabidku() {
     const nabidkaAPI = useNabidkaAPI();
     const navigate = useNavigate();
     const { id } = useParams();
+    const { user } = useUser();
 
     useEffect(()=> {
         const initFetch = async() => {
             try {
                 setLoading(true);
-                const [subjectsRes, usersRes, practiceRes] = await Promise.all([
-                    codeList.getUniqueSubjects(),
-                    userAPI.getOrganizationUsers(),
-                    nabidkaAPI.getNabidkaById(id)
-                ]);
                 
+                const subjectsRes = await codeList.getUniqueSubjects();
                 setSubjects(subjectsRes);
+                
+                const usersRes = await userAPI.getOrganizationUsers();
                 setOrganizationUsers(usersRes);
+                
+                const practiceRes = await nabidkaAPI.getNabidkaById(id);
                 
                 if (practiceRes) {
                     let contactUserId = practiceRes.contact_user;
@@ -188,6 +190,7 @@ export default function UpravitNabidku() {
                 <BackButton/>
                 <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
                     <Headings className="mb-4">Upravit nabídku</Headings>
+                    {user.isDepartmentMg() && ("Editace nabídky nefunguje pro Vaší roli správně..")}
                     <NabidkaForm
                         formData={formData}
                         organizationUsers={organizationUsers}
