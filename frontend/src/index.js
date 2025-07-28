@@ -18,6 +18,7 @@ import UserCRUDPage from '@pages/UserCRUDPage';
 import PrihlaskyPage from '@pages/PrihlaskyPage';
 import SpravaStaziPage from '@pages/SpravaStaziPage';
 import PraxeDetailPage from '@pages/PraxeDetailPage';
+import SubjectPage from '@pages/SubjectPage';
 
 
 import reportWebVitals from './reportWebVitals';
@@ -37,6 +38,7 @@ root.render(
               <Route path="/" element={<LoginPage />} />
               <Route path="/nabidka" element={<NabidkaPage />} />
               <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
+              <Route path="/subjects" element={<SubjectPage />} />
               <Route path="/profil/:id?" element={<ProfilPage />} />
               <Route path="/registrace" element={<RegistracePage />} />
               <Route path="/praxe" element={<PraxePage />} />

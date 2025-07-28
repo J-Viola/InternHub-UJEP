@@ -104,7 +104,7 @@ function Nav({}) {
 
     const departmentDict = {
         "Studentské účty" : "/students",
-        "Předměty" : "#",
+        "Předměty" : "/subjects",
         "Správa stáží" : "/sprava-stazi",
         "Nabídka praxí" : "/nabidka",
         //"Profil" : "#",
