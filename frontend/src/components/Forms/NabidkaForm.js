@@ -8,7 +8,7 @@ import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 
-export default function VytvoritNabidkuForm({organizationUsers, subjects, formData, handleChange, handleSubmit}) {
+export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false}) {
 
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -33,7 +33,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
     return(
             <>
-                <Container property={"grid gap-2 grid-cols-2"}>
+                <Container property={`grid gap-2 grid-cols-2 ${isEdit ? "mt-4" : "" }`}>
                     <CustomDatePicker
                         id={"start_date"}
                         value={formData?.start_date}
@@ -45,6 +45,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
                     
                     <DropDown
                         id={"coefficient"}
+                        value={formData?.coefficient}
                         required={true}
                         label={"Úvazek"}
                         options={uvazek}
@@ -62,6 +63,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
                     <DropDown
                         id={"contact_user"}
+                        value={formData?.contact_user}
                         required={true}
                         label={"Správce inzerátu"}
                         icon={"user"}
@@ -71,6 +73,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
                     <DropDown
                         id={"subject_id"}
+                        value={formData?.subject_id}
                         required={true}
                         label={"Přiřazený předmět"}
                         icon={"book"}
@@ -80,6 +83,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
                     <DropDown
                         id={"available_positions"}
+                        value={formData?.available_positions}
                         required={true}
                         label={"Počet volných míst"}
                         icon={"users"}
@@ -92,6 +96,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
                     <TextField 
                         id={"title"}
+                        value={formData?.title}
                         required={true}
                         label={"Název"} 
                         placeholder={"Název stáže"}
@@ -100,6 +105,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
                     <TextBox
                         id={"description"}
+                        value={formData?.description}
                         required={true}
                         label={"Popis stáže"}
                         placeholder={"Napište popis stáže"}
@@ -108,6 +114,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
 
                     <TextBox
                         id={"responsibilities"}
+                        value={formData?.responsibilities}
                         required={true}
                         label={"Odpovědnost stáže"}
                         placeholder={"Popište odpovědnost stáže"}
@@ -122,7 +129,7 @@ export default function VytvoritNabidkuForm({organizationUsers, subjects, formDa
                         property={"mt-2 px-16"} 
                         onClick={() => handleSubmit()}
                     >
-                        Vytvořit
+                        {isEdit ? "Uložit změny" : "Vytvořit"}
                     </Button>
                 </Container>
             </>

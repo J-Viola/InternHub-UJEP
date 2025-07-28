@@ -8,7 +8,7 @@ import TextField from "@core/Form/TextField";
 import TextBox from "@core/Form/TextBox";
 import DropDown from "@core/Form/DropDown";
 import CustomDatePicker from "@core/Form/DatePicker";
-import VytvoritNabidkuForm from "@components/Forms/VytvoritNabidkuForm";
+import NabidkaForm from "@components/Forms/NabidkaForm";
 import { useCodeListAPI } from "src/api/code_list/code_listAPI";
 import { useUserAPI } from "src/api/user/userAPI";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
@@ -78,7 +78,7 @@ export default function VytvoritNabidku() {
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
                 <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
-                    <VytvoritNabidkuForm
+                    <NabidkaForm
                         formData={formData}
                         organizationUsers={organizationUsers}
                         subjects={subjects}

@@ -163,6 +163,35 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const updateNabidka = async (id, data, isPartial = false) => {
+        try {
+            const formData = new FormData();
+            
+            Object.keys(data).forEach(key => {
+                formData.append(key, data[key]);
+            });
+
+            const method = isPartial ? 'patch' : 'put';
+            const response = await api[method](`/practices/practices/${id}/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
+            if (response && response.data) {
+                sessionStorage.setItem("pendingMessage", JSON.stringify({
+                    text: `Nabídka byla úspěšně aktualizována`,
+                    type: "S"
+                }));
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při aktualizaci nabídky:", error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
         getNabidkaById,
@@ -172,6 +201,7 @@ export const useNabidkaAPI = () => {
         getOrganizationPractices,
         getNabidkyByUserDepartment,
         changeStatus,
-        calculateEndDate
+        calculateEndDate,
+        updateNabidka
     };
 };

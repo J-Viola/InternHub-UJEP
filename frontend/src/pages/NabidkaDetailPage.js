@@ -227,12 +227,24 @@ export default function NabidkaDetailPage() {
                                     variant={"primary"} 
                                     icon={"edit"} 
                                     property={"px-8"} 
-                                    onClick={() => handleToDoAlert()}
+                                    onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
                                 >
                                     Upravit inzerát
                                 </Button>
                             </>
                        )}
+
+                        {/* ORGANIZATION USERS - EDIT BUTTON */}
+                        {user && user.isOrganizationUser() && entity?.employer?.employer_id === user.employer_profile?.employer_id && (
+                            <Button 
+                                variant={"primary"} 
+                                icon={"edit"} 
+                                property={"px-8"} 
+                                onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
+                            >
+                                Upravit nabídku
+                            </Button>
+                        )}
 
                     </Container>
                 </ContainerForEntity>

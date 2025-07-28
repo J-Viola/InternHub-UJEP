@@ -67,7 +67,7 @@ export default function PraxePage() {
 
         } else if (type === "organization_practices") {
             // Pro organizace - zobrazit detail praxe
-            navigate(`/nabidka/${entity.practice_id}`);
+            navigate(`/upravit-nabidku/${entity.practice_id}`);
         }
     }
 

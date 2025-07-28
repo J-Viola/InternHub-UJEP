@@ -1,5 +1,6 @@
 from datetime import date
 
+from api.helpers import FormattedDateField
 from practices.utils import calculate_end_date
 from rest_framework import serializers
 from student_practices.serializers import StudentPracticeStatusSerializer
@@ -157,6 +158,8 @@ class PracticeSerializer(serializers.ModelSerializer):
     contact_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
     contact_user_info = serializers.SerializerMethodField(read_only=True)
     student_practice_status = serializers.SerializerMethodField(read_only=True)
+    start_date = FormattedDateField()
+    end_date = FormattedDateField()
 
     class Meta:
         model = Practice

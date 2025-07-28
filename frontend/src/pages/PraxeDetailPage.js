@@ -17,6 +17,7 @@ import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "src/api/documents/documentsAPI";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
+import handleToDoAlert from "@utils/ToDoAlert";
 
 
 export default function PraxeDetailPage() {
@@ -202,8 +203,8 @@ export default function PraxeDetailPage() {
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
-                        {user && user.role === "VY" && (
-                            <Button variant={"red"} property={"col-start-1 justify-self-end"} onClick={handlePopUp}>Spravovat</Button>
+                        {user && user.isDepartmentMg() && (
+                            <Button variant={"primary"}  icon={"gear"} property={"col-start-1 justify-self-end"} onClick={handleToDoAlert}>Spravovat</Button>
                         )}
                     </Container>
                 </ContainerForEntity>

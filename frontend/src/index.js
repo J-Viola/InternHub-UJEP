@@ -11,6 +11,7 @@ import PraxePage from '@pages/PraxePage';
 import StudentPage from '@pages/StudentsPage';
 import VytvorenePraxe from '@pages/VytvorenePraxePage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
+import UpravitNabidku from '@pages/UpravitNabidku';
 import RegistracePage from '@pages/RegistracePage';
 import LogoutUser from '@services/auth/Logout';
 import MessageToast from '@components/MessageBox/MessageToast';
@@ -46,6 +47,7 @@ root.render(
               <Route path="/students/:id?" element={<StudentPage />} />
               <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
               <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
+              <Route path="/upravit-nabidku/:id" element={<UpravitNabidku />} />
               <Route path="/logout" element={<LogoutUser />} />
               <Route path="/users/:type" element={<UserCRUDPage/>} />
               <Route path="/prihlasky" element={<PrihlaskyPage/>} />
