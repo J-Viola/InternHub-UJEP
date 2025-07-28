@@ -20,11 +20,17 @@ class DepartmentStudentListView(generics.ListAPIView):
         user = self.request.user
         # Zjisti department_id podle přihlášeného profesora
         department_id = None
-        if hasattr(user, "professoruser") and user.professoruser.department_id:
-            department_id = user.professoruser.department_id
+        try:
+            professor_user = user.professoruser
+        except ProfessorUser.DoesNotExist:
+            professor_user = None
+
+        if professor_user and professor_user.department_id:
+            department_id = professor_user.department_id
         else:
             # fallback: pokud není přímo ProfessorUser, zkusit přes UserSubject
             department_id = Department.objects.filter(subjects__user_subjects__user=user).values_list("department_id", flat=True).first()
+
         if not department_id:
             return StudentUser.objects.none()
         # Najdi všechny subjects pod tímto departmentem

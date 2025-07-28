@@ -4,7 +4,7 @@ from practices.utils import calculate_end_date
 from rest_framework import serializers
 from student_practices.serializers import StudentPracticeStatusSerializer
 
-from .models import ApprovalStatus, Department, EmployerProfile, Practice, ProgressStatus, StudentPractice, Subject, User
+from .models import ApprovalStatus, Department, EmployerProfile, Practice, ProgressStatus, StudentPractice, StudentUser, Subject, User
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -198,13 +198,15 @@ class PracticeSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return None
 
-        # Check if the user is a StudentUser
-        if hasattr(request.user, "studentuser"):
-            try:
-                student_practice = StudentPractice.objects.get(user=request.user.studentuser, practice=obj)
-                return StudentPracticeStatusSerializer(student_practice).data
-            except StudentPractice.DoesNotExist:
-                pass
+        try:
+            student_user = request.user.studentuser
+        except StudentUser.DoesNotExist:
+            return None
+        try:
+            student_practice = StudentPractice.objects.get(user=student_user, practice=obj)
+            return StudentPracticeStatusSerializer(student_practice).data
+        except StudentPractice.DoesNotExist:
+            pass
 
         return None
 
