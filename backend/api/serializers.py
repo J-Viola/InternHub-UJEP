@@ -198,12 +198,10 @@ class PracticeSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return None
 
-        try:
-            student_user = request.user.studentuser
-        except StudentUser.DoesNotExist:
+        if not isinstance(request.user, StudentUser):
             return None
         try:
-            student_practice = StudentPractice.objects.get(user=student_user, practice=obj)
+            student_practice = StudentPractice.objects.get(user=request.user, practice=obj)
             return StudentPracticeStatusSerializer(student_practice).data
         except StudentPractice.DoesNotExist:
             pass
