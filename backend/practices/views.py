@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 
 from api.decorators import role_required
 from api.models import (
@@ -104,16 +104,6 @@ class PracticeViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
         user = request.user
-
-        # Fix date format for start_date and end_date
-        for date_field in ["start_date", "end_date"]:
-            if date_field in data and isinstance(data[date_field], str):
-                try:
-                    if "." in data[date_field]:
-                        parsed = datetime.strptime(data[date_field], "%d.%m.%Y")
-                        data[date_field] = parsed.strftime("%Y-%m-%d")
-                except Exception:
-                    pass
 
         # Nastav employer_id podle přihlášeného uživatele, pokud není v datech
         if not data.get("employer_id") and hasattr(user, "employer_profile") and user.employer_profile:

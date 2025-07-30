@@ -100,25 +100,28 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             )
             sync_stag_subjects_for_student(ticket, osCislo, user)
         if ucitIdno:
-            katedra = stagUserInfo.get("katedra")
             try:
-                department = Department.objects.get(department_code=katedra)
-            except Department.DoesNotExist:
-                raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
-            department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
-            user, _ = ProfessorUser.objects.get_or_create(
-                email=email,
-                defaults={
-                    "email": email,
-                    "stag_role": stagRole,
-                    "first_name": jmeno,
-                    "last_name": prijmeni,
-                    "ucit_idno": ucitIdno,
-                    "is_active": True,
-                    "department": department,
-                    "department_role": department_role,
-                },
-            )
+                user = ProfessorUser.objects.get(email=email)
+            except ProfessorUser.DoesNotExist:
+                katedra = stagUserInfo.get("katedra")
+                try:
+                    department = Department.objects.get(department_code=katedra)
+                except Department.DoesNotExist:
+                    raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
+                department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
+                user, _ = ProfessorUser.objects.get_or_create(
+                    email=email,
+                    defaults={
+                        "email": email,
+                        "stag_role": stagRole,
+                        "first_name": jmeno,
+                        "last_name": prijmeni,
+                        "ucit_idno": ucitIdno,
+                        "is_active": True,
+                        "department": department,
+                        "department_role": department_role,
+                    },
+                )
             sync_stag_roles_for_teacher(ticket, ucitIdno, user)
 
         refresh = self.get_token(user)
