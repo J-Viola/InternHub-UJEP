@@ -3934,3 +3934,326 @@ django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: 'www.localhost:
 [2025-07-28 13:19:50,384] INFO django.server "POST /api/practices/get-end-date/ HTTP/1.1" 200 25
 [2025-07-28 13:20:39,201] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 1289
 [2025-07-28 13:20:39,202] INFO django.server "GET /api/practices/practices/organization_practices/ HTTP/1.1" 200 1289
+[2025-07-30 14:29:44,225] INFO django.utils.autoreload Watching for file changes with StatReloader
+[2025-07-30 14:31:27,673] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-30 14:31:27,674] INFO django.server "OPTIONS /api/users/token/refresh/ HTTP/1.1" 200 0
+[2025-07-30 14:31:27,682] INFO django.server "OPTIONS /api/users/login/ HTTP/1.1" 200 0
+[2025-07-30 14:31:27,691] WARNING django.request Unauthorized: /api/users/token/refresh/
+[2025-07-30 14:31:27,691] WARNING django.request Unauthorized: /api/users/token/refresh/
+[2025-07-30 14:31:27,692] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 401 54
+[2025-07-30 14:31:27,692] WARNING django.server "POST /api/users/token/refresh/ HTTP/1.1" 401 54
+[2025-07-30 14:31:28,591] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 856
+[2025-07-30 14:31:28,749] INFO django.server "OPTIONS /api/practices/practices/search/?title= HTTP/1.1" 200 0
+[2025-07-30 14:31:28,753] INFO django.server "OPTIONS /api/subjects/subjects/ HTTP/1.1" 200 0
+[2025-07-30 14:31:28,770] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:31:28,785] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:31:28,789] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:31:28,813] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:31:31,430] INFO django.server "OPTIONS /api/practices/practices/5 HTTP/1.1" 200 0
+[2025-07-30 14:31:31,431] INFO django.server "OPTIONS /api/practices/practices/5 HTTP/1.1" 200 0
+[2025-07-30 14:31:31,439] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-30 14:31:31,439] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-30 14:31:31,443] INFO django.server "OPTIONS /api/practices/practices/5/ HTTP/1.1" 200 0
+[2025-07-30 14:31:31,500] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 14929
+[2025-07-30 14:31:31,517] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 14929
+[2025-07-30 14:31:32,411] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:31:32,412] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:31:32,416] INFO django.server "OPTIONS /api/users/organization-users/ HTTP/1.1" 200 0
+[2025-07-30 14:31:32,426] WARNING django.request Bad Request: /api/users/organization-users/
+[2025-07-30 14:31:32,427] WARNING django.server "GET /api/users/organization-users/ HTTP/1.1" 400 53
+[2025-07-30 14:31:32,478] WARNING django.request Bad Request: /api/users/organization-users/
+[2025-07-30 14:31:32,478] WARNING django.server "GET /api/users/organization-users/ HTTP/1.1" 400 53
+[2025-07-30 14:31:40,549] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-30 14:31:40,550] INFO django.server "GET /api/practices/practices/5 HTTP/1.1" 301 0
+[2025-07-30 14:31:40,573] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 14929
+[2025-07-30 14:31:40,573] INFO django.server "GET /api/practices/practices/5/ HTTP/1.1" 200 14929
+[2025-07-30 14:31:41,519] INFO django.server "OPTIONS /api/practices/practices/by_user_department/ HTTP/1.1" 200 0
+[2025-07-30 14:31:41,546] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:31:41,573] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:31:46,496] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-30 14:31:46,497] INFO django.server "OPTIONS /api/practices/practices/1 HTTP/1.1" 200 0
+[2025-07-30 14:31:46,504] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 14:31:46,504] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 14:31:46,507] INFO django.server "OPTIONS /api/practices/practices/1/ HTTP/1.1" 200 0
+[2025-07-30 14:31:46,565] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 14:31:46,580] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 14:31:47,823] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:31:47,824] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:31:49,696] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 14:31:49,697] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 14:31:49,716] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 14:31:49,716] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 14:31:52,034] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:31:52,035] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:31:52,044] WARNING django.request Bad Request: /api/users/organization-users/
+[2025-07-30 14:31:52,045] WARNING django.request Bad Request: /api/users/organization-users/
+[2025-07-30 14:31:52,045] WARNING django.server "GET /api/users/organization-users/ HTTP/1.1" 400 53
+[2025-07-30 14:31:52,045] WARNING django.server "GET /api/users/organization-users/ HTTP/1.1" 400 53
+[2025-07-30 14:31:52,999] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 14:31:52,999] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 14:31:53,021] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 14:31:53,021] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 14:31:53,566] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:31:53,566] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:31:55,672] INFO django.server "OPTIONS /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 0
+[2025-07-30 14:31:55,684] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:31:55,695] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:32:04,971] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:32:04,971] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:32:04,979] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:32:04,981] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:32:06,415] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-30 14:32:06,415] INFO django.server "OPTIONS /api/users/logout/ HTTP/1.1" 200 0
+[2025-07-30 14:32:06,433] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-30 14:32:06,433] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-30 14:32:06,443] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-30 14:32:06,444] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-30 14:32:10,080] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 856
+[2025-07-30 14:32:10,224] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:32:10,228] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:32:10,235] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:32:10,237] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:32:11,378] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:32:11,378] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:32:11,900] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:32:11,900] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:32:12,463] INFO django.server "OPTIONS /api/departments/department-students/ HTTP/1.1" 200 0
+[2025-07-30 14:32:12,483] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:12,486] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:12,501] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:12,504] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:13,528] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:32:13,529] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:32:14,258] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:14,259] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:14,262] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:14,262] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:15,131] INFO django.server "OPTIONS /api/student-practices/student-practices/6 HTTP/1.1" 200 0
+[2025-07-30 14:32:15,147] INFO django.server "GET /api/student-practices/student-practices/6 HTTP/1.1" 200 11395
+[2025-07-30 14:32:15,163] INFO django.server "GET /api/student-practices/student-practices/6 HTTP/1.1" 200 11395
+[2025-07-30 14:32:22,021] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:22,022] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:22,025] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:22,025] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:23,363] INFO django.server "OPTIONS /api/users/student-profile/3 HTTP/1.1" 200 0
+[2025-07-30 14:32:23,373] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 14:32:23,383] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 14:32:27,583] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:27,585] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:32:27,589] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:27,589] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:32:28,287] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:32:28,288] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:36:40,673] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:37:37,375] WARNING django.request Unauthorized: /api/subjects/subjects/department-subjects/
+[2025-07-30 14:37:37,378] WARNING django.request Unauthorized: /api/subjects/subjects/department-subjects/
+[2025-07-30 14:37:37,380] WARNING django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 401 58
+[2025-07-30 14:37:37,381] WARNING django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 401 58
+[2025-07-30 14:37:37,387] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:37:37,388] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:37:38,418] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:37:38,421] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:37:38,430] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:37:38,430] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:39:28,142] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:39:28,142] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:40:01,434] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:40:01,434] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:40:02,490] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:40:02,492] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:40:02,503] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:40:02,504] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:40:03,948] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:40:03,949] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:44:31,431] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:48:57,180] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:48:57,181] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:48:59,660] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:48:59,660] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:49:00,917] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:00,919] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:01,473] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:49:02,080] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:49:02,084] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:49:02,092] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:49:02,093] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:49:03,258] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-30 14:49:03,259] INFO django.server "POST /api/users/logout/ HTTP/1.1" 200 37
+[2025-07-30 14:49:03,267] WARNING django.request Unauthorized: /api/users/logout/
+[2025-07-30 14:49:03,268] WARNING django.server "POST /api/users/logout/ HTTP/1.1" 401 58
+[2025-07-30 14:49:07,570] INFO django.server "POST /api/users/login/ HTTP/1.1" 200 856
+[2025-07-30 14:49:07,703] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:49:07,703] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 14:49:07,711] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:49:07,733] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 14:49:09,653] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:09,654] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:12,986] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:12,989] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:45,867] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:45,868] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:51,871] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:49:51,877] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:49:51,892] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 14:49:51,895] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 14:49:53,185] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:49:53,185] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:53:37,602] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:53:54,934] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:53:54,935] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:53:55,817] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:53:55,817] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 14:53:56,399] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:53:56,400] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:55:23,384] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:55:23,385] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:56:45,224] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:56:45,224] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:57:10,823] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:57:10,824] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:57:16,154] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:57:16,154] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:58:07,973] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 14:59:02,205] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:59:02,206] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:59:52,526] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:59:52,527] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:59:55,452] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 14:59:55,452] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:00:03,534] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:00:03,535] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:00:08,909] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:08,911] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:10,385] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 15:00:10,385] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 15:00:10,407] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 15:00:10,407] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 15:00:13,509] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:13,510] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:14,602] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 15:00:14,602] INFO django.server "GET /api/practices/practices/1 HTTP/1.1" 301 0
+[2025-07-30 15:00:14,623] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 15:00:14,623] INFO django.server "GET /api/practices/practices/1/ HTTP/1.1" 200 11181
+[2025-07-30 15:00:15,181] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 15:00:15,182] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 15:00:15,193] WARNING django.request Bad Request: /api/users/organization-users/
+[2025-07-30 15:00:15,194] WARNING django.server "GET /api/users/organization-users/ HTTP/1.1" 400 53
+[2025-07-30 15:00:15,195] WARNING django.request Bad Request: /api/users/organization-users/
+[2025-07-30 15:00:15,195] WARNING django.server "GET /api/users/organization-users/ HTTP/1.1" 400 53
+[2025-07-30 15:00:20,353] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:20,353] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:21,053] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:00:21,053] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:00:21,402] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:21,402] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:00:21,730] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 15:00:21,733] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 15:00:21,742] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 15:00:21,742] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 15:00:22,790] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:00:22,791] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:00:22,794] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:00:22,794] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:00:25,651] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:00:25,651] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:00:35,650] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:00:35,651] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:00:35,680] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:00:35,682] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:00:37,138] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:00:37,138] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:02:37,980] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 15:04:18,037] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:18,038] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:18,042] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:18,042] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:20,744] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:04:20,744] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:04:23,246] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:23,246] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:23,249] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:23,249] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:24,389] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:04:24,390] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:04:26,115] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:26,115] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:26,118] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:26,118] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:26,991] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:04:26,991] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:04:41,864] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:41,865] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:41,868] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:41,868] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:42,744] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:04:42,745] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:04:43,805] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:43,806] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:04:43,809] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:04:43,809] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:06:17,669] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:06:17,670] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:06:18,594] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:06:18,595] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:06:18,598] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:06:18,598] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:01,132] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:01,132] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:02,066] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:02,067] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:02,073] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:02,073] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:03,071] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:03,071] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:03,793] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:03,793] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:03,797] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:03,797] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:04,691] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:04,692] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:07,904] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:07,905] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:07,909] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:07,909] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:07,981] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 15:07:41,692] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:41,692] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:55,985] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:07:55,985] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:07:56,405] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:07:56,405] INFO django.server "GET /api/practices/practices/by_user_department/ HTTP/1.1" 200 37329
+[2025-07-30 15:07:56,774] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:56,775] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:07:56,778] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:56,779] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:07:57,629] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:07:57,629] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:08:59,123] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:11:37,992] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 15:15:04,568] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:16:08,031] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 15:17:09,449] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:17:09,450] INFO django.server "GET /api/subjects/subjects/department-subjects/ HTTP/1.1" 200 197
+[2025-07-30 15:17:11,458] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:17:11,459] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:17:11,462] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:17:11,462] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:17:13,297] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:17:13,297] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:20:38,521] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 15:25:57,063] WARNING django.request Unauthorized: /api/users/student-profile/3
+[2025-07-30 15:25:57,071] WARNING django.request Unauthorized: /api/users/student-profile/3
+[2025-07-30 15:25:57,074] WARNING django.server "GET /api/users/student-profile/3 HTTP/1.1" 401 58
+[2025-07-30 15:25:57,074] WARNING django.server "GET /api/users/student-profile/3 HTTP/1.1" 401 58
+[2025-07-30 15:25:57,079] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 15:25:57,086] INFO django.server "POST /api/users/token/refresh/ HTTP/1.1" 200 374
+[2025-07-30 15:25:58,128] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 15:25:58,129] INFO django.server "GET /api/subjects/subjects/ HTTP/1.1" 200 368
+[2025-07-30 15:25:58,139] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 15:25:58,139] INFO django.server "GET /api/practices/practices/search/?title= HTTP/1.1" 200 82235
+[2025-07-30 15:25:59,209] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:25:59,210] WARNING django.request User 3 has 3 practices; only the first will be shown
+[2025-07-30 15:25:59,214] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:25:59,214] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
+[2025-07-30 15:25:59,965] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-07-30 15:25:59,965] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262

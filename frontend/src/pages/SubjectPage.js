@@ -36,12 +36,13 @@ export default function SubjectPage() {
 
     const handleEditSubject = (subjectId) => {
         console.log("Editovat předmět:", subjectId);
-        handleToDoAlert()
+        navigate(`/formular?type=subject&action=create&id=${subjectId}`)
+        //handleToDoAlert()
     };
 
     const handleCreateSubject = () => {
-        console.log("Vytvořit nový předmět");
-        handleToDoAlert()
+        navigate("/formular?type=subject&action=create")
+        //handleToDoAlert()
     };
 
     const handleSubjectClick = (subject) => {

@@ -20,8 +20,7 @@ import PrihlaskyPage from '@pages/PrihlaskyPage';
 import SpravaStaziPage from '@pages/SpravaStaziPage';
 import PraxeDetailPage from '@pages/PraxeDetailPage';
 import SubjectPage from '@pages/SubjectPage';
-
-
+import FormPage from '@pages/FormPage';
 import reportWebVitals from './reportWebVitals';
 import UserProvider from '@hooks/UserProvider';
 import AuthProvider from '@services/auth/Auth';
@@ -52,6 +51,7 @@ root.render(
               <Route path="/users/:type" element={<UserCRUDPage/>} />
               <Route path="/prihlasky" element={<PrihlaskyPage/>} />
               <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
+              <Route path="/formular" element={<FormPage/>} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>
