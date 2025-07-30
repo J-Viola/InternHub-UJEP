@@ -1257,7 +1257,7 @@ INSERT INTO public.token_blacklist_outstandingtoken VALUES (8, 'eyJhbGciOiJIUzI1
 -- Data for Name: user_subjects; Type: TABLE DATA; Schema: public; Owner: internhub
 --
 
-INSERT INTO public.user_subjects VALUES (1, 0, 1, 1);
+INSERT INTO public.user_subjects VALUES (1, 1, 1, 6);
 INSERT INTO public.user_subjects VALUES (2, 0, 1, 2);
 
 
