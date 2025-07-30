@@ -1,7 +1,10 @@
 # InternHub
 
 ## Přehled
-InternHub je full-stack aplikace kombinující Django a React pro správu stáží a uživatelských účtů.
+InternHub je full-stack aplikace kombinující Django a React pro správu stáží a spolupráce mezi studenty a organizacemi.
+Aplikace umožňuje organizacím spravovat nabídky stáží, studentům umožnuje se přihlašovat a sledovat průběh stáží. 
+Zaměstnanci školy mohou spravovat a sledovat průběhy stáží studentů.
+Aplikace je propojena s aplikaci STAG, která slouží k přihlašování zaměstnanců/studentů vysoké školy.
 
 ## Požadavky
 - Docker 20.x nebo vyšší
@@ -11,9 +14,9 @@ InternHub je full-stack aplikace kombinující Django a React pro správu stáž
 1. Naklonujte repozitář
 2. V kořenovém adresáři projektu spusťte:
    ```bash
-   docker-compose up --build
+   docker-compose up --build -d
    ```
-3. Služby se spustí, migrace proběhnou automaticky a počáteční data budou nahrána.
+3. Služby se spustí, migrace proběhnou automaticky a počáteční data budou nahrána. Dá se vypnout za pomocí nastavení v env: **MIGRATE_DEMO=0**
 
 ## Testovací účty
 Po migraci a naplnění databáze se můžete přihlásit pomocí následujících účtů:
@@ -40,12 +43,13 @@ Přihlašovací údaje jsou následující: admin@admin.com / admin a nachází 
 - Uživatel: internhub
 - Heslo: internhub
 
+## Dokumentace API
+Dostupná na http://localhost:8000/api/schema/swagger-ui
+
 
 ## Technické detaily
-- Backend: Django 4.x, Django REST Framework
-- Frontend: React 18, Create React App
+- Backend: Django, Django REST Framework
+- Frontend: React
 - Databáze: PostgreSQL
-- Dokumentace API dostupná na `/api/schema/` a procházení na `/api/`
 - Frontend běží na portu 3000, backend na portu 8000
-- OAuth2 autentizace s JWT tokeny
 - Proměnné prostředí nakonfigurovány v `docker-compose.yml` a `.env`
