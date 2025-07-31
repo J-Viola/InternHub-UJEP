@@ -1,0 +1,30 @@
+Student
+Jako student chci si prohlížet nabídky praxí, abych si mohl vybrat vhodnou příležitost.
+
+Jako student chci odeslat přihlášku na praxi, abych mohl zahájit odbornou stáž.
+
+Jako student chci upravit svůj profil, abych měl aktuální informace pro firmy.
+
+Jako student chci stáhnout návrh smlouvy, abych ho mohl zkontrolovat.
+
+Firma
+Jako firma chci vytvořit nabídku praxe, abych mohl oslovit studenty.
+
+Jako firma chci upravit nebo odstranit nabídku, abych mohl spravovat aktuální inzeráty.
+
+Jako firma chci zobrazit seznam došlých přihlášek, abych mohl posoudit zájem studentů.
+
+Jako firma chci schválit nebo zamítnout žádost, abych si vybral vhodného kandidáta.
+
+Jako firma chci upravit svůj profil, abych uvedl aktuální kontaktní informace.
+
+Administrátor
+Jako administrátor chci upravovat informace o uživatelích, abych mohl řešit chyby nebo provádět korekce.
+
+Jako administrátor chci spravovat nabídky praxí, abych mohl moderovat obsah v systému.
+
+Vedoucí katedry
+Jako vedoucí katedry chci schválit novou praxi, abych mohl moderovat obsah.
+
+Jako vedoucí katedry chci zobrazit přihlášené studenty na praxi, abych mohl kontrolovat, zda si studenti požádali o praxi.
+
