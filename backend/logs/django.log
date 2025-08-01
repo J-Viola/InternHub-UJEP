@@ -4257,3 +4257,4 @@ django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: 'www.localhost:
 [2025-07-30 15:25:59,214] INFO django.server "GET /api/departments/department-students/ HTTP/1.1" 200 360
 [2025-07-30 15:25:59,965] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
 [2025-07-30 15:25:59,965] INFO django.server "GET /api/users/student-profile/3 HTTP/1.1" 200 262
+[2025-08-01 10:18:00,516] INFO django.utils.autoreload Watching for file changes with StatReloader

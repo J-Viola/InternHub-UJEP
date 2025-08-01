@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
-docker-entrypoint.sh postgres &
+
+# Spustíme postgres ENTRYPOINT na pozadí
+exec docker-entrypoint.sh postgres "$@" &
 
 if [ "$MIGRATE_DEMO" = 1 ]; then
 

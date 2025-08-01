@@ -6,6 +6,7 @@ WORKDIR /app/database
 COPY ./.docker/Database/init.sql .
 COPY ./.docker/Database/startup.sh .
 
-RUN chmod +x startup.sh
+# Opravíme line endings a nastavíme execute permissions
+RUN sed -i 's/\r$//' startup.sh && chmod +x startup.sh
 
-ENTRYPOINT ["./startup.sh"]
+ENTRYPOINT ["bash", "/app/database/startup.sh"]
