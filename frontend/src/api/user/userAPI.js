@@ -79,10 +79,21 @@ export const useUserAPI = () => {
         }
     };
 
+    const getAllStudents = async () => {
+        try {
+            const response = await api.get('/users/all-students/');
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při získávání všech studentů:', error);
+            throw error;
+        }
+    };
+
     return {
         postRegister,
         getOrganizationUsers,
         getCurrentUserProfile,
-        getStudentProfile
+        getStudentProfile,
+        getAllStudents
     };
 };

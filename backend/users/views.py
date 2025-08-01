@@ -22,6 +22,7 @@ from users.dtos.dtos import EkonomickySubjektDTO
 from .models import StagRoleEnum
 from .serializers import (
     AdminOrganizationSerializer,
+    AllStudentsListSerializer,
     AresJusticeSerializer,
     CustomTokenObtainPairSerializer,
     LogoutSerializer,
@@ -234,6 +235,18 @@ class StudentProfileView(APIView):
 
         serializer = StudentProfileSerializer(student)
         return Response(serializer.data)
+
+
+class AllStudentsListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AllStudentsListSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        # Vrátíme všechny aktivní studenty v systému
+        return StudentUser.objects.filter(is_active=True).select_related('stag_role').prefetch_related(
+            'user_subjects__subject__department'
+        )
 
 
 class AdminOrganizationViewSet(ModelViewSet):

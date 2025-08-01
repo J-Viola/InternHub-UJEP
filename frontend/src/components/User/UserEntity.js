@@ -9,7 +9,7 @@ import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Paragraph from "@components/core/Text/Paragraph";
 import Headings from "@core/Text/Headings";
 
-export default function UserEntity({entity, attributes, buttons, status="gray", onClick}) {
+export default function UserEntity({entity, attributes, buttons, status="gray", onClick, statusView = true}) {
 
     const renderProgressStatus = (progress_status) => {
         if (progress_status == 0) {
@@ -46,9 +46,11 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
                     <Paragraph variant={"baseBold"}>
                         {entity.student_full_name
                             ? entity.student_full_name
-                            : (entity.titles || entity.surname
-                                ? `${entity.titles?.before || ''} ${entity.name || ''} ${entity.surname || ''} ${entity.titles?.after || ''}`.trim()
-                                : entity.name)
+                            : (entity.first_name && entity.last_name
+                                ? `${entity.first_name} ${entity.last_name}`
+                                : (entity.titles || entity.surname
+                                    ? `${entity.titles?.before || ''} ${entity.name || ''} ${entity.surname || ''} ${entity.titles?.after || ''}`.trim()
+                                    : entity.name))
                         }
                     </Paragraph>
                 </Container>
@@ -56,7 +58,7 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
                 <Container property="flex-1 flex flex-row flex-wrap gap-x-12 gap-y-2 items-center">
                     {Object.entries(attributes).map(([key, value]) => {
                         // Speciální zpracování pro approval_status
-                        if (value === "approval_status") {
+                        if (statusView && value === "approval_status") {
                             const approvalStatus = renderApprovalStatus(entity[value]);
                             return (
                                 <Container key={key} property="min-w-[120px]">
@@ -75,17 +77,19 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
                         );
                     })}
 
-                    <Container property="min-w-[120px]">
-                        {(() => {
-                            const status = renderProgressStatus(entity?.student_practice?.progress_status ?? entity?.progress_status);
-                            return (
-                                <Paragraph>
-                                    <span>Kontrola: </span>
-                                    <span className={status.color}>{status.text}</span>
-                                </Paragraph>
-                            );
-                        })()}                      
-                    </Container>
+                    {statusView && (
+                        <Container property="min-w-[120px]">
+                            {(() => {
+                                const status = renderProgressStatus(entity?.student_practice?.progress_status ?? entity?.progress_status);
+                                return (
+                                    <Paragraph>
+                                        <span>Kontrola: </span>
+                                        <span className={status.color}>{status.text}</span>
+                                    </Paragraph>
+                                );
+                            })()}                      
+                        </Container>
+                    )}
 
                 </Container>
                 {/* Tlačítka */}

@@ -602,3 +602,36 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
                 "full_name": owner.full_name,
             }
         return None
+
+
+class AllStudentsListSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(read_only=True)
+    department = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = StudentUser
+        fields = [
+            "user_id",
+            "email",
+            "first_name", 
+            "last_name",
+            "full_name",
+            "os_cislo",
+            "department",
+            "is_active",
+            "date_joined"
+        ]
+    
+    def get_department(self, obj):
+        # Získáme katedru studenta přes jeho předměty
+        user_subjects = UserSubject.objects.filter(
+            user=obj, 
+            role=UserSubjectType.Student.value
+        ).select_related('subject__department')
+        
+        departments = set()
+        for user_subject in user_subjects:
+            if user_subject.subject.department:
+                departments.add(user_subject.subject.department.department_name)
+        
+        return list(departments) if departments else None

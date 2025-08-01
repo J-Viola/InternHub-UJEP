@@ -25,6 +25,7 @@ import reportWebVitals from './reportWebVitals';
 import UserProvider from '@hooks/UserProvider';
 import AuthProvider from '@services/auth/Auth';
 import { MessageProvider}  from '@hooks/MessageContext';
+import InvitationPage from '@pages/InvitationPage';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -52,6 +53,8 @@ root.render(
               <Route path="/prihlasky" element={<PrihlaskyPage/>} />
               <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
               <Route path="/formular" element={<FormPage/>} />
+              <Route path="/pozvanka" element={<InvitationPage/>} />
+
             </Routes>
           </AuthProvider>
         </BrowserRouter>
