@@ -37,7 +37,7 @@ class User {
     }
 
     isProfessor() {
-        return this.hasRole("PR");
+        return this.hasRole("VY");
     }
 
     isDepartmentMg() {
@@ -53,15 +53,19 @@ class User {
     }
 
     isOrganizationUser() {
-        return this.hasRole("OWNER") || this.hasRole("INSERTOR") 
+        return this.hasRole("OWNER") || this.hasRole("INSERTER") 
+    }
+
+    isDepartmentUser() {
+        return this.hasRole("VY") || this.hasRole("VK")
     }
 
     isOwner() {
         return this.hasRole("OWNER")
     }
 
-    isInsertor() {
-        return this.hasRole("INSERTOR")
+    isInserter() {
+        return this.hasRole("INSERTER")
     }
 
     // Check if user has any data

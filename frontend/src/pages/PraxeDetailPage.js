@@ -203,7 +203,7 @@ export default function PraxeDetailPage() {
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
-                        {user && user.isDepartmentMg() && (
+                        {user && user.isDepartmentUser() && (
                             <Button variant={"primary"}  icon={"gear"} property={"col-start-1 justify-self-end"} onClick={handleToDoAlert}>Spravovat</Button>
                         )}
                     </Container>

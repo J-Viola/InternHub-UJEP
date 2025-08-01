@@ -102,11 +102,35 @@ function Nav({}) {
         //"Profil": "/profil",
     };
 
+    const inserterDict = {
+        "Správa organizace" : {
+            //"Uživatelské účty organizace" : "/users/org",
+            //"Účet organizace" : "#",
+            "Stáže" : "/praxe",
+            "Přihlášky" : "/prihlasky",
+            "Odeslané pozvánky" : "#",
+        },
+        "Nabídka praxí": "/nabidka",
+        "Studenti": "#",
+        //"Praxe": "/praxe",
+        "Odhlásit se": "/logout",
+        //"Profil": "/profil",
+    };
+
     const departmentDict = {
         "Studentské účty" : "/students",
         "Předměty" : "/subjects",
         "Správa stáží" : "/sprava-stazi",
         "Nabídka praxí" : "/nabidka",
+        //"Profil" : "#",
+        "Odhlásit se" : "/logout",
+    }
+
+    const professorDict = {
+        //"Studentské účty" : "/students",
+        //"Předměty" : "/subjects",
+        "Nabídka praxí" : "/nabidka",
+        "Správa stáží" : "/sprava-stazi",
         //"Profil" : "#",
         "Odhlásit se" : "/logout",
     }
@@ -118,6 +142,10 @@ function Nav({}) {
             setNaviagation(studentDict);
         } else if (user.isDepartmentMg()) {
             setNaviagation(departmentDict);
+        } else if (user.isInserter()) {
+            setNaviagation(inserterDict);
+        } else if (user.isProfessor()) {
+            setNaviagation(professorDict);
         }
     }, [user]);
 
