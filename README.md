@@ -25,12 +25,18 @@ Po migraci a naplnění databáze se můžete přihlásit pomocí následující
 - novak@jednatel.cz / demodemo
 - novak@inzerent.cz / demodemo
 
-### Stag uživatelé
+### Zaměstnanci školy
 Přihlášení bude probíhat na stránkách stag.demo.zcu.cz, kde jsou dostupné následující účty:
 - Vedoucí katedry: indy / demo
-- Student: Z21B4385P / demo
 - Vedoucí předmětu: skalab / demo
 
+### Studenti
+Přihlášení bude probíhat na stránkách stag.demo.zcu.cz, kde jsou dostupné následující účty:
+- Martin Lacinová: D21B4304P / demo 
+- Ondřej Kadlec: E22P9319P / demo
+- Daniil Marek: P20B4771P / demo 
+- Matyáš Budina: S22P4307P / demo 
+- Lucie Chadimová: Z21B4385P / demo
 
 ## Databáze
 V projektu je použita PostgreSQL databáze. K ní se dá použít pgAdmin pro správu dat. 
