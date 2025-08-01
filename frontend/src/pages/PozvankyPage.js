@@ -18,12 +18,14 @@ import handleToDoAlert from "@utils/ToDoAlert";
 import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
 import NabidkaEntityInline from "@components/Nabidka/NabidkaEntityInline";
+import PopUpCon from "@core/Container/PopUpCon";
 
 export default function InvitationPage() {
     const [searchParams] = useSearchParams();
     const [formData, setFormData] = useState({});
     const [nabidky, setNabidky] = useState([]);
     const [selectedNabidka, setSelectedNabidka] = useState(null);
+    const [showConfirmPopup, setShowConfirmPopup] = useState(false);
     const { getNabidky } = useNabidkaAPI();
     const { user } = useUser();
     const navigate = useNavigate();
@@ -75,6 +77,21 @@ export default function InvitationPage() {
         navigate(`/nabidka/${nabidka.practice_id}`);
     };
 
+    const handleCreateInvitation = () => {
+        setShowConfirmPopup(true);
+    };
+
+    const handleConfirmCreate = () => {
+        console.log('Vytvořit pozvánku pro:', selectedNabidka, 'a studenty:', studentIds);
+        // TODO: Zde implementovat skutečné vytvoření pozvánky
+        setShowConfirmPopup(false);
+        // Po úspěšném vytvoření možná navigace zpět nebo zobrazení success message
+    };
+
+    const handleCancelCreate = () => {
+        setShowConfirmPopup(false);
+    };
+
     return(
         <Container property="min-h-screen">
             <Nav/>
@@ -84,9 +101,11 @@ export default function InvitationPage() {
                     <Headings sizeTag={"h3"} property={"mt-2"}>
                         {type === 'create' ? 'Vytvořit pozvánku' : 'Pozvánka'}
                     </Headings>
-                    {type === 'create' && selectedNabidka && (
+                </Container>
+                <Container property={"mb-4"}>
+                    {type === 'create' && (
                         <Button
-                            onClick={() => console.log('Vytvořit pozvánku pro:', selectedNabidka, 'a studenty:', studentIds)}
+                            onClick={handleCreateInvitation}
                             icon={"user-plus"}
                             disabled={!selectedNabidka}
                         >
@@ -148,6 +167,19 @@ export default function InvitationPage() {
                     </Container>
                 )}
             </Container>
+
+            {showConfirmPopup && (
+                <PopUpCon
+                    title="Potvrzení vytvoření pozvánky"
+                    text={`Opravdu chcete vytvořit pozvánku pro ${studentNames.length > 0 ? studentNames.length : studentIds.length} studentů na stáž ${selectedNabidka?.title}?`}
+                    onSubmit={handleConfirmCreate}
+                    onReject={handleCancelCreate}
+                    onClose={handleCancelCreate}
+                    onSubmitText="Vytvořit"
+                    onRejectText="Zrušit"
+                    variant="blue"
+                />
+            )}
         </Container>
     )
 }

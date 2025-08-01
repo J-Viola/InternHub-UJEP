@@ -33,7 +33,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
 
     return(
             <>
-                <Container property={`grid gap-2 grid-cols-2 ${isEdit ? "mt-4" : "" }`}>
+                <Container property={`grid gap-2 grid-cols-2 ${isEdit ? "mt-4" : "mt-4" }`}>
                     <CustomDatePicker
                         id={"start_date"}
                         value={formData?.start_date}

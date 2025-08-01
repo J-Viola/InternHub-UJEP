@@ -78,6 +78,7 @@ export default function VytvoritNabidku() {
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
                 <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
+                    <Headings className="mb-4">Vytvořit nabídku</Headings>
                     <NabidkaForm
                         formData={formData}
                         organizationUsers={organizationUsers}

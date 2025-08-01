@@ -11,15 +11,19 @@ import { useAuth } from "@auth/Auth";
 import UserEntity from "@components/User/UserEntity";
 import { useParams } from "react-router-dom";
 import { useUserAPI } from "@api/user/userAPI";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "@hooks/UserProvider";
 
 
 export default function UserCRUDPage() {
     const [data, setData] = useState([])
     const { type } = useParams("type")
     const userAPI = useUserAPI();
+    const { user } = useUser()
+    const navigate = useNavigate();
 
     const rolesTranslator = {"OWNER" : "Jednatel firmy", "INSERTER" : "Správce inzerátů"}
-    const headings = {"org":"Uživatelské účty organizace"}
+    const headings = {"org_users":"Uživatelské účty organizace"}
 
     const translateRoles = (dataArr) => {
         return dataArr.map(entity => ({
@@ -40,6 +44,14 @@ export default function UserCRUDPage() {
 
     // useEffect pro překlad už není potřeba
 
+    const handleCreateOrgUser = () => {
+        navigate(`/formular?type=org_users&action=create`)
+    }
+
+    const handleEditOrgUser = (entity) => {
+        navigate(`/formular?type=org_users&action=edit&id=${entity.id}`)
+    }
+
     
     return(
     <Container property="min-h-screen">
@@ -54,7 +66,7 @@ export default function UserCRUDPage() {
 
             <Container>
                 <Button 
-                    onClick={() => console.log("Handle na vytvoření")}
+                    onClick={() => handleCreateOrgUser()}
                     icon={"plus"}
                 >
                     Založit uživatele
@@ -75,10 +87,12 @@ export default function UserCRUDPage() {
                                 key={entity.id}
                                 entity={entity}
                                 attributes={{"Role": "roleText"}}
+                                statusView={user.isOrganizationUser() ? false : true}
+                                onClick={() => handleEditOrgUser(entity)}
                                 buttons={[
                                     {
                                         icon: "edit",
-                                        btnfunction: () => console.log("Upravit uživatele", entity.id)
+                                        btnfunction: () => handleEditOrgUser(entity)
                                     }
                                 ]}
                             />

@@ -89,11 +89,11 @@ function Nav({}) {
 
     const ownerDict = {
         "Správa organizace" : {
-            "Uživatelské účty organizace" : "/users/org",
+            "Uživatelské účty organizace" : "/users/org_users",
             "Účet organizace" : "#",
             "Stáže" : "/praxe",
             "Přihlášky" : "/prihlasky",
-            "Odeslané pozvánky" : "#",
+            "Odeslané pozvánky" : "/pozvanky-list",
         },
         "Nabídka praxí": "/nabidka",
         "Studenti": "/students",
@@ -108,7 +108,7 @@ function Nav({}) {
             //"Účet organizace" : "#",
             "Stáže" : "/praxe",
             "Přihlášky" : "/prihlasky",
-            "Odeslané pozvánky" : "#",
+            "Odeslané pozvánky" : "/pozvanky-list",
         },
         "Nabídka praxí": "/nabidka",
         "Studenti": "/students",

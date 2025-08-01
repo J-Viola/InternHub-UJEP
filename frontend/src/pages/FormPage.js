@@ -18,6 +18,7 @@ import Paragraph from "@components/core/Text/Paragraph";
 import handleToDoAlert from "@utils/ToDoAlert";
 import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
+import UserForm from "@components/Forms/UserForm";
 
 export default function FormPage() {
     const [searchParams] = useSearchParams();
@@ -30,6 +31,7 @@ export default function FormPage() {
         console.log('Type:', type);
         console.log('Action:', action);
         console.log('ID:', id);
+        // PODLE ACTIONU UDĚLAT FETCH
     }, [searchParams]);
 
     const handleCreate = (data) => {
@@ -43,6 +45,8 @@ export default function FormPage() {
         switch(type) {
             case 'subject':
                 return <SubjectForm formData={formData} handleCreate={handleCreate} />;
+            case 'org_users':
+                return <UserForm organizationUser={true}/>;
             default:
                 return <Paragraph>Neznámý typ formuláře</Paragraph>;
         }
