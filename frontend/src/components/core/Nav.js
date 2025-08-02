@@ -135,6 +135,25 @@ function Nav({}) {
         "Odhlásit se" : "/logout",
     }
 
+    const adminDict = {
+        "Správa systému" : {
+            "Katedry" : "#",
+            "Společnosti" : "#",
+        },
+        "Správa stáží" : {
+            "Přihlášky" : "/prihlasky",
+            "Nabídka praxí": "/nabidka",
+            "Schvalovací kolečko" : "/praxe",
+            "Pozvánky od firem" : "/pozvanky-list",
+        },
+        "Uživatelé" : {
+            "Firemní uživatelé": "#",
+            "Školní uživatelé": "#",
+            "Studenti": "/students",
+        },
+        "Odhlásit se": "/logout",
+    };
+
     useEffect(() => {
         if (user.isOwner()) {
             setNaviagation(ownerDict);
@@ -146,6 +165,8 @@ function Nav({}) {
             setNaviagation(inserterDict);
         } else if (user.isProfessor()) {
             setNaviagation(professorDict);
+        } else if (user.isAdmin()) {
+            setNaviagation(adminDict);
         }
     }, [user]);
 

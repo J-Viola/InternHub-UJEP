@@ -38,6 +38,11 @@ Přihlášení bude probíhat na stránkách stag.demo.zcu.cz, kde jsou dostupn�
 - Matyáš Budina: S22P4307P / demo 
 - Lucie Chadimová: Z21B4385P / demo
 
+### Admin
+Je nutné se přihlásit pomocí způsobu "Jsem firma".
+- admin@admin.com / demodemo
+
+
 ## Databáze
 V projektu je použita PostgreSQL databáze. K ní se dá použít pgAdmin pro správu dat. 
 Přihlašovací údaje jsou následující: admin@admin.com / admin a nachází se na adrese `http://localhost:5050`.

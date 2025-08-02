@@ -49,7 +49,7 @@ class User {
     }
 
     isAdmin() {
-        return this.hasRole("AD");
+        return this.hasRole("admin");
     }
 
     isOrganizationUser() {

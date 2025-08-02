@@ -167,11 +167,21 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         print(f"DEBUG: Login - user type: {type(user)}")
         print(f"DEBUG: Login - organization_role: {getattr(user, 'organization_role', 'N/A')}")
         print(f"DEBUG: Login - role property: {user.role}")
+        print(f"DEBUG: Login - is_superuser: {user.is_superuser}")
+        print(f"DEBUG: Login - email: {user.email}")
+
+        # Určení role podle superuser stavu nebo emailu
+        if user.is_superuser or user.email == "admin@admin.com":
+            role = "admin"
+        else:
+            role = user.role or ""
+        
+        print(f"DEBUG: Login - final role: {role}")
 
         user_info = {
             "id": user.id,
             "email": user.email,
-            "role": user.role,
+            "role": role,
             "firstName": user.first_name,
             "lastName": user.last_name,
         }
