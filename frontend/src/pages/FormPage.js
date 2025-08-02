@@ -19,6 +19,7 @@ import handleToDoAlert from "@utils/ToDoAlert";
 import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
 import UserForm from "@components/Forms/UserForm";
+import CompanyForm from "@components/Forms/CompanyForm";
 
 export default function FormPage() {
     const [searchParams] = useSearchParams();
@@ -41,14 +42,20 @@ export default function FormPage() {
 
     const renderForm = () => {
         const type = searchParams.get('type');
+        const action = searchParams.get('action');
+        const id = searchParams.get('id');
+        
+        console.log('Rendering form with:', { type, action, id });
         
         switch(type) {
             case 'subject':
-                return <SubjectForm formData={formData} handleCreate={handleCreate} />;
+                return <SubjectForm formData={formData} handleCreate={handleCreate} action={action} id={id} />;
             case 'org_users':
-                return <UserForm organizationUser={true}/>;
+                return <UserForm organizationUser={true} action={action} id={id} />;
+            case 'org_form':
+                return <CompanyForm handleFormValues={() => console.log("Není handler")} action={action} id={id} />;
             default:
-                return <Paragraph>Neznámý typ formuláře</Paragraph>;
+                return <Paragraph>Neznámý typ formuláře: {type}</Paragraph>;
         }
     };
     

@@ -43,7 +43,7 @@ export default function NabidkaEntity({ entity }) {
     }
 
     return(
-        <ContainerForEntity id={entity.practice_id} variant={user.isDepartmentMg() ? handleVariant(entity.approval_status) : "gray"} onClick={handleClick} property="hover:shadow-lg transition-shadow duration-200">
+        <ContainerForEntity id={entity.practice_id} variant={user.isDepartmentUser() || user.isOrganizationUser() ? handleVariant(entity.approval_status) : "gray"} onClick={handleClick} property="hover:shadow-lg transition-shadow duration-200">
             <Container property="grid grid-cols-[auto,1fr] gap-4">
                 {/* OBRÁZEK PRAXE */}
                 <Container property="w-24 h-24 rounded-lg overflow-hidden">
@@ -64,6 +64,18 @@ export default function NabidkaEntity({ entity }) {
                         </Headings>
 
                         {user.isDepartmentMg() &&
+                        (<Container property={"justify-end ml-auto"}>
+                            <Button
+                                variant={handleVariant(entity.approval_status, true)}
+                                onClick={handleClick}
+                                hover={false}
+                            >
+                                {approvalTag(entity.approval_status)}
+                            </Button>
+                        </Container>)
+                        }
+
+                        {user.isOrganizationUser() &&
                         (<Container property={"justify-end ml-auto"}>
                             <Button
                                 variant={handleVariant(entity.approval_status, true)}

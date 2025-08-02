@@ -22,7 +22,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
     const subjectCode = entity.subject?.subject_code || "-";
 
     return (
-        <ContainerForEntity variant={bg} property={`pl-8 pt-4 pb-4 pr-4`}>
+        <ContainerForEntity variant={bg} property={`pl-8 pt-4 pb-4 pr-4`} onClick={onView}>
             <Container property={"flex items-center justify-between"}>
             
                 <Container property={"flex items-center gap-6 flex-1"}>
@@ -71,7 +71,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                         <Container property={"flex items-center gap-4 ml-4"}>
                             <Button
                                 noVariant={true}
-                                onClick={onClick}
+                                onClick={(e) => { e.stopPropagation(); onClick(); }}
                                 title="Zobrazit přihlášky"
                                 icon="users"
                                 iconColor={"gray"}
@@ -79,7 +79,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             />
                             <Button
                                 noVariant={true}
-                                onClick={onView}
+                                onClick={(e) => { e.stopPropagation(); onView(); }}
                                 title="Zobrazit detail"
                                 icon="eye"
                                 iconColor={"gray"}
@@ -91,7 +91,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                         <Container property={"flex items-center gap-4 ml-4"}>
                             <Button
                                 noVariant={true}
-                                onClick={onClick}
+                                onClick={(e) => { e.stopPropagation(); onClick(); }}
                                 title="Změnit stav nabídky"
                                 icon="gear"
                                 iconColor={"gray"}
@@ -100,7 +100,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
 
                             <Button
                                 noVariant={true}
-                                onClick={onView}
+                                onClick={(e) => { e.stopPropagation(); onView(); }}
                                 title="Zobrazit detail"
                                 icon="eye"
                                 iconColor={"gray"}

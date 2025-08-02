@@ -8,31 +8,15 @@ import Nav from "@components/core/Nav";
 import { useParams, useNavigate } from "react-router-dom";
 import PozvankyEntity from "@components/Pozvanky/PozvankyEntity";
 import PopUpCon from "@core/Container/PopUpCon";
+import { usePozvankyAPI } from "@api/pozvanky/pozvankyAPI";
 
 export default function PozvankyListPage() {
     const navigate = useNavigate();
+    const { getPozvankyList } = usePozvankyAPI();
     const [showPopup, setShowPopup] = useState(false);
     const [selectedEntity, setSelectedEntity] = useState(null);
-
-    // Mock data pro demonstraci
-    const mockData = [
-        {
-            id: 2,
-            recipient_name: "Adam Nový",
-            department: "Katedra informatiky",
-            project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
-            recipient_id: 101
-        },
-        {
-            id: 3,
-            recipient_name: "Vladislav Zinek",
-            department: "Katedra informatiky", 
-            project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
-            recipient_id: 102
-        }
-    ];
-
-    const [data, setData] = useState(mockData)
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
 
 
     const handleCancelInvitation = (entity) => {
@@ -67,10 +51,19 @@ export default function PozvankyListPage() {
     }
 
     useEffect(() => {
-        // Simulace načítání dat
-        setTimeout(() => {
-            setData(mockData);
-        }, 500);
+        const initFetch = async () => {
+            try {
+                setLoading(true);
+                const pozvankyData = await getPozvankyList();
+                setData(pozvankyData);
+            } catch (error) {
+                console.error('Chyba při načítání pozvánek:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initFetch();
     }, []);
 
     return(
@@ -86,7 +79,7 @@ export default function PozvankyListPage() {
                 <Paragraph>Tato stránka obsahuje pouze dummy data.</Paragraph>
 
                 <Container property={"mt-4 rounded-lg"}>
-                    {!data ? (
+                    {loading ? (
                         <Paragraph>Načítání...</Paragraph>
                     ) : data.length === 0 ? (
                         <Paragraph property="text-center text-gray-500 py-8">
@@ -100,7 +93,6 @@ export default function PozvankyListPage() {
                                     entity={entity}
                                     onCancel={handleCancelInvitation}
                                     onView={handleViewProfile}
-                                    
                                 />
                             ))}
                         </Container>

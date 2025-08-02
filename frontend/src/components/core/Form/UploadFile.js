@@ -4,9 +4,20 @@ import Button from "@core/Button/Button";
 import { useState, useRef } from "react";
 import { Image } from "@core/Image";
 
-export default function UploadFile({id, previewOn = false, property, label, onChange, onIconClick, icon, accept, iconPointer = false}) {
+export default function UploadFile({
+    id, 
+    previewOn = false, 
+    property = "w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 hover:bg-gray-200", 
+    label, 
+    onChange, 
+    onIconClick, 
+    icon = "upload", 
+    accept, 
+    iconPointer = false,
+    iconColor = "text-gray-900"
+}) {
 
-    const baseClass = `flex flex-row items-center gap-2 ${property ? property : ""}`;
+    const baseClass = `flex flex-row items-center gap-2 ${property}`;
     const fileInputRef = useRef(null);
     const [preview, setPreview] = useState(null);
 
@@ -15,13 +26,19 @@ export default function UploadFile({id, previewOn = false, property, label, onCh
         if (file) {
             const objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
-            onChange(file);
+            if (onChange) {
+                onChange(file);
+            } else {
+                console.log('UploadFile - onChange není definován, vybraný soubor:', file);
+            }
         }
     }
 
     const handleClick = () => {
         if (onIconClick) {
             onIconClick();
+        } else {
+            console.log('UploadFile - onIconClick není definován');
         }
         fileInputRef.current?.click();
     }
@@ -29,7 +46,7 @@ export default function UploadFile({id, previewOn = false, property, label, onCh
     return (
         <Container property={baseClass} onClick={handleClick}>
             <label htmlFor={id} className="flex items-center gap-2 cursor-pointer" onClick={handleClick}>
-                <Button property={"cursor-pointer"} noVariant={true} icon={icon} iconColor={"text-black"} pointer={iconPointer}></Button>
+                <Button property={"cursor-pointer"} noVariant={true} icon={icon} iconColor={iconColor} pointer={iconPointer}></Button>
                 <Paragraph property={"text-gray-900"}>{label}</Paragraph>
             </label>
             <input 

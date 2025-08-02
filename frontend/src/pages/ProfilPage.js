@@ -47,17 +47,24 @@ export default function ProfilPage() {
         fetchUserData();
     }, []);
 
-    const handleInputChange = (field, value) => {
-        const updatedData = {
-            ...userData,
-            [field]: value
-        };
-        setUserData(updatedData);
-    };
+    const handleInputChange = (value) => {
+        setUserData(prevValue => ({
+            ...prevValue,
+            ...value
+        }));
+    }
 
-    const handleSubmit = () => {
-        console.log('Ukládám data:', userData);
-    };
+    const handleSubmit = async () => {
+        try {
+            console.log('ProfilPage - handleSubmit - ukládám data:', userData);
+            // TODO: Implementovat API volání pro uložení profilu
+            // const res = await userAPI.updateProfile(userData);
+            // console.log('Profile update response:', res);
+        } catch (error) {
+            console.error('Error profile update:', error);
+            throw error;
+        }
+    }
 
     if (loading) {
         return (
@@ -95,7 +102,11 @@ export default function ProfilPage() {
                     <BackButton/>
                     
                     {isEditMode ? (
-                        <ProfileForm formData={userData} handleInputChange={handleInputChange} handleSubmit={handleSubmit} />
+                        <ProfileForm 
+                            formData={userData} 
+                            handleInputChange={handleInputChange} 
+                            handleSubmit={handleSubmit} 
+                        />
                     ) : (
                         // Zobrazení profilu
                         <>
@@ -272,12 +283,12 @@ export default function ProfilPage() {
                                 )}
 
                                 {/* CV - pouze pro studenty */}
-                                {userData.user_type === 'student' && userData.resume && (
+                                {/*userData.user_type === 'student' && userData.resume && (
                                     <Container property="p-1 space-y-1">
                                         <Headings sizeTag={"h4"}>CV</Headings>
                                         <Button icon="download">Stáhnout</Button>
                                     </Container>
-                                )}
+                                )*/}
 
                             </Container>
 

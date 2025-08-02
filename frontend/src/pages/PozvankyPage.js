@@ -85,6 +85,7 @@ export default function InvitationPage() {
         console.log('Vytvořit pozvánku pro:', selectedNabidka, 'a studenty:', studentIds);
         // TODO: Zde implementovat skutečné vytvoření pozvánky
         setShowConfirmPopup(false);
+        handleToDoAlert();
         // Po úspěšném vytvoření možná navigace zpět nebo zobrazení success message
     };
 

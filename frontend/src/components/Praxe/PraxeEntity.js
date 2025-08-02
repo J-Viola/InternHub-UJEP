@@ -6,7 +6,7 @@ import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
 import { Image } from "@components/core/Image";
 
-export default function PraxeEntity({type, entity, onClick, onView}) {
+export default function PraxeEntity({type, entity, onClick, onView, onStudentsView}) {
 
     //dopladit podle type
     const statusToText = (status) => {

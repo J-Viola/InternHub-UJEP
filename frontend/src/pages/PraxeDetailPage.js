@@ -23,6 +23,7 @@ import handleToDoAlert from "@utils/ToDoAlert";
 export default function PraxeDetailPage() {
     const { id } = useParams();
     const [ popUp, setPopUp ] = useState(false);
+    const [ docsPopUp, setDocsPopUp ] = useState(false);
     const [ entity, setEntity ] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
     const studentpraticeAPI = useStudentPracticeAPI();
@@ -92,6 +93,10 @@ export default function PraxeDetailPage() {
         setPopUp(!popUp);
     }
 
+    const handleDocsPopUp = () => {
+        setDocsPopUp(!docsPopUp);
+    }
+
     const onSubmit = async() => {
         const res = await nabidkaAPI.applyNabidka({
             "practice" : id
@@ -130,7 +135,7 @@ export default function PraxeDetailPage() {
                 {/* DOCS PANEL */}
                 {entity?.student_practice_status?.approval_status !== undefined &&
                  entity.student_practice_status.approval_status === 1 && (
-                    <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
+                    <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload} handleManage={handleDocsPopUp}/>
                 )}
 
 
@@ -203,8 +208,11 @@ export default function PraxeDetailPage() {
                             <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                         )}
 
-                        {user && user.isDepartmentUser() && (
-                            <Button variant={"primary"}  icon={"gear"} property={"col-start-1 justify-self-end"} onClick={handleToDoAlert}>Spravovat</Button>
+                        {/* TLAČÍTKA PRO SPRÁVU - DEPARTMENT A ORGANIZATION USERS */}
+                        {user && (user.isDepartmentUser() || user.isOrganizationUser()) && (
+                            <Container property="flex gap-4 justify-end">
+                                <Button variant={"primary"} icon={"gear"} onClick={handlePopUp}>Spravovat</Button>
+                            </Container>
                         )}
                     </Container>
                 </ContainerForEntity>
@@ -225,12 +233,21 @@ export default function PraxeDetailPage() {
             {/* PODÁNÍ PŘIHLÁŠKY */}
             {popUp && (
                 <PopUpCon 
+                    useCustomContainer={true}
                     onClose={handlePopUp} 
-                    title= {"Přihláška"} 
-                    text={"Opravdu si přejete podat přihlášku?"}
-                    onSubmit={onSubmit}
-                    onReject={onReject}
-                ></PopUpCon>
+                    title={"Přihláška"} 
+                    text={"Proces není definován"}
+                />
+            )}
+
+            {/* KONTROLA DOKUMENTŮ */}
+            {docsPopUp && (
+                <PopUpCon 
+                    useCustomContainer={true}
+                    onClose={handleDocsPopUp} 
+                    title={"Kontrola dokumentů"} 
+                    text={"Proces není definován"}
+                />
             )}
 
         </Container>

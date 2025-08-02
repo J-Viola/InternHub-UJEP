@@ -10,34 +10,37 @@ import Button from "@components/core/Button/Button";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import UploadFile from "@core/Form/UploadFile";
 
-export default function CompanyForm({entity, handleARESCall, handleFormValues, handleRegistration, handleFileChange}) {
+export default function CompanyForm({entity, handleARESCall, handleFormValues, handleRegistration, handleFileChange, action = "create"}) {
     const ares = useAresAPI();
     const [ico, setICO] = useState('');
 
-    //useEffect(() => {
-        //console.log(ico);
-    //},[ico])
+    useEffect(() => {
+        console.log('CompanyForm - action:', action);
+        console.log('CompanyForm - entity:', entity);
+    }, [action, entity]);
 
     return(
             <>
-                <Container property={"grid gap-2 grid-cols-2"}>
-                    <TextField 
-                        id={"ico"}
-                        required={true}
-                        label={"Vyplnění údajů pomocí systému ARES"} 
-                        placeholder={"Zadejte IČO firmy"}
-                        value={ico[ico]}
-                        onChange={(value) => setICO(value)} // to poslouží pro volání ARES api
-                        property={"w-full"}
-                    />
-                    <Button
-                        property={"w-1/3 mt-6 px-4 justify-self-end"} 
-                        onClick={() => handleARESCall(ico)}
-                        variant={"blueSmall"}
-                    >
-                        Hledat
-                    </Button>
-                </Container>
+                {action !== "edit" && (
+                    <Container property={"grid gap-2 grid-cols-2"}>
+                        <TextField 
+                            id={"ico"}
+                            required={true}
+                            label={"Vyplnění údajů pomocí systému ARES"} 
+                            placeholder={"Zadejte IČO firmy"}
+                            value={ico}
+                            onChange={(value) => setICO(value)} // to poslouží pro volání ARES api
+                            property={"w-full"}
+                        />
+                        <Button
+                            property={"w-1/3 mt-6 px-4 justify-self-end"} 
+                            onClick={() => handleARESCall(ico)}
+                            variant={"blueSmall"}
+                        >
+                            Hledat
+                        </Button>
+                    </Container>
+                )}
 
                 <Container property={"grid gap-2 grid-cols-2"}>
                     <TextField 
@@ -144,10 +147,8 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                 
                 <UploadFile 
                     id="companyLogo"
-                    property={"w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 mt-4 hover:bg-gray-200"} 
-                    icon={"upload"}
-                    iconColor="text-gray-900"
-                    onChange={(file) => handleFileChange(file)}
+                    property={"mt-4"}
+                    onChange={handleFileChange}
                     label={"Nahrát logo organizace"}
                     accept="image/*"
                     previewOn={true}
@@ -156,9 +157,11 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                 <Container property={"flex w-full justify-end ml-auto mt-4"}>
                     <Button 
                         property={"mt-2 px-16"} 
-                        onClick={() => handleRegistration()}
+                        icon={action == "edit" ? "edit" : ""}
+                        onClick={handleRegistration ? () => handleRegistration() : () => console.log("Není handler")}
+                        disabled={action == "edit" ? true : false}
                     >
-                        Dokončit registraci
+                        {action == "edit" ? "Upravit profil" : "Dokončit registraci"}
                     </Button>
 
                 </Container>

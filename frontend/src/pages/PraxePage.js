@@ -81,6 +81,10 @@ export default function PraxePage() {
         }
     }
 
+    {/* const handleViewStudents = (entity) => {
+        navigate(`/students/${entity.practice_id}?view=true`)
+    }*/}
+
     const handleInvivtaion = async (action) => {
         if (action) {
             const res = await studentPraciceAPI.manageEmployerInvitation(selectedEntity.invitation_id, action);
@@ -125,7 +129,6 @@ export default function PraxePage() {
                             </Button>
                         </Container>
 
-                        {/* Obsah */}
                         <Container property={"mt-4 rounded-lg"}>
                             {!data ? (
                                 <Paragraph>Načítání...</Paragraph>
@@ -143,7 +146,7 @@ export default function PraxePage() {
                                             onClick={() => handleClick(entity, "organization_practices")}
                                             onView={() =>
                                                 entity.approval_status !== 0
-                                                    ? navigate(`/students/${entity.practice_id}`)
+                                                    ? navigate(`/students/${entity.practice_id}?view=true`)
                                                     : navigate(`/nabidka/${entity.practice_id}`)
                                             }
                                         />
@@ -153,7 +156,7 @@ export default function PraxePage() {
                         </Container>
                     </>
                 ) : (
-                    // Render pro studenta - původní kód
+                    // Render pro studenta
                     <>  
                         <BackButton/>
                         <Container property={"flex flex-col gap-2"}>

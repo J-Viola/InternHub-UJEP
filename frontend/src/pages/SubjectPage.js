@@ -102,7 +102,7 @@ export default function SubjectPage() {
                                         btnfunction: () => handleEditSubject(entity.subject_id)
                                     }
                                 ]}
-                                onClick={() => handleSubjectClick(entity)}
+                                onClick={() => handleEditSubject(entity.subject_id)}
                             />
                         ))
                     )}

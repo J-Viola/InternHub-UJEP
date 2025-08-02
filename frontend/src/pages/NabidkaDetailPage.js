@@ -208,14 +208,21 @@ export default function NabidkaDetailPage() {
                                     Přihlášení studenti
                                 </Button>
 
-                                <Button variant={"blue"} icon={"gear"} property={"px-8"} onClick={() => handleToDoAlert()}>Spravovat</Button>
+                                <Button 
+                                    variant={"primary"} 
+                                    icon={"gear"} 
+                                    property={"px-8"} 
+                                    onClick={() => handleToDoAlert()}
+                                >
+                                    Spravovat
+                                </Button>
                             </>
                        )}
 
                         {user && user.isDepartmentMg() && entity?.approval_status === 0 && (
                             <>
                                 <Button 
-                                    variant={"yellow"} 
+                                    variant={"primary"} 
                                     icon={"gear"} 
                                     property={"px-8"} 
                                     onClick={() => navigate(`/sprava-stazi`)}
@@ -234,16 +241,27 @@ export default function NabidkaDetailPage() {
                             </>
                        )}
 
-                        {/* ORGANIZATION USERS - EDIT BUTTON */}
-                        {user && user.isOrganizationUser() && entity?.employer?.employer_id === user.employer_profile?.employer_id && (
-                            <Button 
-                                variant={"primary"} 
-                                icon={"edit"} 
-                                property={"px-8"} 
-                                onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
-                            >
-                                Upravit nabídku
-                            </Button>
+ 
+                        {user && user.isOrganizationUser() && entity?.employer?.employer_id && (
+                            <>
+                                <Button 
+                                    variant={"primary"} 
+                                    icon={"users"} 
+                                    property={"px-8"} 
+                                    onClick={() => navigate(`/students/${entity.practice_id}?view=true`)}
+                                >
+                                    Zobrazit přihlášené
+                                </Button>
+
+                                <Button 
+                                    variant={"primary"} 
+                                    icon={"edit"} 
+                                    property={"px-8"} 
+                                    onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
+                                >
+                                    Upravit nabídku
+                                </Button>
+                            </>
                         )}
 
                     </Container>

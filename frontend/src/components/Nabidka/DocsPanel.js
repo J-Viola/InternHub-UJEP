@@ -41,7 +41,7 @@ function DocContainer({doc_info, handleDownload, handleUpload}) {
 }
 
 
-export default function DocsPanel({ entity, docData, handleDownload, handleUpload }) {
+export default function DocsPanel({ entity, docData, handleDownload, handleUpload, handleManage }) {
 
     const STATUS = entity.progress_status;
     const { user } = useUser();
@@ -73,7 +73,8 @@ export default function DocsPanel({ entity, docData, handleDownload, handleUploa
                 {user.isDepartmentMg() && (
                     <Button variant={"yellow"} 
                         onClick={() => {
-                        handleToDoAlert()
+                        handleManage();
+
                     }}>
                         Kontrola dokumentů
                     </Button>
