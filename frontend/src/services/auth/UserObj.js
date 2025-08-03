@@ -7,6 +7,7 @@ class User {
         this.username = DUMMY_MODE ? "test_user" : "";
         this.email = DUMMY_MODE ? "test@example.com" : "";
         this.isAuthenticated = false;
+        this.department = "";
     }
 
     setUser(data) {
@@ -20,8 +21,8 @@ class User {
         this.username = data.username || "";
         this.email = data.email || "";
         this.isAuthenticated = true;
+        this.department = data.department;
         
-        // Store additional user data if provided
         if (data.first_name) this.firstName = data.first_name;
         if (data.last_name) this.lastName = data.last_name;
         if (data.department) this.department = data.department;

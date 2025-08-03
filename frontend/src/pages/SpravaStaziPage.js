@@ -37,9 +37,11 @@ export default function SpravaStaziPage() {
 
     const handleApprove = async () => {
         if (!selectedEntity) return;
+
         const newStatus = {
             "approval_status": 1
         }
+        
         await nabidkaAPI.changeStatus(selectedEntity.practice_id, newStatus);
         setPop(false);
         setSelectedEntity(null);
@@ -49,6 +51,7 @@ export default function SpravaStaziPage() {
 
     const handleReject = async () => {
         if (!selectedEntity) return;
+        // TODO: Implementovat zamítnutí stáže (API volání, případně refresh dat)
         const newStatus = {
             "approval_status": 2
         }

@@ -91,6 +91,7 @@ export default function UpravitNabidku() {
 
 
     const handleUpdate = async () => {
+        // TODO: Implementovat aktualizaci nabídky (PUT/POST na API, validace, navigace zpět)
         handleToDoAlert();
         /*
         try {
@@ -174,7 +175,6 @@ export default function UpravitNabidku() {
                     <BackButton/>
                     <Container property="bg-gray-50 mt-2 p-4 rounded-lg">
                         <Container property="text-center py-8">
-                            <Container property="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></Container>
                             <Paragraph>Načítání formuláře...</Paragraph>
                         </Container>
                     </Container>

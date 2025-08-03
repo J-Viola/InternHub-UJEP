@@ -60,6 +60,8 @@ export default function ProfilPage() {
             // TODO: Implementovat API volání pro uložení profilu
             // const res = await userAPI.updateProfile(userData);
             // console.log('Profile update response:', res);
+            handleToDoAlert();
+            navigate(-1);
         } catch (error) {
             console.error('Error profile update:', error);
             throw error;
@@ -295,7 +297,7 @@ export default function ProfilPage() {
                             {/* EDIT PROFILE BUTTON */}
                             <Container property="flex items-center justify-end">
                                 <Button 
-                                    onClick={() => navigate(`/profil/${id}?edit=true`)} 
+                                    onClick={() => navigate(`/profil/${id ? id :""}?edit=true`)} 
                                     icon={"edit"}
                                     property="ml-auto"
                                 >

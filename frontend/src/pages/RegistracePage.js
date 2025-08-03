@@ -11,13 +11,16 @@ import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import { useUserAPI } from "@api/user/userAPI";
 import CompanyForm from "@components/Forms/CompanyForm";
 import { useAuth } from "src/services/auth/Auth";
+import { useMessage } from "@hooks/MessageContext";
 
 // UDĚLAT POLE PRO TITULY - PŘED A ZA + HANDLER NA SUCCESS REGISTRACI
 export default function RegistracePage() {
     const ares = useAresAPI();
     const user = useUserAPI();
+    const { addMessage } = useMessage();
     const [entity, setEntity] = useState(null);
     const [formValue, setFormValue] = useState({});
+    const [aresFetched, setAresFetched] = useState(false);
     const { login } = useAuth();
 
     useEffect(() => {
@@ -30,7 +33,9 @@ export default function RegistracePage() {
             console.log("ARES response:", res);
             if (res) {
                 setEntity(res);
-                // CHATKEM přidané hodnoty přímo z ARESU do dat k zaslání - musíme prodiskutoivat
+                setAresFetched(true);
+                addMessage("Údaje z ARES úspěšně načteny", "S");
+                // hodnoty přímo z ARESU do dat k zaslání - musíme prodiskutovat
                 setFormValue(prevValue => ({
                     ...prevValue,
                     ico: res.ico, //nepo posílat icoId - to má i tu nulu
@@ -46,6 +51,12 @@ export default function RegistracePage() {
             }
         } catch (error) {
             console.error("Error ARES fetch:", error);
+            setAresFetched(false);
+            if (error.response) {
+                addMessage("Chyba při načítání z ARES: " + (error.response.data?.detail || error.message), "E");
+            } else {
+                addMessage("Chyba při načítání z ARES: " + error.message, "E");
+            }
             throw error;
         }
     }
@@ -71,6 +82,7 @@ export default function RegistracePage() {
             const res = await user.postRegister(formValue);
             console.log("Registration response:", res);
             res && setEntity(res);
+            addMessage("Registrace úspěšná", "S");
             
             // po registraci zavolám login - UPRAVIT
             const logData = {
@@ -79,9 +91,15 @@ export default function RegistracePage() {
             };
             const loginRes = await login(logData);
             console.log("Login Res Organizace", loginRes);
+            //addMessage("Automatické přihlášení úspěšné", "S");
 
         } catch (error) {
             console.error("Error registration fetch:", error);
+            if (error.response) {
+                addMessage("Chyba při registraci: " + (error.response.data?.detail || error.message), "E");
+            } else {
+                addMessage("Chyba při registraci: " + error.message, "E");
+            }
             throw error;
         }
     }
@@ -89,6 +107,7 @@ export default function RegistracePage() {
     const renderForm = () => {
         return <CompanyForm 
             entity={entity} 
+            aresFetched={aresFetched}
             handleARESCall={handleARESCall} 
             handleFormValues={handleFormValues}
             handleRegistration={handleRegistration}

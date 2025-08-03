@@ -7,6 +7,7 @@ import Button from "@core/Button/Button";
 import { useNavigate } from "react-router-dom";
 import Paragraph from "./Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
+import { FaUser } from "react-icons/fa";
 
 
 // submenu render
@@ -193,21 +194,22 @@ function Nav({}) {
                     </Container>
 
                     {/* User Info */}
-                    {user.hasData() && <Container property={"hidden md:flex bg-white bg-opacity-20 px-2 py-1 rounded text-xs"}>
+                    {user.hasData() && <Container property={"hidden md:flex bg-white bg-opacity-20 px-1 rounded text-xs"}>
                         {user.hasData() && (
                             <Container property={"flex flex-col items-end gap-1 text-white text-sm"}>
                                 <Container property={"flex items-center gap-2"}>
+                                    <FaUser/>
                                     <Paragraph property={"text-white text-sm"}>
                                         {user.email}
                                     </Paragraph>
-                                    <Container property={""}>
+                                    <Paragraph property={"text-white text-sm"}>
                                         {user.role}
-                                    </Container>
+                                    </Paragraph>
                                 </Container>
                                 {/* INFO o katedře uživatele */}
                                 {user.isDepartmentMg() && user.department && (
                                     <Paragraph property={"text-white text-xs opacity-75"}>
-                                        {user.department}
+                                        {typeof user.department === 'string' ? user.department : user.department?.name || 'Neznámá katedra'}
                                     </Paragraph>
                                 )}
                             </Container>

@@ -6,11 +6,14 @@ import Nav from "@components/core/Nav";
 import LoginForm from "@login/LoginForm";
 import { STAGLogin, getParams } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
+import { useMessage } from "@hooks/MessageContext";
+
 
 
 export default function LoginPage() {
     const [ticket, setTicket] = useState(null);
     const { login } = useAuth();
+    const { addMessage } = useMessage();
     // hook pro user data
 
     // Zpracování parametrů z URL při načtení stránky
@@ -38,12 +41,15 @@ export default function LoginPage() {
                 console.error("Chyba při STAG loginu:", error);
                 if (error.response) {
                     console.error("API error response:", error.response.data);
+                    addMessage("Chyba při STAG přihlášení: " + (error.response.data?.detail || error.message), "E");
+                } else {
+                    addMessage("Chyba při STAG přihlášení: " + error.message, "E");
                 }
             }
         };
 
         handleSTAGLogin();
-    }, [ticket]);
+    }, [ticket, login, addMessage]);
 
     const handleOrganizationLogin = async (loginData) => {
         try{
@@ -53,10 +59,16 @@ export default function LoginPage() {
             // Po úspěšném loginu se přesměruje na /nabidka
             if (response?.status === 200) {
                 console.log("Organization login successful, redirecting to /nabidka");
+                //addMessage("Přihlášení úspěšné", "S");
             }
 
         } catch (error) {
             console.error("Chyba při loginu organizace:", error);
+            if (error.response) {
+                addMessage("Chyba při přihlášení: " + (error.response.data?.detail || error.message), "E");
+            } else {
+                addMessage("Chyba při přihlášení: " + error.message, "E");
+            }
         }
     }
 
@@ -67,6 +79,7 @@ export default function LoginPage() {
             await STAGLogin();
         } catch (error) {
             console.error("Chyba při iniciaci STAG loginu:", error);
+            addMessage("Chyba při iniciaci STAG přihlášení: " + error.message, "E");
         }
     }
 

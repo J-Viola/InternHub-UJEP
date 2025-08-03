@@ -7,7 +7,7 @@ import { Image } from "@core/Image";
 export default function UploadFile({
     id, 
     previewOn = false, 
-    property = "w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 hover:bg-gray-200", 
+    property = "", 
     label, 
     onChange, 
     onIconClick, 
@@ -17,7 +17,7 @@ export default function UploadFile({
     iconColor = "text-gray-900"
 }) {
 
-    const baseClass = `flex flex-row items-center gap-2 ${property}`;
+    const baseClass = `flex flex-row items-center w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 hover:bg-gray-200 gap-2 ${property}`;
     const fileInputRef = useRef(null);
     const [preview, setPreview] = useState(null);
 

@@ -108,6 +108,7 @@ export default function PraxeDetailPage() {
     }
 
     const onReject = () => {
+        // TODO: Implementovat odmítnutí přihlášky (API volání, případně navigace)
         console.log("Přihláška odmítnuta");
     }
 

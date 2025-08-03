@@ -186,6 +186,33 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             "lastName": user.last_name,
         }
 
+        # Pro VK/VY role přidáme údaje o department
+        if hasattr(user, 'stag_role') and user.stag_role:
+            stag_role_name = user.stag_role.role if hasattr(user.stag_role, 'role') else str(user.stag_role)
+            print(f"DEBUG: Login - stag_role_name: {stag_role_name}")
+            if stag_role_name.lower() in ['vk', 'vy']:
+                print(f"DEBUG: Login - VK/VY role detected, user type: {type(user)}")
+                # Pokud je to ProfessorUser, přidáme department údaje
+                if hasattr(user, 'department') and user.department:
+                    print(f"DEBUG: Login - Adding department info")
+                    user_info["department"] = {
+                        "id": user.department.department_id,
+                        "name": user.department.department_name,
+                        "code": user.department.department_code,
+                        "description": user.department.description,
+                    }
+                # Přidáme department role
+                if hasattr(user, 'department_role') and user.department_role:
+                    user_info["department_role"] = user.department_role.name
+                    print(f"DEBUG: Login - department_role: {user.department_role.name}")
+                else:
+                    print(f"DEBUG: Login - No department_role found")
+                    # Pro VK/VY bez department_role nastavíme výchozí
+                    if stag_role_name.lower() == 'vk':
+                        user_info["department_role"] = "HEAD"
+                    else:
+                        user_info["department_role"] = "TEACHER"
+
         serializer = TokenResponseSerializer(
             data={
                 "refresh": tokens["refresh"],

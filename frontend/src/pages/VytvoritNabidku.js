@@ -36,6 +36,7 @@ export default function VytvoritNabidku() {
 
 
     const handleCreation = async () => {
+        // TODO: Implementovat vytvoření nabídky (API volání, validace, navigace zpět)
         const res = await nabidkaAPI.createNabidka(formData);
         res && navigate(-1);
         

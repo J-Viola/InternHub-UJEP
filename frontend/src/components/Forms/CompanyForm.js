@@ -9,15 +9,73 @@ import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import UploadFile from "@core/Form/UploadFile";
+import { useMessage } from "@hooks/MessageContext";
 
-export default function CompanyForm({entity, handleARESCall, handleFormValues, handleRegistration, handleFileChange, action = "create"}) {
+export default function CompanyForm({entity, aresFetched, handleARESCall, handleFormValues, handleRegistration, handleFileChange, action = "create"}) {
     const ares = useAresAPI();
+    const { addMessage } = useMessage();
     const [ico, setICO] = useState('');
+    const [formData, setFormData] = useState({});
 
     useEffect(() => {
         console.log('CompanyForm - action:', action);
         console.log('CompanyForm - entity:', entity);
-    }, [action, entity]);
+        console.log('CompanyForm - aresFetched:', aresFetched);
+    }, [action, entity, aresFetched]);
+
+    // Validace povinných polí
+    const validateForm = () => {
+        const requiredFields = {
+            'executiveName': 'Jméno jednatele',
+            'executiveSurname': 'Příjmení jednatele',
+            'executiveEmail': 'E-mailová adresa jednatele',
+            'executivePhone': 'Telefonní číslo jednatele',
+            'executivePassword1': 'Heslo',
+            'executivePassword2': 'Heslo znovu'
+        };
+
+        const missingFields = [];
+
+        // Kontrola, zda byly načteny údaje z ARES pomocí aresFetched prop
+        if (!aresFetched) {
+            addMessage("Nejprve načtěte údaje z ARES", "E");
+            return false;
+        }
+        
+        for (const [fieldId, fieldName] of Object.entries(requiredFields)) {
+            if (!formData[fieldId] || formData[fieldId].trim() === '') {
+                missingFields.push(fieldName);
+            }
+        }
+
+        // Kontrola, zda jsou hesla stejná
+        if (formData.executivePassword1 && formData.executivePassword2 && 
+            formData.executivePassword1 !== formData.executivePassword2) {
+            addMessage("Hesla se neshodují", "E");
+            return false;
+        }
+
+        if (missingFields.length > 0) {
+            addMessage(`Chybí povinné údaje: ${missingFields.join(', ')}`, "E");
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleFormChange = (value) => {
+        setFormData(prev => ({
+            ...prev,
+            ...value
+        }));
+        handleFormValues(value);
+    };
+
+    const handleRegistrationClick = () => {
+        if (validateForm()) {
+            handleRegistration();
+        }
+    };
 
     return(
             <>
@@ -29,7 +87,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                             label={"Vyplnění údajů pomocí systému ARES"} 
                             placeholder={"Zadejte IČO firmy"}
                             value={ico}
-                            onChange={(value) => setICO(value)} // to poslouží pro volání ARES api
+                            onChange={(value) => setICO(value.ico)} 
                             property={"w-full"}
                         />
                         <Button
@@ -49,7 +107,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         label={"Název společnosti"} 
                         value={entity?.obchodniJmeno}
                         placeholder={"Zadejte název společnosti"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                         disabled={true}
                     />
 
@@ -59,7 +117,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         label={"Adresa"} 
                         value={entity?.sidlo?.textovaAdresa || ''}
                         placeholder={"Zadejte adresu"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                         disabled={true}
                     />
 
@@ -68,7 +126,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         required={false}
                         label={"Titul před jménem"} 
                         placeholder={"např. Ing., Mgr., Dr."}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
 
                     <TextField 
@@ -76,7 +134,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         required={true}
                         label={"Jméno jednatele"} 
                         placeholder={"Zadejte jméno jednatele"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
 
                     <TextField 
@@ -84,7 +142,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         required={true}
                         label={"Příjmení jednatele"} 
                         placeholder={"Zadejte příjmení jednatele"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
 
                     <TextField 
@@ -92,7 +150,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         required={false}
                         label={"Titul za jménem"} 
                         placeholder={"např. Ph.D., MBA"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
 
                     <TextField 
@@ -100,7 +158,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         required={true}
                         label={"E-mailová adresa jednatele"} 
                         placeholder={"Zadejte e-mailovou adresu jednatele"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
 
                     <TextField 
@@ -108,7 +166,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         required={true}
                         label={"Telefonní číslo jednatele"} 
                         placeholder={"Zadejte telefonní číslo jednatele"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
 
                     {/*<DropDown
@@ -132,7 +190,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         label={"Heslo"} 
                         placeholder={"Zadejte heslo"}
                         type={"password"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
 
                     <TextField 
@@ -141,7 +199,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                         label={"Heslo znovu"} 
                         placeholder={"Zadejte heslo znovu"}
                         type={"password"}
-                        onChange={(value) => handleFormValues(value)}
+                        onChange={(value) => handleFormChange(value)}
                     />
                 </Container>
                 
@@ -158,7 +216,7 @@ export default function CompanyForm({entity, handleARESCall, handleFormValues, h
                     <Button 
                         property={"mt-2 px-16"} 
                         icon={action == "edit" ? "edit" : ""}
-                        onClick={handleRegistration ? () => handleRegistration() : () => console.log("Není handler")}
+                        onClick={handleRegistration ? handleRegistrationClick : () => console.log("Není handler")}
                         disabled={action == "edit" ? true : false}
                     >
                         {action == "edit" ? "Upravit profil" : "Dokončit registraci"}

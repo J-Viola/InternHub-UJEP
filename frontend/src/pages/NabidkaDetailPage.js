@@ -98,10 +98,12 @@ export default function NabidkaDetailPage() {
         if (res) {
             addMessage("Přihláška byla úspěšně podána", "S")
             handlePopUp(!popUp)
+            navigate(`/praxe`)
         }
     }
 
     const onReject = () => {
+        // TODO: Implementovat odmítnutí přihlášky (API volání, případně navigace)
         console.log("Přihláška odmítnuta");
     }
 

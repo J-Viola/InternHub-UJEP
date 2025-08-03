@@ -311,6 +311,8 @@ class UserInfoSerializer(serializers.Serializer):
     role = serializers.CharField(allow_null=True)
     firstName = serializers.CharField()
     lastName = serializers.CharField()
+    department = serializers.DictField(allow_null=True, required=False)
+    department_role = serializers.CharField(allow_null=True, required=False)
 
 
 class TokenResponseSerializer(serializers.Serializer):

@@ -13,6 +13,7 @@ from api.models import (
     StudentUser,
     UploadedDocument,
     UserSubjectType,
+    OrganizationUser,
 )
 from django.db import transaction
 from django.http import FileResponse, JsonResponse
@@ -175,6 +176,9 @@ class HasDocumentAccessMixin:
             is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
             if is_professor_for_subject:
                 return True
+        elif isinstance(user, OrganizationUser):
+            # Organizační uživatel má přístup k dokumentům praxí své organizace
+            return document.student_practice.practice.employer == user.employer_profile
         return False
 
 

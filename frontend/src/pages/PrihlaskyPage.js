@@ -9,12 +9,14 @@ import { useParams } from "react-router-dom";
 import { useStudentPracticeAPI } from "@api/student_practice/student_pracitceAPI";
 import PrihlaskaEntity from "@components/Prihlasky/PrihlaskaEntity";
 import PopUpCon from "@core/Container/PopUpCon";
+import { useNavigate } from "react-router-dom";
 
 export default function PrihlaskyPage() {
     const [data, setData] = useState([])
     const [showPopup, setShowPopup] = useState(false);
     const [selectedEntity, setSelectedEntity] = useState(null);
     const studentpracticeAPI = useStudentPracticeAPI();
+    const navigate = useNavigate();
 
     const onSettings = (en) => {
         setSelectedEntity(en);
@@ -23,6 +25,7 @@ export default function PrihlaskyPage() {
 
     const onProfile = (en) => {
         console.log("Profil", en)
+        navigate(`/profil/${en.user_id}`)
     }
 
     const handleClosePopup = () => {
@@ -92,6 +95,7 @@ export default function PrihlaskyPage() {
                     <Container property={"grid grid-cols-1 gap-4"}>
                         {data.map((entity) => (
                             <PrihlaskaEntity
+                                onClick={onProfile}
                                 key={entity.student_practice_id}
                                 entity={entity}
                                 onSettings={onSettings}

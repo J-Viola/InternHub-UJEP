@@ -37,16 +37,19 @@ export default function SubjectPage() {
     const handleEditSubject = (subjectId) => {
         console.log("Editovat předmět:", subjectId);
         navigate(`/formular?type=subject&action=create&id=${subjectId}`)
+        // TODO: případně zde doplnit další logiku pro editaci předmětu - aktuálně je zde odkaz na create form
         //handleToDoAlert()
     };
 
     const handleCreateSubject = () => {
         navigate("/formular?type=subject&action=create")
+        // TODO: případně zde doplnit další logiku pro vytvoření předmětu
         //handleToDoAlert()
     };
 
     const handleSubjectClick = (subject) => {
         console.log("Klik na předmět:", subject);
+        // TODO: zde doplnit logiku pro kliknutí na předmět (detail, editace, atd.)
         handleToDoAlert()
     };
 
