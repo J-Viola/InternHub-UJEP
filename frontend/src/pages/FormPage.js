@@ -19,7 +19,9 @@ import handleToDoAlert from "@utils/ToDoAlert";
 import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
 import UserForm from "@components/Forms/UserForm";
+import DepartmentForm from "@components/Forms/DepartmentForm";
 import CompanyForm from "@components/Forms/CompanyForm";
+import CompanyFormNew from "@components/Forms/CompanyFormNew";
 
 export default function FormPage() {
     const [searchParams] = useSearchParams();
@@ -49,9 +51,13 @@ export default function FormPage() {
         
         switch(type) {
             case 'subject':
-                return <SubjectForm formData={formData} handleCreate={handleCreate} action={action} id={id} />;
+                return <SubjectForm />;
             case 'org_users':
-                return <UserForm organizationUser={true} action={action} id={id} />;
+                return <UserForm organizationUser={true}/>;
+            case 'department':
+                return <DepartmentForm />;
+            case 'company':
+                return <CompanyFormNew />;
             case 'org_form':
                 return <CompanyForm handleFormValues={() => console.log("Není handler")} action={action} id={id} />;
             default:

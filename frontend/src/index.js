@@ -27,6 +27,8 @@ import AuthProvider from '@services/auth/Auth';
 import { MessageProvider}  from '@hooks/MessageContext';
 import InvitationPage from '@pages/PozvankyPage';
 import PozvankyListPage from '@pages/PozvankyListPage';
+import DepartmentsPage from '@pages/DepartmentsPage';
+import CompaniesPage from '@pages/CompaniesPage';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -53,9 +55,11 @@ root.render(
               <Route path="/users/:type" element={<UserCRUDPage/>} />
               <Route path="/prihlasky" element={<PrihlaskyPage/>} />
               <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
-              <Route path="/formular" element={<FormPage/>} />
-              <Route path="/pozvanka" element={<InvitationPage/>} />
-              <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
+                             <Route path="/formular" element={<FormPage/>} />
+               <Route path="/pozvanka" element={<InvitationPage/>} />
+               <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
+               <Route path="/departments" element={<DepartmentsPage/>} />
+               <Route path="/companies" element={<CompaniesPage/>} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

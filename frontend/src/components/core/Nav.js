@@ -138,8 +138,8 @@ function Nav({}) {
 
     const adminDict = {
         "Správa systému" : {
-            "Katedry" : "#",
-            "Společnosti" : "#",
+            "Katedry" : "/departments",
+            "Společnosti" : "/companies",
         },
         "Správa stáží" : {
             "Přihlášky" : "/prihlasky",
