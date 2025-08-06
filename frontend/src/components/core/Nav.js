@@ -105,8 +105,8 @@ function Nav({}) {
 
     const inserterDict = {
         "Správa organizace" : {
-            //"Uživatelské účty organizace" : "/users/org",
-            //"Účet organizace" : "#",
+            "Uživatelské účty organizace" : "/users/org_users",
+            "Účet organizace" : "/formular?type=org_form&action=edit",
             "Stáže" : "/praxe",
             "Přihlášky" : "/prihlasky",
             "Odeslané pozvánky" : "/pozvanky-list",
@@ -148,8 +148,8 @@ function Nav({}) {
             "Pozvánky od firem" : "/pozvanky-list",
         },
         "Uživatelé" : {
-            "Firemní uživatelé": "#",
-            "Školní uživatelé": "#",
+            "Firemní uživatelé": "/users/org_users",
+            "Školní uživatelé": "/users/department_users",
             "Studenti": "/students",
         },
         "Odhlásit se": "/logout",

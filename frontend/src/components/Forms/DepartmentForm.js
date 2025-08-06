@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
-import TextBox from "@core/Form/TextBox";
+
 import TextField from "@core/Form/TextField";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
@@ -20,8 +20,7 @@ export default function DepartmentForm() {
 
     const [formData, setFormData] = useState({
         department_name: '',
-        head_of_department: '',
-        description: ''
+        head_of_department: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -39,8 +38,7 @@ export default function DepartmentForm() {
             if (department) {
                 setFormData({
                     department_name: department.department_name || '',
-                    head_of_department: department.head_of_department || '',
-                    description: department.description || ''
+                    head_of_department: department.head_of_department || ''
                 });
             }
         } catch (error) {
@@ -121,16 +119,7 @@ export default function DepartmentForm() {
                         />
                     </Container>
 
-                    <Container>
-                        <TextBox
-                            id="description"
-                            label="Popis katedry"
-                            value={formData.description}
-                            onChange={(value) => handleInputChange('description', value.description)}
-                            placeholder="Zadejte popis katedry"
-                            rows={4}
-                        />
-                    </Container>
+
 
                     <Container property={"flex gap-4 pt-6"}>
                         <Button

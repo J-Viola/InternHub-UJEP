@@ -14,12 +14,10 @@ import CompanyEntity from "@components/Company/CompanyEntity";
 export default function CompaniesPage() {
     const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showDeletePop, setShowDeletePop] = useState(false);
-    const [selectedCompany, setSelectedCompany] = useState(null);
     
     const companyAPI = useCompanyAPI();
     const navigate = useNavigate();
-    const { showMessage } = useMessage();
+    const { addMessage } = useMessage();
 
     const fetchCompanies = async () => {
         try {
@@ -28,7 +26,7 @@ export default function CompaniesPage() {
             setCompanies(data || []);
         } catch (error) {
             console.error("Chyba při načítání společností:", error);
-            showMessage('Chyba při načítání společností', 'error');
+            addMessage('Chyba při načítání společností', 'error');
             setCompanies([]);
         } finally {
             setLoading(false);
@@ -40,36 +38,19 @@ export default function CompaniesPage() {
     }, []);
 
     const handleCreateCompany = () => {
-        navigate('/formular?type=company&action=create');
+        navigate('/formular?type=org_form&action=create');
     };
 
     const handleEditCompany = (company) => {
-        navigate(`/formular?type=company&action=edit&id=${company.company_id}`);
+        navigate(`/formular?type=org_form&action=edit&id=${company.company_id}`);
     };
 
-    const handleDeleteClick = (company) => {
-        setSelectedCompany(company);
-        setShowDeletePop(true);
+    const handleViewStages = (company) => {
+        // Navigace na stránku se stážemi pro danou společnost
+        navigate(`/praxe?company=${company.company_id}`);
     };
 
-    const handleDeleteConfirm = async () => {
-        if (!selectedCompany) return;
-        
-        try {
-            await companyAPI.deleteCompany(selectedCompany.company_id);
-            showMessage('Společnost byla úspěšně smazána', 'success');
-            setShowDeletePop(false);
-            setSelectedCompany(null);
-            fetchCompanies();
-        } catch (error) {
-            showMessage('Chyba při mazání společnosti', 'error');
-        }
-    };
 
-    const handleDeleteCancel = () => {
-        setShowDeletePop(false);
-        setSelectedCompany(null);
-    };
 
     return (
         <Container property="min-h-screen">
@@ -105,15 +86,14 @@ export default function CompaniesPage() {
                                 <CompanyEntity
                                     key={company.company_id}
                                     entity={company}
-                                    onClick={() => handleEditCompany(company)}
                                     buttons={[
+                                        {
+                                            icon: "eye",
+                                            btnfunction: () => handleViewStages(company)
+                                        },
                                         {
                                             icon: "edit",
                                             btnfunction: () => handleEditCompany(company)
-                                        },
-                                        {
-                                            icon: "cross",
-                                            btnfunction: () => handleDeleteClick(company)
                                         }
                                     ]}
                                 />
@@ -123,18 +103,7 @@ export default function CompaniesPage() {
                 </Container>
             </Container>
 
-            {/* Popup pro potvrzení smazání */}
-            {showDeletePop && (
-                <PopUpCon 
-                    onClose={handleDeleteCancel}
-                    title="Potvrdit smazání"
-                    text={`Opravdu chcete smazat společnost "${selectedCompany?.company_name}"? Tato akce je nevratná.`}
-                    onSubmit={handleDeleteConfirm}
-                    onReject={handleDeleteCancel}
-                    onSubmitText="Smazat"
-                    onRejectText="Zrušit"
-                />
-            )}
+
         </Container>
     );
 } 

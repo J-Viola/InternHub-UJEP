@@ -21,7 +21,7 @@ import SubjectForm from "@components/Forms/SubjectForm";
 import UserForm from "@components/Forms/UserForm";
 import DepartmentForm from "@components/Forms/DepartmentForm";
 import CompanyForm from "@components/Forms/CompanyForm";
-import CompanyFormNew from "@components/Forms/CompanyFormNew";
+import EmployerForm from "@components/Forms/EmployerForm";
 
 export default function FormPage() {
     const [searchParams] = useSearchParams();
@@ -56,8 +56,6 @@ export default function FormPage() {
                 return <UserForm organizationUser={true}/>;
             case 'department':
                 return <DepartmentForm />;
-            case 'company':
-                return <CompanyFormNew />;
             case 'org_form':
                 return <CompanyForm handleFormValues={() => console.log("Není handler")} action={action} id={id} />;
             default:
