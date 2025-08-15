@@ -44,6 +44,7 @@ export default function Button({id, children, text, property, onClick, textSize 
     
     const variants = {
         primary: "bg-facultyCol text-white " + baseClassBig,
+        secondary: "bg-facultyColLight text-black border border-black " + baseClassBig,
         blue: "bg-blue-300 text-white " + baseClassBig,
         red: "bg-red-400 text-white " + baseClassBig,
         yellow: "bg-yellow-300 text-white " + baseClassBig,

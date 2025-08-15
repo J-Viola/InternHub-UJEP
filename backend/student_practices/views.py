@@ -82,6 +82,14 @@ class EmployerInvitationApprovalView(APIView):
 
         return Response({"detail": "Neplatná akce."}, status=status.HTTP_400_BAD_REQUEST)
 
+class AdminPracticeListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ListStudentPracticeSerializer
+    queryset = StudentPractice.objects.all()
+    
+    def get_queryset(self):
+        return StudentPractice.objects.filter(approval_status=ApprovalStatus.PENDING)
+
 
 class StudentPracticeListView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)

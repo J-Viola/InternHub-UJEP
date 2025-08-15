@@ -49,6 +49,9 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     application_date = FormattedDateField(read_only=True)
     student_full_name = serializers.CharField(source="user.full_name", read_only=True)
     user_id = serializers.IntegerField(source="user.user_id", read_only=True)
+    # pro admin list view
+    employer_id = serializers.IntegerField(source="practice.employer.employer_id", read_only=True)
+    employer_name = serializers.CharField(source="practice.employer.company_name", read_only=True)
 
     class Meta:
         model = StudentPractice
@@ -63,6 +66,8 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "approval_status",
             "progress_status",
             "hours_completed",
+            "employer_id",
+            "employer_name",
         ]
         read_only_fields = [
             "student_practice_id",

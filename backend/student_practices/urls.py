@@ -8,11 +8,16 @@ from .views import (
     StudentPracticeListView,
     StudentPracticeStatusUpdateView,
     StudentPracticeUploadDocumentView,
+    AdminPracticeListView,
 )
 
 app_name = "student_practices"
 
 urlpatterns = [
+    # Admin
+    path("admin-view/pending-practices/", AdminPracticeListView.as_view(), name="admin-practice-list"),
+
+    # Zbytek API
     path("student-practices/by-practice/<int:practice_id>", StudentPracticeListView.as_view(), name="student-practice-list"),
     path("employer-invitation/approve/", EmployerInvitationApprovalView.as_view(), name="employer-invitation-approve"),
     path("organization-applications/", OrganizationApplicationsView.as_view(), name="organization-applications"),

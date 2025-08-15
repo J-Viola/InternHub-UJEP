@@ -46,6 +46,17 @@ export const useStudentPracticeAPI = () => {
         }
     };
 
+    // GET /api/student-practices/admin-view/pending-practices/ - Získání všech pending přihlášek z pohledu admina
+    const getAdminPendingApplications = async () => {
+        try {
+            const response = await api.get('/student-practices/admin-view/pending-practices/');
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při získávání pending přihlášek z pohledu admina:', error);
+            throw error;
+        }
+    };
+
     // GET /api/student-practices/<practice_id> - Získání všech studentů přihlášených na konkrétní praxi
     const getStudentsByPracticeId = async (practiceId) => {
         try {
@@ -72,6 +83,7 @@ export const useStudentPracticeAPI = () => {
         getOrganizationApplications,
         updateStudentPracticeStatus,
         getStudentsByPracticeId,
-        getStudentPracticeCard
+        getStudentPracticeCard,
+        getAdminPendingApplications
     };
 };
