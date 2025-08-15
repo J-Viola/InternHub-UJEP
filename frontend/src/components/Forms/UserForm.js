@@ -21,12 +21,13 @@ export default function UserForm({ organizationUser = false }) {
 
     return(
         <>
-        {/* Osobní údaje sekce */}
         <Container property={"mb-6"}>
             <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                Osobní údaje
+                Údaje uživatele
             </Headings>
-            
+        </Container>
+        {/* Osobní údaje sekce */}
+        <Container property={"mb-6"}>
             <Container property={"grid gap-4 grid-cols-3"}>
                 <TextField 
                     id={"name"}
@@ -116,7 +117,7 @@ export default function UserForm({ organizationUser = false }) {
 
         {/* Heslo sekce */}
         <Container property={"mb-6"}>
-            <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
+            <Headings sizeTag={"h5"} property={"mb-4 font-bold"}>
                 Heslo
             </Headings>
             

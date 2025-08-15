@@ -5,11 +5,17 @@ import TextBox from "@core/Form/TextBox";
 import Button from "@components/core/Button/Button";
 import UploadFile from "@core/Form/UploadFile";
 import Image from "@core/Image/Image";
+import Headings from "@core/Text/Headings";
 
 export default function ProfileForm({ formData, handleInputChange, handleSubmit }) {
 
     return (
         <>
+            <Container>
+                <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
+                    Údaje profilu
+                </Headings>
+            </Container>
             <Container property={"grid gap-2 grid-cols-3"}>
                 <TextField 
                     id={"first_name"}

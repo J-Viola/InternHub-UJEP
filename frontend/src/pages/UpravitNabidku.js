@@ -189,7 +189,6 @@ export default function UpravitNabidku() {
             <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <BackButton/>
                 <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
-                    <Headings className="mb-4">Upravit nabídku</Headings>
                     {user.isDepartmentMg() && ("Editace nabídky nefunguje pro Vaší roli správně..")}
                     <NabidkaForm
                         formData={formData}

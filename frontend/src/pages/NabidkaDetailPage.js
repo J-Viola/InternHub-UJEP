@@ -244,7 +244,7 @@ export default function NabidkaDetailPage() {
                        )}
 
  
-                        {user && user.isOrganizationUser() && entity?.employer?.employer_id && (
+                        {user && (user.isOrganizationUser() || user.isAdmin()) && entity?.employer?.employer_id && (
                             <>
                                 <Button 
                                     variant={"primary"} 

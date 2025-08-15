@@ -47,6 +47,7 @@ export default function PrihlaskyPage() {
         }
     }
 
+    
     const handleReject = async () => {
         if (!selectedEntity) return;
         try {
@@ -61,6 +62,7 @@ export default function PrihlaskyPage() {
         }
     }
 
+    // TO:DO - admin nemá vázanou organizaci na účtu, proto je nutné vytvořit separátní endpoint pro admina!
     useEffect(() => {
         const fetchData = async () => {
             try {

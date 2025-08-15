@@ -4,6 +4,7 @@ import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
 
 import TextField from "@core/Form/TextField";
+import DropDown from "@core/Form/DropDown";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
 import { useMessage } from "@hooks/MessageContext";
@@ -82,22 +83,17 @@ export default function DepartmentForm() {
         }
     };
 
-    const getTitle = () => {
-        return 'Údaje o katedře';
-    };
-
     const getSubmitButtonText = () => {
         return isEditing ? 'Uložit' : 'Vytvořit';
     };
 
     return (
         <Container>
-            <Headings sizeTag={"h2"} property={"mb-6"}>
-                {getTitle()}
-            </Headings>
-
             <form onSubmit={handleSubmit}>
-                <Container property={"space-y-6"}>
+                <Container property={"space-y-2"}>
+                    <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
+                        Údaje katedry
+                    </Headings>
                     <Container>
                         <TextField
                             id="department_name"
@@ -105,23 +101,29 @@ export default function DepartmentForm() {
                             value={formData.department_name}
                             onChange={(value) => handleInputChange('department_name', value.department_name)}
                             placeholder="Zadejte název katedry"
-                            required
+                            required = {true}
                         />
                     </Container>
 
                     <Container>
-                        <TextField
+                        <DropDown
                             id="head_of_department"
                             label="Vedoucí katedry"
                             value={formData.head_of_department}
                             onChange={(value) => handleInputChange('head_of_department', value.head_of_department)}
-                            placeholder="Zadejte jméno vedoucího katedry"
+                            placeholder="Vyberte vedoucího katedry"
+                            required={true}
+                            options={[
+                                { value: "jan_novak", label: "Doc. Jan Novák" },
+                                { value: "petr_svoboda", label: "Prof. Petr Svoboda" },
+                                { value: "eva_hruba", label: "Mgr. Eva Hrubá" }
+                            ]}
                         />
                     </Container>
 
 
 
-                    <Container property={"flex gap-4 pt-6"}>
+                    <Container property={"flex gap-4 pt-6 justify-end"}>
                         <Button
                             type="submit"
                             disabled={loading}
@@ -130,14 +132,6 @@ export default function DepartmentForm() {
                             {loading ? 'Ukládám...' : getSubmitButtonText()}
                         </Button>
                         
-                        <Button
-                            type="button"
-                            variant="gray"
-                            onClick={() => navigate('/departments')}
-                            disabled={loading}
-                        >
-                            Zrušit
-                        </Button>
                     </Container>
                 </Container>
             </form>

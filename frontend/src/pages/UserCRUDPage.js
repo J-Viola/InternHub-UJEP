@@ -56,7 +56,7 @@ export default function UserCRUDPage() {
             }
         } catch (error) {
             console.error("Chyba při načítání uživatelů:", error);
-            addMessage('Chyba při načítání uživatelů', 'error');
+            addMessage('Chyba při načítání uživatelů', 'E');
             setData([]);
         } finally {
             setLoading(false);
@@ -100,11 +100,18 @@ export default function UserCRUDPage() {
         navigate(`/profil/${entity.id}`);
     };
 
-
-
     const handleUserTypeChange = (newType) => {
         setUserType(newType);
     };
+
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value || '');
+    };
+
+    const handleSearchClear = () => {
+        setSearchTerm('');
+    };
+
 
     return (
         <Container property="min-h-screen">
@@ -115,45 +122,14 @@ export default function UserCRUDPage() {
                 {/* Filtr a vyhledávání */}
                 <Container property={"mt-4 mb-6"}>
                     <Container property={"flex items-center gap-4 mb-4"}>
-                        <Button 
-                            onClick={() => console.log("Filtr")}
-                            icon={"filter"}
-                            variant={"gray"}
-                            property={"px-4 py-2"}
-                        >
-                            Filtr
-                        </Button>
-                        <Container property={"flex-1"}>
-                            <TextField
-                                id={"companyName"}
-                                label={userType === 'org' ? "Název společnosti" : "Název katedry"}
-                                placeholder={userType === 'org' ? "Zadejte název společnosti" : "Zadejte název katedry"}
-                                value={searchTerm}
-                                onChange={(value) => setSearchTerm(value.companyName || '')}
-                            />
-                        </Container>
+                        <SearchBar
+                            id={"name"}
+                            value={searchTerm}
+                            placeholder={userType === 'org' ? "Zadejte název společnosti" : "Zadejte název katedry"}
+                            onChange={handleSearchChange}
+                            onClear={handleSearchClear}
+                        />
                     </Container>
-                    
-                    {/* Aktivní filtry */}
-                    {activeFilters.length > 0 && (
-                        <Container property={"flex gap-2 mb-4"}>
-                            {activeFilters.map((filter, index) => (
-                                <Container 
-                                    key={index}
-                                    property={"bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"}
-                                >
-                                    <span>{filter}</span>
-                                    <Button
-                                        onClick={() => setActiveFilters(activeFilters.filter((_, i) => i !== index))}
-                                        noVariant={true}
-                                        property={"text-blue-800 hover:text-blue-600"}
-                                    >
-                                        ×
-                                    </Button>
-                                </Container>
-                            ))}
-                        </Container>
-                    )}
                 </Container>
 
                 <Container property={"flex items-center justify-between mb-6"}>

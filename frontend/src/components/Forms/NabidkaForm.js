@@ -7,6 +7,7 @@ import TextBox from "@core/Form/TextBox";
 import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
+import Headings from "@core/Text/Headings";
 
 export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false}) {
 
@@ -33,6 +34,11 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
 
     return(
             <>
+                <Container>
+                    <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
+                        Údaje nabídky
+                    </Headings>
+                </Container>
                 <Container property={`grid gap-2 grid-cols-2 ${isEdit ? "mt-4" : "mt-4" }`}>
                     <CustomDatePicker
                         id={"start_date"}

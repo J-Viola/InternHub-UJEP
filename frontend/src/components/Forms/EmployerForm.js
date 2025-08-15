@@ -10,6 +10,7 @@ import Button from "@components/core/Button/Button";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import UploadFile from "@core/Form/UploadFile";
 import { useMessage } from "@hooks/MessageContext";
+import Headings from "@core/Text/Headings";
 
 export default function EmployerForm({entity, aresFetched, handleARESCall, handleFormValues, handleRegistration, handleFileChange, action = "create"}) {
     const ares = useAresAPI();
@@ -79,6 +80,11 @@ export default function EmployerForm({entity, aresFetched, handleARESCall, handl
 
     return(
             <>
+                <Container>
+                    <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
+                        Údaje zaměstnavatele
+                    </Headings>
+                </Container>
                 {action !== "edit" && (
                     <Container property={"grid gap-2 grid-cols-2"}>
                         <TextField 

@@ -26,8 +26,13 @@ export default function PraxePage() {
 
     useEffect(() => {
         const initFetch = async() => {
+
+            if (user.isAdmin()) {
+                console.log("Jsem admin")
+                // TO:DO vytvořit endpoint pro admina -> admin nemá přiřazenou organizaci, proto nefunguje tento přístup - nutný backend zásah
+            }
             if (user.isOrganizationUser()) {
-                console.log("Jsem organizace")
+                console.log("Jsem organizace/admin")
                 try {
                     const res = await nabidkaAPI.getOrganizationPractices();
                     setData(res);
@@ -110,7 +115,7 @@ export default function PraxePage() {
         <Container property="min-h-screen">
             <Nav/>
             <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                {user.isOrganizationUser() ? (
+                {user.isOrganizationUser() || user.isAdmin() ? (
                     // Render pro organizaci
                     <>
                         <BackButton/>

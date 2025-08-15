@@ -55,11 +55,11 @@ root.render(
               <Route path="/users/:type" element={<UserCRUDPage/>} />
               <Route path="/prihlasky" element={<PrihlaskyPage/>} />
               <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
-                             <Route path="/formular" element={<FormPage/>} />
-               <Route path="/pozvanka" element={<InvitationPage/>} />
-               <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
-               <Route path="/departments" element={<DepartmentsPage/>} />
-               <Route path="/companies" element={<CompaniesPage/>} />
+              <Route path="/formular" element={<FormPage/>} />
+              <Route path="/pozvanka" element={<InvitationPage/>} />
+              <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
+              <Route path="/departments" element={<DepartmentsPage/>} />
+              <Route path="/companies" element={<CompaniesPage/>} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

@@ -12,7 +12,7 @@ export default function SubjectForm(formData, handleCreate) {
         <Container property={"space-y-6"}>
             {/* Údaje předmětu */}
             <Container property={"space-y-4"}>
-                <Headings level={3} property={"text-lg font-semibold text-gray-900"}>
+                <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
                     Údaje předmětu
                 </Headings>
                 
