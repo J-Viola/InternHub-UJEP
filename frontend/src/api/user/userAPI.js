@@ -89,11 +89,24 @@ export const useUserAPI = () => {
         }
     };
 
+    const getAllDepartmentProfessors = async () => {
+        try {
+            const response = await api.get('/departments/department-professor/all/');
+            if (response && response.data) {
+                return response.data;
+            }
+            return [];
+        } catch (error) {
+            throw error;
+        }
+    };
+
     return {
         postRegister,
         getOrganizationUsers,
         getCurrentUserProfile,
         getStudentProfile,
-        getAllStudents
+        getAllStudents,
+        getAllDepartmentProfessors
     };
 };

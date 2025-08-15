@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .views import AdminDepartmentViewSet, DepartmentProfessorListView, DepartmentStudentListView, DepartmentUserRoleDetailView
+from .views import AdminDepartmentViewSet, DepartmentProfessorListView, DepartmentStudentListView, DepartmentUserRoleDetailView, AllDepartmentProfessorListView
 
 app_name = "department"
 router = routers.DefaultRouter()
@@ -13,4 +13,5 @@ urlpatterns = [
     path("department-students/", DepartmentStudentListView.as_view(), name="departmentuserrole-list"),
     path("department-users/<int:pk>/", DepartmentUserRoleDetailView.as_view(), name="departmentuserrole-detail"),
     path("department-professor/", DepartmentProfessorListView.as_view(), name="departmentprofessor-list"),
+    path("department-professor/all/", AllDepartmentProfessorListView.as_view(), name="departmentprofessor-all"),
 ]

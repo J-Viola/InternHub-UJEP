@@ -99,5 +99,6 @@ export const useDepartmentAPI = () => {
         createDepartment,
         updateDepartment,
         deleteDepartment,
+        getDepartmentStudents,
     };
 };

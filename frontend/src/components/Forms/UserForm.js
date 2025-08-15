@@ -8,8 +8,10 @@ import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 import Headings from "@core/Text/Headings";
+import handleToDoAlert from "@utils/ToDoAlert";
+import { useSearchParams } from "react-router-dom";
 
-export default function UserForm({ organizationUser = false }) {
+export default function UserForm({ organizationUser = false, action }) {
     const [formData, setFormData] = useState({});
 
     const handleInputChange = (field, value) => {
@@ -145,9 +147,9 @@ export default function UserForm({ organizationUser = false }) {
         <Container property={"flex w-full justify-end"}>
             <Button 
                 property={"px-16 py-2"} 
-                onClick={() => console.log("Vytvářím uživatele:", formData)}
+                onClick={() => handleToDoAlert()}
             >
-                Vytvořit
+                {action == "edit" ? "Uložit" : "Vytvořit"}
             </Button>
         </Container>
         </>

@@ -11,12 +11,16 @@ import PrihlaskaEntity from "@components/Prihlasky/PrihlaskaEntity";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
+import SearchBar from "@components/Filter/SearchBar";
+import DropDown from "@components/core/Form/DropDown";
 
 export default function PrihlaskyPage() {
 	const [data, setData] = useState([])
 	const [showPopup, setShowPopup] = useState(false);
 	const [selectedEntity, setSelectedEntity] = useState(null);
 	const [selectedCompanies, setSelectedCompanies] = useState([]);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [companySelectValue, setCompanySelectValue] = useState("");
 	const studentpracticeAPI = useStudentPracticeAPI();
 	const navigate = useNavigate();
 	const { user } = useUser();
@@ -87,10 +91,23 @@ export default function PrihlaskyPage() {
 	}, []);
 
 
-	const toId = (name) => `firma-${(name || 'neznamy').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+	const toId = (name) => `firma-${(name || 'neznamy').toLowerCase()}`;
 
-	// seskupení podle firmy
-	const groupedByEmployer = (data || []).reduce((acc, item) => {
+	// vyhledávání
+	const searchFiltered = searchQuery
+		? (data || []).filter((n) => {
+			const q = searchQuery.toLowerCase();
+			return (
+				(n.practice_title || "").toLowerCase().includes(q) ||
+				(n.student_full_name || "").toLowerCase().includes(q) ||
+				(n.employer_name || "").toLowerCase().includes(q) ||
+				(n.department_name || "").toLowerCase().includes(q)
+			);
+		})
+		: (data || []);
+
+	// seskupení podle firmy (po vyhledávání)
+	const groupedByEmployer = (searchFiltered || []).reduce((acc, item) => {
 		const name = item.employer_name || "Neznámá firma";
 		(acc[name] = acc[name] || []).push(item);
 		return acc;
@@ -104,12 +121,11 @@ export default function PrihlaskyPage() {
 		: [];
 
 	// přidání/odebrání filtrů
-	const onAddCompany = (e) => {
-		const name = e.target.value;
+	const onCompanySelect = (dict) => {
+		const name = dict?.company;
 		if (!name) return;
 		if (!selectedCompanies.includes(name)) setSelectedCompanies([...selectedCompanies, name]);
-		// resetnout select zpět na placeholder
-		e.target.value = "";
+		setCompanySelectValue("");
 	};
 	const onRemoveCompany = (name) => setSelectedCompanies(selectedCompanies.filter((n) => n !== name));
 	const availableOptions = allCompanyNames.filter((n) => !selectedCompanies.includes(n));
@@ -127,13 +143,22 @@ export default function PrihlaskyPage() {
 
 			{user.isAdmin() && (
 				<Container property={"flex flex-col gap-3 mb-6 mt-4"}>
+					<SearchBar
+						id="search"
+						value={searchQuery}
+						placeholder="Hledat podle studenta, katedry, firmy nebo názvu praxe..."
+						onChange={(e) => setSearchQuery(e.target.value)}
+						onClear={() => setSearchQuery("")}
+					/>
 					<Container property={"flex items-center gap-3"}>
-						<select className={"py-1 px-2 text-black bg-facultyColLight rounded-lg border border-black"} defaultValue="" onChange={onAddCompany}>
-							<option value="">Vyberte organizaci pro filtrování</option>
-							{availableOptions.map((name) => (
-								<option key={name} value={name}>{name}</option>
-							))}
-						</select>
+						<DropDown
+							id="company"
+							variant="facultyGreen"
+							placeholder="Vyberte organizaci pro filtrování"
+							value={companySelectValue}
+							onChange={onCompanySelect}
+							options={availableOptions.map((name) => ({ label: name, value: name }))}
+						/>
 						<Container property={"flex items-center flex-wrap gap-2"}>
 							{selectedCompanies.map((name) => (
 								<Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
@@ -151,7 +176,7 @@ export default function PrihlaskyPage() {
 				) : user.isAdmin() ? (
 					displayCompanyNames.length === 0 ? (
 						<Paragraph property="text-center text-gray-500 py-8">
-							Zatím nemáte žádné data k zobrazení.
+							Žádné výsledky.
 						</Paragraph>
 					) : (
 						<Container property={"space-y-6"}>
@@ -179,15 +204,19 @@ export default function PrihlaskyPage() {
 					</Paragraph>
 				) : (
 					<Container property={"grid grid-cols-1 gap-4"}>
-						{data.map((entity) => (
-							<PrihlaskaEntity
-								onClick={onProfile}
-								key={entity.student_practice_id}
-								entity={entity}
-								onSettings={onSettings}
-								onProfile={onProfile}
-							/>
-						))}
+						{searchFiltered.length === 0 ? (
+							<Paragraph property="text-center text-gray-500 py-8">Žádné výsledky.</Paragraph>
+						) : (
+							searchFiltered.map((entity) => (
+								<PrihlaskaEntity
+									onClick={onProfile}
+									key={entity.student_practice_id}
+									entity={entity}
+									onSettings={onSettings}
+									onProfile={onProfile}
+								/>
+							))
+						)}
 					</Container>
 				)}
 			</Container>

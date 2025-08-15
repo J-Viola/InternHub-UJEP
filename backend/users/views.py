@@ -229,11 +229,15 @@ class OrganizationUserListView(APIView):
 
     def get(self, request):
         user = request.user
-        employer_profile = getattr(user, "employer_profile", None)
-        if not employer_profile:
-            return Response({"detail": "Uživatel nemá přiřazenou organizaci."}, status=status.HTTP_400_BAD_REQUEST)
-        org_id = employer_profile.employer_id
-        users = OrganizationUser.objects.filter(employer_profile_id=org_id)
+        # Pokud je superuser, vrať všechny organizační uživatele napříč organizacemi
+        if getattr(user, "is_superuser", False):
+            users = OrganizationUser.objects.all().select_related('employer_profile')
+        else:
+            employer_profile = getattr(user, "employer_profile", None)
+            if not employer_profile:
+                return Response({"detail": "Uživatel nemá přiřazenou organizaci."}, status=status.HTTP_400_BAD_REQUEST)
+            org_id = employer_profile.employer_id
+            users = OrganizationUser.objects.filter(employer_profile_id=org_id).select_related('employer_profile')
         data = []
         for u in users:
             role = None
@@ -254,7 +258,13 @@ class OrganizationUserListView(APIView):
                     role = u.organization_role.role
                 else:
                     role = str(u.organization_role)
-            data.append({"id": u.id, "name": f"{u.first_name} {u.last_name}", "role": role})
+            employer_name = u.employer_profile.company_name if getattr(u, 'employer_profile', None) else None
+            data.append({
+                "id": u.id,
+                "name": f"{u.first_name} {u.last_name}",
+                "role": role,
+                "employer_name": employer_name,
+            })
         return Response(data)
 
 

@@ -68,6 +68,18 @@ class DepartmentProfessorListView(generics.ListAPIView):
         )
 
 
+class AllDepartmentProfessorListView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ProfessorDetailSerializer
+
+    def get_queryset(self):
+        # All professors across all departments
+        qs = ProfessorUser.objects.all().distinct()
+        return qs.prefetch_related(
+            Prefetch("user_subjects", queryset=UserSubject.objects.filter(role=UserSubjectType.Professor.value).select_related("subject"))
+        )
+
+
 class AdminDepartmentViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     serializer_class = AdminDepartmentSerializer

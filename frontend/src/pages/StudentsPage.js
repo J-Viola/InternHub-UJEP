@@ -31,6 +31,9 @@ export default function StudentPage() {
             loadStudentsByPractice();
             return;
         }
+        if (user.isAdmin) {
+            loadAllStudents();
+        }
         
         if (user.isDepartmentUser()) {
             loadDepartmentStudents();
@@ -43,6 +46,12 @@ export default function StudentPage() {
         console.log("Mám id", id);
         getStudentsByPracticeId(id).then(fetchedStudents => {
             setEntities(fetchedStudents);
+        });
+    };
+
+    const loadAllStudents = () => {
+        getAllStudents().then(res => {
+            setEntities(res.results);
         });
     };
 
@@ -139,6 +148,14 @@ export default function StudentPage() {
             return viewParam === 'true' 
                 ? { "Osobní číslo": "os_cislo" }  // View mode
                 : { "Osobní číslo": "os_cislo", "": "department" };  // Normal mode
+        }
+
+        if (user.isAdmin()) {
+            return { 
+                "Osobní číslo": "os_cislo",
+                "": "department"
+            
+            };
         }
         
         if (!id) {
@@ -269,6 +286,11 @@ export default function StudentPage() {
         return !user.isOrganizationUser() || searchParams.get('view') === 'true';
     };
 
+
+    // Debug
+    useEffect(() => {
+        console.log("Entities", entities);
+    },[entities])
 
     return (
         <Container property="min-h-screen">

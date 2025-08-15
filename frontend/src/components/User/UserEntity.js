@@ -38,6 +38,23 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
         }
     }
 
+    // projdi mi seznamy z attributes
+    const getNestedValue = (obj, path) => {
+        if (!path) return obj;
+        try {
+            const normalized = path.replace(/\[(\w+)\]/g, ".$1").replace(/^\./, "");
+            const parts = normalized.split(".");
+            let current = obj;
+            for (const part of parts) {
+                if (current == null) return undefined;
+                current = current[part];
+            }
+            return current;
+        } catch (e) {
+            return undefined;
+        }
+    };
+
     return (
         <ContainerForEntity variant={status} property={"pl-8 pt-4 pb-4 pr-4 mt-2"} onClick={onClick}>
             <Container property="flex flex-row items-center gap-8 w-full">
@@ -70,9 +87,10 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
                             );
                         }
                         
+                        const renderedValue = getNestedValue(entity, value);
                         return (
                             <Container key={key} property="min-w-[120px]">
-                                {key !=="" ? <Paragraph>{key}: {entity[value]}</Paragraph> : <Paragraph>{entity[value]}</Paragraph>}                            
+                                {key !=="" ? <Paragraph>{key}: {renderedValue ?? ""}</Paragraph> : <Paragraph>{renderedValue ?? ""}</Paragraph>}                            
                             </Container>
                         );
                     })}

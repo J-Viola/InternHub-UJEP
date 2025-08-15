@@ -53,7 +53,7 @@ export default function FormPage() {
             case 'subject':
                 return <SubjectForm />;
             case 'org_users':
-                return <UserForm organizationUser={true}/>;
+                return <UserForm organizationUser={true} action={action}/>;
             case 'department':
                 return <DepartmentForm />;
             case 'org_form':

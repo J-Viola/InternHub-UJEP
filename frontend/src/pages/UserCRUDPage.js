@@ -15,6 +15,7 @@ import { useUser } from "@hooks/UserProvider";
 import { useMessage } from "@hooks/MessageContext";
 import TextField from "@core/Form/TextField";
 import SearchBar from "@components/Filter/SearchBar";
+import DropDown from "@core/Form/DropDown";
 
 export default function UserCRUDPage() {
     const { type } = useParams("type");
@@ -24,6 +25,8 @@ export default function UserCRUDPage() {
     const [userType, setUserType] = useState(type === 'department_users' ? 'department' : 'org'); // 'org' nebo 'department'
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilters, setActiveFilters] = useState([]);
+    const [selectedCompanies, setSelectedCompanies] = useState([]);
+    const [companySelectValue, setCompanySelectValue] = useState("");
     const userAPI = useUserAPI();
     const { user } = useUser();
     const navigate = useNavigate();
@@ -46,9 +49,11 @@ export default function UserCRUDPage() {
             let res;
             if (userType === 'org') {
                 res = await userAPI.getOrganizationUsers(false);
+                //TO:DO - udělat api pro admina (není přiřazen k organizaci)
+                
+
             } else {
-                // TODO: Implementovat API pro katederní uživatele
-                res = await userAPI.getDepartmentUsers();
+                res = await userAPI.getAllDepartmentProfessors();
             }
             
             if (res) {
@@ -112,7 +117,47 @@ export default function UserCRUDPage() {
         setSearchTerm('');
     };
 
+    // vyhledávání podle typu uživatele
+    const searchFiltered = !searchTerm
+        ? data
+        : data.filter(entity => {
+            const q = searchTerm.toLowerCase();
+            if (userType === 'org') {
+                return (
+                    (entity.name && entity.name.toLowerCase().includes(q))
+                );
+            }
+            // department users
+            return (
+                (entity.department && entity.department.toLowerCase().includes(q)) ||
+                (Array.isArray(entity.subjects) && entity.subjects.some(s => (s.subject_name || '').toLowerCase().includes(q))) ||
+                (entity.first_name && entity.first_name.toLowerCase().includes(q)) ||
+                (entity.last_name && entity.last_name.toLowerCase().includes(q))
+            );
+        });
 
+    // Group by employer_name pro org uživatele
+    const groupedByEmployer = (userType === 'org' ? (searchFiltered || []) : []).reduce((acc, item) => {
+        const name = item.employer_name || "Neznámá firma";
+        (acc[name] = acc[name] || []).push(item);
+        return acc;
+    }, {});
+
+    const allCompanyNames = Object.keys(groupedByEmployer);
+    const displayCompanyNames = userType === 'org'
+        ? (selectedCompanies.length ? selectedCompanies.filter((n) => allCompanyNames.includes(n)) : allCompanyNames)
+        : [];
+
+    const onCompanySelect = (dict) => {
+        const name = dict?.company;
+        if (!name) return;
+        if (!selectedCompanies.includes(name)) setSelectedCompanies([...selectedCompanies, name]);
+        // reset dropdown to placeholder
+        setCompanySelectValue("");
+    };
+
+    const onRemoveCompany = (name) => setSelectedCompanies(selectedCompanies.filter((n) => n !== name));
+    const availableOptions = allCompanyNames.filter((n) => !selectedCompanies.includes(n));
     return (
         <Container property="min-h-screen">
             <Nav/>
@@ -125,11 +170,30 @@ export default function UserCRUDPage() {
                         <SearchBar
                             id={"name"}
                             value={searchTerm}
-                            placeholder={userType === 'org' ? "Zadejte název společnosti" : "Zadejte název katedry"}
+                            placeholder={userType === 'org' ? "Zadejte jméno uživatele" : "Zadejte jméno, předmět, název katedry"}
                             onChange={handleSearchChange}
                             onClear={handleSearchClear}
                         />
                     </Container>
+                    {userType === 'org' && (
+                        <Container property={"flex items-center gap-3"}>
+                            <DropDown
+                                id="company"
+                                variant="facultyGreen"
+                                placeholder="Vyberte organizaci pro filtrování"
+                                value={companySelectValue}
+                                onChange={onCompanySelect}
+                                options={availableOptions.map((name) => ({ label: name, value: name }))}
+                            />
+                            <Container property={"flex items-center flex-wrap gap-2"}>
+                                {selectedCompanies.map((name) => (
+                                    <Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
+                                        {name}
+                                    </Button>
+                                ))}
+                            </Container>
+                        </Container>
+                    )}
                 </Container>
 
                 <Container property={"flex items-center justify-between mb-6"}>
@@ -157,29 +221,52 @@ export default function UserCRUDPage() {
                             Zatím nejsou žádní uživatelé k zobrazení.
                         </Paragraph>
                     ) : (
-                        <Container property={"grid grid-cols-1 gap-4"}>
-                            {data?.map(entity => (
-                                <UserEntity
-                                    key={entity.id}
-                                    entity={entity}
-                                    attributes={{"Role": "roleText"}}
-                                    statusView={user.isOrganizationUser() ? false : true}
-                                                                         buttons={
-                                         userType === 'org' ? [
-                                             {
-                                                 icon: "edit",
-                                                 btnfunction: () => handleEditUser(entity)
-                                             }
-                                         ] : [
-                                             {
-                                                 icon: "eye",
-                                                 btnfunction: () => handleViewProfile(entity)
-                                             }
-                                         ]
-                                     }
-                                />
-                            ))}
-                        </Container>
+                        userType === 'org' ? (
+                            displayCompanyNames.length === 0 ? (
+                                <Paragraph property="text-center text-gray-500 py-8">Žádné výsledky.</Paragraph>
+                            ) : (
+                                <Container property={"space-y-6"}>
+                                    {displayCompanyNames.map((name) => (
+                                        <Container key={name}>
+                                            <Headings sizeTag={"h4"}>{name}</Headings>
+                                            <Container property={"flex flex-col gap-4 mt-2"}>
+                                                {(groupedByEmployer[name] || []).map((entity) => (
+                                                    <UserEntity
+                                                        key={entity.id}
+                                                        entity={entity}
+                                                        attributes={{ "Role": "roleText" }}
+                                                        statusView={false}
+                                                        buttons={[
+                                                            {
+                                                                icon: "edit",
+                                                                btnfunction: () => handleEditUser(entity)
+                                                            }
+                                                        ]}
+                                                    />
+                                                ))}
+                                            </Container>
+                                        </Container>
+                                    ))}
+                                </Container>
+                            )
+                        ) : (
+                            <Container property={"flex flex-col gap-4"}>
+                                {searchFiltered?.map(entity => (
+                                    <UserEntity
+                                        key={entity.id}
+                                        entity={entity}
+                                        attributes={{ "Katedra": "department", "Předmět": "subjects[0].subject_name" }}
+                                        statusView={false}
+                                        buttons={[
+                                            {
+                                                icon: "edit",
+                                                btnfunction: () => handleEditUser(entity)
+                                            }
+                                        ]}
+                                    />
+                                ))}
+                            </Container>
+                        )
                     )}
                 </Container>
             </Container>

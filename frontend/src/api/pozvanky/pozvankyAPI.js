@@ -1,4 +1,5 @@
 export const usePozvankyAPI = () => {
+
     const getPozvankyList = async () => {
         // Mock data pro demonstraci
         return [
@@ -19,7 +20,30 @@ export const usePozvankyAPI = () => {
         ];
     };
 
+    const getPozvankyAdminList = async () => {
+        // Mock data pro demonstraci
+        return [
+            {
+                id: 2,
+                recipient_name: "Adam Nový",
+                employer_name: "Alza",
+                department: "Katedra informatiky",
+                project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
+                recipient_id: 101
+            },
+            {
+                id: 3,
+                recipient_name: "Vladislav Zinek",
+                employer_name: "CZC",
+                department: "Katedra informatiky", 
+                project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
+                recipient_id: 102
+            }
+        ];
+    };
+
     return {
-        getPozvankyList
+        getPozvankyList,
+        getPozvankyAdminList
     };
 }; 
