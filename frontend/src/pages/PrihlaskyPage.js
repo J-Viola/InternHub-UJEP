@@ -11,13 +11,12 @@ import PrihlaskaEntity from "@components/Prihlasky/PrihlaskaEntity";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
-import SearchBar from "@components/Filter/SearchBar";
 
 export default function PrihlaskyPage() {
 	const [data, setData] = useState([])
 	const [showPopup, setShowPopup] = useState(false);
 	const [selectedEntity, setSelectedEntity] = useState(null);
-	const [search, setSearch] = useState("");
+	const [selectedCompanies, setSelectedCompanies] = useState([]);
 	const studentpracticeAPI = useStudentPracticeAPI();
 	const navigate = useNavigate();
 	const { user } = useUser();
@@ -90,20 +89,30 @@ export default function PrihlaskyPage() {
 
 	const toId = (name) => `firma-${(name || 'neznamy').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
-    // projde celé pole a “zredukuje” ho na jedinou hodnotu (objekt, číslo, pole…), kterou průběžně skládá v akumulátoru.
+	// seskupení podle firmy
 	const groupedByEmployer = (data || []).reduce((acc, item) => {
 		const name = item.employer_name || "Neznámá firma";
 		(acc[name] = acc[name] || []).push(item);
 		return acc;
 	}, {});
 
-    // filtrace pro admina - hledání podle názvu firmy
-	const companyNames = user.isAdmin()
-		? Object.keys(groupedByEmployer).filter((n) => {
-			const q = (search || "").trim().toLowerCase();
-			return q === "" || n.toLowerCase().includes(q);
-		})
+	// unikátní názvy firem
+	const allCompanyNames = Object.keys(groupedByEmployer);
+	// zobrazené firmy: pokud nejsou vybrané, zobrazíme všechny
+	const displayCompanyNames = user.isAdmin()
+		? (selectedCompanies.length ? selectedCompanies.filter((n) => allCompanyNames.includes(n)) : allCompanyNames)
 		: [];
+
+	// přidání/odebrání filtrů
+	const onAddCompany = (e) => {
+		const name = e.target.value;
+		if (!name) return;
+		if (!selectedCompanies.includes(name)) setSelectedCompanies([...selectedCompanies, name]);
+		// resetnout select zpět na placeholder
+		e.target.value = "";
+	};
+	const onRemoveCompany = (name) => setSelectedCompanies(selectedCompanies.filter((n) => n !== name));
+	const availableOptions = allCompanyNames.filter((n) => !selectedCompanies.includes(n));
 
 	return(
 	<Container property="min-h-screen">
@@ -117,42 +126,36 @@ export default function PrihlaskyPage() {
 			</Container>
 
 			{user.isAdmin() && (
-                <>
-                    <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                        <SearchBar
-                            placeholder="Hledat firmy"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onClear={() => setSearch("")}
-                        />
-                    </Container>
-
-                    <Container property={"flex items-center justify-start mb-4 mt-4 gap-3"}>
-                        <Paragraph>Výsledky hledání:</Paragraph>
-                        {companyNames.map((name) => (
-                            <Button
-                                key={name}
-                                variant="secondary"
-                                onClick={() => setSearch(name)}
-                            >
-                                {name}
-                            </Button>
-                        ))}
-                    </Container>
-                </>
+				<Container property={"flex flex-col gap-3 mb-6 mt-4"}>
+					<Container property={"flex items-center gap-3"}>
+						<select className={"py-1 px-2 text-black bg-facultyColLight rounded-lg border border-black"} defaultValue="" onChange={onAddCompany}>
+							<option value="">Vyberte organizaci pro filtrování</option>
+							{availableOptions.map((name) => (
+								<option key={name} value={name}>{name}</option>
+							))}
+						</select>
+						<Container property={"flex items-center flex-wrap gap-2"}>
+							{selectedCompanies.map((name) => (
+								<Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
+									{name}
+								</Button>
+							))}
+						</Container>
+					</Container>
+				</Container>
 			)}
 
 			<Container property={"mt-4 rounded-lg"}>
 				{!data ? (
 					<Paragraph>Načítání...</Paragraph>
 				) : user.isAdmin() ? (
-					companyNames.length === 0 ? (
+					displayCompanyNames.length === 0 ? (
 						<Paragraph property="text-center text-gray-500 py-8">
 							Zatím nemáte žádné data k zobrazení.
 						</Paragraph>
 					) : (
 						<Container property={"space-y-6"}>
-							{companyNames.map((name) => (
+							{displayCompanyNames.map((name) => (
 								<Container id={toId(name)} key={name}>
 									<Headings sizeTag={"h4"}>{name}</Headings>
 									<Container property={"flex flex-wrap gap-4 mt-2"}>

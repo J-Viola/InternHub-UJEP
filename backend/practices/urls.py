@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .views import ChangePendingView, GetEndDateView, PracticesForApprovingListView, PracticeViewSet, RunningPracticeListView
+from .views import ChangePendingView, GetEndDateView, AdminPracticesListView, PracticesForApprovingListView, PracticeViewSet, RunningPracticeListView
 
 app_name = "practices"
 
@@ -13,4 +13,5 @@ urlpatterns = [
     path("practices-for-approval/", PracticesForApprovingListView.as_view(), name="practices-for-approval"),
     path("<int:id>/change-pending/", ChangePendingView.as_view(), name="change-pending"),
     path("get-end-date/", GetEndDateView.as_view(), name="change-pending"),
+    path("admin-practices/", AdminPracticesListView.as_view(), name="admin-practices"),
 ]

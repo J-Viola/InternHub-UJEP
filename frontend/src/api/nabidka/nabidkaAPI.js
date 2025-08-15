@@ -23,6 +23,16 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const getAdminPractices = async () => {
+        try {
+            const response = await api.get('/practices/admin-practices/');
+            return response.data;
+        } catch (error) {
+            console.error("Chyba při získávání praxí admina:", error);
+            throw error;
+        }
+    };
+
     const getNabidkaById = async (id) => {
         try {
             const response = await api.get(`/practices/practices/${id}`)
@@ -202,6 +212,7 @@ export const useNabidkaAPI = () => {
         getNabidkyByUserDepartment,
         changeStatus,
         calculateEndDate,
-        updateNabidka
+        updateNabidka,
+        getAdminPractices
     };
 };

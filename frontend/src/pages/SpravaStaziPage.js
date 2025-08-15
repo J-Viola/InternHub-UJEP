@@ -9,6 +9,7 @@ import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
 import PraxeDepartmentEntity from "@components/Praxe/PraxeDepartmentEntity";
+import { useUser } from "@hooks/UserProvider";
 
 export default function SpravaStaziPage() {
     const [approved, setApproved] = useState([]);
@@ -17,13 +18,19 @@ export default function SpravaStaziPage() {
     const navigate = useNavigate();
     const [ showPop, setPop ] = useState(false);
     const [selectedEntity, setSelectedEntity] = useState(null);
-
+    const { user } = useUser();
 
     const fetchData = async () => {
         try {
-            const res = await nabidkaAPI.getNabidkyByUserDepartment();
-            setApproved(res.approved_practices || []);
-            setToApprove(res.to_approve_practices || []);
+            if (user.isAdmin()) {
+                const res = await nabidkaAPI.getAdminPractices();
+                setApproved(res.approved_practices || []);
+                setToApprove(res.to_approve_practices || []);
+            } else {
+                const res = await nabidkaAPI.getNabidkyByUserDepartment();
+                setApproved(res.approved_practices || []);
+                setToApprove(res.to_approve_practices || []);
+            }
         } catch (error) {
             setApproved([]);
             setToApprove([]);

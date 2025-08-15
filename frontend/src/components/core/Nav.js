@@ -144,7 +144,7 @@ function Nav({}) {
         "Správa stáží" : {
             "Přihlášky" : "/prihlasky",
             "Nabídka praxí": "/nabidka",
-            "Schvalovací kolečko" : "/praxe",
+            "Schvalovací kolečko" : "/sprava-stazi",
             "Pozvánky od firem" : "/pozvanky-list",
         },
         "Uživatelé" : {

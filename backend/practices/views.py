@@ -415,6 +415,31 @@ class RunningPracticeListView(generics.ListAPIView):
 
         return practices
 
+class AdminPracticesListView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = OrganizationPracticeSerializer
+
+    def get_queryset(self):
+        return (
+            Practice.objects.all()
+            .select_related("subject", "subject__department", "contact_user")
+            .prefetch_related("student_practices")
+            .order_by("-created_at")
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        approved_qs = queryset.filter(approval_status=ApprovalStatus.APPROVED)
+        pending_qs = queryset.filter(approval_status=ApprovalStatus.PENDING)
+
+        approved_data = self.get_serializer(approved_qs, many=True).data
+        to_approve_data = self.get_serializer(pending_qs, many=True).data
+
+        return Response({
+            "approved_practices": approved_data,
+            "to_approve_practices": to_approve_data,
+        })
+
 
 class PracticesForApprovingListView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
