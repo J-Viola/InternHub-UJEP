@@ -5,30 +5,34 @@ from django.http import FileResponse, Http404, HttpResponseForbidden
 from rest_framework.pagination import PageNumberPagination
 
 
-# Create your views here.
-# -------------------------------------------------------------
-# Nastavení vlastní stránkovací třídy pro všechny viewsety
-# -------------------------------------------------------------
 class StandardResultsSetPagination(PageNumberPagination):
+    """Standard pagination for all API viewsets"""
     page_size = 10
     page_size_query_param = "page_size"
     max_page_size = 100
 
 
-# TODO: one day this will be used to serve documents only to related users
-# (students will see their own and subject teacher + head of department)
 def serve_user_file(request, path):
-    # deny anonymous users
+    """
+    Serve user documents with authentication and path validation.
+
+    TODO: Implement granular permissions (students see their own documents,
+    subject teachers and department heads see related documents)
+    """
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
-    # build and normalize file path
+
+    # Build and normalize file path
     doc_root = Path(settings.STORAGE_ROOT) / "documents"
     full_path = (doc_root / path).resolve()
-    # ensure the file is inside our documents directory
+
+    # Ensure the file is inside our documents directory (security check)
     if not str(full_path).startswith(str(doc_root.resolve())):
-        raise Http404
-    # check existence
+        raise Http404("Invalid path")
+
+    # Check file existence
     if not full_path.is_file():
-        raise Http404
-    # stream the file
-    return FileResponse(open(full_path, "rb"))
+        raise Http404("File not found")
+
+    # Stream the file
+    return FileResponse(full_path.open("rb"))

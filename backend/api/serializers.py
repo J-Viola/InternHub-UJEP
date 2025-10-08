@@ -107,13 +107,7 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        """
-        Nastaví výchozí approval_status na 'pending', pokud není zadán.
-        """
-        if "approval_status" not in validated_data:
-            pending = ApprovalStatus.PENDING.value
-            if pending:
-                validated_data["approval_status"] = pending
+        validated_data.setdefault("approval_status", ApprovalStatus.PENDING.value)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -224,21 +218,14 @@ class PracticeSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        """
-        Nastaví výchozí hodnotu is_active=True a případně status a approval_status.
-        """
-        if "is_active" not in validated_data:
-            validated_data["is_active"] = True
-        if "status" not in validated_data:
-            default_status = ProgressStatus.NOT_STARTED
-            if default_status:
-                validated_data["status"] = default_status
-        if "approval_status" not in validated_data:
-            pending_status = ApprovalStatus.PENDING
-            if pending_status:
-                validated_data["approval_status"] = pending_status
+        validated_data.setdefault("is_active", True)
+        validated_data.setdefault("progress_status", ProgressStatus.NOT_STARTED)
+        validated_data.setdefault("approval_status", ApprovalStatus.PENDING)
 
-        validated_data["end_date"] = calculate_end_date(validated_data.get("start_date"), validated_data.get("coefficient"))
+        start_date = validated_data.get("start_date")
+        coefficient = validated_data.get("coefficient")
+        validated_data["end_date"] = calculate_end_date(start_date, coefficient)
+
         return super().create(validated_data)
 
     def update(self, instance, validated_data):

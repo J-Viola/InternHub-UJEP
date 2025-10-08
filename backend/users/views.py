@@ -160,23 +160,20 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         serializer.is_valid(raise_exception=True)
 
         tokens = serializer.validated_data
-
         user = tokens["user"]
 
-        # Debug: Zkontrolujme role při přihlášení
-        print(f"DEBUG: Login - user type: {type(user)}")
-        print(f"DEBUG: Login - organization_role: {getattr(user, 'organization_role', 'N/A')}")
-        print(f"DEBUG: Login - role property: {user.role}")
-        print(f"DEBUG: Login - is_superuser: {user.is_superuser}")
-        print(f"DEBUG: Login - email: {user.email}")
+        # Build user info response
+        user_info = self._build_user_info(user)
 
-        # Určení role podle superuser stavu nebo emailu
-        if user.is_superuser or user.email == "admin@admin.com":
-            role = "admin"
-        else:
-            role = user.role or ""
-        
-        print(f"DEBUG: Login - final role: {role}")
+        return Response({
+            "access": tokens["access"],
+            "refresh": tokens["refresh"],
+            "user": user_info,
+        })
+
+    def _build_user_info(self, user):
+        """Build user information dictionary including role and department if applicable"""
+        role = self._determine_user_role(user)
 
         user_info = {
             "id": user.id,
@@ -186,42 +183,36 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             "lastName": user.last_name,
         }
 
-        # Pro VK/VY role přidáme údaje o department
-        if hasattr(user, 'stag_role') and user.stag_role:
-            stag_role_name = user.stag_role.role if hasattr(user.stag_role, 'role') else str(user.stag_role)
-            print(f"DEBUG: Login - stag_role_name: {stag_role_name}")
-            if stag_role_name.lower() in ['vk', 'vy']:
-                print(f"DEBUG: Login - VK/VY role detected, user type: {type(user)}")
-                # Pokud je to ProfessorUser, přidáme department údaje
-                if hasattr(user, 'department') and user.department:
-                    print(f"DEBUG: Login - Adding department info")
-                    user_info["department"] = {
-                        "id": user.department.department_id,
-                        "name": user.department.department_name,
-                        "code": user.department.department_code,
-                        "description": user.department.description,
-                    }
-                # Přidáme department role
-                if hasattr(user, 'department_role') and user.department_role:
-                    user_info["department_role"] = user.department_role.name
-                    print(f"DEBUG: Login - department_role: {user.department_role.name}")
-                else:
-                    print(f"DEBUG: Login - No department_role found")
-                    # Pro VK/VY bez department_role nastavíme výchozí
-                    if stag_role_name.lower() == 'vk':
-                        user_info["department_role"] = "HEAD"
-                    else:
-                        user_info["department_role"] = "TEACHER"
+        # Add department info for VK/VY roles
+        if self._should_include_department(user):
+            user_info["department"] = self._get_department_info(user)
 
-        serializer = TokenResponseSerializer(
-            data={
-                "refresh": tokens["refresh"],
-                "access": tokens["access"],
-                "user": user_info,
-            }
-        )
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return user_info
+
+    def _determine_user_role(self, user):
+        """Determine the user's role based on their attributes"""
+        if user.is_superuser or user.email == "admin@admin.com":
+            return "admin"
+        return user.role or ""
+
+    def _should_include_department(self, user):
+        """Check if department info should be included for this user"""
+        if not hasattr(user, 'stag_role') or not user.stag_role:
+            return False
+
+        stag_role_name = user.stag_role.role if hasattr(user.stag_role, 'role') else str(user.stag_role)
+        return stag_role_name.lower() in ['vk', 'vy'] and hasattr(user, 'department') and user.department
+
+    def _get_department_info(self, user):
+        """Extract department information from user"""
+        if not user.department:
+            return None
+
+        return {
+            "id": user.department.department_id,
+            "name": user.department.department_name,
+            "code": user.department.department_code,
+        }
 
 
 class OrganizationUserListView(APIView):

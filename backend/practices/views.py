@@ -105,28 +105,33 @@ class PracticeViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         user = request.user
 
-        # Nastav employer_id podle přihlášeného uživatele, pokud není v datech
+        # Set employer_id from logged-in user if not provided
         if not data.get("employer_id") and hasattr(user, "employer_profile") and user.employer_profile:
             data["employer_id"] = user.employer_profile.employer_id
-            # Nastav logo z employer profilu
-            if user.employer_profile.logo:
-                import base64
-                import mimetypes
 
-                if hasattr(user.employer_profile.logo, "path"):
-                    mime_type, _ = mimetypes.guess_type(user.employer_profile.logo.path)
-                    prefix = f"data:{mime_type or 'image/png'};base64,"
-                    with open(user.employer_profile.logo.path, "rb") as img_file:
-                        data["image_base64"] = prefix + base64.b64encode(img_file.read()).decode("utf-8")
+            # Set logo from employer profile
+            if user.employer_profile.logo and hasattr(user.employer_profile.logo, "path"):
+                data["image_base64"] = self._encode_logo_to_base64(user.employer_profile.logo)
 
-        if not data.get("approval_status"):
-            data["approval_status"] = 0
-        if not data.get("progress_status"):
-            data["progress_status"] = 0
+        # Set default statuses
+        data.setdefault("approval_status", 0)
+        data.setdefault("progress_status", 0)
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _encode_logo_to_base64(self, logo):
+        """Encode logo image to base64 string"""
+        import base64
+        import mimetypes
+
+        mime_type, _ = mimetypes.guess_type(logo.path)
+        prefix = f"data:{mime_type or 'image/png'};base64,"
+
+        with open(logo.path, "rb") as img_file:
+            return prefix + base64.b64encode(img_file.read()).decode("utf-8")
 
     @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def update(self, request, pk=None, *args, **kwargs):
@@ -154,49 +159,59 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def get_practice_user_relations(self, request, pk=None, *args, **kwargs):
-        # GET /api/practices/get_practice_user_relations/
+        """GET /api/practices/get_practice_user_relations/ - Get user's practices and invitations"""
         user = request.user
-        if user.pk:
-            # Získej všechny student_practice záznamy pro uživatele
-            student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
 
-            # Získej všechny employer invitations pro uživatele
-            employer_invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related(
-                "practice", "employer"
+        if not user.pk:
+            return Response(
+                {"detail": "Uživatel nebyl nalezen"},
+                status=status.HTTP_404_NOT_FOUND
             )
 
-            # Serializuj student_practice - pouze základní info
-            student_practice_data = []
-            for sp in student_practices:
-                student_practice_data.append(
-                    {
-                        "student_practice_id": sp.student_practice_id,
-                        "practice_id": sp.practice.practice_id,
-                        "practice_title": sp.practice.title,
-                        "company_logo": sp.practice.image_base64,
-                        "application_date": sp.application_date,
-                        "status": sp.approval_status,
-                    }
-                )
+        student_practices = self._serialize_student_practices(user)
+        employer_invitations = self._serialize_employer_invitations(user)
 
-            # Serializuj employer invitations - pouze základní info
-            employer_invitation_data = []
-            for ei in employer_invitations:
-                employer_invitation_data.append(
-                    {
-                        "invitation_id": ei.invitation_id,
-                        "practice_id": ei.practice.practice_id if ei.practice else None,
-                        "practice_title": ei.practice.title if ei.practice else None,
-                        "company_logo": ei.practice.image_base64 if ei.practice else None,
-                        "submission_date": ei.submission_date,
-                        "status": ei.status,
-                    }
-                )
+        return Response({
+            "student_practices": student_practices,
+            "employer_invitations": employer_invitations
+        })
 
-            # Vrať zjednodušený JSON
-            return Response({"student_practices": student_practice_data, "employer_invitations": employer_invitation_data})
-        else:
-            return Response({"detail": "Uživatel nebyl nalezen"}, status=status.HTTP_404_NOT_FOUND)
+    def _serialize_student_practices(self, user):
+        """Serialize student practice records for user"""
+        student_practices = StudentPractice.objects.filter(user=user).select_related(
+            "practice", "practice__employer"
+        )
+
+        return [
+            {
+                "student_practice_id": sp.student_practice_id,
+                "practice_id": sp.practice.practice_id,
+                "practice_title": sp.practice.title,
+                "company_logo": sp.practice.image_base64,
+                "application_date": sp.application_date,
+                "status": sp.approval_status,
+            }
+            for sp in student_practices
+        ]
+
+    def _serialize_employer_invitations(self, user):
+        """Serialize pending employer invitations for user"""
+        invitations = EmployerInvitation.objects.filter(
+            user=user,
+            status=EmployerInvitationStatus.PENDING
+        ).select_related("practice", "employer")
+
+        return [
+            {
+                "invitation_id": ei.invitation_id,
+                "practice_id": ei.practice.practice_id if ei.practice else None,
+                "practice_title": ei.practice.title if ei.practice else None,
+                "company_logo": ei.practice.image_base64 if ei.practice else None,
+                "submission_date": ei.submission_date,
+                "status": ei.status,
+            }
+            for ei in invitations
+        ]
 
     # PODÁNÍ PŘIHLÁŠKY STUDENTEM
     @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])

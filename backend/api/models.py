@@ -168,11 +168,7 @@ class OrganizationUser(User):
 
     @property
     def role(self):
-
-        if self.organization_role is not None:
-            return self.organization_role.name
-        else:
-            return None
+        return self.organization_role.name if self.organization_role is not None else None
 
 
 class StagUser(User):
@@ -436,24 +432,27 @@ class UserSubject(models.Model):
 
 
 class DocumentHelper:
+    DOCUMENT_FILES = {
+        DocumentType.CONTRACT: "default_contract.docx",
+        DocumentType.FEEDBACK: "default_feedback.docx",
+        DocumentType.CONTENT: "default_content.docx",
+    }
+
     @staticmethod
     def create_default_document(document_type: DocumentType, user_id: int):
-        if document_type == DocumentType.CONTRACT:
-            file_path = f"{settings.BASE_DIR}/storage/default_documents/default_contract.docx"
-            document_file = File(open(file_path, "rb"))
-
-        elif document_type == DocumentType.FEEDBACK:
-            file_path = f"{settings.BASE_DIR}/storage/default_documents/default_feedback.docx"
-            document_file = File(open(file_path, "rb"))
-        elif document_type == DocumentType.CONTENT:
-            file_path = f"{settings.BASE_DIR}/storage/default_documents/default_content.docx"
-            document_file = File(open(file_path, "rb"))
-        else:
+        file_name = DocumentHelper.DOCUMENT_FILES.get(document_type)
+        if not file_name:
             raise ValueError(f"Unsupported document type: {document_type}")
 
+        file_path = f"{settings.BASE_DIR}/storage/default_documents/{file_name}"
+        document_file = File(open(file_path, "rb"))
         document_file.name = f"default_{DocumentHelper.create_name_for_document(document_type, user_id, document_file.name)}"
 
-        document = UploadedDocument(document_type=document_type, document=document_file, uploaded_at=datetime.datetime.now())
+        document = UploadedDocument(
+            document_type=document_type,
+            document=document_file,
+            uploaded_at=datetime.datetime.now()
+        )
         document.save()
         return document
 
