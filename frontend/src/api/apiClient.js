@@ -1,5 +1,6 @@
 import axios from 'axios';
 import dummyData from './_data_/localDatabase';
+import { useNavigate } from "react-router-dom"
 
 const API_ROOT = '/api';
 const DUMMY_DATA = false;
@@ -13,7 +14,7 @@ const BASE_URL = process.env.REACT_APP_API_URL
 console.log("API URL:", BASE_URL);
 
 
-export const createApiClient = () => {
+export const createApiClient = (navigate) => {
     // API client - default
     const apiClient = axios.create({
         baseURL: BASE_URL,
@@ -51,6 +52,9 @@ export const createApiClient = () => {
                 console.error('Error Response Data:', error.response.data);
                 console.error('Error Response Status:', error.response.status);
                 console.error('Error Response Headers:', error.response.headers);
+                if(error.response.status === 401){
+                    navigate('/');
+                }
             }
             return Promise.reject(error);
         }

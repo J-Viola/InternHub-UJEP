@@ -12,7 +12,10 @@ import CustomDatePicker from "@core/Form/DatePicker";
 import NabidkaForm from "@components/Forms/NabidkaForm";
 import { useCodeListAPI } from "src/api/code_list/code_listAPI";
 import { useUserAPI } from "src/api/user/userAPI";
-import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
+import { useSubjectAPI } from "src/api/subject/subjectAPI";
+import { useDepartmentAPI } from "src/api/department/departmentAPI";
+import { useCompanyAPI } from "src/api/company/companyAPI";
+import { useEmployerAPI } from "src/api/employer/employerAPI";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
 import handleToDoAlert from "@utils/ToDoAlert";
@@ -26,6 +29,14 @@ import EmployerForm from "@components/Forms/EmployerForm";
 export default function FormPage() {
     const [searchParams] = useSearchParams();
     const [formData, setFormData] = useState({});
+    const navigate = useNavigate();
+
+    // API hooks
+    const subjectAPI = useSubjectAPI();
+    const userAPI = useUserAPI();
+    const departmentAPI = useDepartmentAPI();
+    const companyAPI = useCompanyAPI();
+    const employerAPI = useEmployerAPI();
 
     useEffect(() => {
         const type = searchParams.get('type');
@@ -37,9 +48,29 @@ export default function FormPage() {
         // PODLE ACTIONU UDĚLAT FETCH
     }, [searchParams]);
 
-    const handleCreate = (data) => {
+    const handleCreate = (createApi) => async (data) => {
         console.log('Ukládám data:', data);
-        // Zde bude API volání pro uložení
+        try {
+            const response = await createApi(data);
+            console.log('Data uložena:', response);
+            // případně přesměrování nebo zobrazení zprávy
+            navigate(-1); // Go back to previous page
+        } catch (error) {
+            console.error('Chyba při ukládání:', error);
+            // zobrazení chybové zprávy
+        }
+    };
+
+    const handleUpdate = (updateApi, id) => async (data) => {
+        console.log('Aktualizuji data:', data);
+        try {
+            const response = await updateApi(id, data);
+            console.log('Data aktualizována:', response);
+            navigate(-1); // Go back to previous page
+        } catch (error) {
+            console.error('Chyba při aktualizaci:', error);
+            // zobrazení chybové zprávy
+        }
     };
 
     const renderForm = () => {
@@ -51,13 +82,51 @@ export default function FormPage() {
         
         switch(type) {
             case 'subject':
-                return <SubjectForm />;
+                return (
+                    <SubjectForm
+                        handleCreate={handleCreate(subjectAPI.createSubject)}
+                        handleUpdate={handleUpdate(subjectAPI.updateSubject, id)}
+                        action={action}
+                        id={id}
+                    />
+                );
             case 'org_users':
-                return <UserForm organizationUser={true} action={action}/>;
+                return (
+                    <UserForm
+                        organizationUser={true}
+                        action={action}
+                        id={id}
+                        handleCreate={handleCreate(userAPI.createUser)}
+                        handleUpdate={handleUpdate(userAPI.updateUser, id)}
+                    />
+                );
             case 'department':
-                return <DepartmentForm />;
+                return (
+                    <DepartmentForm
+                        handleCreate={handleCreate(departmentAPI.createDepartment)}
+                        handleUpdate={handleUpdate(departmentAPI.updateDepartment, id)}
+                        action={action}
+                        id={id}
+                    />
+                );
             case 'org_form':
-                return <CompanyForm handleFormValues={() => console.log("Není handler")} action={action} id={id} />;
+                return (
+                    <CompanyForm
+                        handleCreate={handleCreate(companyAPI.createCompany)}
+                        handleUpdate={handleUpdate(companyAPI.updateCompany, id)}
+                        action={action}
+                        id={id}
+                    />
+                );
+            case 'employer':
+                return (
+                    <EmployerForm
+                        handleCreate={handleCreate(employerAPI.createEmployer)}
+                        handleUpdate={handleUpdate(employerAPI.updateEmployer, id)}
+                        action={action}
+                        id={id}
+                    />
+                );
             default:
                 return <Paragraph>Neznámý typ formuláře: {type}</Paragraph>;
         }

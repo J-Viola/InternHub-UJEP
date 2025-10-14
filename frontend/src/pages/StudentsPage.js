@@ -12,14 +12,17 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
 import { useUserAPI } from "src/api/user/userAPI";
 import Button from "@components/core/Button/Button";
+import {useNabidkaAPI} from "../api/nabidka/nabidkaAPI";
 
 export default function StudentPage() {
     const { getDepartmentStudents } = useDepartmentAPI();
     const [entities, setEntities] = useState([]);
+    const [practice, setPractice] = useState();
     const [filterValues, setFilterValue] = useState({"name" : ""})
     const [selectedStudents, setSelectedStudents] = useState(new Set());
     const navigate = useNavigate()
     const { getStudentsByPracticeId } = useStudentPracticeAPI()
+    const { getNabidkaById } = useNabidkaAPI()
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const { user } = useUser();
@@ -29,6 +32,7 @@ export default function StudentPage() {
     useEffect(() => {
         if (id) {
             loadStudentsByPractice();
+            loadPractice();
             return;
         }
         if (user.isAdmin) {
@@ -42,6 +46,12 @@ export default function StudentPage() {
         }
     }, [searchParams]);
 
+    const loadPractice = () => {
+          console.log("Mám id", id);
+        getNabidkaById(id).then(fetchedPractice => {
+            setPractice(fetchedPractice);
+        });
+    }
     const loadStudentsByPractice = () => {
         console.log("Mám id", id);
         getStudentsByPracticeId(id).then(fetchedStudents => {
@@ -176,7 +186,7 @@ export default function StudentPage() {
         const viewParam = searchParams.get('view');
         
         if (id) {
-            return `Přihlášení k praxi ${entities[0] && entities[0].practice_title}`;
+            return `Přihlášení k praxi - ${practice ? practice.title : ''}`;
         }
         
         if (user.isDepartmentUser()) {

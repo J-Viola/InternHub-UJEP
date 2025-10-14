@@ -81,6 +81,7 @@ export default function UpravitNabidku() {
                 }
             } catch (error) {
                 console.error("Chyba při načítání dat:", error);
+                navigate(-1)
             } finally {
                 setLoading(false);
                 setIsInitialized(true);
@@ -91,9 +92,6 @@ export default function UpravitNabidku() {
 
 
     const handleUpdate = async () => {
-        // TODO: Implementovat aktualizaci nabídky (PUT/POST na API, validace, navigace zpět)
-        handleToDoAlert();
-        /*
         try {
             const res = await nabidkaAPI.updateNabidka(id, formData, false); 
             if (res) {
@@ -102,7 +100,7 @@ export default function UpravitNabidku() {
         } catch (error) {
             console.error("Chyba při aktualizaci nabídky:", error);
         }
-        */
+
     }
 
     const handleChange = (inputObj) => {

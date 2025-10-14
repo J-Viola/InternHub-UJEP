@@ -11,34 +11,119 @@ import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import UploadFile from "@core/Form/UploadFile";
 import { useMessage } from "@hooks/MessageContext";
 import Headings from "@components/core/Text/Headings";
+import { useCompanyAPI } from "src/api/company/companyAPI";
 
-export default function CompanyForm({entity, aresFetched, handleARESCall, handleFormValues, handleRegistration, handleFileChange, action = "create"}) {
+export default function CompanyForm({ handleCreate, handleUpdate, action, id }) {
     const ares = useAresAPI();
     const { addMessage } = useMessage();
+    const companyAPI = useCompanyAPI();
+
     const [ico, setICO] = useState('');
-    const [formData, setFormData] = useState({});
+    const [entity, setEntity] = useState(null);
+    const [aresFetched, setAresFetched] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const [formData, setFormData] = useState({
+        companyName: '',
+        address: '',
+        ico: '',
+        dic: '',
+        titleBefore: '',
+        executiveName: '',
+        executiveSurname: '',
+        titleAfter: '',
+        executiveEmail: '',
+        executivePhone: '',
+        executivePassword1: '',
+        executivePassword2: '',
+        logo: null
+    });
+
+    const isEditing = action === 'edit';
 
     useEffect(() => {
-        console.log('CompanyForm - action:', action);
-        console.log('CompanyForm - entity:', entity);
-        console.log('CompanyForm - aresFetched:', aresFetched);
-    }, [action, entity, aresFetched]);
+        if (isEditing && id) {
+            loadCompany();
+        }
+    }, [action, id]);
 
-    // Validace povinných polí
+    const loadCompany = async () => {
+        try {
+            setLoading(true);
+            const company = await companyAPI.getCompanyById(id);
+            if (company) {
+                setFormData({
+                    companyName: company.company_name || '',
+                    address: company.address || '',
+                    ico: company.ico || '',
+                    dic: company.dic || '',
+                    titleBefore: '',
+                    executiveName: '',
+                    executiveSurname: '',
+                    titleAfter: '',
+                    executiveEmail: '',
+                    executivePhone: '',
+                    executivePassword1: '',
+                    executivePassword2: '',
+                    logo: null
+                });
+                setEntity({
+                    obchodniJmeno: company.company_name,
+                    sidlo: { textovaAdresa: company.address }
+                });
+                setAresFetched(true);
+            }
+        } catch (error) {
+            console.error('Chyba při načítání společnosti:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleARESCall = async (icoValue) => {
+        if (!icoValue) {
+            addMessage("Zadejte IČO", "E");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await ares.getEntityByICO(icoValue);
+            if (response) {
+                setEntity(response);
+                setFormData(prev => ({
+                    ...prev,
+                    companyName: response.obchodniJmeno || '',
+                    address: response.sidlo?.textovaAdresa || '',
+                    ico: icoValue,
+                    dic: response.dic || ''
+                }));
+                setAresFetched(true);
+                addMessage("Údaje byly úspěšně načteny z ARES", "S");
+            }
+        } catch (error) {
+            addMessage("Chyba při načítání údajů z ARES", "E");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const validateForm = () => {
         const requiredFields = {
             'executiveName': 'Jméno jednatele',
             'executiveSurname': 'Příjmení jednatele',
             'executiveEmail': 'E-mailová adresa jednatele',
-            'executivePhone': 'Telefonní číslo jednatele',
-            'executivePassword1': 'Heslo',
-            'executivePassword2': 'Heslo znovu'
+            'executivePhone': 'Telefonní číslo jednatele'
         };
+
+        if (!isEditing) {
+            requiredFields['executivePassword1'] = 'Heslo';
+            requiredFields['executivePassword2'] = 'Heslo znovu';
+        }
 
         const missingFields = [];
 
-        // Kontrola, zda byly načteny údaje z ARES pomocí aresFetched prop
-        if (!aresFetched) {
+        if (!aresFetched && !isEditing) {
             addMessage("Nejprve načtěte údaje z ARES", "E");
             return false;
         }
@@ -49,8 +134,7 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
             }
         }
 
-        // Kontrola, zda jsou hesla stejná
-        if (formData.executivePassword1 && formData.executivePassword2 && 
+        if (!isEditing && formData.executivePassword1 && formData.executivePassword2 &&
             formData.executivePassword1 !== formData.executivePassword2) {
             addMessage("Hesla se neshodují", "E");
             return false;
@@ -69,25 +153,63 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
             ...prev,
             ...value
         }));
-        handleFormValues(value);
     };
 
-    const handleRegistrationClick = () => {
+    const handleFileChange = (file) => {
+        setFormData(prev => ({
+            ...prev,
+            logo: file
+        }));
+    };
+
+    const handleSubmit = () => {
         if (validateForm()) {
-            handleRegistration();
+            // Prepare data for API
+            const companyData = {
+                company_name: formData.companyName,
+                ico: formData.ico,
+                dic: formData.dic,
+                address: formData.address,
+                company_profile: '',
+                first_name: formData.executiveName,
+                last_name: formData.executiveSurname,
+                title_before: formData.titleBefore,
+                title_after: formData.titleAfter,
+                email: formData.executiveEmail,
+                phone: formData.executivePhone
+            };
+
+            if (!isEditing && formData.executivePassword1) {
+                companyData.password = formData.executivePassword1;
+                companyData.password2 = formData.executivePassword2;
+            }
+
+            if (formData.logo) {
+                companyData.logo = formData.logo;
+            }
+
+            if (isEditing) {
+                handleUpdate(companyData);
+            } else {
+                handleCreate(companyData);
+            }
         }
     };
+
+    if (loading) {
+        return <Container property={"text-center py-4"}>Načítání...</Container>;
+    }
 
     return(
             <>
                 <Container>
                      <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        Údaje firmy
+                        {isEditing ? 'Upravit společnost' : 'Údaje firmy'}
                     </Headings>
                 </Container>
-                {action !== "edit" && (
-                    <Container property={"grid gap-2 grid-cols-2"}>
-                        <TextField 
+                {!isEditing && (
+                    <Container property={"grid gap-2 grid-cols-2 mb-4"}>
+                        <TextField
                             id={"ico"}
                             required={true}
                             label={"Vyplnění údajů pomocí systému ARES"} 
@@ -106,25 +228,25 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                     </Container>
                 )}
 
-                <Container property={"grid gap-2 grid-cols-2"}>
-                    <TextField 
+                <Container property={"grid gap-4 grid-cols-1 md:grid-cols-2 mb-6"}>
+                    <TextField
                         id={"companyName"}
                         required={true}
                         label={"Název společnosti"} 
-                        value={entity?.obchodniJmeno}
+                        value={formData.companyName}
                         placeholder={"Zadejte název společnosti"}
                         onChange={(value) => handleFormChange(value)}
-                        disabled={true}
+                        disabled={!isEditing && aresFetched}
                     />
 
                     <TextField 
                         id={"address"}
                         required={true}
                         label={"Adresa"} 
-                        value={entity?.sidlo?.textovaAdresa || ''}
+                        value={formData.address}
                         placeholder={"Zadejte adresu"}
                         onChange={(value) => handleFormChange(value)}
-                        disabled={true}
+                        disabled={!isEditing && aresFetched}
                     />
 
                     <TextField 
@@ -132,6 +254,7 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                         required={false}
                         label={"Titul před jménem"} 
                         placeholder={"např. Ing., Mgr., Dr."}
+                        value={formData.titleBefore}
                         onChange={(value) => handleFormChange(value)}
                     />
 
@@ -140,6 +263,7 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                         required={true}
                         label={"Jméno jednatele"} 
                         placeholder={"Zadejte jméno jednatele"}
+                        value={formData.executiveName}
                         onChange={(value) => handleFormChange(value)}
                     />
 
@@ -148,6 +272,7 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                         required={true}
                         label={"Příjmení jednatele"} 
                         placeholder={"Zadejte příjmení jednatele"}
+                        value={formData.executiveSurname}
                         onChange={(value) => handleFormChange(value)}
                     />
 
@@ -156,6 +281,7 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                         required={false}
                         label={"Titul za jménem"} 
                         placeholder={"např. Ph.D., MBA"}
+                        value={formData.titleAfter}
                         onChange={(value) => handleFormChange(value)}
                     />
 
@@ -164,6 +290,7 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                         required={true}
                         label={"E-mailová adresa jednatele"} 
                         placeholder={"Zadejte e-mailovou adresu jednatele"}
+                        value={formData.executiveEmail}
                         onChange={(value) => handleFormChange(value)}
                     />
 
@@ -172,43 +299,35 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                         required={true}
                         label={"Telefonní číslo jednatele"} 
                         placeholder={"Zadejte telefonní číslo jednatele"}
-                        onChange={(value) => handleFormChange(value)}
-                    />
-
-                    {/*<DropDown
-                        id={"kategorie"}
-                        required={true}
-                        label={"Vyberte kategorii"}
-                        //icon={"eye"}
-                        options={[
-                            { value: "1", label: "GEJ" },
-                            { value: "2", label: "NE GEJ" }
-                        ]}
-                        onChange={(value) => console.log(value)}
-                    />*/}
-
-                </Container>
-
-                <Container property={"grid grid-cols-2 gap-2 mt-2"}>
-                    <TextField 
-                        id={"executivePassword1"}
-                        required={true}
-                        label={"Heslo"} 
-                        placeholder={"Zadejte heslo"}
-                        type={"password"}
-                        onChange={(value) => handleFormChange(value)}
-                    />
-
-                    <TextField 
-                        id={"executivePassword2"}
-                        required={true}
-                        label={"Heslo znovu"} 
-                        placeholder={"Zadejte heslo znovu"}
-                        type={"password"}
+                        value={formData.executivePhone}
                         onChange={(value) => handleFormChange(value)}
                     />
                 </Container>
-                
+
+                {!isEditing && (
+                    <Container property={"grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"}>
+                        <TextField
+                            id={"executivePassword1"}
+                            required={true}
+                            label={"Heslo"}
+                            placeholder={"Zadejte heslo"}
+                            type={"password"}
+                            value={formData.executivePassword1}
+                            onChange={(value) => handleFormChange(value)}
+                        />
+
+                        <TextField
+                            id={"executivePassword2"}
+                            required={true}
+                            label={"Heslo znovu"}
+                            placeholder={"Zadejte heslo znovu"}
+                            type={"password"}
+                            value={formData.executivePassword2}
+                            onChange={(value) => handleFormChange(value)}
+                        />
+                    </Container>
+                )}
+
                 <UploadFile 
                     id="companyLogo"
                     property={"mt-4"}
@@ -221,11 +340,9 @@ export default function CompanyForm({entity, aresFetched, handleARESCall, handle
                 <Container property={"flex w-full justify-end ml-auto mt-4"}>
                     <Button 
                         property={"mt-2 px-16"} 
-                        icon={action == "edit" ? "edit" : ""}
-                        onClick={handleRegistration ? handleRegistrationClick : () => console.log("Není handler")}
-                        disabled={action == "edit" ? true : false}
+                        onClick={handleSubmit}
                     >
-                        {action == "edit" ? "Upravit profil" : "Dokončit registraci"}
+                        {isEditing ? "Uložit změny" : "Vytvořit společnost"}
                     </Button>
 
                 </Container>

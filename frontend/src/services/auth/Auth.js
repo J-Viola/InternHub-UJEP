@@ -10,10 +10,10 @@ const AuthContext = createContext(null);
 function AuthProvider({ children }) {
     const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || null);
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
-    const [apiClient] = useState(() => createApiClient()); // Inicializace při vytvoření
     const [isInitializing, setIsInitializing] = useState(true); // Loading state
     const { user, setUser, cleanUser } = useUser(); // použití useUser hooku
     const navigate = useNavigate();
+    const [apiClient] = useState(() => createApiClient(navigate)); // Inicializace při vytvoření
     const { addMessage } = useMessage();
     
     console.log("STORAGE:", localStorage?.getItem("refreshToken"));

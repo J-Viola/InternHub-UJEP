@@ -101,12 +101,71 @@ export const useUserAPI = () => {
         }
     };
 
+    const createUser = async (userData) => {
+        try {
+            const formData = new FormData();
+
+            // Append user data to formData
+            Object.keys(userData).forEach(key => {
+                if (userData[key] !== null && userData[key] !== undefined) {
+                    formData.append(key, userData[key]);
+                }
+            });
+
+            const response = await api.post('/users/organization-users/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Chyba při vytváření uživatele:", error);
+            throw error;
+        }
+    };
+
+    const updateUser = async (id, userData) => {
+        try {
+            const formData = new FormData();
+
+            // Append user data to formData
+            Object.keys(userData).forEach(key => {
+                if (userData[key] !== null && userData[key] !== undefined) {
+                    formData.append(key, userData[key]);
+                }
+            });
+
+            const response = await api.put(`/users/organization-users/${id}/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Chyba při aktualizaci uživatele:", error);
+            throw error;
+        }
+    };
+
+    const getUserById = async (id) => {
+        try {
+            const response = await api.get(`/users/organization-users/${id}/`);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při získávání uživatele:', error);
+            throw error;
+        }
+    };
+
     return {
         postRegister,
         getOrganizationUsers,
         getCurrentUserProfile,
         getStudentProfile,
         getAllStudents,
-        getAllDepartmentProfessors
+        getAllDepartmentProfessors,
+        createUser,
+        updateUser,
+        getUserById
     };
 };

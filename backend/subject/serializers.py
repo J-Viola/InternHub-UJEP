@@ -15,6 +15,7 @@ class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ["subject_id", "subject_code", "subject_name", "department", "hours_required", "teacher"]
+        required_fields = ["subject_code", "subject_name", "department", "hours_required"]
 
     def get_teacher(self, obj):
         teacher_relationship = UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor).select_related("user").first()

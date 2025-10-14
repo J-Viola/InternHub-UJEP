@@ -9,10 +9,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
 import { useMessage } from "@hooks/MessageContext";
 
-export default function DepartmentForm() {
-    const [searchParams] = useSearchParams();
-    const action = searchParams.get('action');
-    const id = searchParams.get('id');
+export default function DepartmentForm({ handleCreate, handleUpdate, action, id }) {
     const isEditing = action === 'edit';
     
     const navigate = useNavigate();
@@ -56,7 +53,7 @@ export default function DepartmentForm() {
         }));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         
         if (!formData.department_name.trim()) {
@@ -64,37 +61,30 @@ export default function DepartmentForm() {
             return;
         }
 
-        try {
-            setLoading(true);
-            
-            if (action === 'create') {
-                await departmentAPI.createDepartment(formData);
-                showMessage('Katedra byla úspěšně vytvořena', 'success');
-            } else if (action === 'edit') {
-                await departmentAPI.updateDepartment(id, formData);
-                showMessage('Katedra byla úspěšně aktualizována', 'success');
-            }
-            
-            navigate('/departments');
-        } catch (error) {
-            showMessage('Chyba při ukládání katedry', 'error');
-        } finally {
-            setLoading(false);
+        if (isEditing) {
+            handleUpdate(formData);
+        } else {
+            handleCreate(formData);
         }
     };
 
     const getSubmitButtonText = () => {
-        return isEditing ? 'Uložit' : 'Vytvořit';
+        return isEditing ? 'Uložit změny' : 'Vytvořit';
     };
+
+    if (loading) {
+        return <Container property={"text-center py-4"}>Načítání...</Container>;
+    }
 
     return (
         <Container>
             <form onSubmit={handleSubmit}>
-                <Container property={"space-y-2"}>
+                <Container property={"space-y-6"}>
                     <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        Údaje katedry
+                        {isEditing ? 'Upravit katedru' : 'Údaje katedry'}
                     </Headings>
-                    <Container>
+
+                    <Container property={"grid gap-4 grid-cols-1 md:grid-cols-2"}>
                         <TextField
                             id="department_name"
                             label="Název katedry"
@@ -103,9 +93,7 @@ export default function DepartmentForm() {
                             placeholder="Zadejte název katedry"
                             required = {true}
                         />
-                    </Container>
 
-                    <Container>
                         <DropDown
                             id="head_of_department"
                             label="Vedoucí katedry"
@@ -121,20 +109,16 @@ export default function DepartmentForm() {
                         />
                     </Container>
 
-
-
-                    <Container property={"flex gap-4 pt-6 justify-end"}>
+                    <Container property={"flex justify-end"}>
                         <Button
                             type="submit"
-                            disabled={loading}
-                            icon={action === 'create' ? 'plus' : 'save'}
+                            property={"px-16 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"}
                         >
-                            {loading ? 'Ukládám...' : getSubmitButtonText()}
+                            {getSubmitButtonText()}
                         </Button>
-                        
                     </Container>
                 </Container>
             </form>
         </Container>
     );
-} 
+}
