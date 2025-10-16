@@ -253,6 +253,7 @@ class Subject(models.Model):
     subject_name = models.CharField(max_length=100, blank=True, null=True)
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True, related_name="subjects")
     hours_required = models.IntegerField(blank=True, null=True)
+    subject_manager = models.ForeignKey("ProfessorUser", models.SET_NULL, blank=True, null=True, related_name="managed_subjects")
 
     def __str__(self):
         return self.subject_name or self.subject_code or super().__str__()
@@ -448,11 +449,7 @@ class DocumentHelper:
         document_file = File(open(file_path, "rb"))
         document_file.name = f"default_{DocumentHelper.create_name_for_document(document_type, user_id, document_file.name)}"
 
-        document = UploadedDocument(
-            document_type=document_type,
-            document=document_file,
-            uploaded_at=datetime.datetime.now()
-        )
+        document = UploadedDocument(document_type=document_type, document=document_file, uploaded_at=datetime.datetime.now())
         document.save()
         return document
 

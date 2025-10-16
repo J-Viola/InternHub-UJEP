@@ -6,18 +6,22 @@ import Button from "@components/core/Button/Button";
 import Headings from "@core/Text/Headings";
 import { useSubjectAPI } from "src/api/subject/subjectAPI";
 import { useUserAPI } from "src/api/user/userAPI";
+import { useDepartmentAPI } from "src/api/department/departmentAPI";
 
 export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
     const [formData, setFormData] = useState({
         name: "",
         subjectCode: "",
         timeCriterion: "",
-        subjectManager: ""
+        subjectManager: "",
+        department: ""
     });
     const [professorOptions, setProfessorOptions] = useState([]);
+    const [departmentOptions, setDepartmentOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const subjectAPI = useSubjectAPI();
     const userAPI = useUserAPI();
+    const departmentAPI = useDepartmentAPI();
     const isEditing = action === 'edit';
 
     useEffect(() => {
@@ -25,6 +29,7 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
             loadSubject();
         }
         loadProfessors();
+        loadDepartments();
     }, [action, id]);
 
     const loadSubject = async () => {
@@ -36,7 +41,8 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
                     name: subject.subject_name || "",
                     subjectCode: subject.subject_code || "",
                     timeCriterion: subject.hours_required || "",
-                    subjectManager: subject.teacher?.user_id || ""
+                    subjectManager: subject.teacher?.user_id || "",
+                    department: subject.department_id || subject.department?.department_id || ""
                 });
             }
         } catch (error) {
@@ -59,6 +65,19 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
         }
     };
 
+    const loadDepartments = async () => {
+        try {
+            const departments = await departmentAPI.getAllDepartments();
+            const options = departments.map(dept => ({
+                label: dept.department_name,
+                value: dept.department_id
+            }));
+            setDepartmentOptions(options);
+        } catch (error) {
+            console.error('Chyba při načítání kateder:', error);
+        }
+    };
+
     const handleChange = (field) => (valueObject) => {
         const value = valueObject[field];
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -71,7 +90,9 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
             subject_code: formData.subjectCode,
             hours_required: formData.timeCriterion,
             // Add teacher/manager ID if available
-            ...(formData.subjectManager && { teacher_id: formData.subjectManager })
+            ...(formData.subjectManager && { teacher_id: formData.subjectManager }),
+            // Add department ID if available
+            ...(formData.department && { department_id: formData.department })
         };
 
         if (isEditing) {
@@ -125,7 +146,17 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
                         onChange={handleChange("timeCriterion")}
                     />
 
-                    <DropDown 
+                    <DropDown
+                        id={"department"}
+                        required={true}
+                        label={"Katedra"}
+                        placeholder={"Vyberte katedru"}
+                        options={departmentOptions}
+                        value={formData.department}
+                        onChange={handleChange("department")}
+                    />
+
+                    <DropDown
                         id={"subjectManager"}
                         required={true}
                         label={"Správce předmětu"} 
