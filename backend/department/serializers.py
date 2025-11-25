@@ -3,6 +3,29 @@ from django.core.handlers.base import logger
 from rest_framework import serializers
 
 
+class DepartmentSerializer(serializers.ModelSerializer):
+    """
+    Serializer pro model Department
+    - department_id: primární klíč (read-only)
+    - department_name: název oddělení
+    - description: popis oddělení
+    """
+
+    class Meta:
+        model = Department
+        fields = "__all__"
+        read_only_fields = ["department_id"]
+
+    def validate_department_name(self, value):
+        if Department.objects.filter(department_name=value).exists():
+            raise serializers.ValidationError("Oddělení s tímto názvem již existuje.")
+        return value
+
+
+class AdminDepartmentSerializer(DepartmentSerializer):
+    pass
+
+
 class StudentThisPracticeSerializer(serializers.ModelSerializer):
     practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
 
@@ -80,16 +103,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class DepartmentSerializer(serializers.ModelSerializer):
-    user = StudentDetailSerializer(read_only=True)
-    department = serializers.StringRelatedField()
-    role = serializers.StringRelatedField()
-
-    class Meta:
-        model = Department
-        fields = "__all__"
-
-
 class ProfessorSubjectSerializer(serializers.Serializer):
     subject_name = serializers.CharField(source="subject.subject_name")
     subject_id = serializers.CharField(source="subject.subject_id")
@@ -133,10 +146,3 @@ class DepartmentUserSerializer(serializers.Serializer):
 
     class Meta:
         fields = ("user_type", "data")
-
-
-class AdminDepartmentSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Department
-        fields = "__all__"

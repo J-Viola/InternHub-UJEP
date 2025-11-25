@@ -498,11 +498,28 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
             "dic",
             "company_name",
             "address",
+            "company_profile",
             "zip_code",
             "approval_status",
             "logo",
         ]
-        read_only_fields = ["employer_id", "approval_status"]
+        read_only_fields = ["employer_id"]
+
+    def validate_ico(self, value):
+        # Check if ICO exists, but exclude self if updating
+        qs = EmployerProfile.objects.filter(ico=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Společnost s tímto IČO již existuje.")
+        return value
+
+    def create(self, validated_data):
+        validated_data.setdefault("approval_status", ApprovalStatus.PENDING.value)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -609,31 +626,18 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
 class AllStudentsListSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     department = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = StudentUser
-        fields = [
-            "user_id",
-            "email",
-            "first_name", 
-            "last_name",
-            "full_name",
-            "os_cislo",
-            "department",
-            "is_active",
-            "date_joined"
-        ]
-    
+        fields = ["user_id", "email", "first_name", "last_name", "full_name", "os_cislo", "department", "is_active", "date_joined"]
+
     def get_department(self, obj):
         # Získáme katedru studenta přes jeho předměty
-        user_subjects = UserSubject.objects.filter(
-            user=obj, 
-            role=UserSubjectType.Student.value
-        ).select_related('subject__department')
-        
+        user_subjects = UserSubject.objects.filter(user=obj, role=UserSubjectType.Student.value).select_related("subject__department")
+
         departments = set()
         for user_subject in user_subjects:
             if user_subject.subject.department:
                 departments.add(user_subject.subject.department.department_name)
-        
+
         return list(departments) if departments else None

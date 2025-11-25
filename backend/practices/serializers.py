@@ -1,36 +1,12 @@
 from datetime import date
 
 from api.helpers import FormattedDateField
-from api.models import ApprovalStatus, EmployerProfile, Practice, ProgressStatus, StudentPractice
+from api.models import ApprovalStatus, EmployerProfile, Practice, ProgressStatus, StudentPractice, Subject, User
+from practices.utils import calculate_end_date
 from rest_framework import serializers
-
-
-class StudentPracticeSerializer(serializers.ModelSerializer):
-    user_info = serializers.SerializerMethodField()
-    start_date = FormattedDateField()
-    end_date = FormattedDateField()
-
-    class Meta:
-        model = StudentPractice
-        fields = [
-            "student_practice_id",
-            "user",
-            "user_info",
-            "practice",
-            "application_date",
-            "approval_status",
-            "progress_status",
-            "hours_completed",
-            "cancellation_reason",
-            "year",
-            "start_date",
-            "end_date",
-        ]
-
-    def get_user_info(self, obj):
-        if obj.user:
-            return {"user_id": obj.user.user_id, "full_name": obj.user.full_name, "email": obj.user.email}
-        return None
+from student_practices.serializers import StudentPracticeStatusSerializer
+from subject.serializers import SubjectSerializer
+from users.serializers import EmployerProfileSerializer
 
 
 class OrganizationPracticeSerializer(serializers.ModelSerializer):
@@ -61,6 +37,108 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
 
     def get_pending_applications(self, obj):
         return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
+
+
+class PracticeSerializer(serializers.ModelSerializer):
+    """
+    Serializer pro model Practice
+    """
+
+    employer = EmployerProfileSerializer(read_only=True)
+    employer_id = serializers.PrimaryKeyRelatedField(
+        queryset=EmployerProfile.objects.all(), source="employer", write_only=True, required=True
+    )
+
+    subject = SubjectSerializer(read_only=True)
+    subject_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), source="subject", write_only=True, required=True)
+
+    contact_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
+    contact_user_info = serializers.SerializerMethodField(read_only=True)
+    student_practice_status = serializers.SerializerMethodField(read_only=True)
+    start_date = FormattedDateField()
+    end_date = FormattedDateField()
+
+    class Meta:
+        model = Practice
+        fields = [
+            "practice_id",
+            "employer",
+            "employer_id",
+            "subject",
+            "subject_id",
+            "title",
+            "description",
+            "responsibilities",
+            "available_positions",
+            "start_date",
+            "end_date",
+            "progress_status",
+            "approval_status",
+            "contact_user",
+            "contact_user_info",
+            "is_active",
+            "image_base64",
+            "coefficient",
+            "student_practice_status",
+        ]
+        read_only_fields = ["practice_id", "is_active", "end_date"]
+
+    def get_contact_user_info(self, obj):
+        if obj.contact_user:
+            return {
+                "user_id": obj.contact_user.user_id,
+                "username": obj.contact_user.username,
+            }
+        return None
+
+    def get_student_practice_status(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return None
+
+        # Check if user has student attribute/role
+        # Using hasattr check similar to original code if model type is not guaranteed
+        # But preferably checking instance
+        from api.models import StudentUser
+
+        if not isinstance(request.user, StudentUser):
+            return None
+
+        try:
+            student_practice = StudentPractice.objects.get(user=request.user, practice=obj)
+            return StudentPracticeStatusSerializer(student_practice).data
+        except StudentPractice.DoesNotExist:
+            pass
+
+        return None
+
+    def validate(self, data):
+        """
+        Zkontroluje, zda end_date není před start_date, a že start_date >= dnešek.
+        """
+        start = data.get("start_date")
+        # Calculate end date if coefficient is provided, otherwise use provided end_date or existing
+        # Note: calculate_end_date is called in create() but we validate here.
+        # If this is create, we might not have end_date yet.
+
+        if start and start < date.today():
+            raise serializers.ValidationError("Datum zahájení nemůže být v minulosti.")
+        return data
+
+    def create(self, validated_data):
+        validated_data.setdefault("is_active", True)
+        validated_data.setdefault("progress_status", ProgressStatus.NOT_STARTED)
+        validated_data.setdefault("approval_status", ApprovalStatus.PENDING)
+
+        start_date = validated_data.get("start_date")
+        coefficient = validated_data.get("coefficient")
+        if start_date and coefficient is not None:
+            validated_data["end_date"] = calculate_end_date(start_date, coefficient)
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
 
 class RunningPracticeSerializer(serializers.ModelSerializer):

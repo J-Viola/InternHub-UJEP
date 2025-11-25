@@ -14,7 +14,6 @@ from api.models import (
     StudentUser,
     UserSubjectType,
 )
-from api.serializers import PracticeSerializer
 from api.views import StandardResultsSetPagination
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from practices.serializers import (
@@ -23,6 +22,7 @@ from practices.serializers import (
     OrganizationPracticeSerializer,
     PracticeApprovalSerializer,
     PracticeApprovalStatusSerializer,
+    PracticeSerializer,
     RunningPracticeSerializer,
     StudentPracticeSerializer,
 )
@@ -163,24 +163,16 @@ class PracticeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if not user.pk:
-            return Response(
-                {"detail": "Uživatel nebyl nalezen"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": "Uživatel nebyl nalezen"}, status=status.HTTP_404_NOT_FOUND)
 
         student_practices = self._serialize_student_practices(user)
         employer_invitations = self._serialize_employer_invitations(user)
 
-        return Response({
-            "student_practices": student_practices,
-            "employer_invitations": employer_invitations
-        })
+        return Response({"student_practices": student_practices, "employer_invitations": employer_invitations})
 
     def _serialize_student_practices(self, user):
         """Serialize student practice records for user"""
-        student_practices = StudentPractice.objects.filter(user=user).select_related(
-            "practice", "practice__employer"
-        )
+        student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
 
         return [
             {
@@ -196,10 +188,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
     def _serialize_employer_invitations(self, user):
         """Serialize pending employer invitations for user"""
-        invitations = EmployerInvitation.objects.filter(
-            user=user,
-            status=EmployerInvitationStatus.PENDING
-        ).select_related("practice", "employer")
+        invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related(
+            "practice", "employer"
+        )
 
         return [
             {
@@ -430,6 +421,7 @@ class RunningPracticeListView(generics.ListAPIView):
 
         return practices
 
+
 class AdminPracticesListView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = OrganizationPracticeSerializer
@@ -450,10 +442,12 @@ class AdminPracticesListView(generics.ListAPIView):
         approved_data = self.get_serializer(approved_qs, many=True).data
         to_approve_data = self.get_serializer(pending_qs, many=True).data
 
-        return Response({
-            "approved_practices": approved_data,
-            "to_approve_practices": to_approve_data,
-        })
+        return Response(
+            {
+                "approved_practices": approved_data,
+                "to_approve_practices": to_approve_data,
+            }
+        )
 
 
 class PracticesForApprovingListView(generics.ListAPIView):

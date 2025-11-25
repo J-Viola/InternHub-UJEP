@@ -1,5 +1,7 @@
+from datetime import date
+
 from api.helpers import FormattedDateField
-from api.models import Practice, StudentPractice, UploadedDocument
+from api.models import ApprovalStatus, Practice, StudentPractice, UploadedDocument, User
 from rest_framework import serializers
 
 
@@ -10,6 +12,8 @@ class EmployerInvitationApprovalSerializer(serializers.Serializer):
 
 class StudentPracticeSerializer(serializers.ModelSerializer):
     user_info = serializers.SerializerMethodField()
+    start_date = FormattedDateField()
+    end_date = FormattedDateField()
 
     class Meta:
         model = StudentPractice
@@ -17,18 +21,105 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "student_practice_id",
             "user",
             "user_info",
+            "practice",
             "application_date",
             "approval_status",
             "progress_status",
             "hours_completed",
             "cancellation_reason",
             "year",
+            "start_date",
+            "end_date",
         ]
 
     def get_user_info(self, obj):
         if obj.user:
             return {"user_id": obj.user.user_id, "full_name": obj.user.full_name, "email": obj.user.email}
         return None
+
+
+class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
+    """
+    Serializer pro model StudentPractice (původně v api/serializers.py)
+    - student_practice_id: primární klíč (read-only)
+    - practice: PK praxe (write-only)
+    - title: název praxe (read-only)
+    - logo: base64 obrázek praxe (read-only)
+    - application_date: datum podání (read-only)
+    - approval_status: nested Status (read-only)
+    - progress_status: nested Status (read-only)
+    - hours_completed: počet dokončených hodin
+    - cancellation_reason: důvod zrušení
+    - cancelled_by_user: PK uživatele, kdo zrušil (write-only, volitelné)
+    - cancelled_by_user_info: informace o uživateli, který zrušil (read-only)
+    """
+
+    practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
+    title = serializers.CharField(source="practice.title", read_only=True)
+    logo = serializers.CharField(source="practice.image_base64", read_only=True)
+
+    cancelled_by_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
+    cancelled_by_user_info = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = StudentPractice
+        fields = [
+            "student_practice_id",
+            "practice",
+            "title",
+            "logo",
+            "application_date",
+            "approval_status",
+            "progress_status",
+            "hours_completed",
+            "cancellation_reason",
+            "cancelled_by_user",
+            "cancelled_by_user_info",
+        ]
+        read_only_fields = [
+            "student_practice_id",
+            "title",
+            "logo",
+            "application_date",
+            "cancelled_by_user_info",
+        ]
+
+    def get_cancelled_by_user_info(self, obj):
+        if obj.cancelled_by_user:
+            return {
+                "user_id": obj.cancelled_by_user.user_id,
+                "username": obj.cancelled_by_user.username,
+            }
+        return None
+
+    def validate(self, data):
+        """
+        Zkontroluje, zda student již není přihlášen na tuto praxi, a že hours_completed >= 0.
+        """
+        practice = data.get("practice")
+        user = self.context["request"].user if "request" in self.context else None
+        if user and StudentPractice.objects.filter(practice=practice, user=user).exists():
+            raise serializers.ValidationError("Již jste přihlášen(a) na tuto praxi.")
+        hours = data.get("hours_completed", 0)
+        if hours < 0:
+            raise serializers.ValidationError("Počet dokončených hodin nesmí být záporný.")
+        return data
+
+    def create(self, validated_data):
+        """
+        Nastaví výchozí application_date na dnešní datum, pokud není zadáno,
+        a výchozí approval_status na 'pending'.
+        """
+        if "application_date" not in validated_data:
+            validated_data["application_date"] = date.today()
+        if "approval_status" not in validated_data:
+            pending_status = ApprovalStatus.PENDING
+            if pending_status:
+                validated_data["approval_status"] = pending_status
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
 
 class ListStudentPracticeSerializer(serializers.ModelSerializer):
@@ -160,12 +251,12 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
         return StudentPracticeStatusSerializer(obj).data
 
     def get_employer(self, obj):
-        from api.serializers import EmployerProfileSerializer
+        from users.serializers import EmployerProfileSerializer
 
         return EmployerProfileSerializer(obj.practice.employer).data
 
     def get_subject(self, obj):
-        from api.serializers import SubjectSerializer
+        from subject.serializers import SubjectSerializer
 
         return SubjectSerializer(obj.practice.subject).data
 

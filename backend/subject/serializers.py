@@ -1,11 +1,6 @@
 from api.models import Department, ProfessorUser, Subject, UserSubject, UserSubjectType
+from department.serializers import DepartmentSerializer
 from rest_framework import serializers
-
-
-class DepartmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Department
-        fields = ["department_id", "department_name"]
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -27,6 +22,7 @@ class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ["subject_id", "subject_code", "subject_name", "department", "department_id", "hours_required", "teacher", "teacher_id"]
+        read_only_fields = ["subject_id"]
 
     def get_teacher(self, obj):
         # First check if there's a subject_manager assigned
@@ -40,8 +36,19 @@ class SubjectSerializer(serializers.ModelSerializer):
             return TeacherSerializer(teacher_relationship.user).data
         return None
 
+    def validate_subject_code(self, value):
+        if Subject.objects.filter(subject_code=value).exists():
+            # If updating, exclude self
+            if self.instance and self.instance.subject_code == value:
+                return value
+            raise serializers.ValidationError("Předmět s tímto kódem již existuje.")
+        return value
+
     def create(self, validated_data):
         """Create subject and optionally create UserSubject relationship"""
+        if "hours_required" not in validated_data:
+            validated_data["hours_required"] = 0
+
         subject = super().create(validated_data)
 
         # If a subject_manager was assigned, also create UserSubject relationship
