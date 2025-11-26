@@ -12,6 +12,7 @@ from .views import (
     OrganizationUserListView,
     RegisterView,
     StudentProfileView,
+    UpdateAresSubjectView,
 )
 
 app_name = "users"
@@ -25,6 +26,7 @@ urlpatterns = [
     path("login/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("ares-justice/", AresJusticeView.as_view()),
+    path("ares/update/", UpdateAresSubjectView.as_view(), name="update-ares"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("organization-users/", OrganizationUserListView.as_view(), name="organization_users"),
     path("student-profile/<int:student_id>", StudentProfileView.as_view(), name="student_profile"),

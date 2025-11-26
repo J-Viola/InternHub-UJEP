@@ -33,9 +33,13 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
         ]
 
     def get_approved_applications(self, obj):
+        if hasattr(obj, "approved_count"):
+            return obj.approved_count
         return obj.student_practices.filter(approval_status=ApprovalStatus.APPROVED).count()
 
     def get_pending_applications(self, obj):
+        if hasattr(obj, "pending_count"):
+            return obj.pending_count
         return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
 
 
@@ -182,12 +186,18 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
         return None
 
     def get_student_count(self, obj):
+        if hasattr(obj, "total_student_count"):
+            return obj.total_student_count
         return obj.student_practices.count()
 
     def get_approved_student_count(self, obj):
+        if hasattr(obj, "approved_count"):
+            return obj.approved_count
         return obj.student_practices.filter(approval_status=ApprovalStatus.APPROVED).count()
 
     def get_pending_student_count(self, obj):
+        if hasattr(obj, "pending_count"):
+            return obj.pending_count
         return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
 
     def validate(self, data):

@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from users.models import StagRoleEnum
+from users.services import get_user_department_ids
 
 from .serializers import AdminDepartmentSerializer, DepartmentUserSerializer, ProfessorDetailSerializer, StudentDetailSerializer
 
@@ -18,28 +19,20 @@ class DepartmentStudentListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        # Zjisti department_id podle přihlášeného profesora
-        department_id = None
-        if isinstance(user, ProfessorUser) and user.department_id:
-            department_id = user.department_id
-        else:
-            # fallback: pokud není přímo ProfessorUser, zkusit přes UserSubject
-            department_id = Department.objects.filter(subjects__user_subjects__user=user).values_list("department_id", flat=True).first()
+        dept_ids = get_user_department_ids(user)
 
-        if not department_id:
+        if not dept_ids:
             return StudentUser.objects.none()
-        # Najdi všechny subjects pod tímto departmentem
-        subject_ids = Subject.objects.filter(department_id=department_id).values_list("subject_id", flat=True)
-        # Najdi všechny studenty, kteří mají alespoň jeden z těchto subjects
-        student_ids = (
-            UserSubject.objects.filter(subject_id__in=subject_ids, role=UserSubjectType.Student.value)
-            .values_list("user__user_ptr_id", flat=True)
+
+        # Optimized query using joins instead of lists
+        return (
+            StudentUser.objects.filter(
+                user_subjects__subject__department_id__in=dept_ids,
+                user_subjects__role=UserSubjectType.Student.value,
+            )
             .distinct()
-        )
-        students = StudentUser.objects.filter(user_id__in=student_ids).distinct()
-        print(f"Found {students.count()} student(s)")
-        return students.select_related("stag_role").prefetch_related(
-            Prefetch("student_practices", queryset=StudentPractice.objects.select_related("practice"))
+            .select_related("stag_role")
+            .prefetch_related(Prefetch("student_practices", queryset=StudentPractice.objects.select_related("practice")))
         )
 
 
@@ -54,10 +47,10 @@ class DepartmentProfessorListView(generics.ListAPIView):
     serializer_class = ProfessorDetailSerializer
 
     def get_queryset(self):
-        # departments where current user has any role
-        dept_ids = (
-            Department.objects.filter(subjects__user_subjects__user=self.request.user).values_list("department_id", flat=True).distinct()
-        )
+        dept_ids = get_user_department_ids(self.request.user)
+
+        if not dept_ids:
+            return ProfessorUser.objects.none()
 
         professors = ProfessorUser.objects.filter(department_id__in=dept_ids, department_role=UserSubjectType.Professor.value).distinct()
 

@@ -1,28 +1,21 @@
-import requests
 from api.models import (
     ApprovalStatus,
-    Department,
-    DepartmentRole,
     EmployerProfile,
     OrganizationRole,
     OrganizationUser,
     ProfessorUser,
-    StagRole,
     StudentUser,
-    Subject,
     UserSubject,
     UserSubjectType,
 )
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from django.core.cache import cache
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from users.dtos.dtos import EkonomickySubjektDTO
-from users.models import StagRoleEnum, UserType
+from users.models import UserType
+from users.services import fetch_ares_data, get_or_create_stag_user, register_organization, validate_stag_ticket
 
 User = get_user_model()
 
@@ -46,7 +39,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         ticket = attrs.pop("service_ticket", None)
 
         if ticket:
-            return self._validate_with_stag(ticket)
+            try:
+                stag_data = validate_stag_ticket(ticket)
+                user = get_or_create_stag_user(stag_data, ticket)
+                if not user:
+                    raise AuthenticationFailed("Could not create or retrieve STAG user.")
+
+                refresh = self.get_token(user)
+                refresh["type"] = UserType.STAG.value
+                refresh["service_ticket"] = ticket
+                return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
+            except Exception as e:
+                raise AuthenticationFailed(str(e))
 
         email = attrs.get("email")
         password = attrs.get("password")
@@ -55,80 +59,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             return self._validate_with_credentials(email, password)
 
         raise AuthenticationFailed("Email and password are required")
-
-    def _validate_with_stag(self, ticket):
-        url = f"{settings.STAG_WS_URL}/services/rest2/help/getStagUserListForLoginTicketV2"
-        resp = requests.get(
-            url,
-            params={"ticket": ticket, "longTicket": "1"},
-            timeout=(3.05, 27),
-            headers={"Accept": "application/json"},
-        )
-
-        if resp.status_code != 200:
-            raise AuthenticationFailed("Failed to authenticate with STAG")
-
-        details = resp.json()
-        email = details.get("email")
-        jmeno = details.pop("jmeno")
-        prijmeni = details.pop("prijmeni")
-        # https://ws.ujep.cz/ws/services/rest2/student/getStudentInfo?osCislo=F22248&outputFormat=JSON&semestr=%20&rok=2024
-        stagUserInfos = details.get("stagUserInfo")
-        if not stagUserInfos or len(stagUserInfos) == 0:
-            raise AuthenticationFailed("No user information returned by STAG")
-        # TODO pro každý info.. se musí asi udělat účet... píče
-        stagUserInfo = stagUserInfos[0]
-        role = stagUserInfo["role"]
-        roleName = stagUserInfo["roleNazev"]
-        if not email:
-            raise AuthenticationFailed("Email not returned by STAG")
-        osCislo = stagUserInfo.get("osCislo")
-        ucitIdno = stagUserInfo.get("ucitIdno")
-
-        stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
-        if osCislo:
-            user, _ = StudentUser.objects.get_or_create(
-                email=email,
-                defaults={
-                    "email": email,
-                    "stag_role": stagRole,
-                    "first_name": jmeno,
-                    "last_name": prijmeni,
-                    "os_cislo": osCislo,
-                    "is_active": True,
-                },
-            )
-            sync_stag_subjects_for_student(ticket, osCislo, user)
-        if ucitIdno:
-            try:
-                user = ProfessorUser.objects.get(email=email)
-            except ProfessorUser.DoesNotExist:
-                katedra = stagUserInfo.get("katedra")
-                try:
-                    department = Department.objects.get(department_code=katedra)
-                except Department.DoesNotExist:
-                    raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
-                department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
-                user, _ = ProfessorUser.objects.get_or_create(
-                    email=email,
-                    defaults={
-                        "email": email,
-                        "stag_role": stagRole,
-                        "first_name": jmeno,
-                        "last_name": prijmeni,
-                        "ucit_idno": ucitIdno,
-                        "is_active": True,
-                        "department": department,
-                        "department_role": department_role,
-                    },
-                )
-            sync_stag_roles_for_teacher(ticket, ucitIdno, user)
-
-        refresh = self.get_token(user)
-        refresh["type"] = UserType.STAG.value
-        refresh["service_ticket"] = ticket
-
-        return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
 
     def _validate_with_credentials(self, email, password):
         try:
@@ -147,42 +77,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             refresh["type"] = "undefined"
 
         return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
-
-
-# class CustomTokenRefreshSerializer(TokenRefreshSerializer):
-#     def validate(self, attrs):
-#         # decode old refresh
-#         refresh = RefreshToken(attrs["refresh"])
-#         # re-fetch user
-#         # lookup user by configured claim
-#         user_id = refresh[api_settings.USER_ID_CLAIM]
-#         try:
-#             user = User.objects.get(**{api_settings.USER_ID_FIELD: user_id})
-#         except User.DoesNotExist:
-#             raise AuthenticationFailed("User not found", code="user_not_found")
-#         self.user = user
-#
-#         # optionally rotate/blacklist old refresh
-#         if api_settings.ROTATE_REFRESH_TOKENS:
-#             refresh.blacklist()
-#             refresh = RefreshToken.for_user(user)
-#
-#         # build new access
-#         access = refresh.access_token
-#
-#         # inject fresh claims
-#         access["type"] = user
-#         if isinstance(user.user_type, OrganizationUser):
-#             access["role"] = user.organization_role.role
-#         elif user.user_type == UserType.STAG.value:
-#             access["role"] = user.stag_role.role
-#         elif user.is_superuser:
-#             access["role"] = UserType.ADMIN.value
-#
-#         data = {"access": str(access)}
-#         if self.rotate_refresh_tokens:
-#             data["refresh"] = str(refresh)
-#         return data
 
 
 class OrganizationRegisterSerializer(serializers.ModelSerializer):
@@ -227,74 +121,10 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-
-        ico = validated_data.pop("ico")
-        company_name = validated_data.pop("companyName", "")
-        address = validated_data.pop("address", "")
-        dic = validated_data.pop("dic", "")
-
-        ico = str(ico).zfill(8)
-        cache_key = f"ares_{ico}"
-        ares_data = cache.get(cache_key)
-
-        if not ares_data:
-            response = requests.get("https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/" + ico)
-            if response.status_code == 200:
-                response_data = response.json()
-                if "kod" in response_data and response_data["kod"] is not None:
-                    raise serializers.ValidationError({"ARES": "ARES returned an error code."})
-                ares_data = EkonomickySubjektDTO.model_validate(response_data)
-                cache.set(cache_key, ares_data, timeout=3600)
-            else:
-                raise serializers.ValidationError({"ARES": "Failed to fetch data from ARES"})
-
-        with transaction.atomic():
-            user = OrganizationUser.objects.create(
-                email=validated_data["email"],
-                first_name=validated_data["first_name"],
-                last_name=validated_data["last_name"],
-                title_before=validated_data.get("title_before", ""),
-                title_after=validated_data.get("title_after", ""),
-                phone=validated_data.get("phone", ""),
-                organization_role=OrganizationRole.OWNER,
-                is_active=True,  # TODO: Remove this
-            )
-
-            # Use frontend data if provided, otherwise fall back to ARES data
-            if hasattr(ares_data, "sidlo"):
-                sidlo = ares_data.sidlo
-            else:
-                sidlo = ares_data.get("sidlo", {})
-
-            employer_profile = EmployerProfile.objects.create(
-                employer_id=user.id,
-                ico=ico,
-                dic=dic if dic else (ares_data.dic if hasattr(ares_data, "dic") else ares_data.get("dic", "")),
-                company_name=(
-                    company_name
-                    if company_name
-                    else (ares_data.obchodniJmeno if hasattr(ares_data, "obchodniJmeno") else ares_data.get("companyName", ""))
-                ),
-                address=(
-                    address
-                    if address
-                    else (
-                        sidlo.textovaAdresa
-                        if hasattr(sidlo, "textovaAdresa")
-                        else (sidlo.get("address", "") if isinstance(sidlo, dict) else "")
-                    )
-                ),
-                zip_code=sidlo.psc if hasattr(sidlo, "psc") else (sidlo.get("psc", "") if isinstance(sidlo, dict) else ""),
-                approval_status=ApprovalStatus.PENDING,
-                logo=validated_data["logo"] if "logo" in validated_data else None,
-            )
-
-            # Update the user to link to the employer profile
-            user.employer_profile = employer_profile
-            user.set_password(validated_data["password"])
-            user.save()
-
-            return user
+        try:
+            return register_organization(validated_data)
+        except ValueError as e:
+            raise serializers.ValidationError({"ARES": str(e)})
 
 
 class LogoutSerializer(serializers.Serializer):
@@ -305,167 +135,39 @@ class AresJusticeSerializer(serializers.Serializer):
     ico = serializers.RegexField(regex=r"\d{8}")
 
 
-class UserInfoSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    email = serializers.EmailField()
-    role = serializers.CharField(allow_null=True)
-    firstName = serializers.CharField()
-    lastName = serializers.CharField()
-    department = serializers.DictField(allow_null=True, required=False)
-    department_role = serializers.CharField(allow_null=True, required=False)
+class UserInfoSerializer(serializers.ModelSerializer):
+    firstName = serializers.CharField(source="first_name")
+    lastName = serializers.CharField(source="last_name")
+    role = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "role", "firstName", "lastName", "department"]
+
+    def get_role(self, obj):
+        if obj.is_superuser or obj.email == "admin@admin.com":
+            return "admin"
+        return obj.role or ""
+
+    def get_department(self, obj):
+        if not hasattr(obj, "stag_role") or not obj.stag_role:
+            return None
+
+        stag_role_name = obj.stag_role.role if hasattr(obj.stag_role, "role") else str(obj.stag_role)
+        if stag_role_name.lower() in ["vk", "vy"] and hasattr(obj, "department") and obj.department:
+            return {
+                "id": obj.department.department_id,
+                "name": obj.department.department_name,
+                "code": obj.department.department_code,
+            }
+        return None
 
 
 class TokenResponseSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     access = serializers.CharField()
     user = UserInfoSerializer()
-
-
-class PredmetStudentaSerializer(serializers.Serializer):
-    katedra = serializers.CharField()
-    kredity = serializers.IntegerField()
-    nazev = serializers.CharField()
-    rok = serializers.CharField()
-    statut = serializers.CharField()
-    uznano = serializers.CharField()
-    zkratka = serializers.CharField()
-
-
-class PredmetUciteleSerializer(serializers.Serializer):
-    cvicici = serializers.SerializerMethodField()
-    cviciciPodil = serializers.IntegerField()
-    examinator = serializers.SerializerMethodField()
-    garant = serializers.SerializerMethodField()
-    garantPodil = serializers.IntegerField(allow_null=True)
-    katedra = serializers.CharField()
-    nazev = serializers.CharField()
-    prednasejici = serializers.SerializerMethodField()
-    rok = serializers.CharField()
-    seminarici = serializers.SerializerMethodField()
-    seminariciPodil = serializers.IntegerField()
-    zkratka = serializers.CharField()
-
-    def get_cvicici(self, obj):
-        value = obj.get("cvicici", "")
-        if value.upper() == "ANO":
-            return True
-        elif value.upper() == "NE":
-            return False
-        return None
-
-    def get_examinator(self, obj):
-        value = obj.get("examinator", "")
-        if value.upper() == "ANO":
-            return True
-        elif value.upper() == "NE":
-            return False
-        return None
-
-    def get_garant(self, obj):
-        value = obj.get("garant", "")
-        if value.upper() == "ANO":
-            return True
-        elif value.upper() == "NE":
-            return False
-        return None
-
-    def get_prednasejici(self, obj):
-        value = obj.get("prednasejici", "")
-        if value.upper() == "ANO":
-            return True
-        elif value.upper() == "NE":
-            return False
-        return None
-
-    def get_seminarici(self, obj):
-        value = obj.get("seminarici", "")
-        if value.upper() == "ANO":
-            return True
-        elif value.upper() == "NE":
-            return False
-        return None
-
-
-def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StudentUser):
-    """
-    Synchronizes STAG roles with the database for student.
-    """
-    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
-    params = {
-        "osCislo": osCislo,
-        "outputFormat": "JSON",
-        "semestr": "%",
-        "rok": "%",
-    }
-
-    cookies = {
-        "WSCOOKIE": stag_ticket,
-    }
-    response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
-
-    if response.status_code == 200:
-        response_json = response.json()
-        items = response_json.get("predmetStudenta", [])
-        serializer = PredmetStudentaSerializer(data=items, many=True)
-        serializer.is_valid(raise_exception=True)
-        subject_data = serializer.validated_data
-        for subj in subject_data:
-            subjInDb = None
-            try:
-                subjInDb = Subject.objects.get(subject_code=subj["zkratka"])
-            except Subject.DoesNotExist:
-                pass
-            if subjInDb is not None:
-                UserSubject.objects.get_or_create(
-                    subject=subjInDb,
-                    user=user,
-                    defaults={
-                        "subject": subjInDb,
-                        "user": user,
-                        "role": UserSubjectType.Student,
-                    },
-                )
-    else:
-        raise Exception("Failed to fetch STAG roles")
-
-
-def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
-    """
-    Synchronizes STAG roles with the database.
-    """
-    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByUcitel"
-    params = {
-        "ucitIdno": ucitIdno,
-        "outputFormat": "JSON",
-        "semestr": "%",
-        "rok": "%",
-    }
-
-    cookies = {
-        "WSCOOKIE": stag_ticket,
-    }
-    response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
-
-    if response.status_code == 200:
-        response_json = response.json()
-        items = response_json.get("predmetUcitele", [])
-        serializer = PredmetUciteleSerializer(data=items, many=True)
-        serializer.is_valid(raise_exception=True)
-        subject_data = serializer.validated_data
-        for subj in subject_data:
-            subjInDb = None
-            try:
-                subjInDb = Subject.objects.get(subject_code=subj["zkratka"])
-            except Subject.DoesNotExist:
-                pass
-            if subjInDb is not None:
-                UserSubject.objects.get_or_create(
-                    subject=subjInDb,
-                    user=user,
-                    defaults={"subject": subjInDb, "user": user, "role": UserSubjectType.Professor},
-                )
-    else:
-        raise Exception("Failed to fetch STAG roles")
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
@@ -641,3 +343,33 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
                 departments.add(user_subject.subject.department.department_name)
 
         return list(departments) if departments else None
+
+
+class OrganizationUserListSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="full_name", read_only=True)
+    role = serializers.SerializerMethodField()
+    employer_name = serializers.CharField(source="employer_profile.company_name", read_only=True, allow_null=True)
+
+    class Meta:
+        model = OrganizationUser
+        fields = ["id", "name", "role", "employer_name"]
+
+    def get_role(self, obj):
+        if obj.organization_role is not None:
+            # If it's an integer enum value
+            if isinstance(obj.organization_role, int):
+                try:
+                    return OrganizationRole(obj.organization_role).name
+                except Exception:
+                    return str(obj.organization_role)
+            # If it's an Enum object
+            elif hasattr(obj.organization_role, "name"):
+                return obj.organization_role.name
+            # If it's a ForeignKey or object with role_name
+            elif hasattr(obj.organization_role, "role_name") and obj.organization_role.role_name:
+                return obj.organization_role.role_name
+            elif hasattr(obj.organization_role, "role") and obj.organization_role.role:
+                return obj.organization_role.role
+            else:
+                return str(obj.organization_role)
+        return None

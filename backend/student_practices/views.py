@@ -6,6 +6,7 @@ from api.models import (
     DocumentHelper,
     EmployerInvitation,
     EmployerInvitationStatus,
+    OrganizationUser,
     Practice,
     ProfessorUser,
     ProgressStatus,
@@ -13,18 +14,20 @@ from api.models import (
     StudentUser,
     UploadedDocument,
     UserSubjectType,
-    OrganizationUser,
 )
 from django.db import transaction
 from django.http import FileResponse, JsonResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, serializers, status
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from student_practices.permissions import HasDocumentAccess
+from student_practices.services import StudentPracticeService
 
 from .serializers import EmployerInvitationApprovalSerializer, ListStudentPracticeSerializer, StudentPracticeCardSerializer
 
@@ -42,51 +45,15 @@ class EmployerInvitationApprovalView(APIView):
         invitation_id = serializer.validated_data["invitation_id"]
         action = serializer.validated_data["action"]
 
-        try:
-            # Najdi invitation
-            invitation = EmployerInvitation.objects.get(invitation_id=invitation_id, user=request.user)
-        except EmployerInvitation.DoesNotExist:
-            return Response({"detail": "Pozvánka nebyla nalezena nebo k ní nemáte přístup."}, status=status.HTTP_404_NOT_FOUND)
+        result = StudentPracticeService.process_invitation_approval(request.user, invitation_id, action)
+        return Response(result, status=status.HTTP_200_OK)
 
-        # Zkontroluj, že invitation je ve stavu PENDING
-        if invitation.status != EmployerInvitationStatus.PENDING:
-            return Response({"detail": "Pozvánka již byla zpracována."}, status=status.HTTP_400_BAD_REQUEST)
-
-        with transaction.atomic():
-            if action == "accept":
-                # Změň status invitation na ACCEPTED
-                invitation.status = EmployerInvitationStatus.ACCEPTED
-                invitation.save()
-
-                # Vytvoř StudentPractice záznam
-                student_practice = StudentPractice.objects.create(
-                    user=request.user,
-                    practice=invitation.practice,
-                    application_date=date.today(),
-                    approval_status=ApprovalStatus.APPROVED,  # Automaticky schváleno
-                    progress_status=ProgressStatus.IN_PROGRESS,  # Probíhá
-                    hours_completed=0,
-                    year=date.today().year,
-                )
-
-                return Response(
-                    {"detail": "Pozvánka byla přijata a praxe byla zahájena.", "student_practice_id": student_practice.student_practice_id},
-                    status=status.HTTP_200_OK,
-                )
-
-            elif action == "reject":
-                invitation.status = EmployerInvitationStatus.REJECTED
-                invitation.save()
-
-                return Response({"detail": "Pozvánka byla zamítnuta."}, status=status.HTTP_200_OK)
-
-        return Response({"detail": "Neplatná akce."}, status=status.HTTP_400_BAD_REQUEST)
 
 class AdminPracticeListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ListStudentPracticeSerializer
     queryset = StudentPractice.objects.all()
-    
+
     def get_queryset(self):
         return StudentPractice.objects.filter(approval_status=ApprovalStatus.PENDING)
 
@@ -100,11 +67,11 @@ class StudentPracticeListView(generics.ListAPIView):
         practice_id = self.kwargs.get("practice_id")
 
         if not practice_id:
-            return JsonResponse({"error": "practice_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"error": "practice_id is required"})
 
         practice = Practice.objects.filter(practice_id=practice_id).first()
         if not practice:
-            return JsonResponse({"error": "Practice not found"}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound({"error": "Practice not found"})
 
         # Filter student practices by practice_id
         return StudentPractice.objects.filter(practice=practice).all()
@@ -173,26 +140,9 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         return instance
 
 
-class HasDocumentAccessMixin:
-    def _has_document_access(self, user, document):
-        if user.is_superuser:
-            return True
-        if isinstance(user, StudentUser):
-            return document.student_practice.user == user
-        elif isinstance(user, ProfessorUser):
-            user_subjects = document.student_practice.practice.subject.user_subjects
-            is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
-            if is_professor_for_subject:
-                return True
-        elif isinstance(user, OrganizationUser):
-            # Organizační uživatel má přístup k dokumentům praxí své organizace
-            return document.student_practice.practice.employer == user.employer_profile
-        return False
-
-
-class StudentPracticeUploadDocumentView(APIView, HasDocumentAccessMixin):
+class StudentPracticeUploadDocumentView(APIView):
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasDocumentAccess]
 
     @extend_schema(
         summary="Upload a document for a student practice",
@@ -210,9 +160,7 @@ class StudentPracticeUploadDocumentView(APIView, HasDocumentAccessMixin):
     )
     def post(self, request, document_id):
         document = get_object_or_404(UploadedDocument, pk=document_id)
-
-        if not self._has_document_access(request.user, document):
-            return Response({"detail": "Nemáte oprávnění nahrát dokument k této praxi."}, status=status.HTTP_403_FORBIDDEN)
+        self.check_object_permissions(request, document)
 
         serializer = StudentPracticeUploadDocumentSerializer(document, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -221,8 +169,8 @@ class StudentPracticeUploadDocumentView(APIView, HasDocumentAccessMixin):
         return Response({"detail": "Dokument byl úspěšně nahrán."}, status=status.HTTP_201_CREATED)
 
 
-class StudentPracticeDownloadDocumentView(APIView, HasDocumentAccessMixin):
-    permission_classes = [IsAuthenticated]
+class StudentPracticeDownloadDocumentView(APIView):
+    permission_classes = [IsAuthenticated, HasDocumentAccess]
 
     @extend_schema(
         summary="Download a document",
@@ -238,9 +186,7 @@ class StudentPracticeDownloadDocumentView(APIView, HasDocumentAccessMixin):
     )
     def get(self, request, document_id):
         document = get_object_or_404(UploadedDocument, pk=document_id)
-
-        if not self._has_document_access(request.user, document):
-            return Response({"detail": "Nemáte oprávnění stáhnout dokument k této praxi."}, status=status.HTTP_403_FORBIDDEN)
+        self.check_object_permissions(request, document)
 
         file_handle = document.document.open("rb")
         return FileResponse(file_handle, as_attachment=True, filename=document.document.name)

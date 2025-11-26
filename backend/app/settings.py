@@ -156,6 +156,7 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
     ],
+    "EXCEPTION_HANDLER": "api.exceptions.custom_exception_handler",
 }
 
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
