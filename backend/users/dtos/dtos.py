@@ -17,13 +17,19 @@ class Adresa(BaseModel):
     nazevObce: Optional[str] = Field(None, description="Název obce")
     kodCastiObce: Optional[int] = Field(None, description="Kód části obce")
     nazevCastiObce: Optional[str] = Field(None, description="Název části obce")
-    kodMestskeCastiObvodu: Optional[int] = Field(None, description="Kód městské části/obvodu")
-    nazevMestskeCastiObvodu: Optional[str] = Field(None, description="Název městské části/obvodu")
+    kodMestskeCastiObvodu: Optional[int] = Field(
+        None, description="Kód městské části/obvodu"
+    )
+    nazevMestskeCastiObvodu: Optional[str] = Field(
+        None, description="Název městské části/obvodu"
+    )
     kodUlice: Optional[int] = Field(None, description="Kód ulice")
     nazevUlice: Optional[str] = Field(None, description="Název ulice")
     cisloDomovni: Optional[int] = Field(None, description="Číslo domovní")
     cisloOrientacni: Optional[int] = Field(None, description="Číslo orientační")
-    cisloOrientacniPismeno: Optional[str] = Field(None, description="Písmeno čísla orientačního")
+    cisloOrientacniPismeno: Optional[str] = Field(
+        None, description="Písmeno čísla orientačního"
+    )
     kodAdresnihoMista: Optional[int] = Field(None, description="Kód adresního místa")
     psc: Optional[int] = Field(None, description="PSČ")
     textovaAdresa: Optional[str] = Field(None, description="Textová podoba adresy")

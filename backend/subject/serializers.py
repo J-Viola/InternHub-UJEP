@@ -12,16 +12,33 @@ class TeacherSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer):
     department = DepartmentSerializer(read_only=True)
     department_id = serializers.PrimaryKeyRelatedField(
-        queryset=Department.objects.all(), source="department", write_only=True, required=False, allow_null=True
+        queryset=Department.objects.all(),
+        source="department",
+        write_only=True,
+        required=False,
+        allow_null=True,
     )
     teacher = serializers.SerializerMethodField()
     teacher_id = serializers.PrimaryKeyRelatedField(
-        queryset=ProfessorUser.objects.all(), source="subject_manager", write_only=True, required=False, allow_null=True
+        queryset=ProfessorUser.objects.all(),
+        source="subject_manager",
+        write_only=True,
+        required=False,
+        allow_null=True,
     )
 
     class Meta:
         model = Subject
-        fields = ["subject_id", "subject_code", "subject_name", "department", "department_id", "hours_required", "teacher", "teacher_id"]
+        fields = [
+            "subject_id",
+            "subject_code",
+            "subject_name",
+            "department",
+            "department_id",
+            "hours_required",
+            "teacher",
+            "teacher_id",
+        ]
         read_only_fields = ["subject_id"]
 
     def get_teacher(self, obj):
@@ -30,7 +47,11 @@ class SubjectSerializer(serializers.ModelSerializer):
             return TeacherSerializer(obj.subject_manager).data
 
         # Fallback to UserSubject relationship for backward compatibility
-        teacher_relationship = UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor).select_related("user").first()
+        teacher_relationship = (
+            UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor)
+            .select_related("user")
+            .first()
+        )
 
         if teacher_relationship:
             return TeacherSerializer(teacher_relationship.user).data
@@ -53,7 +74,11 @@ class SubjectSerializer(serializers.ModelSerializer):
 
         # If a subject_manager was assigned, also create UserSubject relationship
         if subject.subject_manager:
-            UserSubject.objects.get_or_create(user=subject.subject_manager, subject=subject, defaults={"role": UserSubjectType.Professor})
+            UserSubject.objects.get_or_create(
+                user=subject.subject_manager,
+                subject=subject,
+                defaults={"role": UserSubjectType.Professor},
+            )
 
         return subject
 
@@ -67,10 +92,16 @@ class SubjectSerializer(serializers.ModelSerializer):
         if old_manager != new_manager:
             # Remove old manager's UserSubject if exists
             if old_manager:
-                UserSubject.objects.filter(user=old_manager, subject=subject, role=UserSubjectType.Professor).delete()
+                UserSubject.objects.filter(
+                    user=old_manager, subject=subject, role=UserSubjectType.Professor
+                ).delete()
 
             # Add new manager's UserSubject if exists
             if new_manager:
-                UserSubject.objects.get_or_create(user=new_manager, subject=subject, defaults={"role": UserSubjectType.Professor})
+                UserSubject.objects.get_or_create(
+                    user=new_manager,
+                    subject=subject,
+                    defaults={"role": UserSubjectType.Professor},
+                )
 
         return subject

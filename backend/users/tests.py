@@ -8,7 +8,11 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.serializers import CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
+from users.serializers import (
+    CustomTokenObtainPairSerializer,
+    LogoutSerializer,
+    OrganizationRegisterSerializer,
+)
 from users.views import AresJusticeView
 
 User = get_user_model()

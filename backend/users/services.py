@@ -66,7 +66,9 @@ def register_organization(validated_data):
             employer_id=user.id,
             ico=ico,
             dic=dic if dic else (ares_data.dic or ""),
-            company_name=company_name if company_name else (ares_data.obchodniJmeno or ""),
+            company_name=(
+                company_name if company_name else (ares_data.obchodniJmeno or "")
+            ),
             address=address if address else address_ares,
             zip_code=zip_code_ares,
             approval_status=ApprovalStatus.PENDING,
@@ -152,7 +154,10 @@ def get_user_department_ids(user) -> list[int]:
     return list(
         Department.objects.filter(
             subjects__user_subjects__user_id=user.id,
-            subjects__user_subjects__role__in=[UserSubjectType.Student.value, UserSubjectType.Professor.value],
+            subjects__user_subjects__role__in=[
+                UserSubjectType.Student.value,
+                UserSubjectType.Professor.value,
+            ],
         )
         .values_list("department_id", flat=True)
         .distinct()
@@ -175,7 +180,10 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
         return cached_data
 
     try:
-        response = requests.get(f"https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/{ico}", timeout=5)
+        response = requests.get(
+            f"https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/{ico}",
+            timeout=5,
+        )
         if response.status_code == 200:
             response_data = response.json()
             if "kod" in response_data and response_data["kod"] is not None:
@@ -221,7 +229,12 @@ def validate_stag_ticket(ticket: str):
     if not email:
         raise AuthenticationFailed("Email not returned by STAG")
 
-    return {"email": email, "first_name": jmeno, "last_name": prijmeni, "stagUserInfo": stagUserInfos[0]}  # Taking the first role/info
+    return {
+        "email": email,
+        "first_name": jmeno,
+        "last_name": prijmeni,
+        "stagUserInfo": stagUserInfos[0],
+    }  # Taking the first role/info
 
 
 def get_or_create_stag_user(stag_data: dict, ticket: str):
@@ -238,7 +251,9 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
     osCislo = info.get("osCislo")
     ucitIdno = info.get("ucitIdno")
 
-    stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
+    stagRole, _ = StagRole.objects.get_or_create(
+        role=role, defaults={"role": role, "role_name": roleName}
+    )
 
     user = None
 
@@ -264,9 +279,15 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
             try:
                 department = Department.objects.get(department_code=katedra)
             except Department.DoesNotExist:
-                raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
+                raise AuthenticationFailed(
+                    f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému"
+                )
 
-            department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
+            department_role = (
+                DepartmentRole.HEAD
+                if stagRole.role == StagRoleEnum.VK
+                else DepartmentRole.TEACHER
+            )
 
             user = ProfessorUser.objects.create(
                 email=email,
@@ -301,7 +322,13 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
     }
 
     try:
-        response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
+        response = requests.get(
+            url,
+            cookies=cookies,
+            params=params,
+            timeout=(3.05, 27),
+            headers={"Accept": "application/json"},
+        )
     except requests.RequestException:
         # Log error but don't fail the whole login if syncing subjects fails
         return
@@ -341,7 +368,13 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
     }
 
     try:
-        response = requests.get(url, cookies=cookies, params=params, timeout=(3.05, 27), headers={"Accept": "application/json"})
+        response = requests.get(
+            url,
+            cookies=cookies,
+            params=params,
+            timeout=(3.05, 27),
+            headers={"Accept": "application/json"},
+        )
     except requests.RequestException:
         return
 

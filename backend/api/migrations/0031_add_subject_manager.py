@@ -15,7 +15,11 @@ class Migration(migrations.Migration):
             model_name="subject",
             name="subject_manager",
             field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="managed_subjects", to="api.professoruser"
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="managed_subjects",
+                to="api.professoruser",
             ),
         ),
     ]

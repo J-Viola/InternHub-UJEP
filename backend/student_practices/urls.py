@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminPracticeListView,
     EmployerInvitationApprovalView,
     OrganizationApplicationsView,
     StudentPracticeCardView,
@@ -8,19 +9,33 @@ from .views import (
     StudentPracticeListView,
     StudentPracticeStatusUpdateView,
     StudentPracticeUploadDocumentView,
-    AdminPracticeListView,
 )
 
 app_name = "student_practices"
 
 urlpatterns = [
     # Admin
-    path("admin-view/pending-practices/", AdminPracticeListView.as_view(), name="admin-practice-list"),
-
+    path(
+        "admin-view/pending-practices/",
+        AdminPracticeListView.as_view(),
+        name="admin-practice-list",
+    ),
     # Zbytek API
-    path("student-practices/by-practice/<int:practice_id>", StudentPracticeListView.as_view(), name="student-practice-list"),
-    path("employer-invitation/approve/", EmployerInvitationApprovalView.as_view(), name="employer-invitation-approve"),
-    path("organization-applications/", OrganizationApplicationsView.as_view(), name="organization-applications"),
+    path(
+        "student-practices/by-practice/<int:practice_id>",
+        StudentPracticeListView.as_view(),
+        name="student-practice-list",
+    ),
+    path(
+        "employer-invitation/approve/",
+        EmployerInvitationApprovalView.as_view(),
+        name="employer-invitation-approve",
+    ),
+    path(
+        "organization-applications/",
+        OrganizationApplicationsView.as_view(),
+        name="organization-applications",
+    ),
     path(
         "student-practices/<int:student_practice_id>/status/",
         StudentPracticeStatusUpdateView.as_view(),
@@ -31,6 +46,14 @@ urlpatterns = [
         StudentPracticeCardView.as_view(),
         name="student-practice-card",
     ),
-    path("download-document/<int:document_id>", StudentPracticeDownloadDocumentView.as_view(), name="student-practice-download-document"),
-    path("upload-document/<int:document_id>", StudentPracticeUploadDocumentView.as_view(), name="student-practice-upload-document"),
+    path(
+        "download-document/<int:document_id>",
+        StudentPracticeDownloadDocumentView.as_view(),
+        name="student-practice-download-document",
+    ),
+    path(
+        "upload-document/<int:document_id>",
+        StudentPracticeUploadDocumentView.as_view(),
+        name="student-practice-upload-document",
+    ),
 ]

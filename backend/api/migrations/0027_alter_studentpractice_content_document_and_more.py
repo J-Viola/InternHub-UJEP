@@ -27,7 +27,9 @@ class Migration(migrations.Migration):
             qs = StudentPractice.objects.filter(**{f"{field}__isnull": True})
             for sp in qs:
                 with open(path, "rb") as f:
-                    upload = UploadedDocument(document_type=doc_type, document=File(f, name=filename))
+                    upload = UploadedDocument(
+                        document_type=doc_type, document=File(f, name=filename)
+                    )
                     upload.save()
                 setattr(sp, field + "_id", upload.pk)
                 sp.save(update_fields=[field])

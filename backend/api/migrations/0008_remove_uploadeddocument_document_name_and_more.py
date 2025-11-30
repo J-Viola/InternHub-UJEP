@@ -28,7 +28,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="usersubject",
             name="role",
-            field=django_enumfield.db.fields.EnumField(default=0, enum=api.models.UserSubjectType),
+            field=django_enumfield.db.fields.EnumField(
+                default=0, enum=api.models.UserSubjectType
+            ),
             preserve_default=False,
         ),
     ]

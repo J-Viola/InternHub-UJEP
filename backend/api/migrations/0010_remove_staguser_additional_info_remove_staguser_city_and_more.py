@@ -86,7 +86,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "department_role",
-                    django_enumfield.db.fields.EnumField(blank=True, enum=api.models.DepartmentRole, null=True),
+                    django_enumfield.db.fields.EnumField(
+                        blank=True, enum=api.models.DepartmentRole, null=True
+                    ),
                 ),
                 (
                     "department",

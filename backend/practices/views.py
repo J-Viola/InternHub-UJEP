@@ -1,6 +1,5 @@
 from datetime import date
 
-from api.decorators import role_required
 from api.models import (
     ApprovalStatus,
     Department,
@@ -14,9 +13,12 @@ from api.models import (
     StudentUser,
     UserSubjectType,
 )
+from api.permissions import IsOrganizationOwner
 from api.views import StandardResultsSetPagination
 from django.db.models import Count, Q
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from practices.filters import PracticeFilter
 from practices.serializers import (
     EndDateRequestSerializer,
     EndDateResponseSerializer,
@@ -25,7 +27,6 @@ from practices.serializers import (
     PracticeApprovalStatusSerializer,
     PracticeSerializer,
     RunningPracticeSerializer,
-    StudentPracticeSerializer,
 )
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
@@ -35,6 +36,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from student_practices.serializers import StudentPracticeSerializer
 from users.models import StagRoleEnum
 
 
@@ -47,11 +49,18 @@ class PracticeViewSet(viewsets.ModelViewSet):
     serializer_class = PracticeSerializer
     pagination_class = StandardResultsSetPagination
     parser_classes = [MultiPartParser, FormParser]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_class = PracticeFilter
     search_fields = ["title", "description", "employer__company_name"]
     ordering_fields = ["start_date", "end_date", "title", "practice_id"]
 
     def get_permissions(self):
+        if self.action in ["update", "partial_update", "destroy"]:
+            return [permissions.IsAuthenticated(), IsOrganizationOwner()]
         return [permissions.IsAuthenticated()]
 
     def list(self, request, *args, **kwargs):
@@ -87,15 +96,23 @@ class PracticeViewSet(viewsets.ModelViewSet):
                 student = None
             if student:
                 approved_practices = StudentPractice.objects.filter(
-                    user=student, practice=practice_obj, approval_status=ApprovalStatus.APPROVED
+                    user=student,
+                    practice=practice_obj,
+                    approval_status=ApprovalStatus.APPROVED,
                 )
                 for sp in approved_practices:
                     if sp.contract_document_id:
-                        student_practice_documents.append({"id": sp.contract_document_id, "type": "contract"})
+                        student_practice_documents.append(
+                            {"id": sp.contract_document_id, "type": "contract"}
+                        )
                     if sp.content_document_id:
-                        student_practice_documents.append({"id": sp.content_document_id, "type": "content"})
+                        student_practice_documents.append(
+                            {"id": sp.content_document_id, "type": "content"}
+                        )
                     if sp.feedback_document_id:
-                        student_practice_documents.append({"id": sp.feedback_document_id, "type": "feedback"})
+                        student_practice_documents.append(
+                            {"id": sp.feedback_document_id, "type": "feedback"}
+                        )
 
         response_data = serializer.data
         response_data["contact_user_info"] = contact_user_info
@@ -108,12 +125,18 @@ class PracticeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         # Set employer_id from logged-in user if not provided
-        if not data.get("employer_id") and hasattr(user, "employer_profile") and user.employer_profile:
+        if (
+            not data.get("employer_id")
+            and hasattr(user, "employer_profile")
+            and user.employer_profile
+        ):
             data["employer_id"] = user.employer_profile.employer_id
 
             # Set logo from employer profile
             if user.employer_profile.logo:
-                data["image_base64"] = PracticeService.encode_logo_to_base64(user.employer_profile.logo)
+                data["image_base64"] = PracticeService.encode_logo_to_base64(
+                    user.employer_profile.logo
+                )
 
         # Set default statuses
         data.setdefault("approval_status", 0)
@@ -124,7 +147,6 @@ class PracticeViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def update(self, request, pk=None, *args, **kwargs):
         # PUT /api/practices/{id}/
         partial = kwargs.pop("partial", False)
@@ -136,32 +158,36 @@ class PracticeViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
-    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def partial_update(self, request, pk=None, *args, **kwargs):
         # PATCH /api/practices/{id}/
         return self.update(request, pk, partial=True, *args, **kwargs)
 
-    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def destroy(self, request, pk=None, *args, **kwargs):
         # DELETE /api/practices/{id}/
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def get_practice_user_relations(self, request, pk=None, *args, **kwargs):
         """GET /api/practices/get_practice_user_relations/ - Get user's practices and invitations"""
         user = request.user
 
         if not user.pk:
-            return Response({"detail": "Uživatel nebyl nalezen"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Uživatel nebyl nalezen"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         result = PracticeService.get_user_practices_and_invitations(user)
 
         return Response(result)
 
     # PODÁNÍ PŘIHLÁŠKY STUDENTEM
-    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
+    )
     def apply_student_practice(self, request):
         """
         POST /api/practices/apply_student_practice/
@@ -172,7 +198,10 @@ class PracticeViewSet(viewsets.ModelViewSet):
         practice_id = request.data.get("practice")
 
         if not practice_id:
-            return Response({"detail": "Chybí practice (id praxe)"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Chybí practice (id praxe)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         data = PracticeService.apply_student_practice(user, practice_id)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -184,7 +213,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
         Vrací praxe, které budou začínat v budoucnu (start_date >= dnes)
         """
         today = date.today()
-        upcoming_practices = Practice.objects.filter(start_date__gte=today, is_active=True).order_by("start_date")
+        upcoming_practices = Practice.objects.filter(
+            start_date__gte=today, is_active=True
+        ).order_by("start_date")
         page = self.paginate_queryset(upcoming_practices)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -200,24 +231,35 @@ class PracticeViewSet(viewsets.ModelViewSet):
         """
         subj_id = request.query_params.get("subject_id")
         if not subj_id:
-            return Response({"detail": "Chybí subject_id"}, status=status.HTTP_400_BAD_REQUEST)
-        practices = Practice.objects.filter(subject_id=subj_id, is_active=True).order_by("start_date")
+            return Response(
+                {"detail": "Chybí subject_id"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        practices = Practice.objects.filter(
+            subject_id=subj_id, is_active=True
+        ).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
     @action(
-        detail=False, methods=["get"], permission_classes=[permissions.AllowAny], url_path="by_employer_profile/(?P<employer_id>[^/.]+)"
+        detail=False,
+        methods=["get"],
+        permission_classes=[permissions.AllowAny],
+        url_path="by_employer_profile/(?P<employer_id>[^/.]+)",
     )
     def by_employer_profile(self, request, employer_id):
         """
         GET /api/practices/by_employer_profile/{employer_id}
         Vrací praxe patřící k dané organizaci
         """
-        practices = Practice.objects.filter(employer=employer_id, is_active=True).order_by("start_date")
+        practices = Practice.objects.filter(
+            employer=employer_id, is_active=True
+        ).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def organization_practices(self, request):
         """
         GET /api/practices/organization_practices/
@@ -228,18 +270,24 @@ class PracticeViewSet(viewsets.ModelViewSet):
         # Kontrola, zda je uživatel organizace
         if not hasattr(user, "employer_profile") or not user.employer_profile:
             return Response(
-                {"detail": "Přístup odepřen. Pouze uživatelé organizací mohou přistupovat k tomuto endpointu."},
+                {
+                    "detail": "Přístup odepřen. Pouze uživatelé organizací mohou přistupovat k tomuto endpointu."
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         # Získání praxí podle employer_profile uživatele
-        practices = PracticeService.get_organization_practices_queryset(user.employer_profile)
+        practices = PracticeService.get_organization_practices_queryset(
+            user.employer_profile
+        )
 
         serializer = OrganizationPracticeSerializer(practices, many=True)
         return Response(serializer.data)
 
     # SEARCH ENDPOINT - pro parametry v requestu
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def search(self, request):
         """
         GET /api/practices/search/
@@ -267,7 +315,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def by_user_department(self, request):
         """
         GET /api/practices/by_user_department/
@@ -275,24 +325,42 @@ class PracticeViewSet(viewsets.ModelViewSet):
         """
         user = request.user
         if not user.pk:
-            return Response({"detail": "Chybí user_id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Chybí user_id"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         result = PracticeService.get_practices_by_department(user)
 
         if result is None:
-            return Response({"detail": "Uživatel nemá přiřazenou žádnou katedru."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Uživatel nemá přiřazenou žádnou katedru."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         approved = result["approved"]
         to_approve = result["to_approve"]
 
         serializer = PracticeSerializer
-        approved_data = serializer(approved, many=True, context={"request": request}).data
-        to_approve_data = serializer(to_approve, many=True, context={"request": request}).data
+        approved_data = serializer(
+            approved, many=True, context={"request": request}
+        ).data
+        to_approve_data = serializer(
+            to_approve, many=True, context={"request": request}
+        ).data
 
-        approved_data = PracticeService.enrich_contact_user_info(approved_data, approved)
-        to_approve_data = PracticeService.enrich_contact_user_info(to_approve_data, to_approve)
+        approved_data = PracticeService.enrich_contact_user_info(
+            approved_data, approved
+        )
+        to_approve_data = PracticeService.enrich_contact_user_info(
+            to_approve_data, to_approve
+        )
 
-        return Response({"approved_practices": approved_data, "to_approve_practices": to_approve_data})
+        return Response(
+            {
+                "approved_practices": approved_data,
+                "to_approve_practices": to_approve_data,
+            }
+        )
 
 
 class RunningPracticeListView(generics.ListAPIView):
@@ -305,15 +373,23 @@ class RunningPracticeListView(generics.ListAPIView):
         # Počet přihlášek
         head_of_department = True
         if head_of_department:
-            dept_ids = Department.objects.all().values_list("department_id", flat=True).distinct()
+            dept_ids = (
+                Department.objects.all()
+                .values_list("department_id", flat=True)
+                .distinct()
+            )
         else:
             dept_ids = (
-                Department.objects.filter(subjects__user_subjects__user=self.request.user)
+                Department.objects.filter(
+                    subjects__user_subjects__user=self.request.user
+                )
                 .values_list("department_id", flat=True)
                 .distinct()
             )
 
-        students = StudentUser.objects.filter(user_subjects__subject__department_id__in=dept_ids).distinct()
+        students = StudentUser.objects.filter(
+            user_subjects__subject__department_id__in=dept_ids
+        ).distinct()
         practices = (
             Practice.objects.filter(
                 student_practices__user__in=students,
@@ -322,8 +398,16 @@ class RunningPracticeListView(generics.ListAPIView):
             .distinct()
             .annotate(
                 total_student_count=Count("student_practices"),
-                approved_count=Count("student_practices", filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED)),
-                pending_count=Count("student_practices", filter=Q(student_practices__approval_status=ApprovalStatus.PENDING)),
+                approved_count=Count(
+                    "student_practices",
+                    filter=Q(
+                        student_practices__approval_status=ApprovalStatus.APPROVED
+                    ),
+                ),
+                pending_count=Count(
+                    "student_practices",
+                    filter=Q(student_practices__approval_status=ApprovalStatus.PENDING),
+                ),
             )
         )
 
@@ -340,8 +424,16 @@ class AdminPracticesListView(generics.ListAPIView):
             .select_related("subject", "subject__department", "contact_user")
             .prefetch_related("student_practices")
             .annotate(
-                approved_count=Count("student_practices", filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED)),
-                pending_count=Count("student_practices", filter=Q(student_practices__approval_status=ApprovalStatus.PENDING)),
+                approved_count=Count(
+                    "student_practices",
+                    filter=Q(
+                        student_practices__approval_status=ApprovalStatus.APPROVED
+                    ),
+                ),
+                pending_count=Count(
+                    "student_practices",
+                    filter=Q(student_practices__approval_status=ApprovalStatus.PENDING),
+                ),
             )
             .order_by("-created_at")
         )
@@ -367,9 +459,15 @@ class PracticesForApprovingListView(generics.ListAPIView):
     serializer_class = PracticeApprovalSerializer
 
     def get_queryset(self):
-        dept_ids = Department.objects.filter(professor_users=self.request.user).values_list("department_id", flat=True).distinct()
+        dept_ids = (
+            Department.objects.filter(professor_users=self.request.user)
+            .values_list("department_id", flat=True)
+            .distinct()
+        )
 
-        practices_to_approve = Practice.objects.filter(subject__department_id__in=dept_ids, approval_status=ApprovalStatus.PENDING)
+        practices_to_approve = Practice.objects.filter(
+            subject__department_id__in=dept_ids, approval_status=ApprovalStatus.PENDING
+        )
 
         print(f"Found {practices_to_approve.count()} for approval")
 
@@ -389,15 +487,22 @@ class ChangePendingView(APIView):
         try:
             practice_obj = Practice.objects.get(pk=practice_id)
         except Practice.DoesNotExist:
-            return Response({"detail": "Praxe nenalezena"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Praxe nenalezena"}, status=status.HTTP_404_NOT_FOUND
+            )
         if practice_obj.approval_status != ApprovalStatus.PENDING:
-            return Response({"detail": "Praxe je již schválena/zamítnuta"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Praxe je již schválena/zamítnuta"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        approval_status = ApprovalStatus.get(name_or_numeric=serializer.validated_data.get("approval_status"))
+        approval_status = ApprovalStatus.get(
+            name_or_numeric=serializer.validated_data.get("approval_status")
+        )
         practice_obj.approval_status = approval_status
         practice_obj.save()
         serializer = PracticeSerializer(practice_obj)
@@ -423,4 +528,6 @@ class GetEndDateView(APIView):
         coefficient = serializer.validated_data["coefficient"]
         end_date = calculate_end_date(start_date, coefficient)
         output = {"end_date": end_date}
-        return Response(EndDateResponseSerializer(output).data, status=status.HTTP_200_OK)
+        return Response(
+            EndDateResponseSerializer(output).data, status=status.HTTP_200_OK
+        )

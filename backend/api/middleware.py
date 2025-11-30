@@ -21,13 +21,15 @@ class DocumentPermissionMiddleware(MiddlewareMixin):
         rel_path = request.path[len(settings.STORAGE_URL) :]
 
         # Check if user has access to this document
-        has_access = UploadedDocument.objects.filter(
-            document=rel_path
-        ).filter(
-            Q(practice__contact_user=request.user)
-            | Q(practice__practiceuser__user=request.user)
-            | Q(practice__studentpractice__user=request.user)
-        ).exists()
+        has_access = (
+            UploadedDocument.objects.filter(document=rel_path)
+            .filter(
+                Q(practice__contact_user=request.user)
+                | Q(practice__practiceuser__user=request.user)
+                | Q(practice__studentpractice__user=request.user)
+            )
+            .exists()
+        )
 
         if not has_access:
             raise Http404()

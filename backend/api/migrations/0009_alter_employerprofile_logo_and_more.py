@@ -13,11 +13,15 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="employerprofile",
             name="logo",
-            field=models.ImageField(blank=True, null=True, upload_to="storage/images/logos"),
+            field=models.ImageField(
+                blank=True, null=True, upload_to="storage/images/logos"
+            ),
         ),
         migrations.AlterField(
             model_name="uploadeddocument",
             name="document",
-            field=models.FileField(blank=True, null=True, upload_to="storage/documents"),
+            field=models.FileField(
+                blank=True, null=True, upload_to="storage/documents"
+            ),
         ),
     ]

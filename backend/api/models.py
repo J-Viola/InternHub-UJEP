@@ -36,7 +36,10 @@ class UserManager(PolymorphicManager, BaseUserManager):
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        if extra_fields.get("is_staff") is not True or extra_fields.get("is_superuser") is not True:
+        if (
+            extra_fields.get("is_staff") is not True
+            or extra_fields.get("is_superuser") is not True
+        ):
             raise ValueError("Superuser must have is_staff=True and is_superuser=True")
         return self.create_user(email, password, **extra_fields)
 
@@ -96,7 +99,9 @@ class EmployerProfile(models.Model):
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, null=True)
     approval_status = enum.EnumField(ApprovalStatus)
-    logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
+    logo = models.ImageField(
+        upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -157,7 +162,13 @@ class OrganizationRole(enum.Enum):
 
 
 class OrganizationUser(User):
-    employer_profile = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True, related_name="organization_users")
+    employer_profile = models.ForeignKey(
+        EmployerProfile,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="organization_users",
+    )
     organization_role = enum.EnumField(OrganizationRole, blank=True, null=True)
 
     class Meta:
@@ -168,11 +179,15 @@ class OrganizationUser(User):
 
     @property
     def role(self):
-        return self.organization_role.name if self.organization_role is not None else None
+        return (
+            self.organization_role.name if self.organization_role is not None else None
+        )
 
 
 class StagUser(User):
-    stag_role = models.ForeignKey(StagRole, models.DO_NOTHING, blank=True, null=True, related_name="stag_users")
+    stag_role = models.ForeignKey(
+        StagRole, models.DO_NOTHING, blank=True, null=True, related_name="stag_users"
+    )
 
     class Meta:
         db_table = "stag_users"
@@ -197,7 +212,9 @@ class StudentUser(StagUser):
     zip_code = models.CharField(max_length=10, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     specialization = models.CharField(max_length=100, blank=True, null=True)
-    practices = models.ManyToManyField("Practice", through="StudentPractice", related_name="student_users")
+    practices = models.ManyToManyField(
+        "Practice", through="StudentPractice", related_name="student_users"
+    )
 
     class Meta:
         db_table = "student_users"
@@ -210,7 +227,13 @@ class DepartmentRole(enum.Enum):
 
 class ProfessorUser(StagUser):
     ucit_idno = models.CharField(unique=True, max_length=64, blank=True, null=True)
-    department = models.ForeignKey("Department", models.DO_NOTHING, blank=True, null=True, related_name="professor_users")
+    department = models.ForeignKey(
+        "Department",
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="professor_users",
+    )
     department_role = enum.EnumField(DepartmentRole, blank=True, null=True)
 
     class Meta:
@@ -219,7 +242,9 @@ class ProfessorUser(StagUser):
 
 class ActionLog(models.Model):
     action_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True, related_name="action_logs")
+    user = models.ForeignKey(
+        User, models.DO_NOTHING, blank=True, null=True, related_name="action_logs"
+    )
     action_type = models.CharField(max_length=50, blank=True, null=True)
     object_type = models.CharField(max_length=50, blank=True, null=True)
     object_id = models.IntegerField(blank=True, null=True)
@@ -251,9 +276,17 @@ class Subject(models.Model):
     subject_id = models.AutoField(primary_key=True)
     subject_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
     subject_name = models.CharField(max_length=100, blank=True, null=True)
-    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True, related_name="subjects")
+    department = models.ForeignKey(
+        Department, models.DO_NOTHING, blank=True, null=True, related_name="subjects"
+    )
     hours_required = models.IntegerField(blank=True, null=True)
-    subject_manager = models.ForeignKey("ProfessorUser", models.SET_NULL, blank=True, null=True, related_name="managed_subjects")
+    subject_manager = models.ForeignKey(
+        "ProfessorUser",
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="managed_subjects",
+    )
 
     def __str__(self):
         return self.subject_name or self.subject_code or super().__str__()
@@ -264,9 +297,27 @@ class Subject(models.Model):
 
 class EmployerInvitation(models.Model):
     invitation_id = models.AutoField(primary_key=True)
-    employer = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True, related_name="employer_invitations")
-    user = models.ForeignKey(StudentUser, models.DO_NOTHING, blank=True, null=True, related_name="employer_invitations")
-    practice = models.ForeignKey("Practice", models.DO_NOTHING, blank=True, null=True, related_name="employer_invitations")
+    employer = models.ForeignKey(
+        EmployerProfile,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="employer_invitations",
+    )
+    user = models.ForeignKey(
+        StudentUser,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="employer_invitations",
+    )
+    practice = models.ForeignKey(
+        "Practice",
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="employer_invitations",
+    )
     submission_date = models.DateField(blank=True, null=True)
     expiration_date = models.DateField(blank=True, null=True)
     message = models.TextField(blank=True, null=True)
@@ -283,8 +334,16 @@ class EmployerInvitation(models.Model):
 
 class Practice(models.Model):
     practice_id = models.AutoField(primary_key=True)
-    employer = models.ForeignKey(EmployerProfile, models.DO_NOTHING, blank=True, null=True, related_name="practices")
-    subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True, related_name="practices")
+    employer = models.ForeignKey(
+        EmployerProfile,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="practices",
+    )
+    subject = models.ForeignKey(
+        Subject, models.DO_NOTHING, blank=True, null=True, related_name="practices"
+    )
     title = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     responsibilities = models.TextField(blank=True, null=True)
@@ -293,7 +352,13 @@ class Practice(models.Model):
     end_date = models.DateField(blank=True, null=True)
     progress_status = enum.EnumField(ProgressStatus)
     approval_status = enum.EnumField(ApprovalStatus)
-    contact_user = models.ForeignKey(OrganizationUser, models.DO_NOTHING, blank=True, null=True, related_name="practices")
+    contact_user = models.ForeignKey(
+        OrganizationUser,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="practices",
+    )
     is_active = models.BooleanField(blank=True, null=True)
     image_base64 = models.TextField(blank=True, null=True)
     # image = models.ImageField(upload_to=settings.STORAGE_URL + "images/practices", blank=True, null=True)
@@ -317,7 +382,9 @@ class DocumentType(enum.Enum):
 
 class UploadedDocument(models.Model):
     document_id = models.AutoField(primary_key=True)
-    document = models.FileField(upload_to=settings.STORAGE_URL + "documents", blank=True, null=True)
+    document = models.FileField(
+        upload_to=settings.STORAGE_URL + "documents", blank=True, null=True
+    )
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = enum.EnumField(DocumentType)
 
@@ -340,26 +407,47 @@ class UploadedDocument(models.Model):
 
 class StudentPractice(models.Model):
     def validate_contract_document_type(document):
-        if document and document.contract_document.document_type != DocumentType.CONTRACT:
+        if (
+            document
+            and document.contract_document.document_type != DocumentType.CONTRACT
+        ):
             from django.core.exceptions import ValidationError
 
             raise ValidationError("Document must be of type CONTRACT")
 
     def validate_feedback_document_type(document):
-        if document and document.contract_document.document_type != DocumentType.FEEDBACK:
+        if (
+            document
+            and document.contract_document.document_type != DocumentType.FEEDBACK
+        ):
             from django.core.exceptions import ValidationError
 
             raise ValidationError("Document must be of type CONTENT")
 
     def validate_content_document_type(document):
-        if document and document.contract_document.document_type != DocumentType.CONTENT:
+        if (
+            document
+            and document.contract_document.document_type != DocumentType.CONTENT
+        ):
             from django.core.exceptions import ValidationError
 
             raise ValidationError("Document must be of type FEEDBACK")
 
     student_practice_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(StudentUser, models.DO_NOTHING, blank=True, null=True, related_name="student_practices")
-    practice = models.ForeignKey(Practice, models.DO_NOTHING, blank=True, null=True, related_name="student_practices")
+    user = models.ForeignKey(
+        StudentUser,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="student_practices",
+    )
+    practice = models.ForeignKey(
+        Practice,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="student_practices",
+    )
     application_date = models.DateField(blank=True, null=True)
     approval_status = enum.EnumField(ApprovalStatus)
     progress_status = enum.EnumField(ProgressStatus)
@@ -400,10 +488,18 @@ class StudentPractice(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.pk is None:
-            user_id = self.user.id if self.user is not None else random.randint(0, 99999999)
-            self.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT, user_id)
-            self.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
-            self.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
+            user_id = (
+                self.user.id if self.user is not None else random.randint(0, 99999999)
+            )
+            self.contract_document = DocumentHelper.create_default_document(
+                DocumentType.CONTRACT, user_id
+            )
+            self.content_document = DocumentHelper.create_default_document(
+                DocumentType.CONTENT, user_id
+            )
+            self.feedback_document = DocumentHelper.create_default_document(
+                DocumentType.FEEDBACK, user_id
+            )
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"
@@ -420,8 +516,12 @@ class UserSubjectType(enum.Enum):
 
 class UserSubject(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(StagUser, models.DO_NOTHING, blank=True, null=True, related_name="user_subjects")
-    subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True, related_name="user_subjects")
+    user = models.ForeignKey(
+        StagUser, models.DO_NOTHING, blank=True, null=True, related_name="user_subjects"
+    )
+    subject = models.ForeignKey(
+        Subject, models.DO_NOTHING, blank=True, null=True, related_name="user_subjects"
+    )
     role = enum.EnumField(UserSubjectType)
 
     def __str__(self):
@@ -449,12 +549,18 @@ class DocumentHelper:
         document_file = File(open(file_path, "rb"))
         document_file.name = f"default_{DocumentHelper.create_name_for_document(document_type, user_id, document_file.name)}"
 
-        document = UploadedDocument(document_type=document_type, document=document_file, uploaded_at=datetime.datetime.now())
+        document = UploadedDocument(
+            document_type=document_type,
+            document=document_file,
+            uploaded_at=datetime.datetime.now(),
+        )
         document.save()
         return document
 
     @staticmethod
-    def create_name_for_document(document_type: DocumentType, user_id: int, file_name: str):
+    def create_name_for_document(
+        document_type: DocumentType, user_id: int, file_name: str
+    ):
         timestamp = datetime.datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         ext = file_name.rsplit(".", 1)[-1].lower()
         user_id_hash = hashlib.md5(str(user_id).encode()).hexdigest()[:8]

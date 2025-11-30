@@ -6,7 +6,9 @@ from typing import Iterable
 import holidays
 
 
-def add_working_days(start_date: datetime.date, days: int, skip_dates: Iterable[datetime.date]) -> datetime.date:
+def add_working_days(
+    start_date: datetime.date, days: int, skip_dates: Iterable[datetime.date]
+) -> datetime.date:
     current = start_date
     added = 1
     while added < days:
@@ -16,7 +18,9 @@ def add_working_days(start_date: datetime.date, days: int, skip_dates: Iterable[
     return current
 
 
-def calculate_end_date(start_date: datetime.date, coeficient: float = 1, daily_hours: int = 8) -> datetime.date:
+def calculate_end_date(
+    start_date: datetime.date, coeficient: float = 1, daily_hours: int = 8
+) -> datetime.date:
     """
     Return the end date by adding the needed working days (hours/daily_hours),
     skipping weekends and national holidays for `country`.

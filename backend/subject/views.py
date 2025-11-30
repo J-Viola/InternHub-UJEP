@@ -26,7 +26,11 @@ class SubjectViewSet(viewsets.ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     filterset_fields = ["department", "subject_code"]
     search_fields = ["subject_name", "subject_code"]
     ordering_fields = ["subject_name", "subject_code", "department__department_name"]
@@ -49,7 +53,9 @@ class SubjectViewSet(viewsets.ModelViewSet):
             return Response({"error": "Uživatel nemá přiřazenou katedru"}, status=400)
 
         # Get all subjects from the user's departments
-        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related("department")
+        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related(
+            "department"
+        )
 
         # Serialize the subjects
         serializer = self.get_serializer(subjects, many=True)

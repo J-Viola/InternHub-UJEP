@@ -30,7 +30,11 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("api/practices/", include("practices.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path(
+        "api/schema/swagger-ui/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
     path("api/documents/<path:path>/", serve_user_file, name="serve_user_file"),
     path("api/departments/", include("department.urls")),
     path("api/subjects/", include("subject.urls")),
