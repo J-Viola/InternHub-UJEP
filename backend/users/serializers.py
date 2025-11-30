@@ -11,17 +11,11 @@ from api.models import (
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
-from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.models import UserType
-from users.services import (
-    fetch_ares_data,
-    get_or_create_stag_user,
-    register_organization,
-    validate_stag_ticket,
-)
+from users.services import get_or_create_stag_user, register_organization, validate_stag_ticket
 
 User = get_user_model()
 
@@ -31,96 +25,68 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make password optional because we might login via Ticket
-        self.fields["password"].required = False
-        self.fields["email"].required = False
-
-    @classmethod
-    def get_token(cls, user):
-        """
-        Add custom claims to the token payload.
-        This runs when the token is generated.
-        """
-        token = super().get_token(user)
-
-        # Add custom claims
-        token["email"] = user.email
-
-        # Determine user type and role for the token payload
-        if isinstance(user, OrganizationUser):
-            token["user_type"] = UserType.ORGANIZATION.value
-            # token["role"] = user.organization_role # If needed in token
-        elif isinstance(user, StudentUser) or isinstance(user, ProfessorUser):
-            token["user_type"] = UserType.STAG.value
-        else:
-            token["user_type"] = "admin" if user.is_superuser else "unknown"
-
-        return token
+        # override parent’s password field to be optional/blank
+        pw = self.fields["password"]
+        pw.required = False
+        pw.allow_blank = True
+        pw.write_only = True
+        email = self.fields["email"]
+        email.required = False
+        email.allow_blank = True
+        email.write_only = True
 
     def validate(self, attrs):
-        ticket = attrs.get("service_ticket")
-        email = attrs.get("email")
-        password = attrs.get("password")
+        ticket = attrs.pop("service_ticket", None)
 
-        user = None
-
-        # 1. Authentication Logic
         if ticket:
-            # STAG Auth
             try:
                 stag_data = validate_stag_ticket(ticket)
                 user = get_or_create_stag_user(stag_data, ticket)
                 if not user:
-                    raise AuthenticationFailed(
-                        "Could not create or retrieve STAG user."
-                    )
+                    raise AuthenticationFailed("Could not create or retrieve STAG user.")
+
+                # Update last login manually since we bypassed authenticate()
+                update_last_login(None, user)
+
+                refresh = self.get_token(user)
+                refresh["type"] = UserType.STAG.value
+                refresh["service_ticket"] = ticket
+                return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
             except Exception as e:
                 raise AuthenticationFailed(str(e))
 
-        elif email and password:
-            # Standard Password Auth
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                raise AuthenticationFailed("No account found with this email address")
+        email = attrs.get("email")
+        password = attrs.get("password")
 
-            if not user.check_password(password):
-                raise AuthenticationFailed("Invalid credentials")
+        if email and password:
+            return self._validate_with_credentials(email, password)
 
-            if not user.is_active:
-                raise AuthenticationFailed("Account is disabled")
-        else:
-            raise AuthenticationFailed("Email/Password or Service Ticket required.")
+        raise AuthenticationFailed("Email and password are required")
 
-        # 2. Generate Tokens using parent logic logic manually
-        # (Because parent.validate() expects 'email'/'password' in attrs specifically for authenticate())
+    def _validate_with_credentials(self, email, password):
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise AuthenticationFailed("No account found with this email address")
 
-        # Update last login manually since we bypassed authenticate()
+        if not user.check_password(password) or not user.is_active:
+            raise AuthenticationFailed("Invalid credentials or disabled account")
+
+        # authenticate() updates last_login internally if used, but here we verify manually.
         update_last_login(None, user)
 
-        # Generate tokens
         refresh = self.get_token(user)
+        if isinstance(user, OrganizationUser):
+            # organization_role = user.organization_role
+            refresh["type"] = UserType.ORGANIZATION.value
+        else:
+            refresh["type"] = "undefined"
 
-        data = {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
-
-        # 3. Add User Info to Response (kept for frontend convenience)
-        # Note: Ideally, user info should be fetched via /api/users/profile/,
-        # but keeping it here to match previous structure.
-        self.user = user  # Save for the View to use if needed
-
-        # We return user object in the dict so the View can serialize it
-        data["user"] = user
-
-        return data
+        return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
 
 
 class OrganizationRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password]
-    )
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
     ico = serializers.RegexField(regex=r"^\d{1,8}$", write_only=True, required=True)
     email = serializers.CharField(write_only=True, required=True)
@@ -157,9 +123,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
-            raise serializers.ValidationError(
-                {"password": "Password fields didn't match."}
-            )
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
         return attrs
 
     def create(self, validated_data):
@@ -196,14 +160,8 @@ class UserInfoSerializer(serializers.ModelSerializer):
         if not hasattr(obj, "stag_role") or not obj.stag_role:
             return None
 
-        stag_role_name = (
-            obj.stag_role.role if hasattr(obj.stag_role, "role") else str(obj.stag_role)
-        )
-        if (
-            stag_role_name.lower() in ["vk", "vy"]
-            and hasattr(obj, "department")
-            and obj.department
-        ):
+        stag_role_name = obj.stag_role.role if hasattr(obj.stag_role, "role") else str(obj.stag_role)
+        if stag_role_name.lower() in ["vk", "vy"] and hasattr(obj, "department") and obj.department:
             return {
                 "id": obj.department.department_id,
                 "name": obj.department.department_name,
@@ -350,9 +308,7 @@ class OrganizationUserProfileSerializer(UserProfileSerializer):
                 "city": obj.employer_profile.city,
                 "address": obj.employer_profile.address,
                 "zip_code": obj.employer_profile.zip_code,
-                "logo": (
-                    obj.employer_profile.logo.url if obj.employer_profile.logo else None
-                ),
+                "logo": obj.employer_profile.logo.url if obj.employer_profile.logo else None,
             }
         return None
 
@@ -362,22 +318,10 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmployerProfile
-        fields = [
-            "employer_id",
-            "ico",
-            "dic",
-            "company_name",
-            "address",
-            "zip_code",
-            "approval_status",
-            "logo",
-            "owner",
-        ]
+        fields = ["employer_id", "ico", "dic", "company_name", "address", "zip_code", "approval_status", "logo", "owner"]
 
     def get_owner(self, obj):
-        owner = OrganizationUser.objects.filter(
-            employer_profile=obj, organization_role=OrganizationRole.OWNER
-        ).first()
+        owner = OrganizationUser.objects.filter(employer_profile=obj, organization_role=OrganizationRole.OWNER).first()
         if owner:
             return {
                 "id": owner.id,
@@ -393,23 +337,11 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentUser
-        fields = [
-            "user_id",
-            "email",
-            "first_name",
-            "last_name",
-            "full_name",
-            "os_cislo",
-            "department",
-            "is_active",
-            "date_joined",
-        ]
+        fields = ["user_id", "email", "first_name", "last_name", "full_name", "os_cislo", "department", "is_active", "date_joined"]
 
     def get_department(self, obj):
         # Získáme katedru studenta přes jeho předměty
-        user_subjects = UserSubject.objects.filter(
-            user=obj, role=UserSubjectType.Student.value
-        ).select_related("subject__department")
+        user_subjects = UserSubject.objects.filter(user=obj, role=UserSubjectType.Student.value).select_related("subject__department")
 
         departments = set()
         for user_subject in user_subjects:
@@ -422,9 +354,7 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
 class OrganizationUserListSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="full_name", read_only=True)
     role = serializers.SerializerMethodField()
-    employer_name = serializers.CharField(
-        source="employer_profile.company_name", read_only=True, allow_null=True
-    )
+    employer_name = serializers.CharField(source="employer_profile.company_name", read_only=True, allow_null=True)
 
     class Meta:
         model = OrganizationUser
@@ -442,10 +372,7 @@ class OrganizationUserListSerializer(serializers.ModelSerializer):
             elif hasattr(obj.organization_role, "name"):
                 return obj.organization_role.name
             # If it's a ForeignKey or object with role_name
-            elif (
-                hasattr(obj.organization_role, "role_name")
-                and obj.organization_role.role_name
-            ):
+            elif hasattr(obj.organization_role, "role_name") and obj.organization_role.role_name:
                 return obj.organization_role.role_name
             elif hasattr(obj.organization_role, "role") and obj.organization_role.role:
                 return obj.organization_role.role

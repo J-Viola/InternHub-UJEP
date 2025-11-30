@@ -33,8 +33,6 @@ def register_organization(validated_data):
     logo = validated_data.pop("logo", None)
     password = validated_data.pop("password")
 
-    # Remove non-model fields from validated_data if any remain
-    # (password2 should have been removed or not passed here if we pass specific dict)
     validated_data.pop("password2", None)
 
     ares_data = fetch_ares_data(ico)
@@ -50,10 +48,9 @@ def register_organization(validated_data):
             title_after=validated_data.get("title_after", ""),
             phone=validated_data.get("phone", ""),
             organization_role=OrganizationRole.OWNER,
-            is_active=True,  # TODO: Remove this
+            is_active=True,
         )
 
-        # Use frontend data if provided, otherwise fall back to ARES data
         if hasattr(ares_data, "sidlo") and ares_data.sidlo:
             sidlo = ares_data.sidlo
             address_ares = sidlo.textovaAdresa or ""
@@ -66,16 +63,13 @@ def register_organization(validated_data):
             employer_id=user.id,
             ico=ico,
             dic=dic if dic else (ares_data.dic or ""),
-            company_name=(
-                company_name if company_name else (ares_data.obchodniJmeno or "")
-            ),
+            company_name=company_name if company_name else (ares_data.obchodniJmeno or ""),
             address=address if address else address_ares,
             zip_code=zip_code_ares,
             approval_status=ApprovalStatus.PENDING,
             logo=logo,
         )
 
-        # Update the user to link to the employer profile
         user.employer_profile = employer_profile
         user.set_password(password)
         user.save()
@@ -94,28 +88,8 @@ def update_organization_from_ares(user, ico: str):
 
     try:
         employer_profile = EmployerProfile.objects.get(employer_id=user.id)
-        # Logic to update existing profile could go here if needed,
-        # but original code only created if not exists or seemingly did nothing but save user?
-        # Original code:
-        # employer_profile = EmployerProfile.objects.get(...)
-        # if not employer_profile: ... (this would never trigger if get succeeds)
-        # So original code only handled creation if get failed (which raises DoesNotExist)
-        # We will assume we want to create or update.
-
-        # Actually, looking at original code:
-        # try get -> if successful, do nothing.
-        # except DoesNotExist -> create.
-        # But 'get' raises exception, it doesn't return None.
-        # So the original code was likely buggy or relying on something else.
-        # We will implement: Get or Create/Update logic.
-
-        # For now, let's stick to "Update if exists, Create if not" or "Create if not exists" as per original intent?
-        # Original intent seemed to be: "If profile exists, do nothing? If not, create."
-        # But 'get' would crash if not exists.
-        pass
-
+        # Update existing profile logic could go here if needed
     except EmployerProfile.DoesNotExist:
-        # Create new profile
         status_enum = ApprovalStatus.PENDING
 
         address = ""
@@ -134,8 +108,6 @@ def update_organization_from_ares(user, ico: str):
             approval_status=status_enum,
         )
 
-    # Original code saved user at the end, though it modified nothing on user model itself in the visible snippet.
-    # We will save user just in case signals are attached or last_login update is needed.
     user.save()
     return user
 
@@ -145,19 +117,14 @@ def get_user_department_ids(user) -> list[int]:
     Returns a list of department IDs associated with the user.
     Checks ProfessorUser.department first, then UserSubjects.
     """
-    # 1. Check if user is a ProfessorUser with a direct department assignment
     professor = ProfessorUser.objects.filter(user_ptr_id=user.id).first()
     if professor and professor.department:
         return [professor.department.department_id]
 
-    # 2. Fallback: Check departments via UserSubjects (for students or professors via subjects)
     return list(
         Department.objects.filter(
             subjects__user_subjects__user_id=user.id,
-            subjects__user_subjects__role__in=[
-                UserSubjectType.Student.value,
-                UserSubjectType.Professor.value,
-            ],
+            subjects__user_subjects__role__in=[UserSubjectType.Student.value, UserSubjectType.Professor.value],
         )
         .values_list("department_id", flat=True)
         .distinct()
@@ -174,20 +141,15 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
     cached_data = cache.get(cache_key)
 
     if cached_data:
-        # Check if it's already a DTO (from internal usage) or dict (from cache)
         if isinstance(cached_data, dict):
             return EkonomickySubjektDTO.model_validate(cached_data)
         return cached_data
 
     try:
-        response = requests.get(
-            f"https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/{ico}",
-            timeout=5,
-        )
+        response = requests.get(f"https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/{ico}", timeout=5)
         if response.status_code == 200:
             response_data = response.json()
             if "kod" in response_data and response_data["kod"] is not None:
-                # ARES returned a business error code inside 200 OK
                 return None
 
             ares_dto = EkonomickySubjektDTO.model_validate(response_data)
@@ -208,7 +170,7 @@ def validate_stag_ticket(ticket: str):
         resp = requests.get(
             url,
             params={"ticket": ticket, "longTicket": "1"},
-            timeout=(3.05, 27),
+            timeout=(3.05, 27),  # Connect timeout 3s, Read timeout 27s
             headers={"Accept": "application/json"},
         )
     except requests.RequestException:
@@ -229,12 +191,7 @@ def validate_stag_ticket(ticket: str):
     if not email:
         raise AuthenticationFailed("Email not returned by STAG")
 
-    return {
-        "email": email,
-        "first_name": jmeno,
-        "last_name": prijmeni,
-        "stagUserInfo": stagUserInfos[0],
-    }  # Taking the first role/info
+    return {"email": email, "first_name": jmeno, "last_name": prijmeni, "stagUserInfo": stagUserInfos[0]}
 
 
 def get_or_create_stag_user(stag_data: dict, ticket: str):
@@ -251,17 +208,14 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
     osCislo = info.get("osCislo")
     ucitIdno = info.get("ucitIdno")
 
-    stagRole, _ = StagRole.objects.get_or_create(
-        role=role, defaults={"role": role, "role_name": roleName}
-    )
+    stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
 
     user = None
 
     if osCislo:
-        user, _ = StudentUser.objects.get_or_create(
+        user, created = StudentUser.objects.update_or_create(
             email=email,
             defaults={
-                "email": email,
                 "stag_role": stagRole,
                 "first_name": first_name,
                 "last_name": last_name,
@@ -269,25 +223,26 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 "is_active": True,
             },
         )
+        # Simple caching for sync: Only sync if created or (last_login is None or old)
+        # Or simply: Always sync but with timeout handled in sync function
         sync_stag_subjects_for_student(ticket, osCislo, user)
 
     elif ucitIdno:
+        # For professors, department assignment is critical, so we must ensure it exists
         try:
             user = ProfessorUser.objects.get(email=email)
+            # Update basic info
+            user.first_name = first_name
+            user.last_name = last_name
+            user.save()
         except ProfessorUser.DoesNotExist:
             katedra = info.get("katedra")
             try:
                 department = Department.objects.get(department_code=katedra)
             except Department.DoesNotExist:
-                raise AuthenticationFailed(
-                    f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému"
-                )
+                raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
 
-            department_role = (
-                DepartmentRole.HEAD
-                if stagRole.role == StagRoleEnum.VK
-                else DepartmentRole.TEACHER
-            )
+            department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
 
             user = ProfessorUser.objects.create(
                 email=email,
@@ -308,6 +263,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
 def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StudentUser):
     """
     Synchronizes STAG roles with the database for student.
+    Uses short timeout to fail fast.
     """
     url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
     params = {
@@ -322,21 +278,17 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
     }
 
     try:
-        response = requests.get(
-            url,
-            cookies=cookies,
-            params=params,
-            timeout=(3.05, 27),
-            headers={"Accept": "application/json"},
-        )
+        # Fail fast: 2s connect, 5s read timeout
+        response = requests.get(url, cookies=cookies, params=params, timeout=(2, 5), headers={"Accept": "application/json"})
     except requests.RequestException:
-        # Log error but don't fail the whole login if syncing subjects fails
+        # If sync fails, we just proceed with existing data
         return
 
     if response.status_code == 200:
         response_json = response.json()
         items = response_json.get("predmetStudenta", [])
-        # Note: We are just checking existence here, avoiding circular import of serializers
+
+        # We could optimize this bulk operation, but for now just ensure it runs fast
         for subj in items:
             zkratka = subj.get("zkratka")
             if zkratka:
@@ -354,6 +306,7 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
     """
     Synchronizes STAG roles with the database.
+    Uses short timeout to fail fast.
     """
     url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByUcitel"
     params = {
@@ -368,13 +321,7 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
     }
 
     try:
-        response = requests.get(
-            url,
-            cookies=cookies,
-            params=params,
-            timeout=(3.05, 27),
-            headers={"Accept": "application/json"},
-        )
+        response = requests.get(url, cookies=cookies, params=params, timeout=(2, 5), headers={"Accept": "application/json"})
     except requests.RequestException:
         return
 
