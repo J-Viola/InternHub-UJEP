@@ -240,7 +240,10 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
             try:
                 department = Department.objects.get(department_code=katedra)
             except Department.DoesNotExist:
-                raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
+                if settings.DEMO_LOGIN:
+                    department = Department.objects.get(department_code="DEMO")
+                else:
+                    raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
 
             department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
 
@@ -287,6 +290,15 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
     if response.status_code == 200:
         response_json = response.json()
         items = response_json.get("predmetStudenta", [])
+
+        if settings.DEMO_LOGIN:
+            UserSubject.objects.get_or_create(
+                subject=Subject.objects.get_or_create(subject_code="DEMO"),
+                user=user,
+                defaults={
+                    "role": UserSubjectType.Student,
+                }
+            )
 
         # We could optimize this bulk operation, but for now just ensure it runs fast
         for subj in items:

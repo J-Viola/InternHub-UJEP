@@ -145,6 +145,7 @@ STORAGE_URL = "storage/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+DEMO_LOGIN = os.environ.get("DEMO_LOGIN", "false") == "1"
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
 

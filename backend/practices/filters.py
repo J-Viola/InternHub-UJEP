@@ -11,7 +11,6 @@ class PracticeFilter(django_filters.FilterSet):
     company_name = django_filters.CharFilter(
         field_name="employer__company_name", lookup_expr="icontains"
     )
-    # Example of boolean filter
     active_only = django_filters.BooleanFilter(field_name="is_active")
 
     class Meta:

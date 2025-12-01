@@ -159,14 +159,14 @@ class DepartmentUserSerializer(serializers.Serializer):
             return "student"
         elif isinstance(obj, ProfessorUser):
             return "professor"
-        return "unknown"
+        raise Exception("Unsupported user type")
 
     def get_data(self, obj):
         if isinstance(obj, StudentUser):
             return StudentDetailSerializer(obj).data
         elif isinstance(obj, ProfessorUser):
             return ProfessorDetailSerializer(obj).data
-        return {}
+        raise Exception("Unsupported user type")
 
     class Meta:
         fields = ("user_type", "data")
