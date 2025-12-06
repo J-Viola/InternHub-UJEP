@@ -4,11 +4,7 @@ from functools import wraps
 from api.models import OrganizationRole, OrganizationUser, StagUser
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import (
-    AuthenticationFailed,
-    TokenBackendError,
-    TokenError,
-)
+from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenBackendError, TokenError
 from users.models import StagRoleEnum
 
 
@@ -24,12 +20,8 @@ def role_required(allowed_enums: list[Enum]):
         def my_view(request):
             ...
     """
-    if not allowed_enums or not all(
-        isinstance(r, (StagRoleEnum, OrganizationRole)) for r in allowed_enums
-    ):
-        raise ValueError(
-            "allowed_enums must be members of StagRoleEnum or OrganizationRole"
-        )
+    if not allowed_enums or not all(isinstance(r, (StagRoleEnum, OrganizationRole)) for r in allowed_enums):
+        raise ValueError("allowed_enums must be members of StagRoleEnum or OrganizationRole")
 
     allowed_roles = {r.value for r in allowed_enums}
 
@@ -52,10 +44,7 @@ def role_required(allowed_enums: list[Enum]):
             # Check permissions
             has_permission = (
                 user.is_superuser
-                or (
-                    isinstance(user, OrganizationUser)
-                    and user.organization_role in allowed_roles
-                )
+                or (isinstance(user, OrganizationUser) and user.organization_role in allowed_roles)
                 or (isinstance(user, StagUser) and user.stag_role.role in allowed_roles)
             )
 

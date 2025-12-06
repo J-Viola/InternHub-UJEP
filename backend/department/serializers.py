@@ -1,11 +1,4 @@
-from api.models import (
-    Department,
-    Practice,
-    ProfessorUser,
-    StudentPractice,
-    StudentUser,
-    UserSubjectType,
-)
+from api.models import Department, Practice, ProfessorUser, StudentPractice, StudentUser, UserSubjectType
 from django.core.handlers.base import logger
 from rest_framework import serializers
 
@@ -34,9 +27,7 @@ class AdminDepartmentSerializer(DepartmentSerializer):
 
 
 class StudentThisPracticeSerializer(serializers.ModelSerializer):
-    practice = serializers.PrimaryKeyRelatedField(
-        queryset=Practice.objects.all(), write_only=True, required=True
-    )
+    practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
 
     class Meta:
         model = StudentPractice
@@ -80,17 +71,13 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         qs = list(obj.student_practices.all())
         count = len(qs)
         if count > 1:
-            logger.warning(
-                f"User {obj.user_id} has {count} practices; only the first will be shown"
-            )
+            logger.warning(f"User {obj.user_id} has {count} practices; only the first will be shown")
         first = qs[0] if qs else None
         return StudentThisPracticeSerializer(first).data if first else None
 
     def get_department(self, obj):
         qs = obj.user_subjects.filter(role=UserSubjectType.Student)
-        dept_names = qs.values_list(
-            "subject__department__department_name", flat=True
-        ).distinct()
+        dept_names = qs.values_list("subject__department__department_name", flat=True).distinct()
         return dept_names[0] if dept_names else None
 
     def get_approved_practice(self, obj):
@@ -142,11 +129,7 @@ class ProfessorDetailSerializer(serializers.ModelSerializer):
 
     def get_department(self, obj):
         qs = obj.user_subjects.filter(role=UserSubjectType.Professor)
-        dept_name = (
-            qs.values_list("subject__department__department_name", flat=True)
-            .distinct()
-            .first()
-        )
+        dept_name = qs.values_list("subject__department__department_name", flat=True).distinct().first()
         return dept_name if dept_name else None
 
 

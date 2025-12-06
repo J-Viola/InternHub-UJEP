@@ -47,11 +47,7 @@ class SubjectSerializer(serializers.ModelSerializer):
             return TeacherSerializer(obj.subject_manager).data
 
         # Fallback to UserSubject relationship for backward compatibility
-        teacher_relationship = (
-            UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor)
-            .select_related("user")
-            .first()
-        )
+        teacher_relationship = UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor).select_related("user").first()
 
         if teacher_relationship:
             return TeacherSerializer(teacher_relationship.user).data
@@ -92,9 +88,7 @@ class SubjectSerializer(serializers.ModelSerializer):
         if old_manager != new_manager:
             # Remove old manager's UserSubject if exists
             if old_manager:
-                UserSubject.objects.filter(
-                    user=old_manager, subject=subject, role=UserSubjectType.Professor
-                ).delete()
+                UserSubject.objects.filter(user=old_manager, subject=subject, role=UserSubjectType.Professor).delete()
 
             # Add new manager's UserSubject if exists
             if new_manager:

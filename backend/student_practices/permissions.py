@@ -19,9 +19,7 @@ class HasDocumentAccess(permissions.BasePermission):
 
         elif isinstance(user, ProfessorUser):
             user_subjects = obj.student_practice.practice.subject.user_subjects
-            is_professor_for_subject = user_subjects.filter(
-                user=user, role=UserSubjectType.Professor
-            ).exists()
+            is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
             if is_professor_for_subject:
                 return True
 

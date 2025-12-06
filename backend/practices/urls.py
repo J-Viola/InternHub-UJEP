@@ -13,7 +13,7 @@ from .views import (
 app_name = "practices"
 
 router = routers.DefaultRouter()
-router.register(r"practices", PracticeViewSet, basename="practice")
+router.register(r"", PracticeViewSet, basename="practice")
 urlpatterns = [
     path("", include(router.urls)),
     path(

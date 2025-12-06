@@ -51,7 +51,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(user)
                 refresh["type"] = UserType.STAG.value
                 refresh["service_ticket"] = ticket
-                return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
+                return {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user": user,
+                }
             except Exception as e:
                 raise AuthenticationFailed(str(e))
 
@@ -82,7 +86,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         else:
             refresh["type"] = "undefined"
 
-        return {"refresh": str(refresh), "access": str(refresh.access_token), "user": user}
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": user,
+        }
 
 
 class OrganizationRegisterSerializer(serializers.ModelSerializer):
@@ -308,7 +316,7 @@ class OrganizationUserProfileSerializer(UserProfileSerializer):
                 "city": obj.employer_profile.city,
                 "address": obj.employer_profile.address,
                 "zip_code": obj.employer_profile.zip_code,
-                "logo": obj.employer_profile.logo.url if obj.employer_profile.logo else None,
+                "logo": (obj.employer_profile.logo.url if obj.employer_profile.logo else None),
             }
         return None
 
@@ -318,7 +326,17 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmployerProfile
-        fields = ["employer_id", "ico", "dic", "company_name", "address", "zip_code", "approval_status", "logo", "owner"]
+        fields = [
+            "employer_id",
+            "ico",
+            "dic",
+            "company_name",
+            "address",
+            "zip_code",
+            "approval_status",
+            "logo",
+            "owner",
+        ]
 
     def get_owner(self, obj):
         owner = OrganizationUser.objects.filter(employer_profile=obj, organization_role=OrganizationRole.OWNER).first()
@@ -337,7 +355,17 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentUser
-        fields = ["user_id", "email", "first_name", "last_name", "full_name", "os_cislo", "department", "is_active", "date_joined"]
+        fields = [
+            "user_id",
+            "email",
+            "first_name",
+            "last_name",
+            "full_name",
+            "os_cislo",
+            "department",
+            "is_active",
+            "date_joined",
+        ]
 
     def get_department(self, obj):
         # Získáme katedru studenta přes jeho předměty

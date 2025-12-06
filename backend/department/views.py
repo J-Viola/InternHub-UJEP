@@ -1,14 +1,5 @@
 from api.decorators import role_required
-from api.models import (
-    Department,
-    OrganizationRole,
-    ProfessorUser,
-    StudentPractice,
-    StudentUser,
-    Subject,
-    UserSubject,
-    UserSubjectType,
-)
+from api.models import Department, OrganizationRole, ProfessorUser, StudentPractice, StudentUser, Subject, UserSubject, UserSubjectType
 from api.views import StandardResultsSetPagination
 from django.db.models import Prefetch
 from rest_framework import generics, permissions, status
@@ -19,12 +10,7 @@ from rest_framework.viewsets import ModelViewSet
 from users.models import StagRoleEnum
 from users.services import get_user_department_ids
 
-from .serializers import (
-    AdminDepartmentSerializer,
-    DepartmentUserSerializer,
-    ProfessorDetailSerializer,
-    StudentDetailSerializer,
-)
+from .serializers import AdminDepartmentSerializer, DepartmentUserSerializer, ProfessorDetailSerializer, StudentDetailSerializer
 
 
 class DepartmentStudentListView(generics.ListAPIView):
@@ -71,18 +57,14 @@ class DepartmentProfessorListView(generics.ListAPIView):
         if not dept_ids:
             return ProfessorUser.objects.none()
 
-        professors = ProfessorUser.objects.filter(
-            department_id__in=dept_ids, department_role=UserSubjectType.Professor.value
-        ).distinct()
+        professors = ProfessorUser.objects.filter(department_id__in=dept_ids, department_role=UserSubjectType.Professor.value).distinct()
 
         print(f"Found {professors.count()} professor(s)")
 
         return professors.prefetch_related(
             Prefetch(
                 "user_subjects",
-                queryset=UserSubject.objects.filter(
-                    role=UserSubjectType.Professor.value
-                ).select_related("subject"),
+                queryset=UserSubject.objects.filter(role=UserSubjectType.Professor.value).select_related("subject"),
             )
         )
 
@@ -97,9 +79,7 @@ class AllDepartmentProfessorListView(generics.ListAPIView):
         return qs.prefetch_related(
             Prefetch(
                 "user_subjects",
-                queryset=UserSubject.objects.filter(
-                    role=UserSubjectType.Professor.value
-                ).select_related("subject"),
+                queryset=UserSubject.objects.filter(role=UserSubjectType.Professor.value).select_related("subject"),
             )
         )
 

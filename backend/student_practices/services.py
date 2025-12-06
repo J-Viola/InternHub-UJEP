@@ -1,12 +1,6 @@
 from datetime import date
 
-from api.models import (
-    ApprovalStatus,
-    EmployerInvitation,
-    EmployerInvitationStatus,
-    ProgressStatus,
-    StudentPractice,
-)
+from api.models import ApprovalStatus, EmployerInvitation, EmployerInvitationStatus, ProgressStatus, StudentPractice
 from django.db import transaction
 
 
@@ -18,9 +12,7 @@ class StudentPracticeService:
         Process the approval or rejection of an employer invitation.
         """
         try:
-            invitation = EmployerInvitation.objects.get(
-                invitation_id=invitation_id, user=user
-            )
+            invitation = EmployerInvitation.objects.get(invitation_id=invitation_id, user=user)
         except EmployerInvitation.DoesNotExist:
             raise ValueError("Pozvánka nebyla nalezena nebo k ní nemáte přístup.")
 
@@ -38,6 +30,8 @@ class StudentPracticeService:
                 approval_status=ApprovalStatus.APPROVED,
                 progress_status=ProgressStatus.IN_PROGRESS,
                 hours_completed=0,
+                start_date=invitation.practice.start_date,
+                end_date=invitation.practice.end_date,
                 year=date.today().year,
             )
             return {

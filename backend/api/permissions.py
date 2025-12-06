@@ -9,9 +9,7 @@ class IsOrganizationUser(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and isinstance(
-            request.user, OrganizationUser
-        )
+        return request.user.is_authenticated and isinstance(request.user, OrganizationUser)
 
 
 class IsOrganizationOwner(permissions.BasePermission):
@@ -33,10 +31,7 @@ class IsStagUser(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            isinstance(request.user, StudentUser)
-            or isinstance(request.user, ProfessorUser)
-        )
+        return request.user.is_authenticated and (isinstance(request.user, StudentUser) or isinstance(request.user, ProfessorUser))
 
 
 class IsStagTeacher(permissions.BasePermission):

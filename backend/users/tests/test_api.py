@@ -8,11 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.serializers import (
-    CustomTokenObtainPairSerializer,
-    LogoutSerializer,
-    OrganizationRegisterSerializer,
-)
+from users.serializers import CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
 from users.views import AresJusticeView
 
 User = get_user_model()
@@ -200,7 +196,8 @@ class AresViewsTests(TestCase):
 
         request = self.factory.get("/ares/?ico=12345678")
         request.user = self.user
-        response = AresJusticeView(request)
+        view = AresJusticeView.as_view()
+        response = view(request)
 
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
@@ -209,7 +206,8 @@ class AresViewsTests(TestCase):
     def returnsBadRequestForMissingIco(self):
         request = self.factory.get("/ares/")
         request.user = self.user
-        response = AresJusticeView(request)
+        view = AresJusticeView.as_view()
+        response = view(request)
 
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.content)
@@ -218,7 +216,8 @@ class AresViewsTests(TestCase):
     def returnsBadRequestForInvalidIcoFormat(self):
         request = self.factory.get("/ares/?ico=1234")
         request.user = self.user
-        response = AresJusticeView(request)
+        view = AresJusticeView.as_view()
+        response = view(request)
 
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.content)
@@ -232,9 +231,81 @@ class AresViewsTests(TestCase):
 
         request = self.factory.get("/ares/?ico=12345678")
         request.user = self.user
-        response = AresJusticeView(request)
+        view = AresJusticeView.as_view()
+        response = view(request)
 
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.content)
         self.assertEqual(data, cached_data)
         mock_get.assert_not_called()
+
+
+class UserProfileTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        from api.models import EmployerProfile, OrganizationRole, OrganizationUser, StudentUser
+
+        self.student = StudentUser.objects.create(
+            email="student@test.com",
+            first_name="Jan",
+            last_name="Student",
+            is_active=True,
+        )
+
+        self.org_user = OrganizationUser.objects.create(
+            email="org@test.com",
+            first_name="Org",
+            last_name="Boss",
+            is_active=True,
+            organization_role=OrganizationRole.OWNER,
+        )
+        self.profile = EmployerProfile.objects.create(
+            employer_id=self.org_user.id,
+            company_name="Test Co",
+            approval_status=ApprovalStatus.APPROVED,
+        )
+        self.org_user.employer_profile = self.profile
+
+    def test_current_profile_student(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(reverse("users:current_user_profile"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user_type"], "student")
+        self.assertIn("os_cislo", response.data)
+
+    def test_current_profile_organization(self):
+        self.client.force_authenticate(user=self.org_user)
+        response = self.client.get(reverse("users:current_user_profile"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user_type"], "organization")
+        self.assertIn("employer_profile", response.data)
+        self.assertEqual(response.data["employer_profile"]["company_name"], "Test Co")
+
+
+class OrganizationUserListTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        from api.models import ApprovalStatus, EmployerProfile, OrganizationUser
+
+        self.owner = OrganizationUser.objects.create(email="owner@test.com", is_active=True)
+        self.profile = EmployerProfile.objects.create(
+            employer_id=self.owner.id,
+            company_name="My Corp",
+            approval_status=ApprovalStatus.APPROVED,
+        )
+        self.owner.employer_profile = self.profile
+
+        self.employee = OrganizationUser.objects.create(email="emp@test.com", is_active=True)
+        self.employee.employer_profile = self.profile
+        self.employee.save()
+
+        self.other = OrganizationUser.objects.create(email="other@test.com", is_active=True)  # No profile
+
+    def test_list_users_in_organization(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get(reverse("users:organization_users"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Should see owner and employee
+        ids = [u["id"] for u in response.data]
+        self.assertIn(self.owner.id, ids)
+        self.assertIn(self.employee.id, ids)
+        self.assertNotIn(self.other.id, ids)

@@ -17,6 +17,7 @@ from api.models import (
 )
 from django.db import transaction
 from django.http import FileResponse, JsonResponse
+from django.utils import timezone  # Import timezone from django.utils
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, serializers, status
@@ -29,11 +30,7 @@ from rest_framework.views import APIView
 from student_practices.permissions import HasDocumentAccess
 from student_practices.services import StudentPracticeService
 
-from .serializers import (
-    EmployerInvitationApprovalSerializer,
-    ListStudentPracticeSerializer,
-    StudentPracticeCardSerializer,
-)
+from .serializers import EmployerInvitationApprovalSerializer, ListStudentPracticeSerializer, StudentPracticeCardSerializer
 
 
 class EmployerInvitationApprovalView(APIView):
@@ -49,9 +46,7 @@ class EmployerInvitationApprovalView(APIView):
         invitation_id = serializer.validated_data["invitation_id"]
         action = serializer.validated_data["action"]
 
-        result = StudentPracticeService.process_invitation_approval(
-            request.user, invitation_id, action
-        )
+        result = StudentPracticeService.process_invitation_approval(request.user, invitation_id, action)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -99,9 +94,7 @@ class OrganizationApplicationsView(APIView):
         # Najdi všechny praxe patřící této organizaci
         practices = Practice.objects.filter(employer=employer_profile)
         # Najdi všechny přihlášky na tyto praxe, pouze s approval_status PENDING
-        student_practices = StudentPractice.objects.filter(
-            practice__in=practices, approval_status=ApprovalStatus.PENDING
-        )
+        student_practices = StudentPractice.objects.filter(practice__in=practices, approval_status=ApprovalStatus.PENDING)
 
         serializer = ListStudentPracticeSerializer(student_practices, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -122,9 +115,7 @@ class StudentPracticeStatusUpdateView(APIView):
 
     def patch(self, request, student_practice_id):
         student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
-        serializer = StudentPracticeStatusUpdateSerializer(
-            student_practice, data=request.data, partial=True
-        )
+        serializer = StudentPracticeStatusUpdateSerializer(student_practice, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -138,9 +129,7 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
     def validate_document(self, uploaded_file):
         ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
         if ext not in ("doc", "docx"):
-            raise serializers.ValidationError(
-                "Jenom Word (.doc, .docx) dokumenty jsou povoleny."
-            )
+            raise serializers.ValidationError("Jenom Word (.doc, .docx) dokumenty jsou povoleny.")
         return uploaded_file
 
     def update(self, instance, validated_data):
@@ -148,11 +137,9 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
             instance.document.delete(save=False)
 
         file = validated_data["document"]
-        file.name = DocumentHelper.create_name_for_document(
-            instance.document_type, instance.student_practice.user.user_id, file.name
-        )
+        file.name = DocumentHelper.create_name_for_document(instance.document_type, instance.student_practice.user.user_id, file.name)
         instance.document = file
-        instance.uploaded_at = datetime.datetime.now()
+        instance.uploaded_at = timezone.now()  # Use timezone.now()
         instance.save()
         return instance
 
@@ -184,15 +171,11 @@ class StudentPracticeUploadDocumentView(APIView):
         document = get_object_or_404(UploadedDocument, pk=document_id)
         self.check_object_permissions(request, document)
 
-        serializer = StudentPracticeUploadDocumentSerializer(
-            document, data=request.data, partial=True
-        )
+        serializer = StudentPracticeUploadDocumentSerializer(document, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(
-            {"detail": "Dokument byl úspěšně nahrán."}, status=status.HTTP_201_CREATED
-        )
+        return Response({"detail": "Dokument byl úspěšně nahrán."}, status=status.HTTP_201_CREATED)
 
 
 class StudentPracticeDownloadDocumentView(APIView):
@@ -223,9 +206,7 @@ class StudentPracticeDownloadDocumentView(APIView):
         self.check_object_permissions(request, document)
 
         file_handle = document.document.open("rb")
-        return FileResponse(
-            file_handle, as_attachment=True, filename=document.document.name
-        )
+        return FileResponse(file_handle, as_attachment=True, filename=document.document.name)
 
 
 class StudentPracticeCardView(APIView):

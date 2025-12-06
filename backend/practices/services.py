@@ -2,14 +2,7 @@ import base64
 import mimetypes
 from datetime import date
 
-from api.models import (
-    ApprovalStatus,
-    EmployerInvitation,
-    EmployerInvitationStatus,
-    Practice,
-    ProgressStatus,
-    StudentPractice,
-)
+from api.models import ApprovalStatus, EmployerInvitation, EmployerInvitationStatus, Practice, ProgressStatus, StudentPractice
 from django.db import transaction
 from django.db.models import Count, Q
 from student_practices.serializers import StudentPracticeSerializer
@@ -33,9 +26,7 @@ class PracticeService:
 
     @staticmethod
     def get_user_practices_and_invitations(user):
-        student_practices = StudentPractice.objects.filter(user=user).select_related(
-            "practice", "practice__employer"
-        )
+        student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
 
         sp_data = [
             {
@@ -49,9 +40,9 @@ class PracticeService:
             for sp in student_practices
         ]
 
-        invitations = EmployerInvitation.objects.filter(
-            user=user, status=EmployerInvitationStatus.PENDING
-        ).select_related("practice", "practice__employer")
+        invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related(
+            "practice", "practice__employer"
+        )
 
         inv_data = [
             {
@@ -72,13 +63,15 @@ class PracticeService:
 
     @staticmethod
     @transaction.atomic
-    def apply_student_practice(user, practice_id):
+    def apply_student_practice(user, practice_id: int) -> dict:
+        """
+        Create a StudentPractice record for the user and practice.
+        Raises ValueError if validation fails.
+        """
         if StudentPractice.objects.filter(practice_id=practice_id, user=user).exists():
             raise ValueError("Již jste přihlášen(a) na tuto praxi.")
 
-        practice = Practice.objects.filter(
-            practice_id=practice_id, is_active=True
-        ).first()
+        practice = Practice.objects.filter(practice_id=practice_id, is_active=True).first()
         if not practice:
             raise ValueError("Praxe nenalezena nebo není aktivní.")
 
@@ -109,9 +102,7 @@ class PracticeService:
         if not dept_ids:
             return None
 
-        practices = Practice.objects.filter(
-            subject__department_id__in=dept_ids, is_active=True
-        )
+        practices = Practice.objects.filter(subject__department_id__in=dept_ids, is_active=True)
 
         approved = practices.filter(approval_status=ApprovalStatus.APPROVED)
         to_approve = practices.filter(approval_status=ApprovalStatus.PENDING)
@@ -152,9 +143,7 @@ class PracticeService:
             .annotate(
                 approved_count=Count(
                     "student_practices",
-                    filter=Q(
-                        student_practices__approval_status=ApprovalStatus.APPROVED
-                    ),
+                    filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED),
                 ),
                 pending_count=Count(
                     "student_practices",

@@ -1,15 +1,7 @@
 import re
 
 from api.decorators import role_required
-from api.models import (
-    ApprovalStatus,
-    EmployerProfile,
-    OrganizationRole,
-    OrganizationUser,
-    ProfessorUser,
-    StudentUser,
-    UserSubject,
-)
+from api.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser, ProfessorUser, StudentUser, UserSubject
 from api.views import StandardResultsSetPagination
 from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema
@@ -164,15 +156,11 @@ class OrganizationUserListView(generics.ListAPIView):
                 return OrganizationUser.objects.none()
 
             org_id = employer_profile.employer_id
-            return OrganizationUser.objects.filter(
-                employer_profile_id=org_id
-            ).select_related("employer_profile")
+            return OrganizationUser.objects.filter(employer_profile_id=org_id).select_related("employer_profile")
 
     def list(self, request, *args, **kwargs):
         user = self.request.user
-        if not getattr(user, "is_superuser", False) and not getattr(
-            user, "employer_profile", None
-        ):
+        if not getattr(user, "is_superuser", False) and not getattr(user, "employer_profile", None):
             return Response(
                 {"detail": "Uživatel nemá přiřazenou organizaci."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -188,9 +176,7 @@ class StudentProfileView(APIView):
         try:
             student = StudentUser.objects.get(pk=student_id)
         except StudentUser.DoesNotExist:
-            return Response(
-                {"detail": "Student nenalezen."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": "Student nenalezen."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = StudentProfileSerializer(student)
         return Response(serializer.data)
@@ -202,11 +188,7 @@ class AllStudentsListView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return (
-            StudentUser.objects.filter(is_active=True)
-            .select_related("stag_role")
-            .prefetch_related("user_subjects__subject__department")
-        )
+        return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
 
 
 class AdminOrganizationViewSet(ModelViewSet):

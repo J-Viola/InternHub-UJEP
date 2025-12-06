@@ -21,17 +21,13 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "last_login",
-                    models.DateTimeField(
-                        blank=True, null=True, verbose_name="last login"
-                    ),
+                    models.DateTimeField(blank=True, null=True, verbose_name="last login"),
                 ),
                 ("user_id", models.AutoField(primary_key=True, serialize=False)),
                 ("password", models.CharField(blank=True, max_length=128, null=True)),
                 (
                     "username",
-                    models.CharField(
-                        blank=True, max_length=150, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=150, null=True, unique=True),
                 ),
                 ("email", models.EmailField(max_length=254, unique=True)),
                 (
@@ -95,9 +91,7 @@ class Migration(migrations.Migration):
                 ("department_id", models.AutoField(primary_key=True, serialize=False)),
                 (
                     "department_name",
-                    models.CharField(
-                        blank=True, max_length=100, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=100, null=True, unique=True),
                 ),
                 ("description", models.TextField(blank=True, null=True)),
             ],
@@ -129,9 +123,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        blank=True, max_length=100, null=True, unique=True
-                    ),
+                    models.CharField(blank=True, max_length=100, null=True, unique=True),
                 ),
                 ("coefficient", models.FloatField(blank=True, null=True)),
             ],

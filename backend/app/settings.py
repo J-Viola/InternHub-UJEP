@@ -148,11 +148,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DEMO_LOGIN = os.environ.get("DEMO_LOGIN", "false") == "1"
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
+ARES_API_URL = os.environ.get(
+    "ARES_API_URL",
+    "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty",
+)
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",

@@ -6,6 +6,7 @@ import django.db.models.deletion
 from app import settings
 from django.core.files import File
 from django.db import migrations, models
+from django.utils import timezone  # Add this import
 
 
 class Migration(migrations.Migration):
@@ -28,7 +29,9 @@ class Migration(migrations.Migration):
             for sp in qs:
                 with open(path, "rb") as f:
                     upload = UploadedDocument(
-                        document_type=doc_type, document=File(f, name=filename)
+                        document_type=doc_type,
+                        document=File(f, name=filename),
+                        uploaded_at=timezone.now(),
                     )
                     upload.save()
                 setattr(sp, field + "_id", upload.pk)

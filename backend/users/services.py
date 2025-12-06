@@ -63,7 +63,7 @@ def register_organization(validated_data):
             employer_id=user.id,
             ico=ico,
             dic=dic if dic else (ares_data.dic or ""),
-            company_name=company_name if company_name else (ares_data.obchodniJmeno or ""),
+            company_name=(company_name if company_name else (ares_data.obchodniJmeno or "")),
             address=address if address else address_ares,
             zip_code=zip_code_ares,
             approval_status=ApprovalStatus.PENDING,
@@ -124,7 +124,10 @@ def get_user_department_ids(user) -> list[int]:
     return list(
         Department.objects.filter(
             subjects__user_subjects__user_id=user.id,
-            subjects__user_subjects__role__in=[UserSubjectType.Student.value, UserSubjectType.Professor.value],
+            subjects__user_subjects__role__in=[
+                UserSubjectType.Student.value,
+                UserSubjectType.Professor.value,
+            ],
         )
         .values_list("department_id", flat=True)
         .distinct()
@@ -141,15 +144,18 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
     cached_data = cache.get(cache_key)
 
     if cached_data:
+        # Check if it's already a DTO (from internal usage) or dict (from cache)
         if isinstance(cached_data, dict):
             return EkonomickySubjektDTO.model_validate(cached_data)
         return cached_data
 
     try:
-        response = requests.get(f"https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/{ico}", timeout=5)
+        url = f"{settings.ARES_API_URL}/{ico}"
+        response = requests.get(url, timeout=5)
         if response.status_code == 200:
             response_data = response.json()
             if "kod" in response_data and response_data["kod"] is not None:
+                # ARES returned a business error code inside 200 OK
                 return None
 
             ares_dto = EkonomickySubjektDTO.model_validate(response_data)
@@ -191,7 +197,12 @@ def validate_stag_ticket(ticket: str):
     if not email:
         raise AuthenticationFailed("Email not returned by STAG")
 
-    return {"email": email, "first_name": jmeno, "last_name": prijmeni, "stagUserInfo": stagUserInfos[0]}
+    return {
+        "email": email,
+        "first_name": jmeno,
+        "last_name": prijmeni,
+        "stagUserInfo": stagUserInfos[0],
+    }
 
 
 def get_or_create_stag_user(stag_data: dict, ticket: str):
@@ -282,7 +293,13 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
 
     try:
         # Fail fast: 2s connect, 5s read timeout
-        response = requests.get(url, cookies=cookies, params=params, timeout=(2, 5), headers={"Accept": "application/json"})
+        response = requests.get(
+            url,
+            cookies=cookies,
+            params=params,
+            timeout=(2, 5),
+            headers={"Accept": "application/json"},
+        )
     except requests.RequestException:
         # If sync fails, we just proceed with existing data
         return
@@ -297,7 +314,7 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
                 user=user,
                 defaults={
                     "role": UserSubjectType.Student,
-                }
+                },
             )
 
         # We could optimize this bulk operation, but for now just ensure it runs fast
@@ -333,7 +350,13 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
     }
 
     try:
-        response = requests.get(url, cookies=cookies, params=params, timeout=(2, 5), headers={"Accept": "application/json"})
+        response = requests.get(
+            url,
+            cookies=cookies,
+            params=params,
+            timeout=(2, 5),
+            headers={"Accept": "application/json"},
+        )
     except requests.RequestException:
         return
 
