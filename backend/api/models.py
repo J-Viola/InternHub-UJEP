@@ -9,7 +9,6 @@
 import datetime
 import hashlib
 import random
-from datetime import timezone
 
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
@@ -63,8 +62,8 @@ class ProgressStatus(enum.Enum):
 
 class Role(models.Model):
     role_id = models.AutoField(primary_key=True)
-    role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
+    role_name = models.CharField(unique=True, max_length=50, blank=True, default="")
+    description = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "roles"
@@ -76,47 +75,47 @@ class Role(models.Model):
 class StagRole(models.Model):
     id = models.AutoField(primary_key=True)
     role = models.CharField(unique=True, blank=False, null=False)
-    role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.role_name or self.role or super().__str__()
+    role_name = models.CharField(unique=True, max_length=50, blank=True, default="")
+    description = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "stag_roles"
 
+    def __str__(self):
+        return self.role_name or self.role or super().__str__()
+
 
 class EmployerProfile(models.Model):
     employer_id = models.AutoField(primary_key=True)
-    company_name = models.CharField(max_length=100, blank=True, null=True)
-    ico = models.CharField(unique=True, max_length=15, blank=True, null=True)
-    dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
-    city = models.TextField(blank=True, null=True)
-    address = models.TextField(blank=True, null=True)
+    company_name = models.CharField(max_length=100, blank=True, default="")
+    ico = models.CharField(unique=True, max_length=15, blank=True, default="")
+    dic = models.CharField(unique=True, max_length=15, blank=True, default="")
+    city = models.TextField(blank=True, default="")
+    address = models.TextField(blank=True, default="")
     zip_code = models.IntegerField(blank=True, null=True)
-    company_profile = models.TextField(blank=True, null=True)
+    company_profile = models.TextField(blank=True, default="")
     approval_status = enum.EnumField(ApprovalStatus)
     logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.company_name or super().__str__()
-
     class Meta:
         db_table = "employer_profiles"
+
+    def __str__(self):
+        return self.company_name or super().__str__()
 
 
 class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     user_id = models.AutoField(primary_key=True)
-    password = models.CharField(max_length=128, blank=True, null=True)
-    username = models.CharField(unique=True, max_length=150, blank=True, null=True)
+    password = models.CharField(max_length=128, blank=True, default="")
+    username = models.CharField(unique=True, max_length=150, blank=True, default="")
     email = models.EmailField(unique=True)
-    title_before = models.CharField(max_length=50, blank=True, null=True)
+    title_before = models.CharField(max_length=50, blank=True, default="")
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    title_after = models.CharField(max_length=50, blank=True, null=True)
-    phone = models.CharField(max_length=15, blank=True, null=True)
+    title_after = models.CharField(max_length=50, blank=True, default="")
+    phone = models.CharField(max_length=15, blank=True, default="")
     is_active = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
@@ -145,7 +144,7 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
 
     @property
     def full_name(self):
-        return f"{self.title_before or " "} {self.first_name} {self.last_name} {self.title_after or " "}".strip()
+        return f"{self.title_before or ' '} {self.first_name} {self.last_name} {self.title_after or ' '}".strip()
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
@@ -183,26 +182,29 @@ class StagUser(User):
     class Meta:
         db_table = "stag_users"
 
+    def __str__(self):
+        return self.stag_role.role
+
     @property
     def role(self):
         return self.stag_role.role
 
 
 class StudentUser(StagUser):
-    profile_picture = models.TextField(blank=True, null=True)
-    os_cislo = models.CharField(unique=True, max_length=64, blank=True, null=True)
-    field_of_study = models.CharField(max_length=100, blank=True, null=True)
+    profile_picture = models.TextField(blank=True, default="")
+    os_cislo = models.CharField(unique=True, max_length=64, blank=True, default="")
+    field_of_study = models.CharField(max_length=100, blank=True, default="")
     year_of_study = models.IntegerField(blank=True, null=True)
     stag_f_number = models.IntegerField(unique=True, blank=True, null=True)
-    resume = models.TextField(blank=True, null=True)
-    additional_info = models.TextField(blank=True, null=True)
+    resume = models.TextField(blank=True, default="")
+    additional_info = models.TextField(blank=True, default="")
     date_of_birth = models.DateField(blank=True, null=True)
-    place_of_birth = models.CharField(max_length=100, blank=True, null=True)
-    street = models.CharField(max_length=100, blank=True, null=True)
-    street_number = models.CharField(max_length=10, blank=True, null=True)
-    zip_code = models.CharField(max_length=10, blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    specialization = models.CharField(max_length=100, blank=True, null=True)
+    place_of_birth = models.CharField(max_length=100, blank=True, default="")
+    street = models.CharField(max_length=100, blank=True, default="")
+    street_number = models.CharField(max_length=10, blank=True, default="")
+    zip_code = models.CharField(max_length=10, blank=True, default="")
+    city = models.CharField(max_length=100, blank=True, default="")
+    specialization = models.CharField(max_length=100, blank=True, default="")
     practices = models.ManyToManyField("Practice", through="StudentPractice", related_name="student_users")
 
     class Meta:
@@ -215,7 +217,7 @@ class DepartmentRole(enum.Enum):
 
 
 class ProfessorUser(StagUser):
-    ucit_idno = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    ucit_idno = models.CharField(unique=True, max_length=64, blank=True, default="")
     department = models.ForeignKey(
         "Department",
         models.DO_NOTHING,
@@ -232,37 +234,37 @@ class ProfessorUser(StagUser):
 class ActionLog(models.Model):
     action_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True, related_name="action_logs")
-    action_type = models.CharField(max_length=50, blank=True, null=True)
-    object_type = models.CharField(max_length=50, blank=True, null=True)
+    action_type = models.CharField(max_length=50, blank=True, default="")
+    object_type = models.CharField(max_length=50, blank=True, default="")
     object_id = models.IntegerField(blank=True, null=True)
-    action_description = models.TextField(blank=True, null=True)
+    action_description = models.TextField(blank=True, default="")
     action_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "action_logs"
 
     def __str__(self):
         user_repr = str(self.user) if self.user else "Unknown"
         return f"[{self.action_date}] {self.action_type} by {user_repr}"
-
-    class Meta:
-        db_table = "action_logs"
 
 
 class Department(models.Model):
     department_id = models.AutoField(primary_key=True)
     department_name = models.CharField(unique=True, max_length=100)
     department_code = models.CharField(unique=True, max_length=100)
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.department_name} ({self.department_code})"
+    description = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "departments"
 
+    def __str__(self):
+        return f"{self.department_name} ({self.department_code})"
+
 
 class Subject(models.Model):
     subject_id = models.AutoField(primary_key=True)
-    subject_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
-    subject_name = models.CharField(max_length=100, blank=True, null=True)
+    subject_code = models.CharField(unique=True, max_length=50, blank=True, default="")
+    subject_name = models.CharField(max_length=100, blank=True, default="")
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True, related_name="subjects")
     hours_required = models.IntegerField(blank=True, null=True)
     subject_manager = models.ForeignKey(
@@ -273,11 +275,11 @@ class Subject(models.Model):
         related_name="managed_subjects",
     )
 
-    def __str__(self):
-        return self.subject_name or self.subject_code or super().__str__()
-
     class Meta:
         db_table = "subjects"
+
+    def __str__(self):
+        return self.subject_name or self.subject_code or super().__str__()
 
 
 class EmployerInvitation(models.Model):
@@ -305,16 +307,16 @@ class EmployerInvitation(models.Model):
     )
     submission_date = models.DateField(blank=True, null=True)
     expiration_date = models.DateField(blank=True, null=True)
-    message = models.TextField(blank=True, null=True)
+    message = models.TextField(blank=True, default="")
     status = enum.EnumField(EmployerInvitationStatus)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"Invitation {self.invitation_id} for {self.user} to {self.practice}"
-
     class Meta:
         db_table = "employer_invitations"
+
+    def __str__(self):
+        return f"Invitation {self.invitation_id} for {self.user} to {self.practice}"
 
 
 class Practice(models.Model):
@@ -327,9 +329,9 @@ class Practice(models.Model):
         related_name="practices",
     )
     subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True, related_name="practices")
-    title = models.CharField(max_length=100, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    responsibilities = models.TextField(blank=True, null=True)
+    title = models.CharField(max_length=100, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    responsibilities = models.TextField(blank=True, default="")
     available_positions = models.IntegerField(blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
@@ -343,18 +345,17 @@ class Practice(models.Model):
         related_name="practices",
     )
     is_active = models.BooleanField(blank=True, null=True)
-    image_base64 = models.TextField(blank=True, null=True)
+    image_base64 = models.TextField(blank=True, default="")
     # image = models.ImageField(upload_to=settings.STORAGE_URL + "images/practices", blank=True, null=True)
     coefficient = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-
-        return self.title or super().__str__()
-
     class Meta:
         db_table = "practices"
+
+    def __str__(self):
+        return self.title or super().__str__()
 
 
 class DocumentType(enum.Enum):
@@ -369,6 +370,12 @@ class UploadedDocument(models.Model):
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = enum.EnumField(DocumentType)
 
+    class Meta:
+        db_table = "uploaded_documents"
+
+    def __str__(self):
+        return self.document.name or super().__str__()
+
     @property
     def student_practice(self):
         """Vrátí StudentPractice nezávisle na tom jaký typ dokumentu to je."""
@@ -379,32 +386,8 @@ class UploadedDocument(models.Model):
                     return related_object
         return None
 
-    def __str__(self):
-        return self.document.name or super().__str__()
-
-    class Meta:
-        db_table = "uploaded_documents"
-
 
 class StudentPractice(models.Model):
-    def validate_contract_document_type(document):
-        if document and document.contract_document.document_type != DocumentType.CONTRACT:
-            from django.core.exceptions import ValidationError
-
-            raise ValidationError("Document must be of type CONTRACT")
-
-    def validate_feedback_document_type(document):
-        if document and document.contract_document.document_type != DocumentType.FEEDBACK:
-            from django.core.exceptions import ValidationError
-
-            raise ValidationError("Document must be of type CONTENT")
-
-    def validate_content_document_type(document):
-        if document and document.contract_document.document_type != DocumentType.CONTENT:
-            from django.core.exceptions import ValidationError
-
-            raise ValidationError("Document must be of type FEEDBACK")
-
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         StudentUser,
@@ -424,7 +407,7 @@ class StudentPractice(models.Model):
     approval_status = enum.EnumField(ApprovalStatus)
     progress_status = enum.EnumField(ProgressStatus)
     hours_completed = models.IntegerField(blank=True, null=True)
-    cancellation_reason = models.TextField(blank=True, null=True)
+    cancellation_reason = models.TextField(blank=True, default="")
     cancelled_by_user = models.ForeignKey(
         StagUser,
         models.DO_NOTHING,
@@ -438,24 +421,34 @@ class StudentPractice(models.Model):
         models.DO_NOTHING,
         related_name="student_practice_contract",
         limit_choices_to={"document_type": DocumentType.CONTRACT},
-        validators=[validate_contract_document_type],
+        validators=[],
+        null=True,
     )
     content_document = models.OneToOneField(
         UploadedDocument,
         models.DO_NOTHING,
         related_name="student_practice_content",
         limit_choices_to={"document_type": DocumentType.CONTENT},
-        validators=[validate_content_document_type],
+        validators=[],
+        null=True,
     )
     feedback_document = models.OneToOneField(
         UploadedDocument,
         models.DO_NOTHING,
         related_name="student_practice_feedback",
         limit_choices_to={"document_type": DocumentType.FEEDBACK},
-        validators=[validate_feedback_document_type],
+        validators=[],
+        null=True,
     )
     start_date = models.DateField()
     end_date = models.DateField()
+
+    class Meta:
+        db_table = "student_practices"
+        unique_together = (("user", "practice"),)
+
+    def __str__(self):
+        return f"{self.user} - {self.practice} (status: {self.approval_status})"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -465,12 +458,26 @@ class StudentPractice(models.Model):
             self.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
             self.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
 
-    def __str__(self):
-        return f"{self.user} - {self.practice} (status: {self.approval_status})"
+    @staticmethod
+    def validate_contract_document_type(value):
+        from django.core.exceptions import ValidationError
 
-    class Meta:
-        db_table = "student_practices"
-        unique_together = (("user", "practice"),)
+        if value and value.document_type != DocumentType.CONTRACT:
+            raise ValidationError("Document must be of type CONTRACT")
+
+    @staticmethod
+    def validate_feedback_document_type(value):
+        from django.core.exceptions import ValidationError
+
+        if value and value.document_type != DocumentType.FEEDBACK:
+            raise ValidationError("Document must be of type FEEDBACK")
+
+    @staticmethod
+    def validate_content_document_type(value):
+        from django.core.exceptions import ValidationError
+
+        if value and value.document_type != DocumentType.CONTENT:
+            raise ValidationError("Document must be of type CONTENT")
 
 
 class UserSubjectType(enum.Enum):
@@ -484,12 +491,12 @@ class UserSubject(models.Model):
     subject = models.ForeignKey(Subject, models.DO_NOTHING, blank=True, null=True, related_name="user_subjects")
     role = enum.EnumField(UserSubjectType)
 
-    def __str__(self):
-        return f"{self.user} - {self.subject} ({self.role})"
-
     class Meta:
         db_table = "user_subjects"
         unique_together = (("user", "subject"),)
+
+    def __str__(self):
+        return f"{self.user} - {self.subject} ({self.role})"
 
 
 class DocumentHelper:
@@ -512,14 +519,14 @@ class DocumentHelper:
         document = UploadedDocument(
             document_type=document_type,
             document=document_file,
-            uploaded_at=datetime.datetime.now(timezone.utc),
+            uploaded_at=datetime.datetime.now(datetime.UTC),
         )
         document.save()
         return document
 
     @staticmethod
     def create_name_for_document(document_type: DocumentType, user_id: int, file_name: str):
-        timestamp = datetime.datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d%H%M%S")
         ext = file_name.rsplit(".", 1)[-1].lower()
         user_id_hash = hashlib.md5(str(user_id).encode()).hexdigest()[:8]
         return f"{document_type.name.lower()}_{user_id_hash}_{timestamp}.{ext}"

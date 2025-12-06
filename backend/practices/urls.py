@@ -26,9 +26,7 @@ urlpatterns = [
         PracticesForApprovingListView.as_view(),
         name="practices-for-approval",
     ),
-    path(
-        "<int:id>/change-pending/", ChangePendingView.as_view(), name="change-pending"
-    ),
+    path("<int:id>/change-pending/", ChangePendingView.as_view(), name="change-pending"),
     path("get-end-date/", GetEndDateView.as_view(), name="change-pending"),
     path("admin-practices/", AdminPracticesListView.as_view(), name="admin-practices"),
 ]

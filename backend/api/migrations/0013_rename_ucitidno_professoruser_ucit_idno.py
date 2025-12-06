@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0012_rename_ucit_idno_professoruser_ucitidno"),
     ]

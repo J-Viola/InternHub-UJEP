@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0025_remove_studentpractice_semester"),
     ]
@@ -43,7 +42,11 @@ class Migration(migrations.Migration):
                 validators=[api.models.StudentPractice.validate_contract_document_type],
             ),
         ),
-        migrations.RunPython(lambda apps, schema_editor: apps.get_model("api", "UploadedDocument").objects.all().delete()),
+        migrations.RunPython(
+            lambda apps, schema_editor: apps.get_model("api", "UploadedDocument")
+            .objects.all()
+            .delete()
+        ),
         migrations.AddField(
             model_name="studentpractice",
             name="feedback_document",
@@ -60,7 +63,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="uploadeddocument",
             name="document_type",
-            field=django_enumfield.db.fields.EnumField(default=0, enum=api.models.DocumentType),
+            field=django_enumfield.db.fields.EnumField(
+                default=0, enum=api.models.DocumentType
+            ),
             preserve_default=False,
         ),
     ]

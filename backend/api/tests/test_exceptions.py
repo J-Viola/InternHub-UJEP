@@ -1,8 +1,8 @@
-from api.exceptions import custom_exception_handler
 from django.test import RequestFactory, TestCase
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from api.exceptions import custom_exception_handler
 
 
 class TestExceptionView(APIView):
@@ -16,8 +16,8 @@ class ExceptionHandlerTests(TestCase):
 
     def test_value_error_handler(self):
         # Simulate an exception in a view context
-        view = TestExceptionView.as_view()
-        request = self.factory.get("/")
+        # view = TestExceptionView.as_view()
+        # request = self.factory.get("/")
 
         # Since middleware/exception handler is usually processed by DRF's dispatch,
         # we can call the handler directly or rely on integration test if we registered it.

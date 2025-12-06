@@ -1,3 +1,10 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import update_last_login
+from django.contrib.auth.password_validation import validate_password
+from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 from api.models import (
     ApprovalStatus,
     EmployerProfile,
@@ -8,14 +15,12 @@ from api.models import (
     UserSubject,
     UserSubjectType,
 )
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import update_last_login
-from django.contrib.auth.password_validation import validate_password
-from rest_framework import serializers
-from rest_framework_simplejwt.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.models import UserType
-from users.services import get_or_create_stag_user, register_organization, validate_stag_ticket
+from users.services import (
+    get_or_create_stag_user,
+    register_organization,
+    validate_stag_ticket,
+)
 
 User = get_user_model()
 

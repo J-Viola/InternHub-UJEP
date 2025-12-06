@@ -8,21 +8,14 @@ repos:
         files: ^backend/
     -   id: check-yaml
         files: ^backend/
--   repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.8.2
     hooks:
-    -   id: isort
+    # Run the linter.
+    -   id: ruff
         files: ^backend/
--   repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.1.1
-    hooks:
-    -   id: black
-        language_version: python3.13
-        args: ["--line-length=140"]
+        args: [ --fix ]
+    # Run the formatter.
+    -   id: ruff-format
         files: ^backend/
--   repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-    -   id: flake8
-        files: ^backend/
-        args: ["--max-line-length=140"]

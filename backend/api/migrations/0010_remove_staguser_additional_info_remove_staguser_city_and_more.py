@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0009_alter_employerprofile_logo_and_more"),
     ]
@@ -86,7 +85,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "department_role",
-                    django_enumfield.db.fields.EnumField(blank=True, enum=api.models.DepartmentRole, null=True),
+                    django_enumfield.db.fields.EnumField(
+                        blank=True, enum=api.models.DepartmentRole, null=True
+                    ),
                 ),
                 (
                     "department",

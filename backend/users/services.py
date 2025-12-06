@@ -1,4 +1,9 @@
 import requests
+from django.conf import settings
+from django.core.cache import cache
+from django.db import transaction
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+
 from api.models import (
     ApprovalStatus,
     Department,
@@ -13,10 +18,6 @@ from api.models import (
     UserSubject,
     UserSubjectType,
 )
-from django.conf import settings
-from django.core.cache import cache
-from django.db import transaction
-from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from users.dtos.dtos import EkonomickySubjektDTO
 from users.models import StagRoleEnum
 
@@ -87,7 +88,7 @@ def update_organization_from_ares(user, ico: str):
         raise ValueError("Failed to fetch data from ARES")
 
     try:
-        employer_profile = EmployerProfile.objects.get(employer_id=user.id)
+        EmployerProfile.objects.get(employer_id=user.id)
         # Update existing profile logic could go here if needed
     except EmployerProfile.DoesNotExist:
         status_enum = ApprovalStatus.PENDING
@@ -252,7 +253,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 department = Department.objects.get(department_code=katedra)
             except Department.DoesNotExist:
                 if settings.DEMO_LOGIN:
-                    department = Department.objects.get(department_code="DEMO")
+                    department, _ = Department.objects.get_or_create(department_code="DEMO")
                 else:
                     raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
 
@@ -310,7 +311,7 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
 
         if settings.DEMO_LOGIN:
             UserSubject.objects.get_or_create(
-                subject=Subject.objects.get_or_create(subject_code="DEMO"),
+                subject=Subject.objects.get_or_create(subject_code="BOP"),
                 user=user,
                 defaults={
                     "role": UserSubjectType.Student,

@@ -1,5 +1,6 @@
-from api.models import OrganizationRole, OrganizationUser, ProfessorUser, StudentUser
 from rest_framework import permissions
+
+from api.models import OrganizationRole, OrganizationUser, ProfessorUser, StudentUser
 from users.models import StagRoleEnum
 
 

@@ -1,7 +1,14 @@
 from datetime import date
 
-from api.models import ApprovalStatus, EmployerInvitation, EmployerInvitationStatus, ProgressStatus, StudentPractice
 from django.db import transaction
+
+from api.models import (
+    ApprovalStatus,
+    EmployerInvitation,
+    EmployerInvitationStatus,
+    ProgressStatus,
+    StudentPractice,
+)
 
 
 class StudentPracticeService:

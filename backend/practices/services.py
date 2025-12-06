@@ -2,9 +2,17 @@ import base64
 import mimetypes
 from datetime import date
 
-from api.models import ApprovalStatus, EmployerInvitation, EmployerInvitationStatus, Practice, ProgressStatus, StudentPractice
 from django.db import transaction
 from django.db.models import Count, Q
+
+from api.models import (
+    ApprovalStatus,
+    EmployerInvitation,
+    EmployerInvitationStatus,
+    Practice,
+    ProgressStatus,
+    StudentPractice,
+)
 from student_practices.serializers import StudentPracticeSerializer
 from users.services import get_user_department_ids
 
@@ -89,7 +97,7 @@ class PracticeService:
 
         serializer = StudentPracticeSerializer(data=data)
         if serializer.is_valid():
-            student_practice = serializer.save()
+            serializer.save()
             return serializer.data
         else:
             error_msg = "; ".join([f"{k}: {v}" for k, v in serializer.errors.items()])

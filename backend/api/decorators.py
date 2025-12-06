@@ -1,10 +1,15 @@
 from enum import Enum
 from functools import wraps
 
-from api.models import OrganizationRole, OrganizationUser, StagUser
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenBackendError, TokenError
+from rest_framework_simplejwt.exceptions import (
+    AuthenticationFailed,
+    TokenBackendError,
+    TokenError,
+)
+
+from api.models import OrganizationRole, OrganizationUser, StagUser
 from users.models import StagRoleEnum
 
 
@@ -20,7 +25,7 @@ def role_required(allowed_enums: list[Enum]):
         def my_view(request):
             ...
     """
-    if not allowed_enums or not all(isinstance(r, (StagRoleEnum, OrganizationRole)) for r in allowed_enums):
+    if not allowed_enums or not all(isinstance(r, StagRoleEnum | OrganizationRole) for r in allowed_enums):
         raise ValueError("allowed_enums must be members of StagRoleEnum or OrganizationRole")
 
     allowed_roles = {r.value for r in allowed_enums}
@@ -32,7 +37,7 @@ def role_required(allowed_enums: list[Enum]):
             auth = JWTAuthentication()
             try:
                 user_auth = auth.authenticate(request)
-            except (AuthenticationFailed, TokenError, TokenBackendError) as e:
+            except (AuthenticationFailed, TokenError, TokenBackendError):
                 raise NotAuthenticated("Invalid or missing credentials")
 
             if not user_auth:

@@ -6,7 +6,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0020_rename_status_practice_progress_status"),
     ]
@@ -15,7 +14,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="organizationuser",
             name="organization_role",
-            field=django_enumfield.db.fields.EnumField(blank=True, enum=api.models.OrganizationRole, null=True),
+            field=django_enumfield.db.fields.EnumField(
+                blank=True, enum=api.models.OrganizationRole, null=True
+            ),
         ),
         migrations.DeleteModel(
             name="OrganizationRole",

@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0019_alter_actionlog_table_alter_department_table_and_more"),
     ]

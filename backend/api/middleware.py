@@ -1,8 +1,9 @@
-from api.models import UploadedDocument
 from django.conf import settings
 from django.db.models import Q
 from django.http import Http404, HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
+
+from api.models import UploadedDocument
 
 
 class DocumentPermissionMiddleware(MiddlewareMixin):

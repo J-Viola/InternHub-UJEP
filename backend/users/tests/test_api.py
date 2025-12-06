@@ -8,7 +8,12 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.serializers import CustomTokenObtainPairSerializer, LogoutSerializer, OrganizationRegisterSerializer
+
+from users.serializers import (
+    CustomTokenObtainPairSerializer,
+    LogoutSerializer,
+    OrganizationRegisterSerializer,
+)
 from users.views import AresJusticeView
 
 User = get_user_model()
@@ -233,6 +238,7 @@ class AresViewsTests(TestCase):
         request.user = self.user
         view = AresJusticeView.as_view()
         response = view(request)
+        data = json.loads(response.content)
 
         self.assertEqual(data, cached_data)
         mock_get.assert_not_called()
@@ -241,7 +247,13 @@ class AresViewsTests(TestCase):
 class UserProfileTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        from api.models import EmployerProfile, OrganizationRole, OrganizationUser, StudentUser
+        from api.models import (
+            ApprovalStatus,
+            EmployerProfile,
+            OrganizationRole,
+            OrganizationUser,
+            StudentUser,
+        )
 
         self.student = StudentUser.objects.create(
             email="student@test.com",

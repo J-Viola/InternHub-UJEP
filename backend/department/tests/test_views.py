@@ -1,8 +1,17 @@
-from api.models import Department, DepartmentRole, ProfessorUser, StagRole, StudentUser, Subject, UserSubject, UserSubjectType
 from django.test import TestCase
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from api.models import (
+    Department,
+    DepartmentRole,
+    ProfessorUser,
+    StagRole,
+    StudentUser,
+    Subject,
+    UserSubject,
+    UserSubjectType,
+)
 from users.models import StagRoleEnum
 
 

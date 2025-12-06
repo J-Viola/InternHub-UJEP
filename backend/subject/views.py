@@ -1,10 +1,11 @@
-from api.models import DepartmentRole, ProfessorUser, Subject
 from django_filters.rest_framework import DjangoFilterBackend
 
 # Create your views here.
 from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from api.models import Subject
 from users.services import get_user_department_ids
 
 from .serializers import SubjectSerializer

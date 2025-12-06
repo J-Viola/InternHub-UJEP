@@ -1,9 +1,18 @@
 from datetime import date
 
-from api.helpers import FormattedDateField
-from api.models import ApprovalStatus, EmployerProfile, Practice, ProgressStatus, StudentPractice, Subject, User
-from practices.utils import calculate_end_date
 from rest_framework import serializers
+
+from api.helpers import FormattedDateField
+from api.models import (
+    ApprovalStatus,
+    EmployerProfile,
+    Practice,
+    ProgressStatus,
+    StudentPractice,
+    Subject,
+    User,
+)
+from practices.utils import calculate_end_date
 from student_practices.serializers import StudentPracticeStatusSerializer
 from subject.serializers import SubjectSerializer
 from users.serializers import EmployerProfileSerializer

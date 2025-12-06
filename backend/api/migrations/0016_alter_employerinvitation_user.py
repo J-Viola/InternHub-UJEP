@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0015_studentuser_practices_alter_practiceuser_user_and_more"),
     ]

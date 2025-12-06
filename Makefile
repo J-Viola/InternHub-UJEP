@@ -18,3 +18,13 @@ frontend-open-sh: ## Opens shell inside running container
 
 backend-open-sh: ## Opens shell inside running container
 	docker container exec -it internhub-backend bash
+
+lint: ## Runs linter check inside backend container
+	docker container exec internhub-backend ruff check .
+
+format: ## Formats code and fixes linting issues inside backend container
+	docker container exec internhub-backend ruff format .
+	docker container exec internhub-backend ruff check --fix .
+
+test: ## Runs tests for the backend
+	docker container exec internhub-backend python manage.py test --noinput

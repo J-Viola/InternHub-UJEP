@@ -1,12 +1,7 @@
 import re
 
-from api.decorators import role_required
-from api.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser, ProfessorUser, StudentUser, UserSubject
-from api.views import StandardResultsSetPagination
-from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
-from rest_framework.decorators import api_view
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -14,6 +9,16 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from api.decorators import role_required
+from api.models import (
+    EmployerProfile,
+    OrganizationRole,
+    OrganizationUser,
+    ProfessorUser,
+    StudentUser,
+)
+from api.views import StandardResultsSetPagination
 from users.services import fetch_ares_data, update_organization_from_ares
 
 from .models import StagRoleEnum

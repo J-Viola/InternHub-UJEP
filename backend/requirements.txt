@@ -8,9 +8,7 @@ requests
 pydantic
 pylint
 pre-commit
-black
-flake8
-isort
+ruff
 djangorestframework-simplejwt
 django-polymorphic
 django-model-utils

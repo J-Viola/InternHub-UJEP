@@ -1,23 +1,24 @@
 from datetime import date
 
-from api.models import (
-    ApprovalStatus,
-    Department,
-    EmployerInvitation,
-    EmployerInvitationStatus,
-    OrganizationRole,
-    Practice,
-    ProfessorUser,
-    ProgressStatus,
-    StudentPractice,
-    StudentUser,
-    UserSubjectType,
-)
-from api.permissions import IsOrganizationOwner
-from api.views import StandardResultsSetPagination
 from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import filters, generics, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from api.models import (
+    ApprovalStatus,
+    Department,
+    Practice,
+    StudentPractice,
+    StudentUser,
+)
+from api.permissions import IsOrganizationOwner
+from api.views import StandardResultsSetPagination
 from practices.filters import PracticeFilter
 from practices.serializers import (
     EndDateRequestSerializer,
@@ -30,21 +31,12 @@ from practices.serializers import (
 )
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
-from rest_framework import filters, generics, permissions, status, viewsets
-from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from student_practices.serializers import StudentPracticeSerializer
-from users.models import StagRoleEnum
 
 
 # -------------------------------------------------------------
 # PracticeViewSet – CRUD a správa praxí, včetně přihlášení
 # -------------------------------------------------------------
 class PracticeViewSet(viewsets.ModelViewSet):
-
     queryset = Practice.objects.all().select_related("employer")
     serializer_class = PracticeSerializer
     pagination_class = StandardResultsSetPagination

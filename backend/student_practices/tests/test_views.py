@@ -1,8 +1,12 @@
-from datetime import date, datetime
+from datetime import date
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APIClient
 
 from api.models import (
     ApprovalStatus,
-    DocumentType,
     EmployerInvitation,
     EmployerInvitationStatus,
     EmployerProfile,
@@ -11,12 +15,7 @@ from api.models import (
     ProgressStatus,
     StudentPractice,
     StudentUser,
-    UploadedDocument,
 )
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 class StudentPracticeViewTests(TestCase):

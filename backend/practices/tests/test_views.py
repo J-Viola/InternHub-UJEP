@@ -1,5 +1,9 @@
 from datetime import date, datetime  # Opravený import
 
+from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from api.models import (
     ApprovalStatus,
     Department,
@@ -11,10 +15,6 @@ from api.models import (
     StudentUser,
     Subject,
 )
-from django.test import TestCase
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 class PracticeViewTests(TestCase):

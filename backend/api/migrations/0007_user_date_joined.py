@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0006_employerprofile_city_practiceuser_semester_and_more"),
     ]

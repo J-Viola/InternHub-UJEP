@@ -1,5 +1,6 @@
 from datetime import date
-from unittest.mock import MagicMock, patch
+
+from django.test import TestCase
 
 from api.models import (
     ApprovalStatus,
@@ -12,7 +13,6 @@ from api.models import (
     StudentPractice,
     StudentUser,
 )
-from django.test import TestCase
 from student_practices.services import StudentPracticeService
 
 
@@ -57,7 +57,7 @@ class StudentPracticeServiceTests(TestCase):
         self.assertIn("student_practice_id", result)
 
     def test_process_invitation_approval_reject(self):
-        result = StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "reject")
+        StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "reject")
 
         self.invitation.refresh_from_db()
         self.assertEqual(self.invitation.status, EmployerInvitationStatus.REJECTED)

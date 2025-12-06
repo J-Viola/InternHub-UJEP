@@ -1,16 +1,30 @@
-from api.decorators import role_required
-from api.models import Department, OrganizationRole, ProfessorUser, StudentPractice, StudentUser, Subject, UserSubject, UserSubjectType
-from api.views import StandardResultsSetPagination
 from django.db.models import Prefetch
 from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+
+from api.decorators import role_required
+from api.models import (
+    Department,
+    OrganizationRole,
+    ProfessorUser,
+    StudentPractice,
+    StudentUser,
+    UserSubject,
+    UserSubjectType,
+)
+from api.views import StandardResultsSetPagination
 from users.models import StagRoleEnum
 from users.services import get_user_department_ids
 
-from .serializers import AdminDepartmentSerializer, DepartmentUserSerializer, ProfessorDetailSerializer, StudentDetailSerializer
+from .serializers import (
+    AdminDepartmentSerializer,
+    DepartmentUserSerializer,
+    ProfessorDetailSerializer,
+    StudentDetailSerializer,
+)
 
 
 class DepartmentStudentListView(generics.ListAPIView):

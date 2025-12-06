@@ -1,6 +1,14 @@
-from api.models import Department, Practice, ProfessorUser, StudentPractice, StudentUser, UserSubjectType
 from django.core.handlers.base import logger
 from rest_framework import serializers
+
+from api.models import (
+    Department,
+    Practice,
+    ProfessorUser,
+    StudentPractice,
+    StudentUser,
+    UserSubjectType,
+)
 
 
 class DepartmentSerializer(serializers.ModelSerializer):

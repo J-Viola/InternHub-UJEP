@@ -12,7 +12,6 @@ def truncate_student_user_model(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0017_studentpractice_semester_studentpractice_year_and_more"),
     ]

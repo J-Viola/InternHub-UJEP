@@ -1,8 +1,9 @@
 from datetime import date
 
+from rest_framework import serializers
+
 from api.helpers import FormattedDateField
 from api.models import ApprovalStatus, Practice, StudentPractice, UploadedDocument, User
-from rest_framework import serializers
 
 
 class EmployerInvitationApprovalSerializer(serializers.Serializer):

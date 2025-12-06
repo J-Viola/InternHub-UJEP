@@ -1,5 +1,6 @@
-from api.models import OrganizationUser, ProfessorUser, StudentUser, UserSubjectType
 from rest_framework import permissions
+
+from api.models import OrganizationUser, ProfessorUser, StudentUser, UserSubjectType
 
 
 class HasDocumentAccess(permissions.BasePermission):

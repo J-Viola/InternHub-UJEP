@@ -15,7 +15,6 @@ def backfill_codes(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0028_studentpractice_end_date_studentpractice_start_date"),
     ]

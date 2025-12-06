@@ -1,8 +1,13 @@
 from datetime import date
 from unittest.mock import MagicMock, patch
 
-from api.models import ApprovalStatus, Practice, ProgressStatus, StudentPractice, StudentUser
 from django.test import TestCase
+
+from api.models import (
+    Practice,
+    StudentPractice,
+    StudentUser,
+)
 from practices.services import PracticeService
 
 

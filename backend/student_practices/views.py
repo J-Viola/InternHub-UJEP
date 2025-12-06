@@ -1,22 +1,4 @@
-import datetime
-from datetime import date
-
-from api.models import (
-    ApprovalStatus,
-    DocumentHelper,
-    EmployerInvitation,
-    EmployerInvitationStatus,
-    OrganizationUser,
-    Practice,
-    ProfessorUser,
-    ProgressStatus,
-    StudentPractice,
-    StudentUser,
-    UploadedDocument,
-    UserSubjectType,
-)
-from django.db import transaction
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse
 from django.utils import timezone  # Import timezone from django.utils
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -27,10 +9,22 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from api.models import (
+    ApprovalStatus,
+    DocumentHelper,
+    Practice,
+    StudentPractice,
+    UploadedDocument,
+)
 from student_practices.permissions import HasDocumentAccess
 from student_practices.services import StudentPracticeService
 
-from .serializers import EmployerInvitationApprovalSerializer, ListStudentPracticeSerializer, StudentPracticeCardSerializer
+from .serializers import (
+    EmployerInvitationApprovalSerializer,
+    ListStudentPracticeSerializer,
+    StudentPracticeCardSerializer,
+)
 
 
 class EmployerInvitationApprovalView(APIView):
@@ -210,7 +204,6 @@ class StudentPracticeDownloadDocumentView(APIView):
 
 
 class StudentPracticeCardView(APIView):
-
     @extend_schema(
         summary="Get student practice card",
         description="Returns detailed information about a specific student practice.",
