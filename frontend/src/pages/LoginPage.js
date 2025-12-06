@@ -4,27 +4,28 @@ import Container from "@core/Container/Container";
 //import Button from "@core/Button/Button";
 import Nav from "@components/core/Nav";
 import LoginForm from "@login/LoginForm";
-import { STAGLogin, getParams } from "@auth/STAGLogin";
+import { STAGLogin } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
 import { useMessage } from "@hooks/MessageContext";
-
+import { useSearchParams } from "react-router-dom";
 
 
 export default function LoginPage() {
     const [ticket, setTicket] = useState(null);
     const { login } = useAuth();
     const { addMessage } = useMessage();
+    const [searchParams] = useSearchParams();
     // hook pro user data
 
     // Zpracování parametrů z URL při načtení stránky
     useEffect(() => {
-        const params = getParams();
-        console.log("Načtené URL parametry:", params);
+        const stagUserTicket = searchParams.get("stagUserTicket");
+        console.log("URL Params hook detected:", stagUserTicket);
         
-        if (params?.service_ticket) {
-            setTicket(params.service_ticket);
+        if (stagUserTicket) {
+            setTicket(stagUserTicket);
         }
-    }, []); // Spustí se pouze při načtení stránky
+    }, [searchParams]);
 
     // Zpracování STAG loginu při změně ticketu
     useEffect(() => {

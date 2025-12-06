@@ -9,7 +9,7 @@ export const useNabidkaAPI = () => {
 
     const getNabidky = async (params = {}) => {
         try {
-            const response = await api.get('/practices/practices/search/', { params })
+            const response = await api.get('/practices/search/', { params })
             
             if (response && response.data) {
                 return response.data.results || response.data
@@ -35,7 +35,7 @@ export const useNabidkaAPI = () => {
 
     const getNabidkaById = async (id) => {
         try {
-            const response = await api.get(`/practices/practices/${id}`)
+            const response = await api.get(`/practices/${id}`)
             
             if (response && response.data) {
                 return response.data
@@ -57,7 +57,7 @@ export const useNabidkaAPI = () => {
                 formData.append(key, data[key]);
             });
 
-            const response = await api.post('/practices/practices/', formData, {
+            const response = await api.post('/practices/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -103,7 +103,7 @@ export const useNabidkaAPI = () => {
 
     const getPracticeUserRelations = async () => {
         try {
-            const response = await api.get('/practices/practices/get_practice_user_relations/');
+            const response = await api.get('/practices/get_practice_user_relations/');
 
             if (response && response.data) {
                 return response.data;
@@ -118,7 +118,7 @@ export const useNabidkaAPI = () => {
 
     const getOrganizationPractices = async () => {
         try {
-            const response = await api.get('/practices/practices/organization_practices/');
+            const response = await api.get('/practices/organization_practices/');
 
             if (response && response.data) {
                 return response.data;
@@ -133,7 +133,7 @@ export const useNabidkaAPI = () => {
 
     const getNabidkyByUserDepartment = async () => {
         try {
-            const response = await api.get('/practices/practices/by_user_department/');
+            const response = await api.get('/practices/by_user_department/');
             if (response && response.data) {
                 return response.data;
             }

@@ -75,6 +75,12 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                         >
                             Přihlaste se             
                         </Button>
+                        <Button 
+                            property={"w-full items-center mt-4 bg-gray-500 hover:bg-gray-600"}
+                            onClick={() => window.location.href = "/?stagUserTicket=demo-ticket"}
+                        >
+                            Demo Login (Dev)
+                        </Button>
                     </>
                        
 

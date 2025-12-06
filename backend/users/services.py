@@ -172,6 +172,19 @@ def validate_stag_ticket(ticket: str):
     """
     Validates STAG service ticket and returns user details.
     """
+    if settings.DEMO_LOGIN and ticket == "demo-ticket":
+        return {
+            "email": "demo.student@ujep.cz",
+            "first_name": "Demo",
+            "last_name": "Student",
+            "stagUserInfo": {
+                "role": "ST",
+                "roleNazev": "Student",
+                "osCislo": "S22000",
+                "katedra": "KI",
+            },
+        }
+
     url = f"{settings.STAG_WS_URL}/services/rest2/help/getStagUserListForLoginTicketV2"
     try:
         resp = requests.get(
@@ -253,7 +266,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 department = Department.objects.get(department_code=katedra)
             except Department.DoesNotExist:
                 if settings.DEMO_LOGIN:
-                    department, _ = Department.objects.get_or_create(department_code="DEMO")
+                    department, _ = Department.objects.get_or_create(department_code=settings.DEMO_DEPARTMENT_CODE)
                 else:
                     raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
 
@@ -310,8 +323,9 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
         items = response_json.get("predmetStudenta", [])
 
         if settings.DEMO_LOGIN:
+            subject, _ = Subject.objects.get_or_create(subject_code=settings.DEMO_SUBJECT_CODE)
             UserSubject.objects.get_or_create(
-                subject=Subject.objects.get_or_create(subject_code="BOP"),
+                subject=subject,
                 user=user,
                 defaults={
                     "role": UserSubjectType.Student,

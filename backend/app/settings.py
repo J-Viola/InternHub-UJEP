@@ -146,6 +146,8 @@ STORAGE_URL = "storage/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 DEMO_LOGIN = os.environ.get("DEMO_LOGIN", "false") == "1"
+DEMO_SUBJECT_CODE = os.environ.get("DEMO_SUBJECT_CODE", "BOP")
+DEMO_DEPARTMENT_CODE = os.environ.get("DEMO_DEPARTMENT_CODE", "DEMO")
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
 ARES_API_URL = os.environ.get(

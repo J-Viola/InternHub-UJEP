@@ -62,7 +62,7 @@ class ProgressStatus(enum.Enum):
 
 class Role(models.Model):
     role_id = models.AutoField(primary_key=True)
-    role_name = models.CharField(unique=True, max_length=50, blank=True, default="")
+    role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, default="")
 
     class Meta:
@@ -75,7 +75,7 @@ class Role(models.Model):
 class StagRole(models.Model):
     id = models.AutoField(primary_key=True)
     role = models.CharField(unique=True, blank=False, null=False)
-    role_name = models.CharField(unique=True, max_length=50, blank=True, default="")
+    role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, default="")
 
     class Meta:
@@ -88,8 +88,8 @@ class StagRole(models.Model):
 class EmployerProfile(models.Model):
     employer_id = models.AutoField(primary_key=True)
     company_name = models.CharField(max_length=100, blank=True, default="")
-    ico = models.CharField(unique=True, max_length=15, blank=True, default="")
-    dic = models.CharField(unique=True, max_length=15, blank=True, default="")
+    ico = models.CharField(unique=True, max_length=15, blank=True, null=True)
+    dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
     city = models.TextField(blank=True, default="")
     address = models.TextField(blank=True, default="")
     zip_code = models.IntegerField(blank=True, null=True)
@@ -109,7 +109,7 @@ class EmployerProfile(models.Model):
 class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     user_id = models.AutoField(primary_key=True)
     password = models.CharField(max_length=128, blank=True, default="")
-    username = models.CharField(unique=True, max_length=150, blank=True, default="")
+    username = models.CharField(unique=True, max_length=150, blank=True, null=True)
     email = models.EmailField(unique=True)
     title_before = models.CharField(max_length=50, blank=True, default="")
     first_name = models.CharField(max_length=50)
@@ -192,7 +192,7 @@ class StagUser(User):
 
 class StudentUser(StagUser):
     profile_picture = models.TextField(blank=True, default="")
-    os_cislo = models.CharField(unique=True, max_length=64, blank=True, default="")
+    os_cislo = models.CharField(unique=True, max_length=64, blank=True, null=True)
     field_of_study = models.CharField(max_length=100, blank=True, default="")
     year_of_study = models.IntegerField(blank=True, null=True)
     stag_f_number = models.IntegerField(unique=True, blank=True, null=True)
@@ -217,7 +217,7 @@ class DepartmentRole(enum.Enum):
 
 
 class ProfessorUser(StagUser):
-    ucit_idno = models.CharField(unique=True, max_length=64, blank=True, default="")
+    ucit_idno = models.CharField(unique=True, max_length=64, blank=True, null=True)
     department = models.ForeignKey(
         "Department",
         models.DO_NOTHING,
@@ -250,8 +250,8 @@ class ActionLog(models.Model):
 
 class Department(models.Model):
     department_id = models.AutoField(primary_key=True)
-    department_name = models.CharField(unique=True, max_length=100)
-    department_code = models.CharField(unique=True, max_length=100)
+    department_name = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    department_code = models.CharField(unique=True, max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, default="")
 
     class Meta:
@@ -263,7 +263,7 @@ class Department(models.Model):
 
 class Subject(models.Model):
     subject_id = models.AutoField(primary_key=True)
-    subject_code = models.CharField(unique=True, max_length=50, blank=True, default="")
+    subject_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
     subject_name = models.CharField(max_length=100, blank=True, default="")
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True, related_name="subjects")
     hours_required = models.IntegerField(blank=True, null=True)

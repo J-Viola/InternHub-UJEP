@@ -27,4 +27,4 @@ format: ## Formats code and fixes linting issues inside backend container
 	docker container exec internhub-backend ruff check --fix .
 
 test: ## Runs tests for the backend
-	docker container exec internhub-backend python manage.py test --noinput
+	docker container exec internhub-backend python manage.py test --noinput --settings=app.test_settings
