@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from api.models import ApprovalStatus, EmployerProfile, OrganizationUser
 from users.dtos.dtos import EkonomickySubjektDTO
+from users.models import ApprovalStatus, EmployerProfile, OrganizationUser
 from users.services import register_organization, update_organization_from_ares
 
 

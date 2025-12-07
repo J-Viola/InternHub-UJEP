@@ -7,7 +7,7 @@ import Paragraph from "@components/core/Text/Paragraph";
 import BackButton from "@core/Button/BackButton";
 import SearchBar from "@components/Filter/SearchBar";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
-import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
+import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
 import { useUserAPI } from "src/api/user/userAPI";

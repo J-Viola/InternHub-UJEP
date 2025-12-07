@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from api.models import ProfessorUser, Subject, UserSubject, UserSubjectType
 from department.serializers import DepartmentSerializer
+from subject.models import Subject
+from users.models import ProfessorUser, UserSubject, UserSubjectType
 
 
 class TeacherSerializer(serializers.ModelSerializer):

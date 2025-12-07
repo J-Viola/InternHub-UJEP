@@ -2,25 +2,24 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .forms import UserChangeForm, UserCreationForm
-from .models import (
+from department.models import Department
+from practices.models import Practice
+from student_practices.models import EmployerInvitation, StudentPractice, UploadedDocument
+from subject.models import Subject
+from users.models import (
     ActionLog,
-    Department,
-    EmployerInvitation,
     EmployerProfile,
     OrganizationUser,
-    Practice,
     ProfessorUser,
     Role,
     StagRole,
     StagUser,
-    StudentPractice,
     StudentUser,
-    Subject,
-    UploadedDocument,
     User,
     UserSubject,
 )
+
+from .forms import UserChangeForm, UserCreationForm
 
 
 @admin.register(Role)

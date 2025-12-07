@@ -1,0 +1,28 @@
+ARG PY_VERSION=3.10
+FROM python:${PY_VERSION}-slim
+
+WORKDIR /app/backend
+
+# Install system dependencies (needed for psycopg2, etc.)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY backend/requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install gunicorn
+
+# Copy application code
+COPY backend/ .
+
+# Collect static files (optional, can be done at runtime if using shared volume)
+# RUN python manage.py collectstatic --noinput
+
+EXPOSE 8000
+
+# Start Gunicorn
+CMD ["gunicorn", "app.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

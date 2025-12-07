@@ -2,13 +2,14 @@ import React, { useState, useCallback } from "react";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 
-export default function TextBox({id, label, required = false, placeholder, value, rows = 5, onChange}) {
+export default function TextBox({id, label, required = false, placeholder, value, rows = 5, onChange, error = null}) {
     const [inputValue, setInputValue] = useState((value && id) ? {[id]: value} : {[id]: ""});
     
     const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
 
-    const inputClass = "w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2";
+    const borderColor = error ? "border-red-500" : "border-gray-300";
+    const inputClass = `w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 ${borderColor}`;
     
     const handleTextChange = useCallback((event) => {
         const { value } = event.target;
@@ -39,6 +40,7 @@ export default function TextBox({id, label, required = false, placeholder, value
                 value={inputValue[id] || ""}
                 onChange={handleTextChange}
             />
+            {error && <Paragraph property="text-red-500 text-sm mt-1">{error}</Paragraph>}
         </Container>
     );
 }

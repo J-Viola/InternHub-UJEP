@@ -7,10 +7,11 @@ import Button from "@core/Button/Button";
 import Paragraph from "@components/core/Text/Paragraph";
 import { format } from "date-fns";
 
-export default function CustomDatePicker({ id, property, value, required=false, label, onChange, children, locked=false }) {
+export default function CustomDatePicker({ id, property, value, required=false, label, onChange, children, locked=false, error = null }) {
     const [date, setDate] = useState(null);
     const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
+    const borderColor = error ? "border-red-500" : "border-gray-300";
 
     // Synchronizace date state s value prop
     useEffect(() => {
@@ -95,12 +96,13 @@ export default function CustomDatePicker({ id, property, value, required=false, 
                     locale={cs}
                     dateFormat="dd.MM.yyyy"
                     placeholderText="Vyberte datum"
-                    className="w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 pl-10"
+                    className={`w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 pl-10 ${borderColor}`}
                 />
                 <Container property="absolute left-3 top-1/2 transform -translate-y-1/2">
                     <Button icon={"calendar"} hover={false} pointer={false} noVariant={true} iconColor={"text-gray-900"} />
                 </Container>
             </Container>
+            {error && <Paragraph property="text-red-500 text-sm mt-1">{error}</Paragraph>}
         </Container>
     );
 }

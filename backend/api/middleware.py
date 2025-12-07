@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.http import Http404, HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
 
-from api.models import UploadedDocument
+from student_practices.models import StudentPractice
 
 
 class DocumentPermissionMiddleware(MiddlewareMixin):
@@ -19,16 +19,26 @@ class DocumentPermissionMiddleware(MiddlewareMixin):
             return HttpResponseForbidden()
 
         # Extract relative path from URL
-        rel_path = request.path[len(settings.STORAGE_URL) :]
+        # rel_path must match what is stored in DB (e.g., "documents/contract_....docx")
+        # settings.STORAGE_URL is usually "storage/"
+        # request.path is "/storage/documents/..."
+
+        # If MEDIA_URL/STORAGE_URL is "storage/", then:
+        # DB stores: "documents/file.docx" (because upload_to=STORAGE_URL + "documents") -> Wait, upload_to="storage/documents"
+        # Let's check model: upload_to=settings.STORAGE_URL + "documents" -> "storage/documents"
+
+        # So DB stores: "storage/documents/filename.docx"
+        # Request path: "/storage/documents/filename.docx"
+
+        rel_path = request.path.lstrip("/")
 
         # Check if user has access to this document
+        # We search for a StudentPractice that links to this document
         has_access = (
-            UploadedDocument.objects.filter(document=rel_path)
-            .filter(
-                Q(practice__contact_user=request.user)
-                | Q(practice__practiceuser__user=request.user)
-                | Q(practice__studentpractice__user=request.user)
+            StudentPractice.objects.filter(
+                Q(contract_document__document=rel_path) | Q(content_document__document=rel_path) | Q(feedback_document__document=rel_path)
             )
+            .filter(Q(user=request.user) | Q(practice__contact_user=request.user) | Q(practice__employer__organization_users=request.user))
             .exists()
         )
 

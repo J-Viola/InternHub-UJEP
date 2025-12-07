@@ -16,7 +16,7 @@ import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "src/api/documents/documentsAPI";
-import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
+import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
 import handleToDoAlert from "@utils/ToDoAlert";
 
 

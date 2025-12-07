@@ -3,7 +3,7 @@ import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
 
-export default function DropDown({id, property, label, placeholder, icon = false, required = false, value, onChange, options = [], onIconClick, hover = false,  variant = "default", disableDefault = false, disabled = false}) {
+export default function DropDown({id, property, label, placeholder, icon = false, required = false, value, onChange, options = [], onIconClick, hover = false,  variant = "default", disableDefault = false, disabled = false, error = null}) {
     const [selectedValue, setSelectedValue] = useState((value && id) ? {[id]: value} : {[id]: ""});
 
     // Synchronizace default value
@@ -17,8 +17,10 @@ export default function DropDown({id, property, label, placeholder, icon = false
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
     const iconEntity = icon && <Button noVariant={true} hover={false} pointer={false} icon={icon} iconColor={"text-black"} onClick={onIconClick}></Button>
 
+    const borderColor = error ? "border-red-500" : "border-gray-300";
+
     const variants = {
-        default: "w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 border-gray-300",
+        default: `w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 ${borderColor}`,
         facultyGreen: `w-full px-2 py-1 text-base text-black bg-facultyColLight rounded-lg border border-black ${hover ? "hover:bg-facultyCol transition-colors duration-200" : ""}`,
         blue: "w-full px-2 py-1 text-base text-white bg-blue-500 rounded-lg border-2 border-blue-500 hover:bg-blue-600 transition-colors duration-200",
         red: "w-full px-2 py-1 text-base text-white bg-red-500 rounded-lg border-2 border-red-500 hover:bg-red-600 transition-colors duration-200"
@@ -70,6 +72,7 @@ export default function DropDown({id, property, label, placeholder, icon = false
                     </Container>
                 )}
             </Container>
+            {error && <Paragraph property="text-red-500 text-sm mt-1">{error}</Paragraph>}
         </Container>
     );
 }

@@ -19,7 +19,7 @@ import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
 import NabidkaEntityInline from "@components/Nabidka/NabidkaEntityInline";
 import PopUpCon from "@core/Container/PopUpCon";
-import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
+import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
 import { useMessage } from "@hooks/MessageContext";
 
 export default function InvitationPage() {

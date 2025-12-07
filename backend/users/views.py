@@ -11,14 +11,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from api.decorators import role_required
-from api.models import (
+from api.views import StandardResultsSetPagination
+from users.models import (
     EmployerProfile,
     OrganizationRole,
     OrganizationUser,
     ProfessorUser,
     StudentUser,
 )
-from api.views import StandardResultsSetPagination
 from users.permissions import CanViewStudentProfile
 from users.services import fetch_ares_data, update_organization_from_ares
 

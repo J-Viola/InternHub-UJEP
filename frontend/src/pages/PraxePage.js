@@ -9,7 +9,7 @@ import PopUpCon from "@core/Container/PopUpCon";
 import Button from "@core/Button/Button";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
-import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
+import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
 import { useUser } from "@hooks/UserProvider";
 import BackButton from "@components/core/Button/BackButton";
 

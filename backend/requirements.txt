@@ -3,16 +3,14 @@ django-cors-headers
 markdown
 django-filter
 psycopg2-binary
-pydevd-pycharm~=243.26053.29
+pydevd-pycharm
 requests
 pydantic
-pylint
 pre-commit
 ruff
 djangorestframework-simplejwt
 django-polymorphic
 django-model-utils
-pillow
 django-verify-email
 drf-spectacular
 django-enumfield

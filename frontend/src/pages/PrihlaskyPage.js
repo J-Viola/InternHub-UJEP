@@ -6,7 +6,7 @@ import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
 import Nav from "@components/core/Nav";
 import { useParams } from "react-router-dom";
-import { useStudentPracticeAPI } from "@api/student_practice/student_pracitceAPI";
+import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import PrihlaskaEntity from "@components/Prihlasky/PrihlaskaEntity";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNavigate } from "react-router-dom";

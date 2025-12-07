@@ -3,12 +3,10 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from api.models import (
-    Practice,
-    StudentPractice,
-    StudentUser,
-)
+from practices.models import Practice
 from practices.services import PracticeService
+from student_practices.models import StudentPractice
+from users.models import StudentUser
 
 
 class PracticeServiceTests(TestCase):

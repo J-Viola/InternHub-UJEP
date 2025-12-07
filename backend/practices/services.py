@@ -5,15 +5,14 @@ from datetime import date
 from django.db import transaction
 from django.db.models import Count, Q
 
-from api.models import (
-    ApprovalStatus,
+from practices.models import Practice, ProgressStatus
+from student_practices.models import (
     EmployerInvitation,
     EmployerInvitationStatus,
-    Practice,
-    ProgressStatus,
     StudentPractice,
 )
 from student_practices.serializers import StudentPracticeSerializer
+from users.models import ApprovalStatus
 from users.services import get_user_department_ids
 
 

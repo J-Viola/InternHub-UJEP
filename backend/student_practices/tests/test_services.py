@@ -2,23 +2,25 @@ from datetime import date
 
 from django.test import TestCase
 
-from api.models import (
-    ApprovalStatus,
+from practices.models import Practice, ProgressStatus
+from student_practices.models import (
     EmployerInvitation,
     EmployerInvitationStatus,
-    EmployerProfile,
-    OrganizationUser,
-    Practice,
-    ProgressStatus,
     StudentPractice,
-    StudentUser,
 )
 from student_practices.services import StudentPracticeService
+from users.models import (
+    ApprovalStatus,
+    EmployerProfile,
+    OrganizationUser,
+    StudentUser,
+)
 
 
 class StudentPracticeServiceTests(TestCase):
     def setUp(self):
         self.user = StudentUser.objects.create(email="student@test.com", first_name="S", last_name="U")
+        self.other_user = StudentUser.objects.create(email="thief@test.com", first_name="T", last_name="H")
         self.employer_user = OrganizationUser.objects.create(email="emp@test.com", first_name="E", last_name="O")
         self.employer_profile = EmployerProfile.objects.create(
             employer_id=self.employer_user.id,
@@ -79,3 +81,9 @@ class StudentPracticeServiceTests(TestCase):
         with self.assertRaises(ValueError) as cm:
             StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "accept")
         self.assertIn("již byla zpracována", str(cm.exception))
+
+    def test_process_invitation_wrong_user(self):
+        """Test that a user cannot approve an invitation belonging to someone else"""
+        with self.assertRaises(ValueError) as cm:
+            StudentPracticeService.process_invitation_approval(self.other_user, self.invitation.invitation_id, "accept")
+        self.assertIn("nebo k ní nemáte přístup", str(cm.exception))

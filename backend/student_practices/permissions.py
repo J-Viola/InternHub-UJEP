@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from api.models import (
+from users.models import (
     DepartmentRole,
     OrganizationUser,
     ProfessorUser,

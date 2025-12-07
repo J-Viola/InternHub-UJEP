@@ -10,16 +10,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import (
-    ApprovalStatus,
-    Department,
-    Practice,
-    StudentPractice,
-    StudentUser,
-)
 from api.permissions import IsOrganizationOwner
 from api.views import StandardResultsSetPagination
+from department.models import Department
 from practices.filters import PracticeFilter
+from practices.models import Practice
 from practices.serializers import (
     EndDateRequestSerializer,
     EndDateResponseSerializer,
@@ -31,6 +26,8 @@ from practices.serializers import (
 )
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
+from student_practices.models import StudentPractice
+from users.models import ApprovalStatus, StudentUser
 
 
 # -------------------------------------------------------------

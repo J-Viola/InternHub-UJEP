@@ -247,7 +247,7 @@ class AresViewsTests(TestCase):
 class UserProfileTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        from api.models import (
+        from users.models import (
             ApprovalStatus,
             EmployerProfile,
             OrganizationRole,
@@ -295,7 +295,7 @@ class UserProfileTests(APITestCase):
 class OrganizationUserListTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        from api.models import ApprovalStatus, EmployerProfile, OrganizationUser
+        from users.models import ApprovalStatus, EmployerProfile, OrganizationUser
 
         self.owner = OrganizationUser.objects.create(email="owner@test.com", is_active=True)
         self.profile = EmployerProfile.objects.create(

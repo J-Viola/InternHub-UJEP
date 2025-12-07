@@ -5,15 +5,16 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from api.models import (
-    ApprovalStatus,
+from practices.models import Practice, ProgressStatus
+from student_practices.models import (
     EmployerInvitation,
     EmployerInvitationStatus,
+    StudentPractice,
+)
+from users.models import (
+    ApprovalStatus,
     EmployerProfile,
     OrganizationUser,
-    Practice,
-    ProgressStatus,
-    StudentPractice,
     StudentUser,
 )
 

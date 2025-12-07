@@ -3,18 +3,13 @@ from datetime import date
 from rest_framework import serializers
 
 from api.helpers import FormattedDateField
-from api.models import (
-    ApprovalStatus,
-    EmployerProfile,
-    Practice,
-    ProgressStatus,
-    StudentPractice,
-    Subject,
-    User,
-)
+from practices.models import Practice, ProgressStatus
 from practices.utils import calculate_end_date
+from student_practices.models import StudentPractice
 from student_practices.serializers import StudentPracticeStatusSerializer
+from subject.models import Subject
 from subject.serializers import SubjectSerializer
+from users.models import ApprovalStatus, EmployerProfile, User
 from users.serializers import EmployerProfileSerializer
 
 
@@ -115,7 +110,7 @@ class PracticeSerializer(serializers.ModelSerializer):
         # Check if user has student attribute/role
         # Using hasattr check similar to original code if model type is not guaranteed
         # But preferably checking instance
-        from api.models import StudentUser
+        from users.models import StudentUser
 
         if not isinstance(request.user, StudentUser):
             return None
@@ -133,12 +128,14 @@ class PracticeSerializer(serializers.ModelSerializer):
         Zkontroluje, zda end_date není před start_date, a že start_date >= dnešek.
         """
         start = data.get("start_date")
-        # Calculate end date if coefficient is provided, otherwise use provided end_date or existing
-        # Note: calculate_end_date is called in create() but we validate here.
-        # If this is create, we might not have end_date yet.
+        end = data.get("end_date")
 
         if start and start < date.today():
             raise serializers.ValidationError("Datum zahájení nemůže být v minulosti.")
+
+        if start and end and end < start:
+            raise serializers.ValidationError("Datum ukončení nemůže být před datem zahájení.")
+
         return data
 
     def create(self, validated_data):

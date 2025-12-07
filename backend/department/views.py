@@ -6,17 +6,17 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.decorators import role_required
-from api.models import (
-    Department,
+from api.views import StandardResultsSetPagination
+from department.models import Department
+from student_practices.models import StudentPractice
+from users.models import (
     OrganizationRole,
     ProfessorUser,
-    StudentPractice,
+    StagRoleEnum,
     StudentUser,
     UserSubject,
     UserSubjectType,
 )
-from api.views import StandardResultsSetPagination
-from users.models import StagRoleEnum
 from users.services import get_user_department_ids
 
 from .serializers import (

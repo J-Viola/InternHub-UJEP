@@ -13,7 +13,7 @@ import { useMessage } from "@hooks/MessageContext";
 import Headings from "@components/core/Text/Headings";
 import { useCompanyAPI } from "src/api/company/companyAPI";
 
-export default function CompanyForm({ handleCreate, handleUpdate, action, id }) {
+export default function CompanyForm({ handleCreate, handleUpdate, action, id, errors = {} }) {
     const ares = useAresAPI();
     const { addMessage } = useMessage();
     const companyAPI = useCompanyAPI();
@@ -217,6 +217,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                             value={ico}
                             onChange={(value) => setICO(value.ico)} 
                             property={"w-full"}
+                            error={errors.ico}
                         />
                         <Button
                             property={"w-1/3 mt-6 px-4 justify-self-end"} 
@@ -237,6 +238,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"Zadejte název společnosti"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
+                        error={errors.company_name}
                     />
 
                     <TextField 
@@ -247,6 +249,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"Zadejte adresu"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
+                        error={errors.address}
                     />
 
                     <TextField 
@@ -256,6 +259,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"např. Ing., Mgr., Dr."}
                         value={formData.titleBefore}
                         onChange={(value) => handleFormChange(value)}
+                        error={errors.title_before}
                     />
 
                     <TextField 
@@ -265,6 +269,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"Zadejte jméno jednatele"}
                         value={formData.executiveName}
                         onChange={(value) => handleFormChange(value)}
+                        error={errors.first_name}
                     />
 
                     <TextField 
@@ -274,6 +279,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"Zadejte příjmení jednatele"}
                         value={formData.executiveSurname}
                         onChange={(value) => handleFormChange(value)}
+                        error={errors.last_name}
                     />
 
                     <TextField 
@@ -283,6 +289,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"např. Ph.D., MBA"}
                         value={formData.titleAfter}
                         onChange={(value) => handleFormChange(value)}
+                        error={errors.title_after}
                     />
 
                     <TextField 
@@ -292,6 +299,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"Zadejte e-mailovou adresu jednatele"}
                         value={formData.executiveEmail}
                         onChange={(value) => handleFormChange(value)}
+                        error={errors.email}
                     />
 
                     <TextField 
@@ -301,6 +309,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                         placeholder={"Zadejte telefonní číslo jednatele"}
                         value={formData.executivePhone}
                         onChange={(value) => handleFormChange(value)}
+                        error={errors.phone}
                     />
                 </Container>
 
@@ -314,6 +323,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                             type={"password"}
                             value={formData.executivePassword1}
                             onChange={(value) => handleFormChange(value)}
+                            error={errors.password}
                         />
 
                         <TextField
@@ -324,6 +334,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id }) 
                             type={"password"}
                             value={formData.executivePassword2}
                             onChange={(value) => handleFormChange(value)}
+                            error={errors.password2}
                         />
                     </Container>
                 )}

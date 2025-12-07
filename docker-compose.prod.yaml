@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: .docker/Backend/Dockerfile.prod
+    restart: always
+    command: sh -c "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    volumes:
+      - static_volume:/app/backend/static
+      - storage_volume:/app/backend/storage
+    expose:
+      - "8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: .
+      dockerfile: .docker/Frontend/Dockerfile.prod
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/usr/share/nginx/html/static/django
+      - storage_volume:/usr/share/nginx/html/storage
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  static_volume:
+  storage_volume:

@@ -5,7 +5,7 @@ from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from api.models import Subject
+from subject.models import Subject
 from users.services import get_user_department_ids
 
 from .serializers import SubjectSerializer

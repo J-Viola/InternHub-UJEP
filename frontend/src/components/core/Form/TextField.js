@@ -3,7 +3,7 @@ import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
 
-export default function TextField({id, property, label, placeholder, icon = false, required = false, value, onChange, type = "text", onIconClick, disabled = false}) {
+export default function TextField({id, property, label, placeholder, icon = false, required = false, value, onChange, type = "text", onIconClick, disabled = false, error = null}) {
     
     const [inputValue, setInputValue] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -12,7 +12,8 @@ export default function TextField({id, property, label, placeholder, icon = fals
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
     const iconEntity = icon && <Button noVariant={true} icon={icon} iconColor={"text-black"} onClick={onIconClick}></Button>
 
-    const inputClass = `w-full ${icon ? "pl-10 pr-2" : "px-2"} py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`;
+    const borderColor = error ? "border-red-500" : "border-gray-300";
+    const inputClass = `w-full ${icon ? "pl-10 pr-2" : "px-2"} py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 ${borderColor} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`;
     
     const handleTextChange = useCallback((event) => {
         const newValue = event.target.value;
@@ -64,6 +65,7 @@ export default function TextField({id, property, label, placeholder, icon = fals
                     </Container>
                 )}
             </Container>
+            {error && <Paragraph property="text-red-500 text-sm mt-1">{error}</Paragraph>}
         </Container>
     );
 }

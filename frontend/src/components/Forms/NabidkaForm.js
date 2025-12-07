@@ -9,7 +9,7 @@ import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 import Headings from "@core/Text/Headings";
 
-export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false}) {
+export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false, errors = {}}) {
 
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -46,6 +46,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         label={"Čas období od"}
                         required={true}
                         onChange={handleChange}
+                        error={errors.start_date}
                     />
 
                     
@@ -56,6 +57,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         label={"Úvazek"}
                         options={uvazek}
                         onChange={handleChange}
+                        error={errors.coefficient}
                     />
 
                     <CustomDatePicker
@@ -65,6 +67,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         label={"Čas období do"}
                         required={true}
                         onChange={handleChange}
+                        error={errors.end_date}
                     />
 
                     <DropDown
@@ -75,6 +78,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         icon={"user"}
                         options={organizationUsers}
                         onChange={handleChange}
+                        error={errors.contact_user}
                     />
 
                     <DropDown
@@ -85,6 +89,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         icon={"book"}
                         options={subjects}
                         onChange={handleChange}
+                        error={errors.subject_id}
                     />
 
                     <DropDown
@@ -95,6 +100,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         icon={"users"}
                         options={availablePositions}
                         onChange={handleChange}
+                        error={errors.available_positions}
                     />
                 </Container>
 
@@ -107,6 +113,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         label={"Název"} 
                         placeholder={"Název stáže"}
                         onChange={handleChange}
+                        error={errors.title}
                     />
 
                     <TextBox
@@ -116,6 +123,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         label={"Popis stáže"}
                         placeholder={"Napište popis stáže"}
                         onChange={handleChange}
+                        error={errors.description}
                     />
 
                     <TextBox
@@ -125,6 +133,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         label={"Odpovědnost stáže"}
                         placeholder={"Popište odpovědnost stáže"}
                         onChange={handleChange}
+                        error={errors.responsibilities}
                     />
                 </Container>
 

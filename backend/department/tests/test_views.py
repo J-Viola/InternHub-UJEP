@@ -2,17 +2,9 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from api.models import (
-    Department,
-    DepartmentRole,
-    ProfessorUser,
-    StagRole,
-    StudentUser,
-    Subject,
-    UserSubject,
-    UserSubjectType,
-)
-from users.models import StagRoleEnum
+from department.models import Department
+from subject.models import Subject
+from users.models import DepartmentRole, ProfessorUser, StagRole, StagRoleEnum, StudentUser, UserSubject, UserSubjectType
 
 
 class DepartmentViewTests(TestCase):

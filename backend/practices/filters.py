@@ -1,6 +1,6 @@
 import django_filters
 
-from api.models import Practice
+from practices.models import Practice
 
 
 class PracticeFilter(django_filters.FilterSet):

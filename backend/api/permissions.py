@@ -1,7 +1,6 @@
 from rest_framework import permissions
 
-from api.models import OrganizationRole, OrganizationUser, ProfessorUser, StudentUser
-from users.models import StagRoleEnum
+from users.models import OrganizationRole, OrganizationUser, ProfessorUser, StagRoleEnum, StudentUser
 
 
 class IsOrganizationUser(permissions.BasePermission):

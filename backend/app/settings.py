@@ -25,17 +25,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", False)
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 
-AUTH_USER_MODEL = "api.user"
+AUTH_USER_MODEL = "users.User"
 
 # Application definition
 
 INSTALLED_APPS = [
     "polymorphic",
     "api.apps.ApiConfig",
+    "users",
+    "practices",
+    "department",
+    "subject",
+    "student_practices",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -166,7 +171,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "api.exceptions.custom_exception_handler",
 }
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 ACCESS_TOKEN_REFRESH_TIME = int(os.environ.get("JWT_ACCESS_TOKEN_REFRESH_TIME"))
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=ACCESS_TOKEN_REFRESH_TIME),
@@ -175,7 +180,7 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
+    "SIGNING_KEY": JWT_SECRET_KEY,
     "USER_ID_FIELD": "user_id",
     "USER_ID_CLAIM": "user_id",
 }
@@ -234,12 +239,12 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # Additional CORS settings
-CORS_ORIGIN_ALLOW_ALL = True  # Pro vývoj
+CORS_ORIGIN_ALLOW_ALL = DEBUG  # Pro vývoj
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
 # Debug settings
-DEBUG = True  # Pro vývoj
+# DEBUG is set via env var at the top of file
 
 # Debug and error logging settings
 LOGGING = {

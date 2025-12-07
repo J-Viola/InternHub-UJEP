@@ -20,6 +20,7 @@ export default function VytvoritNabidku() {
     const [ formData, setFormData ] = useState({})
     const [ subjects, setSubjects ] = useState([])
     const [ organizationUsers, setOrganizationUsers ] = useState([]);
+    const [ errors, setErrors ] = useState({});
     const codeList = useCodeListAPI();
     const userAPI = useUserAPI();
     const nabidkaAPI = useNabidkaAPI();
@@ -36,6 +37,7 @@ export default function VytvoritNabidku() {
 
 
     const handleCreation = async () => {
+        setErrors({});
         try {
             const res = await nabidkaAPI.createNabidka(formData);
             if (res) {
@@ -44,12 +46,13 @@ export default function VytvoritNabidku() {
             }
         } catch (error) {
             console.error("Chyba při vytváření nabídky:", error);
-            if (error.response?.data?.detail) {
-                addMessage(error.response.data.detail, "E");
-            } else if (error.response?.data) {
-                // Procházíme chyby z validace (např. {field: ["error msg"]})
-                const errorMessages = Object.values(error.response.data).map(msg => msg.join(", ")).join("; ");
-                addMessage("Chyba při vytváření nabídky: " + errorMessages, "E");
+            if (error.response?.data) {
+                setErrors(error.response.data);
+                if (error.response.data.detail) {
+                    addMessage(error.response.data.detail, "E");
+                } else {
+                    addMessage("Zkontrolujte prosím formulář.", "E");
+                }
             } else {
                 addMessage("Došlo k neznámé chybě při vytváření nabídky.", "E");
             }
@@ -99,6 +102,7 @@ export default function VytvoritNabidku() {
                         subjects={subjects}
                         handleChange={handleChange}
                         handleSubmit={handleCreation}
+                        errors={errors}
                     />
                 </Container>
 

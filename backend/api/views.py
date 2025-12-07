@@ -7,13 +7,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import (
+from student_practices.models import UploadedDocument
+from users.models import (
     DepartmentRole,
     EmployerProfile,
     OrganizationUser,
     ProfessorUser,
     StudentUser,
-    UploadedDocument,
     UserSubjectType,
 )  # Importy pro nové View
 

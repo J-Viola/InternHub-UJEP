@@ -4,23 +4,23 @@ from django.core.cache import cache
 from django.db import transaction
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
-from api.models import (
+from department.models import Department
+from subject.models import Subject
+from users.dtos.dtos import EkonomickySubjektDTO
+from users.models import (
     ApprovalStatus,
-    Department,
     DepartmentRole,
     EmployerProfile,
     OrganizationRole,
     OrganizationUser,
     ProfessorUser,
     StagRole,
+    StagRoleEnum,
     StudentUser,
-    Subject,
     User,
     UserSubject,
     UserSubjectType,
 )
-from users.dtos.dtos import EkonomickySubjektDTO
-from users.models import StagRoleEnum
 
 
 def register_organization(validated_data):

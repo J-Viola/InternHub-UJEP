@@ -11,17 +11,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from api.models import (
-    ApprovalStatus,
+from api.permissions import IsOrganizationOwner
+from practices.models import Practice
+from student_practices.models import (
     DocumentHelper,
     EmployerInvitation,
-    Practice,
     StudentPractice,
     UploadedDocument,
 )
-from api.permissions import IsOrganizationOwner
 from student_practices.permissions import HasDocumentAccess
 from student_practices.services import StudentPracticeService
+from users.models import ApprovalStatus
 
 from .serializers import (
     CreateInvitationSerializer,

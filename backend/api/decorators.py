@@ -9,8 +9,7 @@ from rest_framework_simplejwt.exceptions import (
     TokenError,
 )
 
-from api.models import OrganizationRole, OrganizationUser, StagUser
-from users.models import StagRoleEnum
+from users.models import OrganizationRole, OrganizationUser, StagRoleEnum, StagUser
 
 
 def role_required(allowed_enums: list[Enum]):

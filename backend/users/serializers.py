@@ -5,7 +5,8 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from api.models import (
+from api.helpers import Base64ImageField
+from users.models import (
     ApprovalStatus,
     EmployerProfile,
     OrganizationRole,
@@ -14,8 +15,8 @@ from api.models import (
     StudentUser,
     UserSubject,
     UserSubjectType,
+    UserType,
 )
-from users.models import UserType
 from users.services import (
     get_or_create_stag_user,
     register_organization,
@@ -278,6 +279,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class StudentUserProfileSerializer(UserProfileSerializer):
+    profile_picture = Base64ImageField(required=False, allow_null=True)
+
     class Meta(UserProfileSerializer.Meta):
         model = StudentUser
         fields = UserProfileSerializer.Meta.fields + [

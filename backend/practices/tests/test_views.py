@@ -1,19 +1,18 @@
-from datetime import date, datetime  # Opravený import
+from datetime import date, datetime, timedelta
 
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from api.models import (
+from department.models import Department
+from practices.models import Practice, ProgressStatus
+from student_practices.models import StudentPractice
+from subject.models import Subject
+from users.models import (
     ApprovalStatus,
-    Department,
     EmployerProfile,
     OrganizationUser,
-    Practice,
-    ProgressStatus,
-    StudentPractice,
     StudentUser,
-    Subject,
 )
 
 
@@ -36,6 +35,22 @@ class PracticeViewTests(TestCase):
         )
         self.org_user.employer_profile = self.employer_profile
         self.org_user.save()
+
+        # Setup Another Organization (Attacker)
+        self.other_org_user = OrganizationUser.objects.create(
+            email="other@test.com",
+            password="pass",
+            first_name="Other",
+            last_name="User",
+            is_active=True,
+        )
+        self.other_employer_profile = EmployerProfile.objects.create(
+            employer_id=self.other_org_user.id,
+            company_name="Other Corp",
+            approval_status=ApprovalStatus.APPROVED,
+        )
+        self.other_org_user.employer_profile = self.other_employer_profile
+        self.other_org_user.save()
 
         # Setup Student
         self.student = StudentUser.objects.create(
@@ -131,7 +146,7 @@ class PracticeViewTests(TestCase):
             "subject_id": self.subject.subject_id,
             "title": "New Practice",
             "description": "Desc",
-            "start_date": datetime.today().strftime("%d.%m.%Y"),  # Používám datetime.today()
+            "start_date": datetime.today().strftime("%d.%m.%Y"),
             "coefficient": 1.0,
         }
 
@@ -156,3 +171,45 @@ class PracticeViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.practice.refresh_from_db()
         self.assertEqual(self.practice.approval_status, ApprovalStatus.APPROVED)
+
+    def test_create_practice_invalid_dates(self):
+        """Test that end_date cannot be before start_date"""
+        self.client.force_authenticate(user=self.org_user)
+        url = "/api/practices/"
+
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+
+        data = {
+            "subject_id": self.subject.subject_id,
+            "title": "Invalid Dates Practice",
+            "start_date": today.strftime("%d.%m.%Y"),
+            "end_date": yesterday.strftime("%d.%m.%Y"),
+            "coefficient": 1.0,
+        }
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # Depending on serializer, it might be under 'non_field_errors' or field name
+        self.assertTrue(response.data)
+
+    def test_student_cannot_delete_practice(self):
+        """Test that a student cannot delete a practice"""
+        self.client.force_authenticate(user=self.student)
+        url = f"/api/practices/{self.practice.practice_id}/"
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Practice.objects.filter(pk=self.practice.practice_id).exists())
+
+    def test_organization_cannot_edit_other_practice(self):
+        """Test that an organization cannot edit practice of another organization"""
+        self.client.force_authenticate(user=self.other_org_user)
+        url = f"/api/practices/{self.practice.practice_id}/"
+
+        data = {"title": "Hacked Title"}
+        response = self.client.patch(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.practice.refresh_from_db()
+        self.assertNotEqual(self.practice.title, "Hacked Title")
