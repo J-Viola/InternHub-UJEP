@@ -25,7 +25,7 @@ export const useStudentPracticeAPI = () => {
         if (action === "reject") approval_status = 2; // REJECTED
         if (approval_status === null) throw new Error("Neplatná akce");
         try {
-            const response = await api.patch(`/student-practices/student-practices/${studentPracticeId}/status/`, {
+            const response = await api.patch(`/student-practices/${studentPracticeId}/status/`, {
                 approval_status
             });
             return response.data;
@@ -60,7 +60,7 @@ export const useStudentPracticeAPI = () => {
     // GET /api/student-practices/<practice_id> - Získání všech studentů přihlášených na konkrétní praxi
     const getStudentsByPracticeId = async (practiceId) => {
         try {
-            const response = await api.get(`/student-practices/student-practices/by-practice/${practiceId}`);
+            const response = await api.get(`/student-practices/by-practice/${practiceId}`);
             return response.data;
         } catch (error) {
             console.error('Chyba při získávání studentů pro praxi:', error);
@@ -70,7 +70,7 @@ export const useStudentPracticeAPI = () => {
 
     const getStudentPracticeCard = async (student_practiceId) => {
         try {
-            const response = await api.get(`/student-practices/student-practices/${student_practiceId}`);
+            const response = await api.get(`/student-practices/${student_practiceId}`);
             return response.data;
         } catch (error) {
             console.error('Chyba při získávání studentů pro praxi:', error);

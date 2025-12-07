@@ -15,6 +15,7 @@ from api.models import (
     StagRole,
     StudentUser,
     Subject,
+    User,
     UserSubject,
     UserSubjectType,
 )
@@ -237,30 +238,84 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
 
     user = None
 
-    if osCislo:
-        user, created = StudentUser.objects.update_or_create(
-            email=email,
-            defaults={
-                "stag_role": stagRole,
-                "first_name": first_name,
-                "last_name": last_name,
-                "os_cislo": osCislo,
-                "is_active": True,
-            },
-        )
+    if osCislo:  # This indicates a StudentUser
+        user = None
+        # 1. Try finding by email
+        try:
+            user = StudentUser.objects.get(email=email)
+        except StudentUser.DoesNotExist:
+            # 2. Try finding by osCislo
+            try:
+                user = StudentUser.objects.get(os_cislo=osCislo)
+                # Found by ID but email is different. Update email.
+                user.email = email
+                user.save()
+            except StudentUser.DoesNotExist:
+                # Not found by email nor ID -> Check for conflict with generic User
+                try:
+                    existing_user = User.objects.get(email=email)
+                    # If we are here, user exists but is not StudentUser
+                    if settings.DEMO_LOGIN:
+                        existing_user.delete()
+                    else:
+                        raise AuthenticationFailed(
+                            f"Uživatel s emailem {email} již existuje, ale není veden jako student." f"Kontaktujte administrátora"
+                        )
+                except User.DoesNotExist:
+                    pass
+
+        if user:
+            # Update basic info
+            user.first_name = first_name
+            user.last_name = last_name
+            user.os_cislo = osCislo  # Ensure os_cislo is updated
+            user.save()
+        else:
+            user = StudentUser.objects.create(
+                email=email,
+                stag_role=stagRole,
+                first_name=first_name,
+                last_name=last_name,
+                os_cislo=osCislo,
+                is_active=True,
+            )
+
         # Simple caching for sync: Only sync if created or (last_login is None or old)
         # Or simply: Always sync but with timeout handled in sync function
         sync_stag_subjects_for_student(ticket, osCislo, user)
 
     elif ucitIdno:
         # For professors, department assignment is critical, so we must ensure it exists
+        user = None
         try:
             user = ProfessorUser.objects.get(email=email)
+        except ProfessorUser.DoesNotExist:
+            # Try to find by ucitIdno if email changed
+            try:
+                user = ProfessorUser.objects.get(ucit_idno=ucitIdno)
+                # Found by ID but email is different. Update email.
+                user.email = email
+                user.save()
+            except ProfessorUser.DoesNotExist:
+                # Not found by email nor ID -> Check for conflict with generic User
+                try:
+                    existing_user = User.objects.get(email=email)
+                    # If we are here, user exists but is not ProfessorUser
+                    if settings.DEMO_LOGIN:
+                        existing_user.delete()
+                    else:
+                        raise AuthenticationFailed(
+                            f"Uživatel s emailem {email} již existuje, ale není veden jako vyučující." f"Kontaktujte administrátora"
+                        )
+                except User.DoesNotExist:
+                    pass
+
+        if user:
             # Update basic info
             user.first_name = first_name
             user.last_name = last_name
             user.save()
-        except ProfessorUser.DoesNotExist:
+        else:
             katedra = info.get("katedra")
             try:
                 department = Department.objects.get(department_code=katedra)
@@ -335,16 +390,30 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
         # We could optimize this bulk operation, but for now just ensure it runs fast
         for subj in items:
             zkratka = subj.get("zkratka")
+            nazev = subj.get("nazev")
+            katedra_kod = subj.get("katedra")
+
+            department = None
+            if katedra_kod:
+                department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+
             if zkratka:
-                subjInDb = Subject.objects.filter(subject_code=zkratka).first()
-                if subjInDb:
-                    UserSubject.objects.get_or_create(
-                        subject=subjInDb,
-                        user=user,
-                        defaults={
-                            "role": UserSubjectType.Student,
-                        },
-                    )
+                subjInDb, created = Subject.objects.get_or_create(
+                    subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
+                )
+
+                # Update department if missing or changed (optional, prioritizing STAG data)
+                if department and subjInDb.department != department:
+                    subjInDb.department = department
+                    subjInDb.save()
+
+                UserSubject.objects.get_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={
+                        "role": UserSubjectType.Student,
+                    },
+                )
 
 
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
@@ -380,11 +449,24 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
         items = response_json.get("predmetUcitele", [])
         for subj in items:
             zkratka = subj.get("zkratka")
+            nazev = subj.get("nazev")
+            katedra_kod = subj.get("katedra")
+
+            department = None
+            if katedra_kod:
+                department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+
             if zkratka:
-                subjInDb = Subject.objects.filter(subject_code=zkratka).first()
-                if subjInDb:
-                    UserSubject.objects.get_or_create(
-                        subject=subjInDb,
-                        user=user,
-                        defaults={"role": UserSubjectType.Professor},
-                    )
+                subjInDb, created = Subject.objects.get_or_create(
+                    subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
+                )
+
+                if department and subjInDb.department != department:
+                    subjInDb.department = department
+                    subjInDb.save()
+
+                UserSubject.objects.get_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={"role": UserSubjectType.Professor},
+                )

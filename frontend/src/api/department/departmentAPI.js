@@ -1,34 +1,12 @@
 import { useApi } from "@hooks/useApi";
 import { useMessage } from "@hooks/MessageContext";
 
-// Dummy data pro katedry
-const dummyDepartments = [
-    {
-        "department_id": 1,
-        "department_name": "Katedra informatiky",
-        "description": "Katedra zaměřená na informatiku a počítačové vědy",
-        "head_of_department": "RNDr. Petr Ztracený"
-    },
-    {
-        "department_id": 2,
-        "department_name": "Katedra matematiky",
-        "description": "Katedra zaměřená na matematiku a její aplikace",
-        "head_of_department": "Prof. Ing. Jan Novák"
-    },
-    {
-        "department_id": 3,
-        "department_name": "Katedra fyziky",
-        "description": "Katedra zaměřená na fyziku a fyzikální experimenty",
-        "head_of_department": "Doc. RNDr. Marie Svobodová"
-    }
-];
-
 export const useDepartmentAPI = () => {
     const api = useApi();
 
     const getNabidky = async (params = {}) => {
         try {
-            const response = await api.get('/practices/practices/search/', { params })
+            const response = await api.get('/practices/search/', { params })
             
             if (response && response.data) {
                 return response.data.results || response.data
@@ -54,43 +32,67 @@ export const useDepartmentAPI = () => {
         }
     };
 
-    // CRUD operace pro katedry s dummy daty
     const getAllDepartments = async () => {
-        return dummyDepartments;
+        try {
+            // Přidáme page_size=100 pro získání více kateder, nebo implementovat stránkování na FE
+            const response = await api.get('/departments/admin-departments/?page_size=100');
+            if (response?.data) {
+                return response.data.results || response.data;
+            }
+            return [];
+        } catch (error) {
+            console.error("Chyba při získávání kateder:", error);
+            return [];
+        }
     };
 
     const getDepartmentById = async (id) => {
-        return dummyDepartments.find(dept => dept.department_id == id) || null;
+        try {
+            const response = await api.get(`/departments/admin-departments/${id}/`);
+            if (response?.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při získávání katedry:", error);
+            return null;
+        }
     };
 
     const createDepartment = async (departmentData) => {
-        const newDepartment = {
-            department_id: Math.max(...dummyDepartments.map(d => d.department_id)) + 1,
-            ...departmentData
-        };
-        dummyDepartments.push(newDepartment);
-        return newDepartment;
+        try {
+            const response = await api.post('/departments/admin-departments/', departmentData);
+            if (response?.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při vytváření katedry:", error);
+            throw error;
+        }
     };
 
     const updateDepartment = async (id, departmentData) => {
-        const index = dummyDepartments.findIndex(dept => dept.department_id == id);
-        if (index !== -1) {
-            dummyDepartments[index] = {
-                department_id: parseInt(id),
-                ...departmentData
-            };
-            return dummyDepartments[index];
+        try {
+            const response = await api.put(`/departments/admin-departments/${id}/`, departmentData);
+            if (response?.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při aktualizaci katedry:", error);
+            throw error;
         }
-        return null;
     };
 
     const deleteDepartment = async (id) => {
-        const index = dummyDepartments.findIndex(dept => dept.department_id == id);
-        if (index !== -1) {
-            dummyDepartments.splice(index, 1);
+        try {
+            await api.delete(`/departments/admin-departments/${id}/`);
             return true;
+        } catch (error) {
+            console.error("Chyba při mazání katedry:", error);
+            throw error;
         }
-        return false;
     };
 
     return {

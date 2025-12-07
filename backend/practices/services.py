@@ -83,6 +83,9 @@ class PracticeService:
         if not practice:
             raise ValueError("Praxe nenalezena nebo není aktivní.")
 
+        if not practice.start_date or not practice.end_date:
+            raise ValueError("Praxe nemá nastavené datum zahájení nebo ukončení.")
+
         data = {
             "user": user.pk,
             "practice": practice_id,

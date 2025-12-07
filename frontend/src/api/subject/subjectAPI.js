@@ -22,7 +22,7 @@ export const useSubjectAPI = () => {
 
     const getDepartmentSubjects = async (params = {}) => {
         try {
-            const response = await api.get('/subjects/subjects/department-subjects/', { params })
+            const response = await api.get('/subjects/department-subjects/', { params })
             
             if (response && response.data) {
                 return response.data
@@ -38,7 +38,7 @@ export const useSubjectAPI = () => {
 
     const getAllSubjects = async (params = {}) => {
         try {
-            const response = await api.get('/subjects/subjects/', { params })
+            const response = await api.get('/subjects/', { params })
             
             if (response && response.data) {
                 return response.data.results || response.data
@@ -61,7 +61,7 @@ export const useSubjectAPI = () => {
             }
             );
 
-            const response = await api.post('/subjects/subjects/', formData, {
+            const response = await api.post('/subjects/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -89,7 +89,7 @@ export const useSubjectAPI = () => {
                 }
             });
 
-            const response = await api.put(`/subjects/subjects/${id}/`, formData, {
+            const response = await api.put(`/subjects/${id}/`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -108,7 +108,7 @@ export const useSubjectAPI = () => {
 
     const getSubjectById = async (id) => {
         try {
-            const response = await api.get(`/subjects/subjects/${id}/`);
+            const response = await api.get(`/subjects/${id}/`);
 
             if (response && response.data) {
                 return response.data;

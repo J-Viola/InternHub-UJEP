@@ -85,7 +85,7 @@ export const useNabidkaAPI = () => {
                 formData.append(key, data[key]);
             });
 
-            const response = await api.post('/practices/practices/apply_student_practice/', formData, {
+            const response = await api.post('/practices/apply_student_practice/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -182,7 +182,7 @@ export const useNabidkaAPI = () => {
             });
 
             const method = isPartial ? 'patch' : 'put';
-            const response = await api[method](`/practices/practices/${id}/`, formData, {
+            const response = await api[method](`/practices/${id}/`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

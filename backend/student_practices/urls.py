@@ -22,7 +22,7 @@ urlpatterns = [
     ),
     # Zbytek API
     path(
-        "student-practices/by-practice/<int:practice_id>",
+        "by-practice/<int:practice_id>",
         StudentPracticeListView.as_view(),
         name="student-practice-list",
     ),
@@ -37,12 +37,12 @@ urlpatterns = [
         name="organization-applications",
     ),
     path(
-        "student-practices/<int:student_practice_id>/status/",
+        "<int:student_practice_id>/status/",
         StudentPracticeStatusUpdateView.as_view(),
         name="student-practice-status-update",
     ),
     path(
-        "student-practices/<int:student_practice_id>",
+        "<int:student_practice_id>",
         StudentPracticeCardView.as_view(),
         name="student-practice-card",
     ),

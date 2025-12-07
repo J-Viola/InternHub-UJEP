@@ -2,7 +2,12 @@ from pathlib import Path
 
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponseForbidden
+from rest_framework import permissions, status
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from api.models import EmployerProfile  # Importy pro nové View
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -37,3 +42,23 @@ def serve_user_file(request, path):
 
     # Stream the file
     return FileResponse(full_path.open("rb"))
+
+
+class UniqueLocationsListView(APIView):
+    """
+    API View to retrieve a list of unique cities and addresses from EmployerProfiles.
+    """
+
+    permission_classes = [permissions.AllowAny]  # Povolit prozatím komukoliv
+
+    def get(self, request, *args, **kwargs):
+        # Získání unikátních měst z EmployerProfile
+        cities = EmployerProfile.objects.exclude(city__isnull=True).exclude(city__exact="").values_list("city", flat=True)
+
+        # Získání unikátních adres z EmployerProfile
+        addresses = EmployerProfile.objects.exclude(address__isnull=True).exclude(address__exact="").values_list("address", flat=True)
+
+        # Sjednocení a odstranění duplicit, seřazení
+        all_locations = sorted(list(set(list(cities) + list(addresses))))
+
+        return Response(all_locations, status=status.HTTP_200_OK)

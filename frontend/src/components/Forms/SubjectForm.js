@@ -91,8 +91,6 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
             hours_required: formData.timeCriterion,
             // Add teacher/manager ID if available
             ...(formData.subjectManager && { teacher_id: formData.subjectManager }),
-            // Add department ID if available
-            ...(formData.department && { department_id: formData.department })
         };
 
         if (isEditing) {
@@ -154,6 +152,7 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
                         options={departmentOptions}
                         value={formData.department}
                         onChange={handleChange("department")}
+                        disabled={true}
                     />
 
                     <DropDown

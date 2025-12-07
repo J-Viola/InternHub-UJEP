@@ -92,13 +92,22 @@ export default function NabidkaDetailPage() {
     }
 
     const onSubmit = async() => {
-        const res = await nabidkaAPI.applyNabidka({
-            "practice" : id
-        })
-        if (res) {
-            addMessage("Přihláška byla úspěšně podána", "S")
-            handlePopUp(!popUp)
-            navigate(`/praxe`)
+        try {
+            const res = await nabidkaAPI.applyNabidka({
+                "practice" : id
+            })
+            if (res) {
+                addMessage("Přihláška byla úspěšně podána", "S")
+                handlePopUp(!popUp)
+                navigate(`/praxe`)
+            }
+        } catch (error) {
+            console.error("Chyba při podání přihlášky:", error);
+            if (error.response?.data?.detail) {
+                addMessage(error.response.data.detail, "E");
+            } else {
+                addMessage("Došlo k chybě při podání přihlášky.", "E");
+            }
         }
     }
 

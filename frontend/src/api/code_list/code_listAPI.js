@@ -6,7 +6,7 @@ export const useCodeListAPI = () => {
 
     const getSubjects = async () => {
         try {
-            const response = await api.get('/subjects/subjects/');
+            const response = await api.get('/subjects/');
             
             if (response?.data) {
                 return response.data;
@@ -20,12 +20,14 @@ export const useCodeListAPI = () => {
 
     const getUniqueLocations = async () => {
         try {
-            // Prozatím vracíme prázdné pole, dokud nemáme endpoint pro lokace
-            // TODO: Implementovat API endpoint pro lokace
+            const response = await api.get('/code-lists/locations/');
+            if (response?.data) {
+                return response.data;
+            }
             return [];
         } catch (error) {
             console.error("Chyba při získávání unikátních lokací:", error);
-            return [];
+            throw error;
         }
     };
 

@@ -13,8 +13,7 @@ import { useCodeListAPI } from "src/api/code_list/code_listAPI";
 import { useUserAPI } from "src/api/user/userAPI";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
-
-
+import { useMessage } from "@hooks/MessageContext";
 
 
 export default function VytvoritNabidku() {
@@ -25,6 +24,7 @@ export default function VytvoritNabidku() {
     const userAPI = useUserAPI();
     const nabidkaAPI = useNabidkaAPI();
     const navigate = useNavigate();
+    const { addMessage } = useMessage();
 
     useEffect(()=> {
         const initFetch = async() => {
@@ -36,10 +36,24 @@ export default function VytvoritNabidku() {
 
 
     const handleCreation = async () => {
-        // TODO: Implementovat vytvoření nabídky (API volání, validace, navigace zpět)
-        const res = await nabidkaAPI.createNabidka(formData);
-        res && navigate(-1);
-        
+        try {
+            const res = await nabidkaAPI.createNabidka(formData);
+            if (res) {
+                // addMessage("Nabídka byla úspěšně vytvořena", "S"); // Již se přidává v nabidkaAPI
+                navigate(-1);
+            }
+        } catch (error) {
+            console.error("Chyba při vytváření nabídky:", error);
+            if (error.response?.data?.detail) {
+                addMessage(error.response.data.detail, "E");
+            } else if (error.response?.data) {
+                // Procházíme chyby z validace (např. {field: ["error msg"]})
+                const errorMessages = Object.values(error.response.data).map(msg => msg.join(", ")).join("; ");
+                addMessage("Chyba při vytváření nabídky: " + errorMessages, "E");
+            } else {
+                addMessage("Došlo k neznámé chybě při vytváření nabídky.", "E");
+            }
+        }
     }
 
     const handleChange = (inputObj) => {

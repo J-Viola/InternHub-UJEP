@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from api.models import Department, ProfessorUser, Subject, UserSubject, UserSubjectType
+from api.models import ProfessorUser, Subject, UserSubject, UserSubjectType
 from department.serializers import DepartmentSerializer
 
 
@@ -12,13 +12,6 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 class SubjectSerializer(serializers.ModelSerializer):
     department = DepartmentSerializer(read_only=True)
-    department_id = serializers.PrimaryKeyRelatedField(
-        queryset=Department.objects.all(),
-        source="department",
-        write_only=True,
-        required=False,
-        allow_null=True,
-    )
     teacher = serializers.SerializerMethodField()
     teacher_id = serializers.PrimaryKeyRelatedField(
         queryset=ProfessorUser.objects.all(),
@@ -35,7 +28,6 @@ class SubjectSerializer(serializers.ModelSerializer):
             "subject_code",
             "subject_name",
             "department",
-            "department_id",
             "hours_required",
             "teacher",
             "teacher_id",

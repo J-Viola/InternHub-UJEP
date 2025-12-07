@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from api.views import serve_user_file
+from api.views import UniqueLocationsListView, serve_user_file
 
 from . import settings
 from .views import index
@@ -40,6 +40,7 @@ urlpatterns = [
     path("api/departments/", include("department.urls")),
     path("api/subjects/", include("subject.urls")),
     path("api/student-practices/", include("student_practices.urls")),
+    path("api/code-lists/locations/", UniqueLocationsListView.as_view(), name="unique-locations"),
 ]
 
 # TODO: Remove this in production

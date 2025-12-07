@@ -9,9 +9,7 @@ from .views import (
     CurrentUserProfileView,
     CustomTokenObtainPairView,
     LogoutView,
-    OrganizationUserListView,
     RegisterView,
-    StudentProfileView,
     UpdateAresSubjectView,
 )
 
@@ -19,9 +17,9 @@ app_name = "users"
 
 router = routers.DefaultRouter()
 router.register(
-    r"admin-organization-users",
+    r"organization-users",
     AdminOrganizationViewSet,
-    basename="admin_organization_users",
+    basename="organization_users",
 )
 
 urlpatterns = [
@@ -32,16 +30,6 @@ urlpatterns = [
     path("ares-justice/", AresJusticeView.as_view()),
     path("ares/update/", UpdateAresSubjectView.as_view(), name="update-ares"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path(
-        "organization-users/",
-        OrganizationUserListView.as_view(),
-        name="organization_users",
-    ),
-    path(
-        "student-profile/<int:student_id>",
-        StudentProfileView.as_view(),
-        name="student_profile",
-    ),
     path("profile/", CurrentUserProfileView.as_view(), name="current_user_profile"),
     path("all-students/", AllStudentsListView.as_view(), name="all_students"),
     # path('verification/', include('verify_email.urls')),
