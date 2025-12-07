@@ -7,7 +7,15 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import EmployerProfile  # Importy pro nové View
+from api.models import (
+    DepartmentRole,
+    EmployerProfile,
+    OrganizationUser,
+    ProfessorUser,
+    StudentUser,
+    UploadedDocument,
+    UserSubjectType,
+)  # Importy pro nové View
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -21,9 +29,6 @@ class StandardResultsSetPagination(PageNumberPagination):
 def serve_user_file(request, path):
     """
     Serve user documents with authentication and path validation.
-
-    TODO: Implement granular permissions (students see their own documents,
-    subject teachers and department heads see related documents)
     """
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
@@ -39,6 +44,43 @@ def serve_user_file(request, path):
     # Check file existence
     if not full_path.is_file():
         raise Http404("File not found")
+
+    # Check permissions
+    db_path = f"storage/documents/{path}"
+    try:
+        doc = UploadedDocument.objects.get(document=db_path)
+    except UploadedDocument.DoesNotExist:
+        # If not found in DB by exact path, try fallback or just 404
+        # Sometimes path might be stored differently?
+        raise Http404("Document record not found")
+
+    user = request.user
+    has_access = False
+
+    if user.is_superuser:
+        has_access = True
+    else:
+        sp = doc.student_practice
+        if sp:
+            if isinstance(user, StudentUser):
+                if sp.user == user:
+                    has_access = True
+
+            elif isinstance(user, ProfessorUser):
+                subject = sp.practice.subject
+                # Check if professor is assigned to the subject
+                if subject.user_subjects.filter(user=user, role=UserSubjectType.Professor).exists():
+                    has_access = True
+                # Check if professor is head of department
+                elif user.department_role == DepartmentRole.HEAD and user.department == subject.department:
+                    has_access = True
+
+            elif isinstance(user, OrganizationUser):
+                if sp.practice.employer == user.employer_profile:
+                    has_access = True
+
+    if not has_access:
+        return HttpResponseForbidden("You do not have permission to access this document")
 
     # Stream the file
     return FileResponse(full_path.open("rb"))

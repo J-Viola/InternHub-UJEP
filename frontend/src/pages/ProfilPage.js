@@ -13,14 +13,17 @@ import ProfileForm from "@components/Forms/ProfileForm";
 import { useNavigate } from "react-router-dom";
 import Image from "@core/Image/Image";
 
+import { useMessage } from "@hooks/MessageContext";
+
 export default function ProfilPage() {
-    const { getCurrentUserProfile, getStudentProfile } = useUserAPI();
+    const { getCurrentUserProfile, getStudentProfile, updateProfile } = useUserAPI();
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const isEditMode = searchParams.get('edit') === 'true';
     const navigate = useNavigate();
+    const { addMessage } = useMessage();
     // přidělat check na param id -> pak bud tahadam data ciziho profilu, nebo svůj
 
     useEffect(() => {
@@ -57,14 +60,12 @@ export default function ProfilPage() {
     const handleSubmit = async () => {
         try {
             console.log('ProfilPage - handleSubmit - ukládám data:', userData);
-            // TODO: Implementovat API volání pro uložení profilu
-            // const res = await userAPI.updateProfile(userData);
-            // console.log('Profile update response:', res);
-            handleToDoAlert();
+            await updateProfile(userData);
+            addMessage("Profil byl úspěšně aktualizován", "S");
             navigate(-1);
         } catch (error) {
             console.error('Error profile update:', error);
-            throw error;
+            addMessage("Chyba při aktualizaci profilu", "E");
         }
     }
 

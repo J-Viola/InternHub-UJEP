@@ -7,7 +7,31 @@ import UploadFile from "@core/Form/UploadFile";
 import Image from "@core/Image/Image";
 import Headings from "@core/Text/Headings";
 
+const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.readAsDataURL(file);
+        fileReader.onload = () => {
+            resolve(fileReader.result);
+        };
+        fileReader.onerror = (error) => {
+            reject(error);
+        };
+    });
+};
+
 export default function ProfileForm({ formData, handleInputChange, handleSubmit }) {
+
+    const handleProfilePicChange = async (file) => {
+        if (file) {
+            try {
+                const base64 = await convertToBase64(file);
+                handleInputChange('profile_picture', base64);
+            } catch (error) {
+                console.error("Error converting file to base64:", error);
+            }
+        }
+    };
 
     return (
         <>
@@ -217,7 +241,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     id={"profile_picture"}
                     label={"Nahrát nový profilový obrázek"}
                     accept={"image/*"}
-                    onChange={(file) => handleInputChange('profile_picture', file)}
+                    onChange={handleProfilePicChange}
                 />
                 {/*<UploadFile
                     id={"resume"}

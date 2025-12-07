@@ -3,6 +3,20 @@ import { useApi } from "@hooks/useApi";
 export const useStudentPracticeAPI = () => {
     const api = useApi();
 
+    // POST /api/student-practices/employer-invitation/create/ - Vytvoření pozvánky
+    const createInvitation = async (practiceId, studentIds) => {
+        try {
+            const response = await api.post('/student-practices/employer-invitation/create/', {
+                practice_id: practiceId,
+                student_ids: studentIds
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při vytváření pozvánky:', error);
+            throw error;
+        }
+    };
+
     // POST /api/student-practices/employer-invitation/approve/ - Schválení/zamítnutí pozvánky
     const manageEmployerInvitation = async (invitationId, action) => {
         try {
@@ -84,6 +98,7 @@ export const useStudentPracticeAPI = () => {
         updateStudentPracticeStatus,
         getStudentsByPracticeId,
         getStudentPracticeCard,
-        getAdminPendingApplications
+        getAdminPendingApplications,
+        createInvitation
     };
 };

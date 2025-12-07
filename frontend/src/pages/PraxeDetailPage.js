@@ -97,19 +97,46 @@ export default function PraxeDetailPage() {
         setDocsPopUp(!docsPopUp);
     }
 
-    const onSubmit = async() => {
-        const res = await nabidkaAPI.applyNabidka({
-            "practice" : id
-        })
-        if (res) {
-            addMessage("Přihláška byla úspěšně podána", "S")
-            handlePopUp(!popUp)
+    const handleApply = async() => {
+        try {
+            const res = await nabidkaAPI.applyNabidka({
+                "practice" : id
+            })
+            if (res) {
+                addMessage("Přihláška byla úspěšně podána", "S")
+                handlePopUp()
+                fetchData();
+            }
+        } catch (error) {
+            console.error("Chyba při podání přihlášky:", error);
+            if (error.response?.data?.detail) {
+                addMessage(error.response.data.detail, "E");
+            } else {
+                addMessage("Došlo k chybě při podání přihlášky.", "E");
+            }
         }
     }
 
-    const onReject = () => {
-        // TODO: Implementovat odmítnutí přihlášky (API volání, případně navigace)
-        console.log("Přihláška odmítnuta");
+    const handleApprove = async () => {
+        try {
+            await studentpraticeAPI.updateStudentPracticeStatus(id, "approve");
+            addMessage("Přihláška schválena", "S");
+            fetchData();
+            setPopUp(false);
+        } catch (error) {
+            addMessage("Chyba při schvalování", "E");
+        }
+    }
+
+    const handleReject = async () => {
+        try {
+            await studentpraticeAPI.updateStudentPracticeStatus(id, "reject");
+            addMessage("Přihláška zamítnuta", "S");
+            fetchData();
+            setPopUp(false);
+        } catch (error) {
+            addMessage("Chyba při zamítání", "E");
+        }
     }
 
     return(
@@ -122,13 +149,13 @@ export default function PraxeDetailPage() {
                 <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8 mb-2 mt-4"}>
                     <Headings sizeTag={"h3"} property={""}>Student</Headings>
                     <Paragraph property={"mt-2"}>
-                        {entity?.student_practice_status.student_info.full_name}
+                        {entity?.student_practice_status?.student_info?.full_name}
                     </Paragraph>
                     <Paragraph>
-                        {`Osobní číslo: ${entity?.student_practice_status.student_info.os_cislo}`}
+                        {`Osobní číslo: ${entity?.student_practice_status?.student_info?.os_cislo}`}
                     </Paragraph>
                     <Paragraph>
-                        {`Email: ${entity?.student_practice_status.student_info.email}`}
+                        {`Email: ${entity?.student_practice_status?.student_info?.email}`}
                     </Paragraph>
 
                 </ContainerForEntity>
@@ -156,7 +183,7 @@ export default function PraxeDetailPage() {
                         <Container>
                             <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
                             <Container property={"flex flex-row gap-2 mt-2"}>
-                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer.address}</Button>
+                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer?.address}</Button>
                                 <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
                             </Container>
                         </Container>
@@ -231,13 +258,30 @@ export default function PraxeDetailPage() {
                   
             </Container>
 
-            {/* PODÁNÍ PŘIHLÁŠKY */}
-            {popUp && (
+            {/* PODÁNÍ PŘIHLÁŠKY - STUDENT */}
+            {popUp && user && user.isStudent() && (
                 <PopUpCon 
                     useCustomContainer={true}
                     onClose={handlePopUp} 
                     title={"Přihláška"} 
-                    text={"Proces není definován"}
+                    text={"Opravdu si přejete podat přihlášku?"}
+                    onSubmit={handleApply}
+                    onSubmitText="Podat"
+                    onReject={handlePopUp}
+                    onRejectText="Zrušit"
+                />
+            )}
+
+            {/* SCHVALOVÁNÍ PŘIHLÁŠKY - UČITEL/ORGANIZACE */}
+            {popUp && user && (user.isDepartmentUser() || user.isOrganizationUser()) && (
+                <PopUpCon 
+                    onClose={handlePopUp} 
+                    title={"Správa přihlášky"} 
+                    text={`Chcete schválit nebo zamítnout přihlášku studenta ${entity?.student_practice_status?.student_info?.full_name}?`}
+                    onSubmit={handleApprove}
+                    onSubmitText="Schválit"
+                    onReject={handleReject}
+                    onRejectText="Zamítnout"
                 />
             )}
 

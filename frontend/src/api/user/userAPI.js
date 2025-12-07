@@ -157,6 +157,16 @@ export const useUserAPI = () => {
         }
     };
 
+    const updateProfile = async (userData) => {
+        try {
+            const response = await api.patch('/users/profile/', userData);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při aktualizaci profilu:', error);
+            throw error;
+        }
+    };
+
     return {
         postRegister,
         getOrganizationUsers,
@@ -166,6 +176,7 @@ export const useUserAPI = () => {
         getAllDepartmentProfessors,
         createUser,
         updateUser,
-        getUserById
+        getUserById,
+        updateProfile
     };
 };

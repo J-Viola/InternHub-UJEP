@@ -3,12 +3,49 @@ from datetime import date
 from rest_framework import serializers
 
 from api.helpers import FormattedDateField
-from api.models import ApprovalStatus, Practice, StudentPractice, UploadedDocument, User
+from api.models import ApprovalStatus, EmployerInvitation, Practice, StudentPractice, UploadedDocument, User
 
 
 class EmployerInvitationApprovalSerializer(serializers.Serializer):
     invitation_id = serializers.IntegerField()
     action = serializers.ChoiceField(choices=["accept", "reject"])
+
+
+class EmployerInvitationSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="invitation_id", read_only=True)
+    recipient_name = serializers.CharField(source="user.full_name", read_only=True)
+    employer_name = serializers.CharField(source="employer.company_name", read_only=True)
+    department = serializers.SerializerMethodField()
+    project_title = serializers.CharField(source="practice.title", read_only=True)
+    recipient_id = serializers.IntegerField(source="user.user_id", read_only=True)
+
+    class Meta:
+        model = EmployerInvitation
+        fields = [
+            "id",
+            "invitation_id",
+            "recipient_name",
+            "employer_name",
+            "department",
+            "project_title",
+            "recipient_id",
+            "status",
+            "submission_date",
+        ]
+
+    def get_department(self, obj):
+        # Try to get student's department via subjects
+        # This is simplified; student might have multiple departments
+        if obj.user and hasattr(obj.user, "user_subjects"):
+            subjects = obj.user.user_subjects.filter(role=0).select_related("subject__department")  # Role 0 = Student
+            if subjects.exists():
+                return subjects.first().subject.department.department_name
+        return ""
+
+
+class CreateInvitationSerializer(serializers.Serializer):
+    practice_id = serializers.IntegerField()
+    student_ids = serializers.ListField(child=serializers.IntegerField())
 
 
 class StudentPracticeSerializer(serializers.ModelSerializer):

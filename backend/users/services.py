@@ -259,7 +259,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                         existing_user.delete()
                     else:
                         raise AuthenticationFailed(
-                            f"Uživatel s emailem {email} již existuje, ale není veden jako student." f"Kontaktujte administrátora"
+                            f"Uživatel s emailem {email} již existuje, ale není veden jako student.Kontaktujte administrátora"
                         )
                 except User.DoesNotExist:
                     pass
@@ -305,7 +305,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                         existing_user.delete()
                     else:
                         raise AuthenticationFailed(
-                            f"Uživatel s emailem {email} již existuje, ale není veden jako vyučující." f"Kontaktujte administrátora"
+                            f"Uživatel s emailem {email} již existuje, ale není veden jako vyučující.Kontaktujte administrátora"
                         )
                 except User.DoesNotExist:
                     pass

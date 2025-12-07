@@ -77,7 +77,11 @@ function AuthProvider({ children }) {
                 } else {
                     console.log("Refresh failed, staying on current page");
                 }
+            }).finally(() => {
+                setIsInitializing(false);
             });
+        } else {
+            setIsInitializing(false); // Není uložený refresh token, takže inicializace dokončena
         }
     }, [])
 
@@ -226,7 +230,8 @@ function AuthProvider({ children }) {
             refreshToken, 
             login, 
             logout,
-            apiClient 
+            apiClient,
+            isInitializing // Přidáno do kontextu
         }}>
             {children}
         </AuthContext.Provider>

@@ -353,6 +353,7 @@ class Practice(models.Model):
 
     class Meta:
         db_table = "practices"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.title or super().__str__()

@@ -1,49 +1,41 @@
+import { useApi } from "@hooks/useApi";
+
 export const usePozvankyAPI = () => {
+    const api = useApi();
 
     const getPozvankyList = async () => {
-        // Mock data pro demonstraci
-        return [
-            {
-                id: 2,
-                recipient_name: "Adam Nový",
-                department: "Katedra informatiky",
-                project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
-                recipient_id: 101
-            },
-            {
-                id: 3,
-                recipient_name: "Vladislav Zinek",
-                department: "Katedra informatiky", 
-                project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
-                recipient_id: 102
-            }
-        ];
+        try {
+            const response = await api.get('/student-practices/invitations/');
+            return response.data;
+        } catch (error) {
+            console.error("Chyba při získávání pozvánek:", error);
+            throw error;
+        }
     };
 
     const getPozvankyAdminList = async () => {
-        // Mock data pro demonstraci
-        return [
-            {
-                id: 2,
-                recipient_name: "Adam Nový",
-                employer_name: "Alza",
-                department: "Katedra informatiky",
-                project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
-                recipient_id: 101
-            },
-            {
-                id: 3,
-                recipient_name: "Vladislav Zinek",
-                employer_name: "CZC",
-                department: "Katedra informatiky", 
-                project_title: "Návrhu a implementace AI asistentů pro zákaznickou podporu",
-                recipient_id: 102
-            }
-        ];
+        try {
+            const response = await api.get('/student-practices/invitations/');
+            return response.data;
+        } catch (error) {
+            console.error("Chyba při získávání pozvánek (admin):", error);
+            throw error;
+        }
+    };
+
+    const deleteInvitation = async (id) => {
+        try {
+            await api.delete(`/student-practices/invitations/${id}/`);
+            return true;
+        } catch (error) {
+            console.error("Chyba při mazání pozvánky:", error);
+            throw error;
+        }
     };
 
     return {
         getPozvankyList,
-        getPozvankyAdminList
+        getPozvankyAdminList,
+        deleteInvitation
     };
 }; 

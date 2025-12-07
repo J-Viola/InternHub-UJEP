@@ -15,7 +15,7 @@ import DropDown from "@components/core/Form/DropDown";
 
 export default function PozvankyListPage() {
 	const navigate = useNavigate();
-	const { getPozvankyList, getPozvankyAdminList } = usePozvankyAPI();
+	const { getPozvankyList, getPozvankyAdminList, deleteInvitation } = usePozvankyAPI();
 	const [showPopup, setShowPopup] = useState(false);
 	const [selectedEntity, setSelectedEntity] = useState(null);
 	const [selectedCompanies, setSelectedCompanies] = useState([]);
@@ -34,8 +34,8 @@ export default function PozvankyListPage() {
 	const handleConfirmCancel = async () => {
 		if (!selectedEntity) return;
 		try {
-			// TODO: Implementovat API volání pro zrušení pozvánky
 			console.log('Zrušit pozvánku:', selectedEntity);
+            await deleteInvitation(selectedEntity.id);
 			
 			// Odebrat z listu
 			setData(prevData => prevData.filter(item => item.id !== selectedEntity.id));

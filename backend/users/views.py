@@ -19,6 +19,7 @@ from api.models import (
     StudentUser,
 )
 from api.views import StandardResultsSetPagination
+from users.permissions import CanViewStudentProfile
 from users.services import fetch_ares_data, update_organization_from_ares
 
 from .models import StagRoleEnum
@@ -174,7 +175,7 @@ class OrganizationUserListView(generics.ListAPIView):
 
 
 class StudentProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanViewStudentProfile]
 
     @extend_schema(responses={200: StudentProfileSerializer})
     def get(self, request, student_id):
@@ -183,6 +184,7 @@ class StudentProfileView(APIView):
         except StudentUser.DoesNotExist:
             return Response({"detail": "Student nenalezen."}, status=status.HTTP_404_NOT_FOUND)
 
+        self.check_object_permissions(request, student)
         serializer = StudentProfileSerializer(student)
         return Response(serializer.data)
 
@@ -205,6 +207,8 @@ class AdminOrganizationViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
 
     def get_permissions(self):
+        if self.action == "create":
+            return [permissions.IsAdminUser()]
         return [permissions.IsAuthenticated()]
 
     def list(self, request, *args, **kwargs):
@@ -222,10 +226,12 @@ class AdminOrganizationViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        serializer = self.get_serializer(data=data)
+        serializer = OrganizationRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        user = serializer.save()
+
+        if hasattr(user, "employer_profile"):
+            return Response(self.get_serializer(user.employer_profile).data, status=status.HTTP_201_CREATED)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
@@ -266,3 +272,21 @@ class CurrentUserProfileView(APIView):
             serializer = UserProfileSerializer(user)
 
         return Response(serializer.data)
+
+    @extend_schema(request=UserProfileSerializer, responses={200: UserProfileSerializer})
+    def patch(self, request):
+        user = request.user
+
+        if isinstance(user, StudentUser):
+            serializer = StudentUserProfileSerializer(user, data=request.data, partial=True)
+        elif isinstance(user, ProfessorUser):
+            serializer = ProfessorUserProfileSerializer(user, data=request.data, partial=True)
+        elif isinstance(user, OrganizationUser):
+            serializer = OrganizationUserProfileSerializer(user, data=request.data, partial=True)
+        else:
+            serializer = UserProfileSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

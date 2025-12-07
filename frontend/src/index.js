@@ -23,12 +23,50 @@ import SubjectPage from '@pages/SubjectPage';
 import FormPage from '@pages/FormPage';
 import reportWebVitals from './reportWebVitals';
 import UserProvider from '@hooks/UserProvider';
-import AuthProvider from '@services/auth/Auth';
+import AuthProvider, { useAuth } from '@services/auth/Auth';
 import { MessageProvider}  from '@hooks/MessageContext';
 import InvitationPage from '@pages/PozvankyPage';
 import PozvankyListPage from '@pages/PozvankyListPage';
 import DepartmentsPage from '@pages/DepartmentsPage';
 import CompaniesPage from '@pages/CompaniesPage';
+
+const AppRoutes = () => {
+  const { isInitializing } = useAuth();
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-xl text-gray-600">Načítání aplikace...</div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/nabidka" element={<NabidkaPage />} />
+      <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
+      <Route path="/subjects" element={<SubjectPage />} />
+      <Route path="/profil/:id?" element={<ProfilPage />} />
+      <Route path="/registrace" element={<RegistracePage />} />
+      <Route path="/praxe" element={<PraxePage />} />
+      <Route path="/karta-praxe/:id" element={<PraxeDetailPage />} />
+      <Route path="/students/:id?" element={<StudentPage />} />
+      <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
+      <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
+      <Route path="/upravit-nabidku/:id" element={<UpravitNabidku />} />
+      <Route path="/logout" element={<LogoutUser />} />
+      <Route path="/users/:type" element={<UserCRUDPage/>} />
+      <Route path="/prihlasky" element={<PrihlaskyPage/>} />
+      <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
+      <Route path="/formular" element={<FormPage/>} />
+      <Route path="/pozvanka" element={<InvitationPage/>} />
+      <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
+      <Route path="/departments" element={<DepartmentsPage/>} />
+      <Route path="/companies" element={<CompaniesPage/>} />
+    </Routes>
+  );
+};
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -38,29 +76,7 @@ root.render(
         <BrowserRouter>
           <AuthProvider> {/* TOKEN WORK */}
             <MessageToast/> {/* PRO ZOBRAZENÍ MESSAGE BOXU */}
-            <Routes>
-              <Route path="/" element={<LoginPage />} />
-              <Route path="/nabidka" element={<NabidkaPage />} />
-              <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
-              <Route path="/subjects" element={<SubjectPage />} />
-              <Route path="/profil/:id?" element={<ProfilPage />} />
-              <Route path="/registrace" element={<RegistracePage />} />
-              <Route path="/praxe" element={<PraxePage />} />
-              <Route path="/karta-praxe/:id" element={<PraxeDetailPage />} />
-              <Route path="/students/:id?" element={<StudentPage />} />
-              <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
-              <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
-              <Route path="/upravit-nabidku/:id" element={<UpravitNabidku />} />
-              <Route path="/logout" element={<LogoutUser />} />
-              <Route path="/users/:type" element={<UserCRUDPage/>} />
-              <Route path="/prihlasky" element={<PrihlaskyPage/>} />
-              <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
-              <Route path="/formular" element={<FormPage/>} />
-              <Route path="/pozvanka" element={<InvitationPage/>} />
-              <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
-              <Route path="/departments" element={<DepartmentsPage/>} />
-              <Route path="/companies" element={<CompaniesPage/>} />
-            </Routes>
+            <AppRoutes />
           </AuthProvider>
         </BrowserRouter>
       </UserProvider>

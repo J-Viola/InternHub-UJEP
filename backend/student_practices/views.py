@@ -9,22 +9,57 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from api.models import (
     ApprovalStatus,
     DocumentHelper,
+    EmployerInvitation,
     Practice,
     StudentPractice,
     UploadedDocument,
 )
+from api.permissions import IsOrganizationOwner
 from student_practices.permissions import HasDocumentAccess
 from student_practices.services import StudentPracticeService
 
 from .serializers import (
+    CreateInvitationSerializer,
     EmployerInvitationApprovalSerializer,
+    EmployerInvitationSerializer,
     ListStudentPracticeSerializer,
     StudentPracticeCardSerializer,
 )
+
+
+class EmployerInvitationViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = EmployerInvitationSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return EmployerInvitation.objects.all()
+        if hasattr(user, "employer_profile") and user.employer_profile:
+            return EmployerInvitation.objects.filter(employer=user.employer_profile)
+        return EmployerInvitation.objects.none()
+
+
+class CreateInvitationView(APIView):
+    permission_classes = [IsAuthenticated, IsOrganizationOwner]
+
+    def post(self, request):
+        serializer = CreateInvitationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        practice_id = serializer.validated_data["practice_id"]
+        student_ids = serializer.validated_data["student_ids"]
+
+        try:
+            result = StudentPracticeService.create_invitations(request.user, practice_id, student_ids)
+            return Response(result, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EmployerInvitationApprovalView(APIView):

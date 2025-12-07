@@ -1,6 +1,12 @@
 from rest_framework import permissions
 
-from api.models import OrganizationUser, ProfessorUser, StudentUser, UserSubjectType
+from api.models import (
+    DepartmentRole,
+    OrganizationUser,
+    ProfessorUser,
+    StudentUser,
+    UserSubjectType,
+)
 
 
 class HasDocumentAccess(permissions.BasePermission):
@@ -19,9 +25,14 @@ class HasDocumentAccess(permissions.BasePermission):
             return obj.student_practice.user == user
 
         elif isinstance(user, ProfessorUser):
+            # Check if professor is assigned to the subject
             user_subjects = obj.student_practice.practice.subject.user_subjects
             is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
             if is_professor_for_subject:
+                return True
+
+            # Check if professor is head of the department
+            if user.department_role == DepartmentRole.HEAD and user.department == obj.student_practice.practice.subject.department:
                 return True
 
         elif isinstance(user, OrganizationUser):

@@ -1,8 +1,11 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework import routers
 
 from .views import (
     AdminPracticeListView,
+    CreateInvitationView,
     EmployerInvitationApprovalView,
+    EmployerInvitationViewSet,
     OrganizationApplicationsView,
     StudentPracticeCardView,
     StudentPracticeDownloadDocumentView,
@@ -13,7 +16,11 @@ from .views import (
 
 app_name = "student_practices"
 
+router = routers.DefaultRouter()
+router.register(r"invitations", EmployerInvitationViewSet, basename="invitations")
+
 urlpatterns = [
+    path("", include(router.urls)),
     # Admin
     path(
         "admin-view/pending-practices/",
@@ -25,6 +32,11 @@ urlpatterns = [
         "by-practice/<int:practice_id>",
         StudentPracticeListView.as_view(),
         name="student-practice-list",
+    ),
+    path(
+        "employer-invitation/create/",
+        CreateInvitationView.as_view(),
+        name="employer-invitation-create",
     ),
     path(
         "employer-invitation/approve/",

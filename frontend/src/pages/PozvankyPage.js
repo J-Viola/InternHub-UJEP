@@ -19,6 +19,8 @@ import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
 import NabidkaEntityInline from "@components/Nabidka/NabidkaEntityInline";
 import PopUpCon from "@core/Container/PopUpCon";
+import { useStudentPracticeAPI } from "src/api/student_practice/student_pracitceAPI";
+import { useMessage } from "@hooks/MessageContext";
 
 export default function InvitationPage() {
     const [searchParams] = useSearchParams();
@@ -26,8 +28,10 @@ export default function InvitationPage() {
     const [nabidky, setNabidky] = useState([]);
     const [selectedNabidka, setSelectedNabidka] = useState(null);
     const [showConfirmPopup, setShowConfirmPopup] = useState(false);
-    const { getNabidky } = useNabidkaAPI();
+    const { getOrganizationPractices } = useNabidkaAPI();
+    const { createInvitation } = useStudentPracticeAPI();
     const { user } = useUser();
+    const { addMessage } = useMessage();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -42,9 +46,9 @@ export default function InvitationPage() {
             
             // Načíst nabídky organizace
             if (user.isOrganizationUser()) {
-                getNabidky().then(res => {
+                getOrganizationPractices().then(res => {
                     console.log('Načtené nabídky:', res);
-                    setNabidky(res.results || res || []);
+                    setNabidky(res || []);
                 }).catch(error => {
                     console.error('Chyba při načítání nabídek:', error);
                 });
@@ -81,12 +85,26 @@ export default function InvitationPage() {
         setShowConfirmPopup(true);
     };
 
-    const handleConfirmCreate = () => {
+    const handleConfirmCreate = async () => {
         console.log('Vytvořit pozvánku pro:', selectedNabidka, 'a studenty:', studentIds);
-        // TODO: Zde implementovat skutečné vytvoření pozvánky
-        setShowConfirmPopup(false);
-        handleToDoAlert();
-        // Po úspěšném vytvoření možná navigace zpět nebo zobrazení success message
+        
+        if (!selectedNabidka || studentIds.length === 0) return;
+
+        try {
+            const res = await createInvitation(selectedNabidka.practice_id, studentIds);
+            if (res) {
+                addMessage(`Pozvánka pro ${res.created} studentů vytvořena.`, "S");
+                if (res.errors && res.errors.length > 0) {
+                    addMessage(`Chyby: ${res.errors.join(", ")}`, "E");
+                }
+                setShowConfirmPopup(false);
+                navigate('/pozvanky-list');
+            }
+        } catch (error) {
+            console.error("Chyba při vytváření pozvánky:", error);
+            addMessage("Chyba při vytváření pozvánky: " + (error.response?.data?.detail || error.message), "E");
+            setShowConfirmPopup(false);
+        }
     };
 
     const handleCancelCreate = () => {
