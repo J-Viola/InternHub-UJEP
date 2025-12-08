@@ -2,15 +2,12 @@ import React, {useEffect, useState} from "react";
 import Container from "@core/Container/Container";
 import TextField from "@core/Form/TextField";
 import DropDown from "@core/Form/DropDown";
-import BackButton from "@core/Button/BackButton";
 import TextBox from "@core/Form/TextBox";
-import Nav from "@components/core/Nav";
-import CustomDatePicker from "@core/Form/DatePicker";
-import Button from "@components/core/Button/Button";
-import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import UploadFile from "@core/Form/UploadFile";
-import { useMessage } from "@hooks/MessageContext";
+import Button from "@core/Button/Button";
 import Headings from "@components/core/Text/Headings";
+import { useAresAPI } from "@api/ARES/aresJusticeAPI";
+import { useMessage } from "@hooks/MessageContext";
 import { useCompanyAPI } from "src/api/company/companyAPI";
 
 export default function CompanyForm({ handleCreate, handleUpdate, action, id, errors = {} }) {
@@ -18,10 +15,11 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
     const { addMessage } = useMessage();
     const companyAPI = useCompanyAPI();
 
-    const [ico, setICO] = useState('');
+    const [icoValue, setICOValue] = useState(''); // Local state for ICO input, before it's part of formData
     const [entity, setEntity] = useState(null);
     const [aresFetched, setAresFetched] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [localErrors, setLocalErrors] = useState({}); // Local state for frontend validation errors
 
     const [formData, setFormData] = useState({
         companyName: '',
@@ -81,7 +79,9 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
     };
 
     const handleARESCall = async (icoValue) => {
+        setLocalErrors({}); // Clear previous local errors
         if (!icoValue) {
+            setLocalErrors(prev => ({ ...prev, ico: "Zadejte IČO" }));
             addMessage("Zadejte IČO", "E");
             return;
         }
@@ -102,6 +102,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                 addMessage("Údaje byly úspěšně načteny z ARES", "S");
             }
         } catch (error) {
+            setLocalErrors(prev => ({ ...prev, ico: "Chyba při načítání údajů z ARES" }));
             addMessage("Chyba při načítání údajů z ARES", "E");
         } finally {
             setLoading(false);
@@ -109,6 +110,9 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
     };
 
     const validateForm = () => {
+        const newLocalErrors = {};
+        let isValid = true;
+
         const requiredFields = {
             'executiveName': 'Jméno jednatele',
             'executiveSurname': 'Příjmení jednatele',
@@ -121,31 +125,26 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
             requiredFields['executivePassword2'] = 'Heslo znovu';
         }
 
-        const missingFields = [];
-
         if (!aresFetched && !isEditing) {
-            addMessage("Nejprve načtěte údaje z ARES", "E");
-            return false;
+            newLocalErrors.ico = "Nejprve načtěte údaje z ARES";
+            isValid = false;
         }
         
         for (const [fieldId, fieldName] of Object.entries(requiredFields)) {
             if (!formData[fieldId] || formData[fieldId].trim() === '') {
-                missingFields.push(fieldName);
+                newLocalErrors[fieldId] = `${fieldName} je povinné.`;
+                isValid = false;
             }
         }
 
         if (!isEditing && formData.executivePassword1 && formData.executivePassword2 &&
             formData.executivePassword1 !== formData.executivePassword2) {
-            addMessage("Hesla se neshodují", "E");
-            return false;
+            newLocalErrors.executivePassword2 = "Hesla se neshodují.";
+            isValid = false;
         }
 
-        if (missingFields.length > 0) {
-            addMessage(`Chybí povinné údaje: ${missingFields.join(', ')}`, "E");
-            return false;
-        }
-
-        return true;
+        setLocalErrors(newLocalErrors); // Update local errors state
+        return isValid;
     };
 
     const handleFormChange = (value) => {
@@ -214,14 +213,14 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                             required={true}
                             label={"Vyplnění údajů pomocí systému ARES"} 
                             placeholder={"Zadejte IČO firmy"}
-                            value={ico}
-                            onChange={(value) => setICO(value.ico)} 
+                            value={icoValue}
+                            onChange={(value) => setICOValue(value.ico)} 
                             property={"w-full"}
-                            error={errors.ico}
+                            error={localErrors.ico || errors.ico}
                         />
                         <Button
                             property={"w-1/3 mt-6 px-4 justify-self-end"} 
-                            onClick={() => handleARESCall(ico)}
+                            onClick={() => handleARESCall(icoValue)}
                             variant={"blueSmall"}
                         >
                             Hledat
@@ -238,7 +237,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"Zadejte název společnosti"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
-                        error={errors.company_name}
+                        error={localErrors.companyName || errors.company_name}
                     />
 
                     <TextField 
@@ -249,7 +248,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"Zadejte adresu"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
-                        error={errors.address}
+                        error={localErrors.address || errors.address}
                     />
 
                     <TextField 
@@ -259,7 +258,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"např. Ing., Mgr., Dr."}
                         value={formData.titleBefore}
                         onChange={(value) => handleFormChange(value)}
-                        error={errors.title_before}
+                        error={localErrors.titleBefore || errors.title_before}
                     />
 
                     <TextField 
@@ -269,7 +268,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"Zadejte jméno jednatele"}
                         value={formData.executiveName}
                         onChange={(value) => handleFormChange(value)}
-                        error={errors.first_name}
+                        error={localErrors.executiveName || errors.first_name}
                     />
 
                     <TextField 
@@ -279,7 +278,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"Zadejte příjmení jednatele"}
                         value={formData.executiveSurname}
                         onChange={(value) => handleFormChange(value)}
-                        error={errors.last_name}
+                        error={localErrors.executiveSurname || errors.last_name}
                     />
 
                     <TextField 
@@ -289,7 +288,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"např. Ph.D., MBA"}
                         value={formData.titleAfter}
                         onChange={(value) => handleFormChange(value)}
-                        error={errors.title_after}
+                        error={localErrors.titleAfter || errors.title_after}
                     />
 
                     <TextField 
@@ -299,7 +298,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"Zadejte e-mailovou adresu jednatele"}
                         value={formData.executiveEmail}
                         onChange={(value) => handleFormChange(value)}
-                        error={errors.email}
+                        error={localErrors.executiveEmail || errors.email}
                     />
 
                     <TextField 
@@ -309,7 +308,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         placeholder={"Zadejte telefonní číslo jednatele"}
                         value={formData.executivePhone}
                         onChange={(value) => handleFormChange(value)}
-                        error={errors.phone}
+                        error={localErrors.executivePhone || errors.phone}
                     />
                 </Container>
 
@@ -323,7 +322,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                             type={"password"}
                             value={formData.executivePassword1}
                             onChange={(value) => handleFormChange(value)}
-                            error={errors.password}
+                            error={localErrors.executivePassword1 || errors.password}
                         />
 
                         <TextField
@@ -334,7 +333,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                             type={"password"}
                             value={formData.executivePassword2}
                             onChange={(value) => handleFormChange(value)}
-                            error={errors.password2}
+                            error={localErrors.executivePassword2 || errors.password2}
                         />
                     </Container>
                 )}

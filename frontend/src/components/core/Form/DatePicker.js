@@ -9,7 +9,12 @@ import { format } from "date-fns";
 
 export default function CustomDatePicker({ id, property, value, required=false, label, onChange, children, locked=false, error = null }) {
     const [date, setDate] = useState(null);
-    const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
+    // Měníme labelEntity na skutečný <label> element
+    const labelEntity = label ? (
+        <label htmlFor={id} className="block text-base font-medium text-gray-700">
+            {label}
+        </label>
+    ) : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
     const borderColor = error ? "border-red-500" : "border-gray-300";
 
@@ -97,6 +102,8 @@ export default function CustomDatePicker({ id, property, value, required=false, 
                     dateFormat="dd.MM.yyyy"
                     placeholderText="Vyberte datum"
                     className={`w-full px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 pl-10 ${borderColor}`}
+                    id={id} // Předání ID pro primární input
+                    inputProps={{ id: id }} // Předání ID do vnitřního inputu
                 />
                 <Container property="absolute left-3 top-1/2 transform -translate-y-1/2">
                     <Button icon={"calendar"} hover={false} pointer={false} noVariant={true} iconColor={"text-gray-900"} />

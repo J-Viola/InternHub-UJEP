@@ -4,7 +4,7 @@ const ORIGINAL_URL = "http%3A%2F%2Fwww.localhost%3A3000%2F";
 const LOGIN_PARAMS = "?originalURL=" + ORIGINAL_URL;
 
 const API_LOGIN_URL = STAG_LOGIN_URL + LOGIN_PARAMS;
-console.log(API_LOGIN_URL);
+
 /*
 https://portal.ujep.cz/ws/login?originalURL=http://www.stag-client.cz
 */

@@ -5,7 +5,12 @@ import Paragraph from "@components/core/Text/Paragraph";
 export default function TextBox({id, label, required = false, placeholder, value, rows = 5, onChange, error = null}) {
     const [inputValue, setInputValue] = useState((value && id) ? {[id]: value} : {[id]: ""});
     
-    const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
+    // Měníme labelEntity na skutečný <label> element
+    const labelEntity = label ? (
+        <label htmlFor={id} className="block text-base font-medium text-gray-700">
+            {label}
+        </label>
+    ) : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
 
     const borderColor = error ? "border-red-500" : "border-gray-300";

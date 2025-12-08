@@ -13,7 +13,12 @@ export default function DropDown({id, property, label, placeholder, icon = false
         }
     }, [value, id]);
 
-    const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
+    // Měníme labelEntity na skutečný <label> element
+    const labelEntity = label ? (
+        <label htmlFor={id} className="block text-base font-medium text-gray-700">
+            {label}
+        </label>
+    ) : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
     const iconEntity = icon && <Button noVariant={true} hover={false} pointer={false} icon={icon} iconColor={"text-black"} onClick={onIconClick}></Button>
 

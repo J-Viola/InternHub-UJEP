@@ -8,7 +8,12 @@ export default function TextField({id, property, label, placeholder, icon = fals
     const [inputValue, setInputValue] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
-    const labelEntity = label ? <Paragraph>{label}</Paragraph> : null;
+    // Měníme labelEntity na skutečný <label> element
+    const labelEntity = label ? (
+        <label htmlFor={id} className="block text-base font-medium text-gray-700">
+            {label}
+        </label>
+    ) : null;
     const requiredLabel = <Paragraph property={"text-red-600 ml-1"}>*</Paragraph>
     const iconEntity = icon && <Button noVariant={true} icon={icon} iconColor={"text-black"} onClick={onIconClick}></Button>
 
