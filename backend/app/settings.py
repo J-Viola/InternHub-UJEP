@@ -36,6 +36,8 @@ AUTH_USER_MODEL = "users.User"
 INSTALLED_APPS = [
     "polymorphic",
     "api.apps.ApiConfig",
+    "app",
+    "django_seed",
     "users",
     "practices",
     "department",

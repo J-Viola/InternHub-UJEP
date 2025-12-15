@@ -10,19 +10,21 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from api.decorators import role_required
 from api.views import StandardResultsSetPagination
 from users.models import (
     EmployerProfile,
-    OrganizationRole,
     OrganizationUser,
     ProfessorUser,
     StudentUser,
 )
-from users.permissions import CanViewStudentProfile
+from users.permissions import (
+    CanViewStudentProfile,
+    IsOrganizationOwner,
+    IsOrganizationUser,
+    IsStagTeacher,
+)
 from users.services import fetch_ares_data, update_organization_from_ares
 
-from .models import StagRoleEnum
 from .serializers import (
     AdminOrganizationSerializer,
     AllStudentsListSerializer,
@@ -101,9 +103,8 @@ class AresJusticeView(generics.GenericAPIView):
 
 
 class UpdateAresSubjectView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOrganizationOwner]
 
-    @role_required([OrganizationRole.OWNER])
     def post(self, request):
         ico = request.data.get("ico")
         if not ico:
@@ -209,6 +210,8 @@ class AdminOrganizationViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == "create":
             return [permissions.IsAdminUser()]
+        if self.action in ["update", "partial_update", "destroy"]:
+            return [IsAuthenticated(), IsOrganizationUser() | IsStagTeacher()]
         return [permissions.IsAuthenticated()]
 
     def list(self, request, *args, **kwargs):
@@ -234,7 +237,6 @@ class AdminOrganizationViewSet(ModelViewSet):
             return Response(self.get_serializer(user.employer_profile).data, status=status.HTTP_201_CREATED)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def update(self, request, pk=None, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
@@ -244,11 +246,9 @@ class AdminOrganizationViewSet(ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def partial_update(self, request, pk=None, *args, **kwargs):
         return self.update(request, pk, partial=True, *args, **kwargs)
 
-    @role_required([OrganizationRole.OWNER, OrganizationRole.INSERTER, StagRoleEnum.VY])
     def destroy(self, request, pk=None, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)

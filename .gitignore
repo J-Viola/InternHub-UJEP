@@ -1,3 +1,41 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
+# General
+.DS_Store
+*.log
 .env
-__pycache__
+.venv
+venv/
+__pycache__/
+*.py[cod]
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python / Django
+*.pot
+*.pyc
+*.pyd
+db.sqlite3
+media/
+staticfiles/
+backend/logs/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / React
+node_modules/
+build/
+dist/
+.npm/
+*.tfstate
+frontend/node_modules/
+frontend/build/
+frontend/.eslintcache
+
+# Docker
+.docker_data/
+postgres_data/

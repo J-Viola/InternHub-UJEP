@@ -5,16 +5,16 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.permissions import IsOrganizationOwner
+from api.permissions import IsOrganizationOwner, IsOrganizationUser
 from api.views import StandardResultsSetPagination
 from department.models import Department
 from practices.filters import PracticeFilter
-from practices.models import Practice
+from practices.models import Practice, ProgressStatus
 from practices.serializers import (
     EndDateRequestSerializer,
     EndDateResponseSerializer,
@@ -37,7 +37,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
     queryset = Practice.objects.all().select_related("employer")
     serializer_class = PracticeSerializer
     pagination_class = StandardResultsSetPagination
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -50,6 +50,8 @@ class PracticeViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ["update", "partial_update", "destroy"]:
             return [permissions.IsAuthenticated(), IsOrganizationOwner()]
+        if self.action == "create":  # Added for create action
+            return [permissions.IsAuthenticated(), IsOrganizationUser()]
         return [permissions.IsAuthenticated()]
 
     def list(self, request, *args, **kwargs):
@@ -116,8 +118,8 @@ class PracticeViewSet(viewsets.ModelViewSet):
                 data["image_base64"] = PracticeService.encode_logo_to_base64(user.employer_profile.logo)
 
         # Set default statuses
-        data.setdefault("approval_status", 0)
-        data.setdefault("progress_status", 0)
+        data.setdefault("approval_status", ApprovalStatus.PENDING.value)
+        data.setdefault("progress_status", ProgressStatus.NOT_STARTED.value)
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)

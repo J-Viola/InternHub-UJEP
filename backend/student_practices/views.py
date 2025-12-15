@@ -144,6 +144,16 @@ class StudentPracticeStatusUpdateView(APIView):
 
     def patch(self, request, student_practice_id):
         student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
+
+        # Check permissions: Only the organization that owns the practice can change status
+        is_owner_org = hasattr(request.user, "employer_profile") and student_practice.practice.employer == request.user.employer_profile
+
+        if not is_owner_org and not request.user.is_superuser:
+            return Response(
+                {"detail": "Nemáte oprávnění k úpravě statusu této praxe."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = StudentPracticeStatusUpdateSerializer(student_practice, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

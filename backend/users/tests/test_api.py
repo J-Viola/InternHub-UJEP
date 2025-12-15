@@ -30,7 +30,7 @@ class CustomTokenObtainPairSerializerTests(TestCase):
         self.serializer = CustomTokenObtainPairSerializer()
 
     @patch("requests.get")
-    def authenticatesWithValidStagTicket(self, mock_get):
+    def test_authenticates_with_valid_stag_ticket(self, mock_get):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"email": "student@example.com"}
@@ -45,7 +45,7 @@ class CustomTokenObtainPairSerializerTests(TestCase):
         self.assertTrue(user.is_active)
 
     @patch("requests.get")
-    def failsWithInvalidStagTicket(self, mock_get):
+    def test_fails_with_invalid_stag_ticket(self, mock_get):
         mock_response = MagicMock()
         mock_response.status_code = 401
         mock_get.return_value = mock_response
@@ -55,20 +55,20 @@ class CustomTokenObtainPairSerializerTests(TestCase):
             self.serializer.validate(attrs)
         self.assertIn("Failed to authenticate with STAG", str(context.exception))
 
-    def authenticatesWithValidCredentials(self):
+    def test_authenticates_with_valid_credentials(self):
         attrs = {"email": "test@example.com", "password": "StrongPassword123"}
         result = self.serializer.validate(attrs)
 
         self.assertIn("refresh", result)
         self.assertIn("access", result)
 
-    def failsWithInvalidPassword(self):
+    def test_fails_with_invalid_password(self):
         attrs = {"email": "test@example.com", "password": "WrongPassword"}
         with self.assertRaises(Exception) as context:
             self.serializer.validate(attrs)
         self.assertIn("Invalid credentials", str(context.exception))
 
-    def failsWithNonExistentEmail(self):
+    def test_fails_with_non_existent_email(self):
         attrs = {
             "email": "nonexistent@example.com",
             "password": "StrongPassword123",
@@ -77,7 +77,7 @@ class CustomTokenObtainPairSerializerTests(TestCase):
             self.serializer.validate(attrs)
         self.assertIn("No account found", str(context.exception))
 
-    def requiresCredentials(self):
+    def test_requires_credentials(self):
         attrs = {}
         with self.assertRaises(Exception) as context:
             self.serializer.validate(attrs)
@@ -85,7 +85,7 @@ class CustomTokenObtainPairSerializerTests(TestCase):
 
 
 class RegisterSerializerTests(TestCase):
-    def registerWithValidData(self):
+    def test_register_with_valid_data(self):
         data = {
             "email": "new@example.com",
             "password": "StrongPassword123",
@@ -102,7 +102,7 @@ class RegisterSerializerTests(TestCase):
         self.assertTrue(user.is_active)
         self.assertTrue(user.check_password("StrongPassword123"))
 
-    def failsWithMismatchedPasswords(self):
+    def test_fails_with_mismatched_passwords(self):
         data = {
             "email": "new@example.com",
             "password": "StrongPassword123",
@@ -115,7 +115,7 @@ class RegisterSerializerTests(TestCase):
         self.assertIn("password", serializer.errors)
         self.assertIn("didn't match", str(serializer.errors["password"]))
 
-    def failsWithMissingRequiredFields(self):
+    def test_fails_with_missing_required_fields(self):
         data = {
             "email": "new@example.com",
             "password": "StrongPassword123",
@@ -136,7 +136,7 @@ class LogoutSerializerTests(TestCase):
         )
         self.refresh_token = RefreshToken.for_user(self.user)
 
-    def serializesValidToken(self):
+    def test_serializes_valid_token(self):
         data = {"refresh": str(self.refresh_token)}
         serializer = LogoutSerializer(data=data)
         self.assertTrue(serializer.is_valid())
@@ -144,7 +144,7 @@ class LogoutSerializerTests(TestCase):
 
 
 class RegisterViewTests(APITestCase):
-    def registersUserSuccessfully(self):
+    def test_registers_user_successfully(self):
         url = reverse("register")
         data = {
             "email": "new@example.com",
@@ -171,7 +171,7 @@ class LogoutViewTests(APITestCase):
         self.client.force_authenticate(user=self.user)
         self.refresh_token = RefreshToken.for_user(self.user)
 
-    def successfullyLogsOut(self):
+    def test_successfully_logs_out(self):
         url = reverse("logout")
         data = {"refresh": str(self.refresh_token)}
         response = self.client.post(url, data, format="json")
@@ -190,7 +190,7 @@ class AresViewsTests(TestCase):
         )
 
     @patch("requests.get")
-    def fetchesValidAresData(self, mock_get):
+    def test_fetches_valid_ares_data(self, mock_get):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -208,7 +208,7 @@ class AresViewsTests(TestCase):
         data = json.loads(response.content)
         self.assertEqual(data["ico"], "12345678")
 
-    def returnsBadRequestForMissingIco(self):
+    def test_returns_bad_request_for_missing_ico(self):
         request = self.factory.get("/ares/")
         request.user = self.user
         view = AresJusticeView.as_view()
@@ -218,7 +218,7 @@ class AresViewsTests(TestCase):
         data = json.loads(response.content)
         self.assertIn("missing", data["error"])
 
-    def returnsBadRequestForInvalidIcoFormat(self):
+    def test_returns_bad_request_for_invalid_ico_format(self):
         request = self.factory.get("/ares/?ico=1234")
         request.user = self.user
         view = AresJusticeView.as_view()
@@ -230,7 +230,7 @@ class AresViewsTests(TestCase):
 
     @patch("users.views.cache")
     @patch("requests.get")
-    def usesCachedDataWhenAvailable(self, mock_get, mock_cache):
+    def test_uses_cached_data_when_available(self, mock_get, mock_cache):
         cached_data = {"ico": "12345678", "name": "Cached Company"}
         mock_cache.get.return_value = cached_data
 

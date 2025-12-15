@@ -1,10 +1,79 @@
 from rest_framework import permissions
 
 from users.models import (
+    OrganizationRole,
     OrganizationUser,
     ProfessorUser,
+    StagRoleEnum,
+    StagUser,
+    StudentUser,
     UserSubjectType,
 )
+
+
+class IsOrganizationUser(permissions.BasePermission):
+    """
+    Allows access only to organization users.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, OrganizationUser))
+
+
+class IsOrganizationOwner(permissions.BasePermission):
+    """
+    Allows access only to organization owners.
+    """
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and isinstance(request.user, OrganizationUser)
+            and request.user.organization_role == OrganizationRole.OWNER
+        )
+
+
+class IsStagUser(permissions.BasePermission):
+    """
+    Allows access only to STAG users (students or professors).
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, StagUser))
+
+
+class IsStagStudent(permissions.BasePermission):
+    """
+    Allows access only to students (STAG role 'st').
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, StudentUser))
+
+
+class IsStagTeacher(permissions.BasePermission):
+    """
+    Allows access only to teachers (STAG role 'vy').
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, ProfessorUser))
+
+
+class IsStagAdmin(permissions.BasePermission):
+    """
+    Allows access only to STAG admins (STAG role 'vk' - department coordinator?).
+    """
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and isinstance(request.user, StagUser)
+            and request.user.stag_role
+            and request.user.stag_role.role == StagRoleEnum.VK.value
+        )
 
 
 class CanViewStudentProfile(permissions.BasePermission):

@@ -2,12 +2,12 @@ help: ## Prints help for targets with comments
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 build: ## Builds the app and detaches
-	docker compose up --d -build --parallel
+	docker compose up -d --build
 
 up: ## Brings Docker stack up and detaches
 	docker compose up -d
 
-down: ## Puts Docker stack down
+down: ## Puts Docker stack down (removes volumes for full reset)
 	docker compose down -v
 
 restart: ## Restarts docker stack
