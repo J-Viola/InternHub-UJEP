@@ -8,8 +8,9 @@ import TextField from "@core/Form/TextField";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) { 
-    // dodělat hook z parenta na informace z formuláře
     const [loginAccess, setLoginAccess] = useState({});
+    const [studentId, setStudentId] = useState("");
+    const [teacherId, setTeacherId] = useState("");
     const navigate = useNavigate();
 
     const handleAccess = useCallback((newValues) => {
@@ -19,6 +20,24 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
         }));
         
     }, []);
+
+    const handleStudentIdChange = (values) => {
+        setStudentId(values.studentId);
+    };
+
+    const handleTeacherIdChange = (values) => {
+        setTeacherId(values.teacherId);
+    };
+
+    const handleMockStudentLogin = () => {
+        const ticket = studentId ? `mock-student:${studentId}` : 'student-ticket';
+        window.location.href = `/?stagUserTicket=${ticket}`;
+    };
+
+    const handleMockTeacherLogin = () => {
+        const ticket = teacherId ? `mock-teacher:${teacherId}` : 'teacher-ticket';
+        window.location.href = `/?stagUserTicket=${ticket}`;
+    };
 
     useEffect(() => {
         console.log("LoginAccess", loginAccess);
@@ -81,6 +100,36 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                         >
                             Demo Login (Dev)
                         </Button>
+                        
+                        <TextField 
+                            id="studentId" 
+                            label="Zadejte osCislo studenta (nepovinné)" 
+                            placeholder="S12345" 
+                            property="mt-4 mb-2"
+                            value={studentId}
+                            onChange={handleStudentIdChange}
+                        />
+                        <Button 
+                            property={"w-full items-center bg-blue-500 hover:bg-blue-600"}
+                            onClick={handleMockStudentLogin}
+                        >
+                            Mock Student (Dev)
+                        </Button>
+
+                        <TextField 
+                            id="teacherId" 
+                            label="Zadejte ucitIdno učitele (nepovinné)" 
+                            placeholder="U98765" 
+                            property="mt-4 mb-2"
+                            value={teacherId}
+                            onChange={handleTeacherIdChange}
+                        />
+                        <Button 
+                            property={"w-full items-center bg-green-500 hover:bg-green-600"}
+                            onClick={handleMockTeacherLogin}
+                        >
+                            Mock Teacher (Dev)
+                        </Button>
                     </>
                        
 
@@ -111,4 +160,3 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
         </Container>
     );
 }
-

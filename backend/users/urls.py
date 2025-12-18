@@ -11,6 +11,7 @@ from .views import (
     LogoutView,
     OrganizationUserListView,
     RegisterView,
+    StudentProfileView,
     UpdateAresSubjectView,
 )
 
@@ -37,6 +38,7 @@ urlpatterns = [
         name="organization_users",
     ),
     path("profile/", CurrentUserProfileView.as_view(), name="current_user_profile"),
+    path("student-profile/<int:student_id>/", StudentProfileView.as_view(), name="student_profile"),
     path("all-students/", AllStudentsListView.as_view(), name="all_students"),
     # path('verification/', include('verify_email.urls')),
 ]

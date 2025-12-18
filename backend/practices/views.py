@@ -28,6 +28,7 @@ from practices.services import PracticeService
 from practices.utils import calculate_end_date
 from student_practices.models import StudentPractice
 from users.models import ApprovalStatus, StudentUser
+from users.permissions import IsStagTeacher
 
 
 # -------------------------------------------------------------
@@ -179,7 +180,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         data = PracticeService.apply_student_practice(user, practice_id)
         return Response(data, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.AllowAny])
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def upcoming(self, request):
         """
         GET /api/practices/upcoming/
@@ -194,7 +195,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(upcoming_practices, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.AllowAny])
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def by_subject(self, request):
         """
         GET /api/practices/by_subject/?subject_id={id}
@@ -210,7 +211,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=["get"],
-        permission_classes=[permissions.AllowAny],
+        permission_classes=[permissions.IsAuthenticated],
         url_path="by_employer_profile/(?P<employer_id>[^/.]+)",
     )
     def by_employer_profile(self, request, employer_id):
@@ -402,7 +403,7 @@ class PracticesForApprovingListView(generics.ListAPIView):
 
 
 class ChangePendingView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated, IsStagTeacher]
     serializer_class = PracticeApprovalStatusSerializer
 
     def post(self, request, *args, **kwargs):
@@ -433,7 +434,7 @@ class ChangePendingView(APIView):
 
 
 class GetEndDateView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         summary="Calculate end date of practice",

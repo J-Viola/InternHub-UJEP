@@ -35,7 +35,7 @@ export default function StudentPage() {
             loadPractice();
             return;
         }
-        if (user.isAdmin) {
+        if (user.isAdmin()) {
             loadAllStudents();
         }
         

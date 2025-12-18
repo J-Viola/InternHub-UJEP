@@ -157,6 +157,7 @@ DEMO_SUBJECT_CODE = os.environ.get("DEMO_SUBJECT_CODE", "BOP")
 DEMO_DEPARTMENT_CODE = os.environ.get("DEMO_DEPARTMENT_CODE", "DEMO")
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
+STAG_MOCK = os.environ.get("STAG_MOCK", "False") == "True"
 ARES_API_URL = os.environ.get(
     "ARES_API_URL",
     "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty",
@@ -164,6 +165,9 @@ ARES_API_URL = os.environ.get(
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",

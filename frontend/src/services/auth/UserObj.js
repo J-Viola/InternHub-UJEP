@@ -30,7 +30,8 @@ class User {
 
     // Role checks
     hasRole(role) {
-        return this.role === role;
+        if (!this.role || !role) return false;
+        return this.role.toLowerCase() === role.toLowerCase();
     }
 
     isStudent() {

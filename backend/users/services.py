@@ -1,7 +1,7 @@
 import requests
 from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
 from department.models import Department
@@ -21,6 +21,7 @@ from users.models import (
     UserSubject,
     UserSubjectType,
 )
+from users.stag_api import get_stag_client
 
 
 def register_organization(validated_data):
@@ -173,34 +174,12 @@ def validate_stag_ticket(ticket: str):
     """
     Validates STAG service ticket and returns user details.
     """
-    if settings.DEMO_LOGIN and ticket == "demo-ticket":
-        return {
-            "email": "demo.student@ujep.cz",
-            "first_name": "Demo",
-            "last_name": "Student",
-            "stagUserInfo": {
-                "role": "ST",
-                "roleNazev": "Student",
-                "osCislo": "S22000",
-                "katedra": "KI",
-            },
-        }
+    client = get_stag_client()
+    # If using Mock client (via settings or DEMO_LOGIN), it handles fake tickets.
+    # Real client handles real tickets.
 
-    url = f"{settings.STAG_WS_URL}/services/rest2/help/getStagUserListForLoginTicketV2"
-    try:
-        resp = requests.get(
-            url,
-            params={"ticket": ticket, "longTicket": "1"},
-            timeout=(3.05, 27),  # Connect timeout 3s, Read timeout 27s
-            headers={"Accept": "application/json"},
-        )
-    except requests.RequestException:
-        raise AuthenticationFailed("Failed to connect to STAG")
+    details = client.validate_ticket(ticket)
 
-    if resp.status_code != 200:
-        raise AuthenticationFailed("Failed to authenticate with STAG")
-
-    details = resp.json()
     email = details.get("email")
     jmeno = details.pop("jmeno")
     prijmeni = details.pop("prijmeni")
@@ -234,7 +213,28 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
     osCislo = info.get("osCislo")
     ucitIdno = info.get("ucitIdno")
 
-    stagRole, _ = StagRole.objects.get_or_create(role=role, defaults={"role": role, "role_name": roleName})
+    try:
+        stagRole, created = StagRole.objects.get_or_create(role=role, defaults={"role_name": roleName})
+        if not created and stagRole.role_name != roleName:
+            # If role existed, but its role_name is different from what STAG provided, update it.
+            stagRole.role_name = roleName
+            stagRole.save(update_fields=["role_name"])
+    except IntegrityError as e:
+        # If get_or_create failed, it's likely due to a unique constraint violation.
+        # Since 'role' is unique and used in get_or_create, it implies that
+        # the 'create' part of get_or_create failed on 'role_name' unique constraint.
+        # This means another StagRole with this 'roleName' exists, but with a different 'role' code.
+        # This suggests an inconsistent database state or unexpected data from STAG.
+        # As a fallback, try to retrieve by role_name.
+        try:
+            stagRole = StagRole.objects.get(role_name=roleName)
+        except StagRole.DoesNotExist:
+            raise AuthenticationFailed(
+                f"STAG role '{role}'/'{roleName}' lookup/creation failed due to unique constraint "
+                f"violation and no fallback by role_name found. Error: {e}"
+            )
+        except Exception as e_inner:
+            raise AuthenticationFailed(f"An unexpected error occurred during STAG role handling: {e_inner}")
 
     user = None
 
@@ -346,127 +346,75 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
 def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StudentUser):
     """
     Synchronizes STAG roles with the database for student.
-    Uses short timeout to fail fast.
     """
-    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
-    params = {
-        "osCislo": osCislo,
-        "outputFormat": "JSON",
-        "semestr": "%",
-        "rok": "%",
-    }
+    client = get_stag_client()
+    items = client.get_student_subjects(stag_ticket, osCislo)
 
-    cookies = {
-        "WSCOOKIE": stag_ticket,
-    }
-
-    try:
-        # Fail fast: 2s connect, 5s read timeout
-        response = requests.get(
-            url,
-            cookies=cookies,
-            params=params,
-            timeout=(2, 5),
-            headers={"Accept": "application/json"},
+    if settings.DEMO_LOGIN:
+        subject, _ = Subject.objects.get_or_create(subject_code=settings.DEMO_SUBJECT_CODE)
+        UserSubject.objects.get_or_create(
+            subject=subject,
+            user=user,
+            defaults={
+                "role": UserSubjectType.Student,
+            },
         )
-    except requests.RequestException:
-        # If sync fails, we just proceed with existing data
-        return
 
-    if response.status_code == 200:
-        response_json = response.json()
-        items = response_json.get("predmetStudenta", [])
+    for subj in items:
+        zkratka = subj.get("zkratka")
+        nazev = subj.get("nazev")
+        katedra_kod = subj.get("katedra")
 
-        if settings.DEMO_LOGIN:
-            subject, _ = Subject.objects.get_or_create(subject_code=settings.DEMO_SUBJECT_CODE)
+        department = None
+        if katedra_kod:
+            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+
+        if zkratka:
+            subjInDb, created = Subject.objects.get_or_create(
+                subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
+            )
+
+            # Update department if missing or changed (optional, prioritizing STAG data)
+            if department and subjInDb.department != department:
+                subjInDb.department = department
+                subjInDb.save()
+
             UserSubject.objects.get_or_create(
-                subject=subject,
+                subject=subjInDb,
                 user=user,
                 defaults={
                     "role": UserSubjectType.Student,
                 },
             )
 
-        # We could optimize this bulk operation, but for now just ensure it runs fast
-        for subj in items:
-            zkratka = subj.get("zkratka")
-            nazev = subj.get("nazev")
-            katedra_kod = subj.get("katedra")
-
-            department = None
-            if katedra_kod:
-                department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
-
-            if zkratka:
-                subjInDb, created = Subject.objects.get_or_create(
-                    subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
-                )
-
-                # Update department if missing or changed (optional, prioritizing STAG data)
-                if department and subjInDb.department != department:
-                    subjInDb.department = department
-                    subjInDb.save()
-
-                UserSubject.objects.get_or_create(
-                    subject=subjInDb,
-                    user=user,
-                    defaults={
-                        "role": UserSubjectType.Student,
-                    },
-                )
-
 
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
     """
     Synchronizes STAG roles with the database.
-    Uses short timeout to fail fast.
     """
-    url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByUcitel"
-    params = {
-        "ucitIdno": ucitIdno,
-        "outputFormat": "JSON",
-        "semestr": "%",
-        "rok": "%",
-    }
+    client = get_stag_client()
+    items = client.get_teacher_subjects(stag_ticket, ucitIdno)
 
-    cookies = {
-        "WSCOOKIE": stag_ticket,
-    }
+    for subj in items:
+        zkratka = subj.get("zkratka")
+        nazev = subj.get("nazev")
+        katedra_kod = subj.get("katedra")
 
-    try:
-        response = requests.get(
-            url,
-            cookies=cookies,
-            params=params,
-            timeout=(2, 5),
-            headers={"Accept": "application/json"},
-        )
-    except requests.RequestException:
-        return
+        department = None
+        if katedra_kod:
+            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
 
-    if response.status_code == 200:
-        response_json = response.json()
-        items = response_json.get("predmetUcitele", [])
-        for subj in items:
-            zkratka = subj.get("zkratka")
-            nazev = subj.get("nazev")
-            katedra_kod = subj.get("katedra")
+        if zkratka:
+            subjInDb, created = Subject.objects.get_or_create(
+                subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
+            )
 
-            department = None
-            if katedra_kod:
-                department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+            if department and subjInDb.department != department:
+                subjInDb.department = department
+                subjInDb.save()
 
-            if zkratka:
-                subjInDb, created = Subject.objects.get_or_create(
-                    subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
-                )
-
-                if department and subjInDb.department != department:
-                    subjInDb.department = department
-                    subjInDb.save()
-
-                UserSubject.objects.get_or_create(
-                    subject=subjInDb,
-                    user=user,
-                    defaults={"role": UserSubjectType.Professor},
-                )
+            UserSubject.objects.get_or_create(
+                subject=subjInDb,
+                user=user,
+                defaults={"role": UserSubjectType.Professor},
+            )

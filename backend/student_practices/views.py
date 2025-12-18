@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from api import permissions
 from api.permissions import IsOrganizationOwner
 from practices.models import Practice
 from student_practices.models import (
@@ -19,7 +20,11 @@ from student_practices.models import (
     StudentPractice,
     UploadedDocument,
 )
-from student_practices.permissions import HasDocumentAccess
+from student_practices.permissions import (
+    HasDocumentAccess,
+    IsPracticeOrganizationOwner,
+    IsSubjectTeacherOrHeadForPractice,
+)
 from student_practices.services import StudentPracticeService
 from users.models import ApprovalStatus
 
@@ -140,19 +145,12 @@ class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
 
 
 class StudentPracticeStatusUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | permissions.IsAd]
 
     def patch(self, request, student_practice_id):
         student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
 
-        # Check permissions: Only the organization that owns the practice can change status
-        is_owner_org = hasattr(request.user, "employer_profile") and student_practice.practice.employer == request.user.employer_profile
-
-        if not is_owner_org and not request.user.is_superuser:
-            return Response(
-                {"detail": "Nemáte oprávnění k úpravě statusu této praxe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        self.check_object_permissions(request, student_practice)
 
         serializer = StudentPracticeStatusUpdateSerializer(student_practice, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

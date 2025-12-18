@@ -128,8 +128,8 @@ function Nav({}) {
     }
 
     const professorDict = {
-        //"Studentské účty" : "/students",
-        //"Předměty" : "/subjects",
+        "Studentské účty" : "/students",
+        "Předměty" : "/subjects",
         "Nabídka praxí" : "/nabidka",
         "Správa stáží" : "/sprava-stazi",
         //"Profil" : "#",
