@@ -1,7 +1,7 @@
 import re
 
-from drf_spectacular.utils import extend_schema
-from rest_framework import generics, permissions, status
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -47,6 +47,7 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = OrganizationRegisterSerializer
     permission_classes = (AllowAny,)
 
+    @extend_schema(summary="Register a new organization user", responses={201: OpenApiResponse(description="User registered successfully")})
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -67,6 +68,12 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = LogoutSerializer
 
+    @extend_schema(
+        summary="Logout user",
+        description="Blacklists the provided refresh token to log out the user. **Permissions: Authenticated User**",
+        tags=["Auth"],
+        responses={200: OpenApiResponse(description="Successfully logged out")},
+    )
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -86,6 +93,12 @@ class LogoutView(generics.GenericAPIView):
 class AresJusticeView(generics.GenericAPIView):
     serializer_class = AresJusticeSerializer
 
+    @extend_schema(
+        summary="Fetch data from ARES",
+        description="Fetches organization details from the ARES database using IČO. **Permissions: Allow Any**",
+        tags=["Utils"],
+        responses={200: OpenApiResponse(description="Data fetched successfully")},
+    )
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -105,6 +118,12 @@ class AresJusticeView(generics.GenericAPIView):
 class UpdateAresSubjectView(APIView):
     permission_classes = [IsAuthenticated, IsOrganizationOwner]
 
+    @extend_schema(
+        summary="Update organization info from ARES",
+        description="Updates the organization details (name, address) using the provided IČO and ARES API.",
+        request=serializers.DictField(child=serializers.CharField(), help_text='{"ico": "12345678"}'),
+        responses={200: OrganizationUserProfileSerializer},
+    )
     def post(self, request):
         ico = request.data.get("ico")
         if not ico:
@@ -130,7 +149,12 @@ class UpdateAresSubjectView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
-    @extend_schema(responses={200: TokenResponseSerializer})
+    @extend_schema(
+        summary="Login / Obtain JWT Token",
+        description="Authenticates a user and returns access and refresh JWT tokens along with user info. **Permissions: Allow Any**",
+        tags=["Auth"],
+        responses={200: TokenResponseSerializer}
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -150,6 +174,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class OrganizationUserListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List users in organization",
+        description="Returns a list of all users associated with the same organization as the current user. **Permissions: Organization User or Admin**",
+        tags=["Users"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = [IsAuthenticated]
     serializer_class = OrganizationUserListSerializer
 
@@ -178,7 +210,10 @@ class OrganizationUserListView(generics.ListAPIView):
 class StudentProfileView(APIView):
     permission_classes = [IsAuthenticated, CanViewStudentProfile]
 
-    @extend_schema(responses={200: StudentProfileSerializer})
+    @extend_schema(
+        summary="Get student profile detail",
+        responses={200: StudentProfileSerializer, 404: OpenApiResponse(description="Student not found")},
+    )
     def get(self, request, student_id):
         try:
             student = StudentUser.objects.get(pk=student_id)
@@ -191,6 +226,14 @@ class StudentProfileView(APIView):
 
 
 class AllStudentsListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List all students (paginated)",
+        description="Returns a paginated list of all active students in the system. **Permissions: Authenticated User**",
+        tags=["Users"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = [IsAuthenticated]
     serializer_class = AllStudentsListSerializer
     pagination_class = StandardResultsSetPagination
@@ -199,6 +242,7 @@ class AllStudentsListView(generics.ListAPIView):
         return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
 
 
+@extend_schema(tags=["Organizations - Admin"])
 class AdminOrganizationViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     serializer_class = AdminOrganizationSerializer
@@ -211,9 +255,10 @@ class AdminOrganizationViewSet(ModelViewSet):
         if self.action == "create":
             return [permissions.IsAdminUser()]
         if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), IsOrganizationUser() | IsStagTeacher()]
+            return [IsAuthenticated(), (IsOrganizationUser | IsStagTeacher)()]
         return [permissions.IsAuthenticated()]
 
+    @extend_schema(summary="List all organizations (Admin)")
     def list(self, request, *args, **kwargs):
         departments = self.queryset
         page = self.paginate_queryset(departments)
@@ -223,11 +268,13 @@ class AdminOrganizationViewSet(ModelViewSet):
         serializer = self.get_serializer(departments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(summary="Get organization detail (Admin)")
     def retrieve(self, request, pk=None, *args, **kwargs):
         department = self.get_object()
         serializer = self.get_serializer(department)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(summary="Register a new organization (Admin)", request=OrganizationRegisterSerializer)
     def create(self, request, *args, **kwargs):
         serializer = OrganizationRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -237,6 +284,7 @@ class AdminOrganizationViewSet(ModelViewSet):
             return Response(self.get_serializer(user.employer_profile).data, status=status.HTTP_201_CREATED)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(summary="Update organization detail (Admin)")
     def update(self, request, pk=None, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
@@ -246,9 +294,11 @@ class AdminOrganizationViewSet(ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(summary="Partial update organization detail (Admin)")
     def partial_update(self, request, pk=None, *args, **kwargs):
         return self.update(request, pk, partial=True, *args, **kwargs)
 
+    @extend_schema(summary="Delete an organization (Admin)")
     def destroy(self, request, pk=None, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -258,7 +308,12 @@ class AdminOrganizationViewSet(ModelViewSet):
 class CurrentUserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses={200: UserProfileSerializer})
+    @extend_schema(
+        summary="Get current user profile",
+        description="Returns the profile details of the currently logged-in user (Student, Professor, or Organization). **Permissions: Authenticated User**",
+        tags=["Users"],
+        responses={200: UserProfileSerializer}
+    )
     def get(self, request):
         user = request.user
 
@@ -273,7 +328,13 @@ class CurrentUserProfileView(APIView):
 
         return Response(serializer.data)
 
-    @extend_schema(request=UserProfileSerializer, responses={200: UserProfileSerializer})
+    @extend_schema(
+        summary="Update current user profile",
+        description="Updates the profile details of the currently logged-in user. **Permissions: Authenticated User**",
+        tags=["Users"],
+        request=UserProfileSerializer,
+        responses={200: UserProfileSerializer}
+    )
     def patch(self, request):
         user = request.user
 

@@ -204,8 +204,8 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_FROM")
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Your Project API",
-    "DESCRIPTION": "Your project description",
+    "TITLE": "InternHub UJEP API",
+    "DESCRIPTION": "API pro správu studentských praxí na UJEP (InternHub). Umožňuje správu organizací, praxí a přihlášek studentů.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,

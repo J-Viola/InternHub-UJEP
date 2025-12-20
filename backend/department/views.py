@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -22,6 +23,14 @@ from .serializers import (
 
 
 class DepartmentStudentListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List students in department",
+        description="Returns a list of students belonging to the same department as the logged-in user. **Permissions: Authenticated User**",
+        tags=["Department"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = (IsAuthenticated,)
     serializer_class = StudentDetailSerializer
 
@@ -30,12 +39,52 @@ class DepartmentStudentListView(generics.ListAPIView):
 
 
 class DepartmentUserRoleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    @extend_schema(
+        summary="Retrieve/Update/Delete department user role",
+        description="Manages a specific user's role within a department. **Permissions: Authenticated User**",
+        tags=["Department"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update department user role",
+        description="Updates the role of a user within a department. **Permissions: Authenticated User**",
+        tags=["Department"],
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Partial update department user role",
+        description="Partially updates the role of a user within a department. **Permissions: Authenticated User**",
+        tags=["Department"],
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete department user role",
+        description="Removes a user's role from a department. **Permissions: Authenticated User**",
+        tags=["Department"],
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
     queryset = Department.objects.all()
     serializer_class = DepartmentUserSerializer
     permission_classes = [IsAuthenticated]
 
 
 class DepartmentProfessorListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List professors in department",
+        description="Returns a list of professors belonging to the same department as the logged-in user. **Permissions: Authenticated User**",
+        tags=["Department"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = (IsAuthenticated,)
     serializer_class = ProfessorDetailSerializer
 
@@ -44,6 +93,14 @@ class DepartmentProfessorListView(generics.ListAPIView):
 
 
 class AllDepartmentProfessorListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List all professors across all departments",
+        description="Returns a comprehensive list of all professors in the system. **Permissions: Authenticated User**",
+        tags=["Department"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = (IsAuthenticated,)
     serializer_class = ProfessorDetailSerializer
 
@@ -61,7 +118,7 @@ class AdminDepartmentViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), IsOrganizationUser() | IsStagTeacher()]
+            return [IsAuthenticated(), (IsOrganizationUser | IsStagTeacher)()]
         return [IsAuthenticated()]
 
     def list(self, request, *args, **kwargs):

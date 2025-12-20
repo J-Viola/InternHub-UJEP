@@ -2,6 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponseForbidden
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import permissions, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -87,13 +88,13 @@ def serve_user_file(request, path):
 
 
 class UniqueLocationsListView(APIView):
-    """
-    API View to retrieve a list of unique cities and addresses from EmployerProfiles.
-    """
-
-    permission_classes = [permissions.AllowAny]  # Povolit prozatím komukoliv
-
-    def get(self, request, *args, **kwargs):
+    @extend_schema(
+        summary="Get unique practice locations",
+        description="Returns a list of all unique cities/locations where practices are offered. **Permissions: Allow Any**",
+        tags=["Utils"],
+        responses={200: OpenApiResponse(description="List of unique locations (strings)")},
+    )
+    def get(self, request):
         # Získání unikátních měst z EmployerProfile
         cities = EmployerProfile.objects.exclude(city__isnull=True).exclude(city__exact="").values_list("city", flat=True)
 

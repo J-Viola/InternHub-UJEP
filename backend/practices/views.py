@@ -2,8 +2,9 @@ from datetime import date
 
 from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import filters, generics, permissions, status, viewsets
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import filters, generics, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -34,6 +35,7 @@ from users.permissions import IsStagTeacher
 # -------------------------------------------------------------
 # PracticeViewSet – CRUD a správa praxí, včetně přihlášení
 # -------------------------------------------------------------
+@extend_schema(tags=["Practices"])
 class PracticeViewSet(viewsets.ModelViewSet):
     queryset = Practice.objects.all().select_related("employer")
     serializer_class = PracticeSerializer
@@ -55,6 +57,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), IsOrganizationUser()]
         return [permissions.IsAuthenticated()]
 
+    @extend_schema(summary="List all active practices")
     def list(self, request, *args, **kwargs):
         # GET /api/practices/
         practices = self.filter_queryset(self.queryset.filter(is_active=True))
@@ -65,6 +68,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
+    @extend_schema(summary="Get practice detail")
     def retrieve(self, request, pk=None, *args, **kwargs):
         # GET /api/practices/{id}/
         practice_obj = self.get_object()
@@ -106,6 +110,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
         return Response(response_data)
 
+    @extend_schema(summary="Create a new practice")
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
         user = request.user
@@ -127,6 +132,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(summary="Update practice detail")
     def update(self, request, pk=None, *args, **kwargs):
         # PUT /api/practices/{id}/
         partial = kwargs.pop("partial", False)
@@ -138,16 +144,24 @@ class PracticeViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
+    @extend_schema(summary="Partial update practice detail")
     def partial_update(self, request, pk=None, *args, **kwargs):
         # PATCH /api/practices/{id}/
         return self.update(request, pk, partial=True, *args, **kwargs)
 
+    @extend_schema(summary="Delete a practice")
     def destroy(self, request, pk=None, *args, **kwargs):
         # DELETE /api/practices/{id}/
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        summary="Get user's practices and invitations",
+        description="Returns a list of student practices and pending invitations for the current user. **Permissions: Authenticated User**",
+        tags=["Practices"],
+        responses={200: OpenApiResponse(description="List of practices and invitations")},
+    )
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def get_practice_user_relations(self, request, pk=None, *args, **kwargs):
         """GET /api/practices/get_practice_user_relations/ - Get user's practices and invitations"""
@@ -161,6 +175,13 @@ class PracticeViewSet(viewsets.ModelViewSet):
         return Response(result)
 
     # PODÁNÍ PŘIHLÁŠKY STUDENTEM
+    @extend_schema(
+        summary="Apply for a practice (student)",
+        description="Creates a StudentPractice record for the current student user. **Permissions: Authenticated Student**",
+        tags=["Practices"],
+        request=serializers.DictField(child=serializers.IntegerField(), help_text='{"practice": <practice_id>}'),
+        responses={201: OpenApiResponse(description="Application created successfully")},
+    )
     @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def apply_student_practice(self, request):
         """
@@ -180,6 +201,12 @@ class PracticeViewSet(viewsets.ModelViewSet):
         data = PracticeService.apply_student_practice(user, practice_id)
         return Response(data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        summary="Get upcoming practices",
+        description="Returns practices that are starting in the future. **Permissions: Authenticated User**",
+        tags=["Practices"],
+        responses={200: PracticeSerializer(many=True)},
+    )
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def upcoming(self, request):
         """
@@ -195,6 +222,12 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(upcoming_practices, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Get practices by subject",
+        description="Returns practices associated with a specific subject ID.",
+        parameters=[OpenApiParameter("subject_id", OpenApiTypes.INT, location=OpenApiParameter.QUERY)],
+        responses={200: PracticeSerializer(many=True)},
+    )
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def by_subject(self, request):
         """
@@ -208,6 +241,11 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Get practices by employer profile",
+        description="Returns practices associated with a specific employer profile ID.",
+        responses={200: PracticeSerializer(many=True)},
+    )
     @action(
         detail=False,
         methods=["get"],
@@ -223,6 +261,11 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Get organization's own practices",
+        description="Returns all practices created by the logged-in user's organization.",
+        responses={200: OrganizationPracticeSerializer(many=True)},
+    )
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def organization_practices(self, request):
         """
@@ -245,6 +288,17 @@ class PracticeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     # SEARCH ENDPOINT - pro parametry v requestu
+    @extend_schema(
+        summary="Search practices",
+        description="Search practices with various filters. **Permissions: Authenticated User**",
+        tags=["Practices"],
+        parameters=[
+            OpenApiParameter("subject", OpenApiTypes.INT, location=OpenApiParameter.QUERY),
+            OpenApiParameter("title", OpenApiTypes.STR, location=OpenApiParameter.QUERY),
+            OpenApiParameter("address", OpenApiTypes.STR, location=OpenApiParameter.QUERY),
+        ],
+        responses={200: PracticeSerializer(many=True)},
+    )
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def search(self, request):
         """
@@ -273,6 +327,14 @@ class PracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Get practices by user department",
+        description="Returns practices divided into approved and pending for the user's department.",
+        responses={
+            200: OpenApiResponse(description="Approved and pending practices"),
+            404: OpenApiResponse(description="User department not found"),
+        },
+    )
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def by_user_department(self, request):
         """
@@ -310,6 +372,14 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
 
 class RunningPracticeListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List running practices for department",
+        description="Returns a list of practices that are currently active and have students, with student statistics. **Permissions: Department Head/Teacher**",
+        tags=["Practices"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = (IsAuthenticated,)
     serializer_class = RunningPracticeSerializer
 
@@ -351,6 +421,14 @@ class RunningPracticeListView(generics.ListAPIView):
 
 
 class AdminPracticesListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List all practices (Admin)",
+        description="Returns a list of all practices, divided into approved and pending, with detailed statistics. **Permissions: Admin/Staff**",
+        tags=["Practices - Admin"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = (IsAuthenticated,)
     serializer_class = OrganizationPracticeSerializer
 
@@ -389,6 +467,14 @@ class AdminPracticesListView(generics.ListAPIView):
 
 
 class PracticesForApprovingListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List practices waiting for approval",
+        description="Returns a list of practices within the teacher's department that are waiting for approval. **Permissions: STAG Teacher**",
+        tags=["Practices - Admin"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = (IsAuthenticated,)
     serializer_class = PracticeApprovalSerializer
 
@@ -406,6 +492,16 @@ class ChangePendingView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsStagTeacher]
     serializer_class = PracticeApprovalStatusSerializer
 
+    @extend_schema(
+        summary="Change approval status of a practice",
+        description="Updates the approval status (APPROVED/REJECTED) for a practice currently in PENDING state.",
+        request=PracticeApprovalStatusSerializer,
+        responses={
+            200: PracticeSerializer,
+            400: OpenApiResponse(description="Bad request or practice already processed"),
+            404: OpenApiResponse(description="Practice not found"),
+        },
+    )
     def post(self, request, *args, **kwargs):
         """
         POST /api/practices/{id}/change-pending
@@ -438,7 +534,8 @@ class GetEndDateView(APIView):
 
     @extend_schema(
         summary="Calculate end date of practice",
-        description="Returns the calculated end date based on the start date and coefficient",
+        description="Returns the calculated end date based on the start date and coefficient. **Permissions: Authenticated User**",
+        tags=["Utils"],
         request=EndDateRequestSerializer,
         responses={
             200: EndDateResponseSerializer,

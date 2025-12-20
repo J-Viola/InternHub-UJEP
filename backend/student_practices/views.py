@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from api import permissions
+from rest_framework import permissions
 from api.permissions import IsOrganizationOwner
 from practices.models import Practice
 from student_practices.models import (
@@ -37,6 +37,7 @@ from .serializers import (
 )
 
 
+@extend_schema(tags=["Employer Invitations"])
 class EmployerInvitationViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = EmployerInvitationSerializer
@@ -49,10 +50,41 @@ class EmployerInvitationViewSet(ModelViewSet):
             return EmployerInvitation.objects.filter(employer=user.employer_profile)
         return EmployerInvitation.objects.none()
 
+    @extend_schema(summary="List all employer invitations")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Create an employer invitation")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Get employer invitation detail")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Update an employer invitation")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Partial update an employer invitation")
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete an employer invitation")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 
 class CreateInvitationView(APIView):
     permission_classes = [IsAuthenticated, IsOrganizationOwner]
 
+    @extend_schema(
+        summary="Create employer invitations for students",
+        description="Creates pending invitations for specified students to a specific practice. **Permissions: Organization Owner**",
+        tags=["Student Practices"],
+        request=CreateInvitationSerializer,
+        responses={201: OpenApiResponse(description="Invitations created successfully")},
+    )
     def post(self, request):
         serializer = CreateInvitationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -70,6 +102,13 @@ class CreateInvitationView(APIView):
 class EmployerInvitationApprovalView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Approve or reject an employer invitation",
+        description="Processes a student's response to an employer invitation (ACCEPT/REJECT). **Permissions: Authenticated Student**",
+        tags=["Student Practices"],
+        request=EmployerInvitationApprovalSerializer,
+        responses={200: OpenApiResponse(description="Invitation processed")},
+    )
     def post(self, request):
         """
         Schválí nebo zamítne employer_invitation a případně vytvoří StudentPractice záznam
@@ -85,6 +124,14 @@ class EmployerInvitationApprovalView(APIView):
 
 
 class AdminPracticeListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List pending student practices (Admin)",
+        description="Returns a list of all student practices with PENDING approval status. **Permissions: Admin/Staff**",
+        tags=["Student Practices - Admin"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = [IsAuthenticated]
     serializer_class = ListStudentPracticeSerializer
     queryset = StudentPractice.objects.all()
@@ -94,6 +141,14 @@ class AdminPracticeListView(generics.ListAPIView):
 
 
 class StudentPracticeListView(generics.ListAPIView):
+    @extend_schema(
+        summary="List student practices by practice ID",
+        description="Returns all student practices (applications) for a specific practice. **Permissions: Authenticated User**",
+        tags=["Student Practices"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     permission_classes = (IsAuthenticated,)
     serializer_class = ListStudentPracticeSerializer
 
@@ -115,6 +170,12 @@ class StudentPracticeListView(generics.ListAPIView):
 class OrganizationApplicationsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get pending applications for organization",
+        description="Returns a list of all pending student applications for the practices belonging to the logged-in organization. **Permissions: Organization User**",
+        tags=["Student Practices"],
+        responses={200: ListStudentPracticeSerializer(many=True)},
+    )
     def get(self, request):
         user = request.user
         # Zjisti employer_profile id z přihlášeného uživatele (OrganizationUser)
@@ -145,8 +206,15 @@ class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
 
 
 class StudentPracticeStatusUpdateView(APIView):
-    permission_classes = [IsAuthenticated, IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | permissions.IsAd]
+    permission_classes = [IsAuthenticated, IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | permissions.IsAdminUser]
 
+    @extend_schema(
+        summary="Update student practice status",
+        description="Updates the approval or progress status of a student practice. **Permissions: Practice Organization Owner, Subject Teacher, or Admin**",
+        tags=["Student Practices"],
+        request=StudentPracticeStatusUpdateSerializer,
+        responses={200: StudentPracticeStatusUpdateSerializer},
+    )
     def patch(self, request, student_practice_id):
         student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
 
@@ -187,7 +255,8 @@ class StudentPracticeUploadDocumentView(APIView):
 
     @extend_schema(
         summary="Upload a document for a student practice",
-        description="Uploads a file and attaches it to the specified StudentPractice record.",
+        description="Uploads a file and attaches it to the specified StudentPractice record. **Permissions: Student (Owner) or Authorized Personnel**",
+        tags=["Documents"],
         parameters=[
             OpenApiParameter(
                 name="document_id",
@@ -220,7 +289,8 @@ class StudentPracticeDownloadDocumentView(APIView):
 
     @extend_schema(
         summary="Download a document",
-        description="Streams the file associated with the given UploadedDocument ID.",
+        description="Streams the file associated with the given UploadedDocument ID. **Permissions: Owner or Authorized Personnel**",
+        tags=["Documents"],
         parameters=[
             OpenApiParameter(
                 name="document_id",
@@ -249,7 +319,8 @@ class StudentPracticeDownloadDocumentView(APIView):
 class StudentPracticeCardView(APIView):
     @extend_schema(
         summary="Get student practice card",
-        description="Returns detailed information about a specific student practice.",
+        description="Returns detailed information about a specific student practice. **Permissions: Authenticated User**",
+        tags=["Student Practices"],
         parameters=[
             OpenApiParameter(
                 name="student_practice_id",

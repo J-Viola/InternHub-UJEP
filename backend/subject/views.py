@@ -1,7 +1,8 @@
 from django_filters.rest_framework import DjangoFilterBackend
 
 # Create your views here.
-from rest_framework import filters, permissions, viewsets
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -11,17 +12,10 @@ from users.services import get_user_department_ids
 from .serializers import SubjectSerializer
 
 
+@extend_schema(tags=["Subjects"])
 class SubjectViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing subjects.
-
-    Provides CRUD operations:
-    - list: GET /subjects/
-    - retrieve: GET /subjects/{id}/
-    - create: POST /subjects/
-    - update: PUT /subjects/{id}/
-    - partial update: PATCH /subjects/{id}/
-    - delete: DELETE /subjects/{id}/
     """
 
     queryset = Subject.objects.all()
@@ -36,12 +30,41 @@ class SubjectViewSet(viewsets.ModelViewSet):
     search_fields = ["subject_name", "subject_code"]
     ordering_fields = ["subject_name", "subject_code", "department__department_name"]
 
+    @extend_schema(summary="List all subjects")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Create a new subject")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Get subject detail")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Update a subject")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Partial update a subject")
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete a subject")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save()
 
     def perform_update(self, serializer):
         serializer.save()
 
+    @extend_schema(
+        summary="Get department-specific subjects",
+        description="Returns all subjects belonging to the department(s) associated with the logged-in professor. **Permissions: Authenticated Professor**",
+        responses={200: SubjectSerializer(many=True), 400: OpenApiResponse(description="User has no assigned department")},
+    )
     @action(detail=False, methods=["get"], url_path="department-subjects")
     def department_subjects(self, request):
         """
