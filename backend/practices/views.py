@@ -27,7 +27,6 @@ from practices.serializers import (
 )
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
-from student_practices.models import StudentPractice
 from users.models import ApprovalStatus, StudentUser
 from users.permissions import IsStagTeacher
 
@@ -69,46 +68,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(summary="Get practice detail")
-    def retrieve(self, request, pk=None, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs):
         # GET /api/practices/{id}/
-        practice_obj = self.get_object()
-        serializer = self.get_serializer(practice_obj)
-        user_id = request.user.id
-
-        contact_user_info = None
-        student_practice_documents = []
-        if practice_obj.contact_user:
-            contact_user_info = {
-                "user_id": practice_obj.contact_user.user_id,
-                "username": practice_obj.contact_user.username,
-                "first_name": practice_obj.contact_user.first_name,
-                "last_name": practice_obj.contact_user.last_name,
-                "email": practice_obj.contact_user.email,
-                "phone": practice_obj.contact_user.phone,
-            }
-            try:
-                student = StudentUser.objects.get(user_id=user_id)
-            except StudentUser.DoesNotExist:
-                student = None
-            if student:
-                approved_practices = StudentPractice.objects.filter(
-                    user=student,
-                    practice=practice_obj,
-                    approval_status=ApprovalStatus.APPROVED,
-                )
-                for sp in approved_practices:
-                    if sp.contract_document_id:
-                        student_practice_documents.append({"id": sp.contract_document_id, "type": "contract"})
-                    if sp.content_document_id:
-                        student_practice_documents.append({"id": sp.content_document_id, "type": "content"})
-                    if sp.feedback_document_id:
-                        student_practice_documents.append({"id": sp.feedback_document_id, "type": "feedback"})
-
-        response_data = serializer.data
-        response_data["contact_user_info"] = contact_user_info
-        response_data["student_practice_documents"] = student_practice_documents
-
-        return Response(response_data)
+        return super().retrieve(request, *args, **kwargs)
 
     @extend_schema(summary="Create a new practice")
     def create(self, request, *args, **kwargs):

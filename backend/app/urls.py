@@ -43,6 +43,6 @@ urlpatterns = [
     path("api/code-lists/locations/", UniqueLocationsListView.as_view(), name="unique-locations"),
 ]
 
-# TODO: Remove this in production
+# Serving media files in development
 if settings.DEBUG:
-    urlpatterns += static(settings.STORAGE_URL, document_root=settings.STORAGE_URL)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -147,6 +147,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STORAGE_ROOT = BASE_DIR / "storage"
 STORAGE_URL = "storage/"
+
+MEDIA_ROOT = STORAGE_ROOT
+MEDIA_URL = "/" + STORAGE_URL
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

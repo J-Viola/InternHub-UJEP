@@ -66,8 +66,62 @@ class PracticeSerializer(serializers.ModelSerializer):
     contact_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
     contact_user_info = serializers.SerializerMethodField(read_only=True)
     student_practice_status = serializers.SerializerMethodField(read_only=True)
+    student_practice_documents = serializers.SerializerMethodField(read_only=True)
     start_date = FormattedDateField()
     end_date = FormattedDateField(required=False)
+
+    def get_contact_user_info(self, obj):
+        if obj.contact_user:
+            return {
+                "user_id": obj.contact_user.user_id,
+                "username": obj.contact_user.username,
+                "first_name": obj.contact_user.first_name,
+                "last_name": obj.contact_user.last_name,
+                "email": obj.contact_user.email,
+                "phone": obj.contact_user.phone,
+            }
+        return None
+
+    def get_student_practice_documents(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return []
+
+        from users.models import StudentUser
+
+        try:
+            student = StudentUser.objects.get(user_id=request.user.id)
+        except StudentUser.DoesNotExist:
+            return []
+
+        student_practice_documents = []
+        approved_practices = StudentPractice.objects.filter(
+            user=student,
+            practice=obj,
+            approval_status=ApprovalStatus.APPROVED,
+        )
+        for sp in approved_practices:
+            if sp.contract_document_id:
+                student_practice_documents.append({"id": sp.contract_document_id, "type": "contract"})
+            if sp.content_document_id:
+                student_practice_documents.append({"id": sp.content_document_id, "type": "content"})
+            if sp.feedback_document_id:
+                student_practice_documents.append({"id": sp.feedback_document_id, "type": "feedback"})
+
+        return student_practice_documents
+
+    def get_student_practice_status(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return None
+
+        try:
+            student_practice = StudentPractice.objects.get(user_id=request.user.id, practice=obj)
+            return StudentPracticeStatusSerializer(student_practice).data
+        except (StudentPractice.DoesNotExist, StudentPractice.MultipleObjectsReturned):
+            pass
+
+        return None
 
     class Meta:
         model = Practice
@@ -87,41 +141,13 @@ class PracticeSerializer(serializers.ModelSerializer):
             "approval_status",
             "contact_user",
             "contact_user_info",
+            "student_practice_documents",
             "is_active",
             "image_base64",
             "coefficient",
             "student_practice_status",
         ]
         read_only_fields = ["practice_id", "is_active"]
-
-    def get_contact_user_info(self, obj):
-        if obj.contact_user:
-            return {
-                "user_id": obj.contact_user.user_id,
-                "username": obj.contact_user.username,
-            }
-        return None
-
-    def get_student_practice_status(self, obj):
-        request = self.context.get("request")
-        if not request or not request.user.is_authenticated:
-            return None
-
-        # Check if user has student attribute/role
-        # Using hasattr check similar to original code if model type is not guaranteed
-        # But preferably checking instance
-        from users.models import StudentUser
-
-        if not isinstance(request.user, StudentUser):
-            return None
-
-        try:
-            student_practice = StudentPractice.objects.get(user=request.user, practice=obj)
-            return StudentPracticeStatusSerializer(student_practice).data
-        except StudentPractice.DoesNotExist:
-            pass
-
-        return None
 
     def validate(self, data):
         """

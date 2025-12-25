@@ -256,7 +256,17 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                     existing_user = User.objects.get(email=email)
                     # If we are here, user exists but is not StudentUser
                     if settings.DEMO_LOGIN:
-                        existing_user.delete()
+                        if existing_user.is_staff or existing_user.is_superuser:
+                            raise AuthenticationFailed(
+                                f"Uživatel s emailem {email} existuje jako ADMIN/STAFF. Nelze automaticky převést na Studenta."
+                            )
+                        # Archive existing user instead of deleting
+                        import time
+
+                        timestamp = int(time.time())
+                        existing_user.email = f"archived_{timestamp}_{existing_user.email}"
+                        existing_user.is_active = False
+                        existing_user.save()
                     else:
                         raise AuthenticationFailed(
                             f"Uživatel s emailem {email} již existuje, ale není veden jako student.Kontaktujte administrátora"
@@ -302,7 +312,16 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                     existing_user = User.objects.get(email=email)
                     # If we are here, user exists but is not ProfessorUser
                     if settings.DEMO_LOGIN:
-                        existing_user.delete()
+                        if existing_user.is_staff or existing_user.is_superuser:
+                            raise AuthenticationFailed(
+                                f"Uživatel s emailem {email} existuje jako ADMIN/STAFF. Nelze automaticky převést na Vyučujícího."
+                            )
+                        import time
+
+                        timestamp = int(time.time())
+                        existing_user.email = f"archived_{timestamp}_{existing_user.email}"
+                        existing_user.is_active = False
+                        existing_user.save()
                     else:
                         raise AuthenticationFailed(
                             f"Uživatel s emailem {email} již existuje, ale není veden jako vyučující.Kontaktujte administrátora"

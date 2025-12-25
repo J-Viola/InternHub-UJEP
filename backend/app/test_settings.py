@@ -1,3 +1,5 @@
+from .settings import *
+
 MIGRATION_MODULES = {
     "auth": None,
     "contenttypes": None,

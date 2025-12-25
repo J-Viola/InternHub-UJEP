@@ -4,6 +4,7 @@ from django.db import transaction
 
 from practices.models import Practice, ProgressStatus
 from student_practices.models import (
+    DocumentHelper,
     EmployerInvitation,
     EmployerInvitationStatus,
     StudentPractice,
@@ -78,6 +79,10 @@ class StudentPracticeService:
                 end_date=invitation.practice.end_date,
                 year=date.today().year,
             )
+
+            # Explicitly generate default documents
+            DocumentHelper.assign_default_documents(student_practice)
+
             return {
                 "detail": "Pozvánka byla přijata a praxe byla zahájena.",
                 "student_practice_id": student_practice.student_practice_id,

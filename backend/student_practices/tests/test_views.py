@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 
 from practices.models import Practice, ProgressStatus
 from student_practices.models import (
+    DocumentHelper,
     EmployerInvitation,
     EmployerInvitationStatus,
     StudentPractice,
@@ -76,6 +77,7 @@ class StudentPracticeViewTests(TestCase):
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 1),
         )
+        DocumentHelper.assign_default_documents(sp)
         sp.refresh_from_db()
         contract_doc = sp.contract_document
 
@@ -103,6 +105,7 @@ class StudentPracticeViewTests(TestCase):
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 1),
         )
+        DocumentHelper.assign_default_documents(sp)
         sp.refresh_from_db()
         contract_doc = sp.contract_document
 
@@ -130,6 +133,7 @@ class StudentPracticeViewTests(TestCase):
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 1),
         )
+        DocumentHelper.assign_default_documents(sp)
         sp.refresh_from_db()
         contract_doc = sp.contract_document
 
@@ -148,6 +152,7 @@ class StudentPracticeViewTests(TestCase):
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 1),
         )
+        DocumentHelper.assign_default_documents(sp)
         sp.refresh_from_db()
         contract_doc = sp.contract_document
 

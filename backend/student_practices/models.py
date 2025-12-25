@@ -3,6 +3,7 @@ import hashlib
 import random
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
 from django.db.models import OneToOneRel
@@ -64,7 +65,7 @@ class DocumentType(enum.Enum):
 
 class UploadedDocument(models.Model):
     document_id = models.AutoField(primary_key=True)
-    document = models.FileField(upload_to=settings.STORAGE_URL + "documents", blank=True, null=True)
+    document = models.FileField(upload_to="documents", blank=True, null=True)
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = enum.EnumField(DocumentType)
 
@@ -97,7 +98,7 @@ class DocumentHelper:
         file_name = DocumentHelper.DOCUMENT_FILES.get(document_type)
         if not file_name:
             raise ValueError(f"Unsupported document type: {document_type}")
-        file_path = f"{settings.BASE_DIR}/storage/default_documents/{file_name}"
+        file_path = settings.MEDIA_ROOT / "default_documents" / file_name
         try:
             document_file = File(open(file_path, "rb"))
             document_file.name = f"default_{DocumentHelper.create_name_for_document(document_type, user_id, document_file.name)}"
@@ -119,8 +120,42 @@ class DocumentHelper:
         user_id_hash = hashlib.md5(str(user_id).encode()).hexdigest()[:8]
         return f"{document_type.name.lower()}_{user_id_hash}_{timestamp}.{ext}"
 
+    @staticmethod
+    def assign_default_documents(student_practice):
+        """
+        Explicitly generates and assigns default documents to a StudentPractice instance.
+        """
+        try:
+            user_id = student_practice.user.id
+        except (AttributeError, ValueError, models.ObjectDoesNotExist):
+            user_id = random.randint(0, 99999999)
+
+        if not student_practice.contract_document:
+            student_practice.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT, user_id)
+        if not student_practice.content_document:
+            student_practice.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
+        if not student_practice.feedback_document:
+            student_practice.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
+
+        student_practice.save()
+
 
 class StudentPractice(models.Model):
+    @staticmethod
+    def validate_contract_document_type(value):
+        if value and value.document_type != DocumentType.CONTRACT:
+            raise ValidationError("Document must be of type CONTRACT")
+
+    @staticmethod
+    def validate_feedback_document_type(value):
+        if value and value.document_type != DocumentType.FEEDBACK:
+            raise ValidationError("Document must be of type FEEDBACK")
+
+    @staticmethod
+    def validate_content_document_type(value):
+        if value and value.document_type != DocumentType.CONTENT:
+            raise ValidationError("Document must be of type CONTENT")
+
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         "users.StudentUser",
@@ -154,7 +189,7 @@ class StudentPractice(models.Model):
         models.CASCADE,
         related_name="student_practice_contract",
         limit_choices_to={"document_type": DocumentType.CONTRACT},
-        validators=[],
+        validators=[validate_contract_document_type],
         null=True,
     )
     content_document = models.OneToOneField(
@@ -162,7 +197,7 @@ class StudentPractice(models.Model):
         models.CASCADE,
         related_name="student_practice_content",
         limit_choices_to={"document_type": DocumentType.CONTENT},
-        validators=[],
+        validators=[validate_content_document_type],
         null=True,
     )
     feedback_document = models.OneToOneField(
@@ -170,7 +205,7 @@ class StudentPractice(models.Model):
         models.CASCADE,
         related_name="student_practice_feedback",
         limit_choices_to={"document_type": DocumentType.FEEDBACK},
-        validators=[],
+        validators=[validate_feedback_document_type],
         null=True,
     )
     start_date = models.DateField()
@@ -182,43 +217,3 @@ class StudentPractice(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"
-
-    def save(self, *args, **kwargs):
-        if self.pk is None:  # Creation
-            # Use safe access for user.id
-            try:
-                user_id = self.user.id
-            except (AttributeError, ValueError, models.ObjectDoesNotExist):
-                # Should not happen in normal flow, but safeguard.
-                # Using 0 or random as fallback
-                user_id = random.randint(0, 99999999)
-
-            if not self.contract_document:
-                self.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT, user_id)
-            if not self.content_document:
-                self.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
-            if not self.feedback_document:
-                self.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
-
-        super().save(*args, **kwargs)
-
-    @staticmethod
-    def validate_contract_document_type(value):
-        from django.core.exceptions import ValidationError
-
-        if value and value.document_type != DocumentType.CONTRACT:
-            raise ValidationError("Document must be of type CONTRACT")
-
-    @staticmethod
-    def validate_feedback_document_type(value):
-        from django.core.exceptions import ValidationError
-
-        if value and value.document_type != DocumentType.FEEDBACK:
-            raise ValidationError("Document must be of type FEEDBACK")
-
-    @staticmethod
-    def validate_content_document_type(value):
-        from django.core.exceptions import ValidationError
-
-        if value and value.document_type != DocumentType.CONTENT:
-            raise ValidationError("Document must be of type CONTENT")
