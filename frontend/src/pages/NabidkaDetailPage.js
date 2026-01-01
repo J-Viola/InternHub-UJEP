@@ -148,149 +148,145 @@ export default function NabidkaDetailPage() {
     }
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <BackButton/>
-                {/* DOCS PANEL */}
-                {entity?.student_practice_status?.approval_status !== undefined &&
-                 entity.student_practice_status.approval_status === 1 && (
-                    <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
+        <>
+            <BackButton/>
+            {/* DOCS PANEL */}
+            {entity?.student_practice_status?.approval_status !== undefined &&
+                entity.student_practice_status.approval_status === 1 && (
+                <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
+            )}
+            <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
+                <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
+                        
+                    {/* LOGO */}
+                    <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
+                        <Headings sizeTag="h4" property="text-white">
+                            <Image
+                                src={entity?.image_base64}
+                                alt={entity?.title}
+                                objectFit="cover"
+                            />
+                        </Headings>
+                    </Container>
+
+                    {/* TITLE */}
+                    <Container>
+                        <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
+                        <Container property={"flex flex-row gap-2 mt-2"}>
+                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer.address}</Button>
+                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
+                        </Container>
+                    </Container>
+
+                </Container>
+                {/* DESCRIPTION */}
+                <Container property={"editor-content mt-2"}>
+                    <Paragraph>{entity?.description}</Paragraph>
+                </Container>
+
+                {/* RESPONSIBILITY */}
+                <Container property={"editor-content mt-2"}>
+                    <Paragraph>{entity?.responsibilities}</Paragraph>
+                </Container>
+
+                {/* RENDER - STUDENTS */}
+                {entity && entity.contact_user_info && user.isStudent() && entity.student_practice_status && (
+                    renderContactInfo()
                 )}
-                <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
-                    <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
-                            
-                        {/* LOGO */}
-                        <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
-                            <Headings sizeTag="h4" property="text-white">
-                                <Image
-                                    src={entity?.image_base64}
-                                    alt={entity?.title}
-                                    objectFit="cover"
-                                />
-                            </Headings>
-                        </Container>
 
-                        {/* TITLE */}
-                        <Container>
-                            <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
-                            <Container property={"flex flex-row gap-2 mt-2"}>
-                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer.address}</Button>
-                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
-                            </Container>
-                        </Container>
+                {/* RENDER - DEPARTMENT */}
+                {entity && entity.contact_user_info && user.isDepartmentMg() && (
+                    renderContactInfo()
+                )}
 
-                    </Container>
-                    {/* DESCRIPTION */}
-                    <Container property={"editor-content mt-2"}>
-                        <Paragraph>{entity?.description}</Paragraph>
-                    </Container>
-
-                    {/* RESPONSIBILITY */}
-                    <Container property={"editor-content mt-2"}>
-                        <Paragraph>{entity?.responsibilities}</Paragraph>
-                    </Container>
-
-                    {/* RENDER - STUDENTS */}
-                    {entity && entity.contact_user_info && user.isStudent() && entity.student_practice_status && (
-                        renderContactInfo()
+                <Container property={"flex flex-row  justify-end gap-8 mt-4"}>
+                    {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
+                    {user && user.isStudent() && (!entity?.student_practice_status) && (
+                        <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
                     )}
 
-                    {/* RENDER - DEPARTMENT */}
-                    {entity && entity.contact_user_info && user.isDepartmentMg() && (
-                        renderContactInfo()
+
+                    {user && user.isDepartmentMg() && entity?.approval_status === 1 && (
+                        <>
+                            <Button 
+                                variant={"primary"} 
+                                icon={"users"} 
+                                property={"px-8"} 
+                                onClick={() => navigate(`/students/${entity.practice_id}`)}
+                            >
+                                Přihlášení studenti
+                            </Button>
+
+                            <Button 
+                                variant={"primary"} 
+                                icon={"gear"} 
+                                property={"px-8"} 
+                                onClick={() => handleToDoAlert()}
+                            >
+                                Spravovat
+                            </Button>
+                        </>
                     )}
 
-                    <Container property={"flex flex-row  justify-end gap-8 mt-4"}>
-                        {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
-                        {user && user.isStudent() && (!entity?.student_practice_status) && (
-                            <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
-                        )}
+                    {user && user.isDepartmentMg() && entity?.approval_status === 0 && (
+                        <>
+                            <Button 
+                                variant={"primary"} 
+                                icon={"gear"} 
+                                property={"px-8"} 
+                                onClick={() => navigate(`/sprava-stazi`)}
+                            >
+                                Spravovat nabídku
+                            </Button>
+
+                            <Button 
+                                variant={"primary"} 
+                                icon={"edit"} 
+                                property={"px-8"} 
+                                onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
+                            >
+                                Upravit inzerát
+                            </Button>
+                        </>
+                    )}
 
 
-                        {user && user.isDepartmentMg() && entity?.approval_status === 1 && (
-                            <>
-                                <Button 
-                                    variant={"primary"} 
-                                    icon={"users"} 
-                                    property={"px-8"} 
-                                    onClick={() => navigate(`/students/${entity.practice_id}`)}
-                                >
-                                    Přihlášení studenti
-                                </Button>
+                    {user && (user.isOrganizationUser() || user.isAdmin()) && entity?.employer?.employer_id && (
+                        <>
+                            <Button 
+                                variant={"primary"} 
+                                icon={"users"} 
+                                property={"px-8"} 
+                                onClick={() => navigate(`/students/${entity.practice_id}?view=true`)}
+                            >
+                                Zobrazit přihlášené
+                            </Button>
 
-                                <Button 
-                                    variant={"primary"} 
-                                    icon={"gear"} 
-                                    property={"px-8"} 
-                                    onClick={() => handleToDoAlert()}
-                                >
-                                    Spravovat
-                                </Button>
-                            </>
-                       )}
+                            <Button 
+                                variant={"primary"} 
+                                icon={"edit"} 
+                                property={"px-8"} 
+                                onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
+                            >
+                                Upravit nabídku
+                            </Button>
+                        </>
+                    )}
 
-                        {user && user.isDepartmentMg() && entity?.approval_status === 0 && (
-                            <>
-                                <Button 
-                                    variant={"primary"} 
-                                    icon={"gear"} 
-                                    property={"px-8"} 
-                                    onClick={() => navigate(`/sprava-stazi`)}
-                                >
-                                    Spravovat nabídku
-                                </Button>
+                </Container>
+            </ContainerForEntity>
 
-                                <Button 
-                                    variant={"primary"} 
-                                    icon={"edit"} 
-                                    property={"px-8"} 
-                                    onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
-                                >
-                                    Upravit inzerát
-                                </Button>
-                            </>
-                       )}
-
- 
-                        {user && (user.isOrganizationUser() || user.isAdmin()) && entity?.employer?.employer_id && (
-                            <>
-                                <Button 
-                                    variant={"primary"} 
-                                    icon={"users"} 
-                                    property={"px-8"} 
-                                    onClick={() => navigate(`/students/${entity.practice_id}?view=true`)}
-                                >
-                                    Zobrazit přihlášené
-                                </Button>
-
-                                <Button 
-                                    variant={"primary"} 
-                                    icon={"edit"} 
-                                    property={"px-8"} 
-                                    onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
-                                >
-                                    Upravit nabídku
-                                </Button>
-                            </>
-                        )}
-
-                    </Container>
-                </ContainerForEntity>
-
-                {entity?.student_practice_status?.approval_status !== undefined &&
-                 entity.student_practice_status.approval_status === 1 && (
-                    <Container property={"mt-2"}>
-                        <ProgressPanel
-                            subject={entity.subject?.subject_code}
-                            goalValueSingle={entity.subject?.hours_required}
-                            currentValueSingle={entity.student_practice_status?.hours_completed}
-                        />
-                    </Container>
-                )}
-                  
-            </Container>
-
+            {entity?.student_practice_status?.approval_status !== undefined &&
+                entity.student_practice_status.approval_status === 1 && (
+                <Container property={"mt-2"}>
+                    <ProgressPanel
+                        subject={entity.subject?.subject_code}
+                        goalValueSingle={entity.subject?.hours_required}
+                        currentValueSingle={entity.student_practice_status?.hours_completed}
+                    />
+                </Container>
+            )}
+                
             {/* PODÁNÍ PŘIHLÁŠKY */}
             {popUp && (
                 <PopUpCon 
@@ -301,7 +297,6 @@ export default function NabidkaDetailPage() {
                     onReject={onReject}
                 ></PopUpCon>
             )}
-
-        </Container>
+        </>
     )
 } 

@@ -147,6 +147,33 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"ARES": str(e)})
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+    new_password_confirm = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError({"new_password_confirm": "Nová hesla se neshodují."})
+        return attrs
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uidb64 = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(validators=[validate_password])
+    new_password_confirm = serializers.CharField()
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError({"new_password_confirm": "Nová hesla se neshodují."})
+        return attrs
+
+
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField(help_text="Refresh token to invalidate")
 
@@ -160,10 +187,11 @@ class UserInfoSerializer(serializers.ModelSerializer):
     lastName = serializers.CharField(source="last_name")
     role = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
+    favorite_practices = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "firstName", "lastName", "department"]
+        fields = ["id", "email", "role", "firstName", "lastName", "department", "favorite_practices"]
 
     def get_role(self, obj):
         if obj.is_superuser or obj.email == "admin@admin.com":
@@ -183,6 +211,11 @@ class UserInfoSerializer(serializers.ModelSerializer):
             }
         return None
 
+    def get_favorite_practices(self, obj):
+        if hasattr(obj, "favorite_practices"):
+            return list(obj.favorite_practices.values_list("pk", flat=True))
+        return []
+
 
 class TokenResponseSerializer(serializers.Serializer):
     refresh = serializers.CharField()
@@ -190,16 +223,60 @@ class TokenResponseSerializer(serializers.Serializer):
     user = UserInfoSerializer()
 
 
-class StudentProfileSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
     full_name = serializers.CharField(read_only=True)
+    user_type = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
-        model = StudentUser
+        model = User
         fields = [
             "id",
             "email",
             "phone",
             "full_name",
+            "title_before",
+            "title_after",
+            "first_name",
+            "last_name",
+            "user_type",
+            "role",
+        ]
+
+    def validate_email(self, value):
+        # Pokud se email nemění, přeskočit validaci
+        if self.instance and self.instance.email == value:
+            return value
+
+        # Jinak zkontrolovat unikátnost (s vyloučením sebe sama pro jistotu, i když by to mělo pokrýt if výše)
+        qs = User.objects.filter(email=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Uživatel s tímto emailem již existuje.")
+        return value
+
+    def get_user_type(self, obj):
+        if isinstance(obj, StudentUser):
+            return "student"
+        elif isinstance(obj, ProfessorUser):
+            return "professor"
+        elif isinstance(obj, OrganizationUser):
+            return "organization"
+        else:
+            return "unknown"
+
+    def get_role(self, obj):
+        return obj.role
+
+
+class StudentProfileSerializer(UserProfileSerializer):
+    cv_file = serializers.FileField(read_only=True)
+
+    class Meta(UserProfileSerializer.Meta):
+        model = StudentUser
+        fields = UserProfileSerializer.Meta.fields + [
             "profile_picture",
             "resume",
             "additional_info",
@@ -208,6 +285,8 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "zip_code",
             "city",
             "specialization",
+            "skills",
+            "cv_file",
         ]
 
 
@@ -244,42 +323,10 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(read_only=True)
-    user_type = serializers.SerializerMethodField()
-    role = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "email",
-            "phone",
-            "full_name",
-            "title_before",
-            "title_after",
-            "first_name",
-            "last_name",
-            "user_type",
-            "role",
-        ]
-
-    def get_user_type(self, obj):
-        if isinstance(obj, StudentUser):
-            return "student"
-        elif isinstance(obj, ProfessorUser):
-            return "professor"
-        elif isinstance(obj, OrganizationUser):
-            return "organization"
-        else:
-            return "unknown"
-
-    def get_role(self, obj):
-        return obj.role
-
-
 class StudentUserProfileSerializer(UserProfileSerializer):
     profile_picture = Base64ImageField(required=False, allow_null=True)
+    cv_file = serializers.FileField(required=False, allow_null=True)
+    favorite_practices = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta(UserProfileSerializer.Meta):
         model = StudentUser
@@ -295,7 +342,20 @@ class StudentUserProfileSerializer(UserProfileSerializer):
             "field_of_study",
             "year_of_study",
             "os_cislo",
+            "skills",
+            "cv_file",
+            "favorite_practices",
         ]
+
+    def validate_skills(self, value):
+        if isinstance(value, str):
+            import json
+
+            try:
+                return json.loads(value)
+            except ValueError:
+                return []
+        return value
 
 
 class ProfessorUserProfileSerializer(UserProfileSerializer):

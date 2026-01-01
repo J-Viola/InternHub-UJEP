@@ -140,124 +140,120 @@ export default function PraxeDetailPage() {
     }
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <BackButton/>
+        <>
+            <BackButton/>
 
-                {/* INFORMACE O STUDENTOVI, JEHOŽ KARTA JE OTEVŘENA */}
-                <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8 mb-2 mt-4"}>
-                    <Headings sizeTag={"h3"} property={""}>Student</Headings>
-                    <Paragraph property={"mt-2"}>
-                        {entity?.student_practice_status?.student_info?.full_name}
-                    </Paragraph>
-                    <Paragraph>
-                        {`Osobní číslo: ${entity?.student_practice_status?.student_info?.os_cislo}`}
-                    </Paragraph>
-                    <Paragraph>
-                        {`Email: ${entity?.student_practice_status?.student_info?.email}`}
-                    </Paragraph>
+            {/* INFORMACE O STUDENTOVI, JEHOŽ KARTA JE OTEVŘENA */}
+            <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8 mb-2 mt-4"}>
+                <Headings sizeTag={"h3"} property={""}>Student</Headings>
+                <Paragraph property={"mt-2"}>
+                    {entity?.student_practice_status?.student_info?.full_name}
+                </Paragraph>
+                <Paragraph>
+                    {`Osobní číslo: ${entity?.student_practice_status?.student_info?.os_cislo}`}
+                </Paragraph>
+                <Paragraph>
+                    {`Email: ${entity?.student_practice_status?.student_info?.email}`}
+                </Paragraph>
 
-                </ContainerForEntity>
+            </ContainerForEntity>
 
-                {/* DOCS PANEL */}
-                {entity?.student_practice_status?.approval_status !== undefined &&
-                 entity.student_practice_status.approval_status === 1 && (
-                    <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload} handleManage={handleDocsPopUp}/>
-                )}
+            {/* DOCS PANEL */}
+            {entity?.student_practice_status?.approval_status !== undefined &&
+                entity.student_practice_status.approval_status === 1 && (
+                <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload} handleManage={handleDocsPopUp}/>
+            )}
 
 
-                <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
-                    <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
-                            
-                        {/* LOGO */}
-                        <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
-                            <Image
-                                src={entity?.image_base64}
-                                alt={entity?.title}
-                                objectFit="cover"
-                            />
-                        </Container>
-
-                        {/* TITLE */}
-                        <Container>
-                            <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
-                            <Container property={"flex flex-row gap-2 mt-2"}>
-                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer?.address}</Button>
-                                <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
-                            </Container>
-                        </Container>
-
-                    </Container>
-                    {/* DESCRIPTION */}
-                    <Container property={"editor-content mt-2"}>
-                        <Paragraph>{entity?.description}</Paragraph>
-                    </Container>
-
-                    {/* RESPONSIBILITY */}
-                    <Container property={"editor-content mt-2"}>
-                        <Paragraph>{entity?.responsibilities}</Paragraph>
-                    </Container>
-
-                    {/* CONTACT USER INFO */}
-                    {entity && entity.contact_user_info && (
-                        <Container property={"editor-content mt-2"}>
-                            <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
-                            {entity.contact_user_info.username && (
-                                <Paragraph property="mb-2">
-                                    Uživatelské jméno: {entity.contact_user_info.username}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.first_name && (
-                                <Paragraph property="mb-2">
-                                    Jméno: {entity.contact_user_info.first_name}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.last_name && (
-                                <Paragraph property="mb-2">
-                                    Příjmení: {entity.contact_user_info.last_name}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.email && (
-                                <Paragraph property="mb-2">
-                                    Email: {entity.contact_user_info.email}
-                                </Paragraph>
-                            )}
-                            {entity.contact_user_info.phone && (
-                                <Paragraph property="mb-2">
-                                    Telefon: {entity.contact_user_info.phone}
-                                </Paragraph>
-                            )}
-                        </Container>
-                    )}
-                    <Container property={"grid grid-cols-1 gap-8 mt-4"}>
-                        {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
-                        {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
-                            <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
-                        )}
-
-                        {/* TLAČÍTKA PRO SPRÁVU - DEPARTMENT A ORGANIZATION USERS */}
-                        {user && (user.isDepartmentUser() || user.isOrganizationUser()) && (
-                            <Container property="flex gap-4 justify-end">
-                                <Button variant={"primary"} icon={"gear"} onClick={handlePopUp}>Spravovat</Button>
-                            </Container>
-                        )}
-                    </Container>
-                </ContainerForEntity>
-
-                {entity?.student_practice_status?.approval_status !== undefined &&
-                 entity.student_practice_status.approval_status === 1 && (
-                    <Container property={"mt-2"}>
-                        <ProgressPanel
-                            subject={entity.subject?.subject_code}
-                            goalValueSingle={entity.subject?.hours_required}
-                            currentValueSingle={entity.student_practice_status?.hours_completed}
+            <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
+                <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
+                        
+                    {/* LOGO */}
+                    <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
+                        <Image
+                            src={entity?.image_base64}
+                            alt={entity?.title}
+                            objectFit="cover"
                         />
                     </Container>
-                )}
-                  
-            </Container>
 
+                    {/* TITLE */}
+                    <Container>
+                        <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
+                        <Container property={"flex flex-row gap-2 mt-2"}>
+                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer?.address}</Button>
+                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
+                        </Container>
+                    </Container>
+
+                </Container>
+                {/* DESCRIPTION */}
+                <Container property={"editor-content mt-2"}>
+                    <Paragraph>{entity?.description}</Paragraph>
+                </Container>
+
+                {/* RESPONSIBILITY */}
+                <Container property={"editor-content mt-2"}>
+                    <Paragraph>{entity?.responsibilities}</Paragraph>
+                </Container>
+
+                {/* CONTACT USER INFO */}
+                {entity && entity.contact_user_info && (
+                    <Container property={"editor-content mt-2"}>
+                        <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
+                        {entity.contact_user_info.username && (
+                            <Paragraph property="mb-2">
+                                Uživatelské jméno: {entity.contact_user_info.username}
+                            </Paragraph>
+                        )}
+                        {entity.contact_user_info.first_name && (
+                            <Paragraph property="mb-2">
+                                Jméno: {entity.contact_user_info.first_name}
+                            </Paragraph>
+                        )}
+                        {entity.contact_user_info.last_name && (
+                            <Paragraph property="mb-2">
+                                Příjmení: {entity.contact_user_info.last_name}
+                            </Paragraph>
+                        )}
+                        {entity.contact_user_info.email && (
+                            <Paragraph property="mb-2">
+                                Email: {entity.contact_user_info.email}
+                            </Paragraph>
+                        )}
+                        {entity.contact_user_info.phone && (
+                            <Paragraph property="mb-2">
+                                Telefon: {entity.contact_user_info.phone}
+                            </Paragraph>
+                        )}
+                    </Container>
+                )}
+                <Container property={"grid grid-cols-1 gap-8 mt-4"}>
+                    {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
+                    {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
+                        <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
+                    )}
+
+                    {/* TLAČÍTKA PRO SPRÁVU - DEPARTMENT A ORGANIZATION USERS */}
+                    {user && (user.isDepartmentUser() || user.isOrganizationUser()) && (
+                        <Container property="flex gap-4 justify-end">
+                            <Button variant={"primary"} icon={"gear"} onClick={handlePopUp}>Spravovat</Button>
+                        </Container>
+                    )}
+                </Container>
+            </ContainerForEntity>
+
+            {entity?.student_practice_status?.approval_status !== undefined &&
+                entity.student_practice_status.approval_status === 1 && (
+                <Container property={"mt-2"}>
+                    <ProgressPanel
+                        subject={entity.subject?.subject_code}
+                        goalValueSingle={entity.subject?.hours_required}
+                        currentValueSingle={entity.student_practice_status?.hours_completed}
+                    />
+                </Container>
+            )}
+                
             {/* PODÁNÍ PŘIHLÁŠKY - STUDENT */}
             {popUp && user && user.isStudent() && (
                 <PopUpCon 
@@ -294,7 +290,6 @@ export default function PraxeDetailPage() {
                     text={"Proces není definován"}
                 />
             )}
-
-        </Container>
+        </>
     )
 } 

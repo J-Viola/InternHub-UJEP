@@ -159,119 +159,114 @@ export default function UserCRUDPage() {
     const onRemoveCompany = (name) => setSelectedCompanies(selectedCompanies.filter((n) => n !== name));
     const availableOptions = allCompanyNames.filter((n) => !selectedCompanies.includes(n));
     return (
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                <BackButton/>
-                
-                {/* Filtr a vyhledávání */}
-                <Container property={"mt-4 mb-6"}>
-                    <Container property={"flex items-center gap-4 mb-4"}>
-                        <SearchBar
-                            id={"name"}
-                            value={searchTerm}
-                            placeholder={userType === 'org' ? "Zadejte jméno uživatele" : "Zadejte jméno, předmět, název katedry"}
-                            onChange={handleSearchChange}
-                            onClear={handleSearchClear}
-                        />
-                    </Container>
-                    {userType === 'org' && (
-                        <Container property={"flex items-center gap-3"}>
-                            <DropDown
-                                id="company"
-                                variant="facultyGreen"
-                                placeholder="Vyberte organizaci pro filtrování"
-                                value={companySelectValue}
-                                onChange={onCompanySelect}
-                                options={availableOptions.map((name) => ({ label: name, value: name }))}
-                            />
-                            <Container property={"flex items-center flex-wrap gap-2"}>
-                                {selectedCompanies.map((name) => (
-                                    <Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
-                                        {name}
-                                    </Button>
-                                ))}
-                            </Container>
-                        </Container>
-                    )}
+        <>
+            <BackButton/>
+            
+            {/* Filtr a vyhledávání */}
+            <Container property={"mt-4 mb-6"}>
+                <Container property={"flex items-center gap-4 mb-4"}>
+                    <SearchBar
+                        id={"name"}
+                        value={searchTerm}
+                        placeholder={userType === 'org' ? "Zadejte jméno uživatele" : "Zadejte jméno, předmět, název katedry"}
+                        onChange={handleSearchChange}
+                        onClear={handleSearchClear}
+                    />
                 </Container>
-
-                <Container property={"flex items-center justify-between mb-6"}>
-                    <Headings sizeTag={"h3"} property={"mt-2"}>
-                        {type ? (headings[type]) : ("Správa uživatelů")}
-                    </Headings>
-                </Container>
-
                 {userType === 'org' && (
-                    <Container>
-                        <Button 
-                            onClick={handleCreateUser}
-                            icon={"plus"}
-                        >
-                            Založit účet
-                        </Button>
+                    <Container property={"flex items-center gap-3"}>
+                        <DropDown
+                            id="company"
+                            variant="facultyGreen"
+                            placeholder="Vyberte organizaci pro filtrování"
+                            value={companySelectValue}
+                            onChange={onCompanySelect}
+                            options={availableOptions.map((name) => ({ label: name, value: name }))}
+                        />
+                        <Container property={"flex items-center flex-wrap gap-2"}>
+                            {selectedCompanies.map((name) => (
+                                <Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
+                                    {name}
+                                </Button>
+                            ))}
+                        </Container>
                     </Container>
                 )}
+            </Container>
 
-                <Container property={"mt-4 rounded-lg"}>
-                    {loading ? (
-                        <Paragraph>Načítání...</Paragraph>
-                    ) : data.length === 0 ? (
-                        <Paragraph property="text-center text-gray-500 py-8">
-                            Zatím nejsou žádní uživatelé k zobrazení.
-                        </Paragraph>
-                    ) : (
-                        userType === 'org' ? (
-                            displayCompanyNames.length === 0 ? (
-                                <Paragraph property="text-center text-gray-500 py-8">Žádné výsledky.</Paragraph>
-                            ) : (
-                                <Container property={"space-y-6"}>
-                                    {displayCompanyNames.map((name) => (
-                                        <Container key={name}>
-                                            <Headings sizeTag={"h4"}>{name}</Headings>
-                                            <Container property={"flex flex-col gap-4 mt-2"}>
-                                                {(groupedByEmployer[name] || []).map((entity) => (
-                                                    <UserEntity
-                                                        key={entity.id}
-                                                        entity={entity}
-                                                        attributes={{ "Role": "roleText" }}
-                                                        statusView={false}
-                                                        buttons={[
-                                                            {
-                                                                icon: "edit",
-                                                                btnfunction: () => handleEditUser(entity)
-                                                            }
-                                                        ]}
-                                                    />
-                                                ))}
-                                            </Container>
-                                        </Container>
-                                    ))}
-                                </Container>
-                            )
+            <Container property={"flex items-center justify-between mb-6"}>
+                <Headings sizeTag={"h3"} property={"mt-2"}>
+                    {type ? (headings[type]) : ("Správa uživatelů")}
+                </Headings>
+            </Container>
+
+            {userType === 'org' && (
+                <Container>
+                    <Button 
+                        onClick={handleCreateUser}
+                        icon={"plus"}
+                    >
+                        Založit účet
+                    </Button>
+                </Container>
+            )}
+
+            <Container property={"mt-4 rounded-lg"}>
+                {loading ? (
+                    <Paragraph>Načítání...</Paragraph>
+                ) : data.length === 0 ? (
+                    <Paragraph property="text-center text-gray-500 py-8">
+                        Zatím nejsou žádní uživatelé k zobrazení.
+                    </Paragraph>
+                ) : (
+                    userType === 'org' ? (
+                        displayCompanyNames.length === 0 ? (
+                            <Paragraph property="text-center text-gray-500 py-8">Žádné výsledky.</Paragraph>
                         ) : (
-                            <Container property={"flex flex-col gap-4"}>
-                                {searchFiltered?.map(entity => (
-                                    <UserEntity
-                                        key={entity.id}
-                                        entity={entity}
-                                        attributes={{ "Katedra": "department", "Předmět": "subjects[0].subject_name" }}
-                                        statusView={false}
-                                        buttons={[
-                                            {
-                                                icon: "edit",
-                                                btnfunction: () => handleEditUser(entity)
-                                            }
-                                        ]}
-                                    />
+                            <Container property={"space-y-6"}>
+                                {displayCompanyNames.map((name) => (
+                                    <Container key={name}>
+                                        <Headings sizeTag={"h4"}>{name}</Headings>
+                                        <Container property={"flex flex-col gap-4 mt-2"}>
+                                            {(groupedByEmployer[name] || []).map((entity) => (
+                                                <UserEntity
+                                                    key={entity.id}
+                                                    entity={entity}
+                                                    attributes={{ "Role": "roleText" }}
+                                                    statusView={false}
+                                                    buttons={[
+                                                        {
+                                                            icon: "edit",
+                                                            btnfunction: () => handleEditUser(entity)
+                                                        }
+                                                    ]}
+                                                />
+                                            ))}
+                                        </Container>
+                                    </Container>
                                 ))}
                             </Container>
                         )
-                    )}
-                </Container>
+                    ) : (
+                        <Container property={"flex flex-col gap-4"}>
+                            {searchFiltered?.map(entity => (
+                                <UserEntity
+                                    key={entity.id}
+                                    entity={entity}
+                                    attributes={{ "Katedra": "department", "Předmět": "subjects[0].subject_name" }}
+                                    statusView={false}
+                                    buttons={[
+                                        {
+                                            icon: "edit",
+                                            btnfunction: () => handleEditUser(entity)
+                                        }
+                                    ]}
+                                />
+                            ))}
+                        </Container>
+                    )
+                )}
             </Container>
-
-
-        </Container>
+        </>
     );
 }

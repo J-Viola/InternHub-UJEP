@@ -303,42 +303,39 @@ export default function StudentPage() {
     },[entities])
 
     return (
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                <BackButton/>
-                <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                    <Headings sizeTag={"h3"} property={"mt-2"}>
-                        {getTitle()}
-                    </Headings>
-                </Container>
-
-                {renderInviteButton()}
-
-                <Container property={"mt-auto"}>
-                    <SearchBar
-                        id={"name"}
-                        value={filterValues.name}
-                        placeholder={"Hledat podle jména..."}
-                        onChange={handleChange}
-                        onClear={handleClear}
-                    />
-                </Container>
-                
-                <Container property={"mt-4"}>
-                    {filteredEntities.map(entity => (
-                        <UserEntity
-                            key={entity.user_id}
-                            entity={entity}
-                            attributes={getAttributes()}
-                            status={renderEntityStatus(entity)}
-                            onClick={() => handleProfileView(entity)}
-                            buttons={renderEntityButtons(entity)}
-                            statusView={renderEntityStatusView()}
-                        />
-                    ))}
-                </Container>
+        <>
+            <BackButton/>
+            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                <Headings sizeTag={"h3"} property={"mt-2"}>
+                    {getTitle()}
+                </Headings>
             </Container>
-        </Container>
+
+            {renderInviteButton()}
+
+            <Container property={"mt-auto"}>
+                <SearchBar
+                    id={"name"}
+                    value={filterValues.name}
+                    placeholder={"Hledat podle jména..."}
+                    onChange={handleChange}
+                    onClear={handleClear}
+                />
+            </Container>
+            
+            <Container property={"mt-4"}>
+                {filteredEntities.map(entity => (
+                    <UserEntity
+                        key={entity.user_id}
+                        entity={entity}
+                        attributes={getAttributes()}
+                        status={renderEntityStatus(entity)}
+                        onClick={() => handleProfileView(entity)}
+                        buttons={renderEntityButtons(entity)}
+                        statusView={renderEntityStatusView()}
+                    />
+                ))}
+            </Container>
+        </>
     );
 }

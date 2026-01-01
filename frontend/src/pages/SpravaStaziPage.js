@@ -108,55 +108,52 @@ export default function SpravaStaziPage() {
     }
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                <BackButton/>
-                
-                <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                    <Headings sizeTag={"h3"} property={"mt-2"}>
-                        Probíhající stáže
-                    </Headings>
-                </Container>
-                <Container property={"mb-8 space-y-4"}>
-                    {approved.length === 0 ? (
-                        <Paragraph property="text-center text-gray-500 py-8">
-                            Žádné schválené stáže.
-                        </Paragraph>
-                    ) : (
-                        approved.map((entity) => (
-                            <PraxeDepartmentEntity 
-                                key={entity.practice_id} 
-                                entity={entity} 
-                                type="approved"
-                                onView={() => handleView("approved_practices", entity)}
-                                onClick={() => handleClick("approved_practices", entity)
-                                }
-                            />
+        <>
+            <BackButton/>
+            
+            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                <Headings sizeTag={"h3"} property={"mt-2"}>
+                    Probíhající stáže
+                </Headings>
+            </Container>
+            <Container property={"mb-8 space-y-4"}>
+                {approved.length === 0 ? (
+                    <Paragraph property="text-center text-gray-500 py-8">
+                        Žádné schválené stáže.
+                    </Paragraph>
+                ) : (
+                    approved.map((entity) => (
+                        <PraxeDepartmentEntity 
+                            key={entity.practice_id} 
+                            entity={entity} 
+                            type="approved"
+                            onView={() => handleView("approved_practices", entity)}
+                            onClick={() => handleClick("approved_practices", entity)
+                            }
+                        />
+                    ))
+                )}
+            </Container>
+            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                <Headings sizeTag={"h3"} property={"mt-2"}>
+                    Schvalovací kolečko
+                </Headings>
+            </Container>
+            <Container property={"mt-4 mb-8 space-y-4"}>
+                {toApprove.length === 0 ? (
+                    <Paragraph property="text-center text-gray-500 py-8">
+                        Žádné stáže čekající na schválení.
+                    </Paragraph>
+                ) : (
+                    toApprove.map((entity) => (
+                        <PraxeDepartmentEntity 
+                            key={entity.practice_id} 
+                            entity={entity} 
+                            onView={() => handleView("to_approve_practices", entity)}
+                            onClick={() => handleClick("to_approve_practices", entity)}
+                            type="to_approve" />
                         ))
-                    )}
-                </Container>
-                <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                    <Headings sizeTag={"h3"} property={"mt-2"}>
-                        Schvalovací kolečko
-                    </Headings>
-                </Container>
-                <Container property={"mt-4 mb-8 space-y-4"}>
-                    {toApprove.length === 0 ? (
-                        <Paragraph property="text-center text-gray-500 py-8">
-                            Žádné stáže čekající na schválení.
-                        </Paragraph>
-                    ) : (
-                        toApprove.map((entity) => (
-                            <PraxeDepartmentEntity 
-                                key={entity.practice_id} 
-                                entity={entity} 
-                                onView={() => handleView("to_approve_practices", entity)}
-                                onClick={() => handleClick("to_approve_practices", entity)}
-                                type="to_approve" />
-                            ))
-                    )}
-                </Container>
+                )}
             </Container>
             {showPop && 
                 <PopUpCon
@@ -169,8 +166,6 @@ export default function SpravaStaziPage() {
                     text={`Chcete změnit stav nabídky: ${selectedEntity?.title || ""}?`}
                 />
             }
-
-
-        </Container>
+        </>
     )
 }

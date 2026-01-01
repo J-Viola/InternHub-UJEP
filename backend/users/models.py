@@ -169,11 +169,11 @@ class StagUser(User):
         db_table = "stag_users"
 
     def __str__(self):
-        return self.stag_role.role
+        return self.stag_role.role if self.stag_role else self.email
 
     @property
     def role(self):
-        return self.stag_role.role
+        return self.stag_role.role if self.stag_role else None
 
 
 class StudentUser(StagUser):
@@ -192,6 +192,11 @@ class StudentUser(StagUser):
     city = models.CharField(max_length=100, blank=True, default="")
     specialization = models.CharField(max_length=100, blank=True, default="")
     practices = models.ManyToManyField("practices.Practice", through="student_practices.StudentPractice", related_name="student_users")
+
+    # New fields
+    skills = models.JSONField(default=list, blank=True)
+    cv_file = models.FileField(upload_to=settings.STORAGE_URL + "documents/cvs", blank=True, null=True)
+    favorite_practices = models.ManyToManyField("practices.Practice", related_name="favorited_by", blank=True)
 
     class Meta:
         db_table = "student_users"

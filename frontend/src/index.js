@@ -29,6 +29,10 @@ import InvitationPage from '@pages/PozvankyPage';
 import PozvankyListPage from '@pages/PozvankyListPage';
 import DepartmentsPage from '@pages/DepartmentsPage';
 import CompaniesPage from '@pages/CompaniesPage';
+import ChangePasswordPage from '@pages/ChangePasswordPage';
+import PasswordResetRequestPage from '@pages/PasswordResetRequestPage';
+import PasswordResetConfirmPage from '@pages/PasswordResetConfirmPage';
+import MainLayout from '@components/Layout/MainLayout';
 
 const AppRoutes = () => {
   const { isInitializing } = useAuth();
@@ -43,27 +47,32 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route path="/nabidka" element={<NabidkaPage />} />
-      <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
-      <Route path="/subjects" element={<SubjectPage />} />
-      <Route path="/profil/:id?" element={<ProfilPage />} />
-      <Route path="/registrace" element={<RegistracePage />} />
-      <Route path="/praxe" element={<PraxePage />} />
-      <Route path="/karta-praxe/:id" element={<PraxeDetailPage />} />
-      <Route path="/students/:id?" element={<StudentPage />} />
-      <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
-      <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
-      <Route path="/upravit-nabidku/:id" element={<UpravitNabidku />} />
-      <Route path="/logout" element={<LogoutUser />} />
-      <Route path="/users/:type" element={<UserCRUDPage/>} />
-      <Route path="/prihlasky" element={<PrihlaskyPage/>} />
-      <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
-      <Route path="/formular" element={<FormPage/>} />
-      <Route path="/pozvanka" element={<InvitationPage/>} />
-      <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
-      <Route path="/departments" element={<DepartmentsPage/>} />
-      <Route path="/companies" element={<CompaniesPage/>} />
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/nabidka" element={<NabidkaPage />} />
+        <Route path="/nabidka/:id" element={<NabidkaDetailPage />} />
+        <Route path="/subjects" element={<SubjectPage />} />
+        <Route path="/profil/:id?" element={<ProfilPage />} />
+        <Route path="/registrace" element={<RegistracePage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
+        <Route path="/reset-password" element={<PasswordResetRequestPage />} />
+        <Route path="/reset-password/:uid/:token" element={<PasswordResetConfirmPage />} />
+        <Route path="/praxe" element={<PraxePage />} />
+        <Route path="/karta-praxe/:id" element={<PraxeDetailPage />} />
+        <Route path="/students/:id?" element={<StudentPage />} />
+        <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
+        <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
+        <Route path="/upravit-nabidku/:id" element={<UpravitNabidku />} />
+        <Route path="/logout" element={<LogoutUser />} />
+        <Route path="/users/:type" element={<UserCRUDPage/>} />
+        <Route path="/prihlasky" element={<PrihlaskyPage/>} />
+        <Route path="/sprava-stazi" element={<SpravaStaziPage/>} />
+        <Route path="/formular" element={<FormPage/>} />
+        <Route path="/pozvanka" element={<InvitationPage/>} />
+        <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
+        <Route path="/departments" element={<DepartmentsPage/>} />
+        <Route path="/companies" element={<CompaniesPage/>} />
+      </Route>
     </Routes>
   );
 };

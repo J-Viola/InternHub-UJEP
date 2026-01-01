@@ -18,7 +18,6 @@ import { useCompanyAPI } from "src/api/company/companyAPI";
 import { useEmployerAPI } from "src/api/employer/employerAPI";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
-import handleToDoAlert from "@utils/ToDoAlert";
 import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
 import UserForm from "@components/Forms/UserForm";
@@ -38,38 +37,21 @@ export default function FormPage() {
     const companyAPI = useCompanyAPI();
     const employerAPI = useEmployerAPI();
 
-    useEffect(() => {
-        const type = searchParams.get('type');
-        const action = searchParams.get('action');
-        const id = searchParams.get('id');
-        console.log('Type:', type);
-        console.log('Action:', action);
-        console.log('ID:', id);
-        // PODLE ACTIONU UDĚLAT FETCH
-    }, [searchParams]);
-
     const handleCreate = (createApi) => async (data) => {
-        console.log('Ukládám data:', data);
         try {
-            const response = await createApi(data);
-            console.log('Data uložena:', response);
-            // případně přesměrování nebo zobrazení zprávy
+            await createApi(data);
             navigate(-1); // Go back to previous page
         } catch (error) {
             console.error('Chyba při ukládání:', error);
-            // zobrazení chybové zprávy
         }
     };
 
     const handleUpdate = (updateApi, id) => async (data) => {
-        console.log('Aktualizuji data:', data);
         try {
-            const response = await updateApi(id, data);
-            console.log('Data aktualizována:', response);
+            await updateApi(id, data);
             navigate(-1); // Go back to previous page
         } catch (error) {
             console.error('Chyba při aktualizaci:', error);
-            // zobrazení chybové zprávy
         }
     };
 
@@ -77,8 +59,6 @@ export default function FormPage() {
         const type = searchParams.get('type');
         const action = searchParams.get('action');
         const id = searchParams.get('id');
-        
-        console.log('Rendering form with:', { type, action, id });
         
         switch(type) {
             case 'subject':
@@ -133,14 +113,11 @@ export default function FormPage() {
     };
     
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <BackButton/>
-                <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
-                    {renderForm()}
-                </Container>
+        <>
+            <BackButton/>
+            <Container property={"bg-white mt-2 p-8 rounded-lg shadow-sm"}>
+                {renderForm()}
             </Container>
-        </Container>
+        </>
     )
 }

@@ -1,5 +1,10 @@
 import re
 
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -15,7 +20,9 @@ from users.models import (
     EmployerProfile,
     OrganizationUser,
     ProfessorUser,
+    StagUser,
     StudentUser,
+    User,
 )
 from users.permissions import (
     CanViewStudentProfile,
@@ -29,11 +36,14 @@ from .serializers import (
     AdminOrganizationSerializer,
     AllStudentsListSerializer,
     AresJusticeSerializer,
+    ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
     LogoutSerializer,
     OrganizationRegisterSerializer,
     OrganizationUserListSerializer,
     OrganizationUserProfileSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     ProfessorUserProfileSerializer,
     StudentProfileSerializer,
     StudentUserProfileSerializer,
@@ -62,6 +72,104 @@ class RegisterView(generics.CreateAPIView):
             {"message": "User registered successfully"},
             status=status.HTTP_201_CREATED,
         )
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Request password reset email",
+        tags=["Auth"],
+        request=PasswordResetRequestSerializer,
+        responses={200: OpenApiResponse(description="If email exists, reset link was sent")},
+    )
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        try:
+            user = User.objects.get(email=email)
+            # STAG users cannot reset password here
+            if isinstance(user, StagUser):
+                return Response({"detail": "Uživatelé školy si mění heslo v systému STAG."}, status=status.HTTP_400_BAD_REQUEST)
+
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+
+            # URL na frontend (např. http://localhost:3000/reset-password/UID/TOKEN)
+            frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+            reset_url = f"{frontend_url}/reset-password/{uid}/{token}"
+
+            send_mail(
+                "Obnova hesla - InternHub UJEP",
+                f"Pro obnovu hesla klikněte na tento odkaz: {reset_url}\n\nPokud jste o obnovu nežádali, tento email ignorujte.",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+        except User.DoesNotExist:
+            # Pro bezpečnost neříkáme, že email neexistuje
+            pass
+
+        return Response(
+            {"message": "Pokud email v systému existuje, byl na něj odeslán odkaz pro obnovu hesla."}, status=status.HTTP_200_OK
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Confirm password reset",
+        tags=["Auth"],
+        request=PasswordResetConfirmSerializer,
+        responses={200: OpenApiResponse(description="Password reset successful")},
+    )
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            uid = force_str(urlsafe_base64_decode(serializer.validated_data["uidb64"]))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"detail": "Neplatný odkaz."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, serializer.validated_data["token"]):
+            return Response({"detail": "Neplatný nebo expirovaný token."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+        return Response({"message": "Heslo bylo úspěšně změněno. Nyní se můžete přihlásit."}, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Change user password",
+        description="Changes the password for the currently logged-in user. **Permissions: Authenticated User (Non-STAG)**",
+        tags=["Auth"],
+        request=ChangePasswordSerializer,
+        responses={200: OpenApiResponse(description="Password changed successfully")},
+    )
+    def post(self, request):
+        user = request.user
+        if isinstance(user, StagUser):
+            return Response(
+                {"detail": "Uživatelé STAG nemohou měnit heslo v této aplikaci. Použijte systém STAG."}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not user.check_password(serializer.validated_data["old_password"]):
+            return Response({"old_password": ["Chybné heslo."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+        return Response({"message": "Heslo bylo úspěšně změněno"}, status=status.HTTP_200_OK)
 
 
 class LogoutView(generics.GenericAPIView):
@@ -153,7 +261,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         summary="Login / Obtain JWT Token",
         description="Authenticates a user and returns access and refresh JWT tokens along with user info. **Permissions: Allow Any**",
         tags=["Auth"],
-        responses={200: TokenResponseSerializer}
+        responses={200: TokenResponseSerializer},
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -176,7 +284,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class OrganizationUserListView(generics.ListAPIView):
     @extend_schema(
         summary="List users in organization",
-        description="Returns a list of all users associated with the same organization as the current user. **Permissions: Organization User or Admin**",
+        description="Returns a list of all users associated with the same organization as the current user."
+        "**Permissions: Organization User or Admin**",
         tags=["Users"],
     )
     def get(self, request, *args, **kwargs):
@@ -221,7 +330,7 @@ class StudentProfileView(APIView):
             return Response({"detail": "Student nenalezen."}, status=status.HTTP_404_NOT_FOUND)
 
         self.check_object_permissions(request, student)
-        serializer = StudentProfileSerializer(student)
+        serializer = StudentProfileSerializer(student, context={"request": request})
         return Response(serializer.data)
 
 
@@ -310,21 +419,23 @@ class CurrentUserProfileView(APIView):
 
     @extend_schema(
         summary="Get current user profile",
-        description="Returns the profile details of the currently logged-in user (Student, Professor, or Organization). **Permissions: Authenticated User**",
+        description="Returns the profile details of the currently logged-in user (Student, Professor, or Organization)."
+        "**Permissions: Authenticated User**",
         tags=["Users"],
-        responses={200: UserProfileSerializer}
+        responses={200: UserProfileSerializer},
     )
     def get(self, request):
         user = request.user
+        context = {"request": request}
 
         if isinstance(user, StudentUser):
-            serializer = StudentUserProfileSerializer(user)
+            serializer = StudentUserProfileSerializer(user, context=context)
         elif isinstance(user, ProfessorUser):
-            serializer = ProfessorUserProfileSerializer(user)
+            serializer = ProfessorUserProfileSerializer(user, context=context)
         elif isinstance(user, OrganizationUser):
-            serializer = OrganizationUserProfileSerializer(user)
+            serializer = OrganizationUserProfileSerializer(user, context=context)
         else:
-            serializer = UserProfileSerializer(user)
+            serializer = UserProfileSerializer(user, context=context)
 
         return Response(serializer.data)
 
@@ -333,7 +444,7 @@ class CurrentUserProfileView(APIView):
         description="Updates the profile details of the currently logged-in user. **Permissions: Authenticated User**",
         tags=["Users"],
         request=UserProfileSerializer,
-        responses={200: UserProfileSerializer}
+        responses={200: UserProfileSerializer},
     )
     def patch(self, request):
         user = request.user

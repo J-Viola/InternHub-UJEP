@@ -91,22 +91,18 @@ export default function VytvoritNabidku() {
     }, [formData.coefficient, formData.start_date]);
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <BackButton/>
-                <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
-                    <NabidkaForm
-                        formData={formData}
-                        organizationUsers={organizationUsers}
-                        subjects={subjects}
-                        handleChange={handleChange}
-                        handleSubmit={handleCreation}
-                        errors={errors}
-                    />
-                </Container>
-
+        <>
+            <BackButton/>
+            <Container property={"bg-white mt-2 p-8 rounded-lg shadow-sm"}>
+                <NabidkaForm
+                    formData={formData}
+                    organizationUsers={organizationUsers}
+                    subjects={subjects}
+                    handleChange={handleChange}
+                    handleSubmit={handleCreation}
+                    errors={errors}
+                />
             </Container>
-        </Container>
+        </>
     )
 }

@@ -48,14 +48,11 @@ export default function RegistracePage() {
     };
 
     return(
-        <Container property={"min-h-screen"}>
-            <Nav/>
-            <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <BackButton></BackButton>
-                <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
-                    {renderForm()}
-                </Container>
+        <>
+            <BackButton></BackButton>
+            <Container property={"bg-white mt-2 p-8 rounded-lg shadow-sm"}>
+                {renderForm()}
             </Container>
-        </Container>
+        </>
     );
 }

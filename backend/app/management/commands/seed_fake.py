@@ -69,7 +69,7 @@ class Command(BaseCommand):
             email = fake.unique.email()
             StudentUser.objects.create(
                 email=email,
-                password="password123",  # Všechna hesla stejná pro snadné testování
+                password="demodemo",  # Všechna hesla stejná pro snadné testování
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),
                 username=email,  # Username často kopíruje email

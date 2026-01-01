@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import Container from "@core/Container/Container"
 import ContainerForEntity from "@core/Container/ContainerForEntity"
 import Paragraph from "@components/core/Text/Paragraph"
@@ -7,10 +7,53 @@ import { Image } from "@components/core/Image"
 import { useNavigate } from "react-router-dom"
 import Button from "@components/core/Button/Button"
 import { useUser } from "@hooks/UserProvider"
+import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 
 export default function NabidkaEntity({ entity }) {
     const navigate = useNavigate();
-    const { user } = useUser();
+    const { user, setUser } = useUser();
+    const { toggleFavorite } = useNabidkaAPI();
+    const [isFavorite, setIsFavorite] = useState(false);
+
+    useEffect(() => {
+        if (user && user.favorite_practices && user.favorite_practices.includes(entity.practice_id)) {
+            setIsFavorite(true);
+        } else {
+            setIsFavorite(false);
+        }
+    }, [user, entity.practice_id]);
+
+    const handleHeartClick = async (e) => {
+        e.stopPropagation();
+        try {
+            const result = await toggleFavorite(entity.practice_id);
+            setIsFavorite(result.is_favorite);
+            
+             // Update global user state manually
+            let newFavorites = [...(user.favorite_practices || [])];
+            if (result.is_favorite) {
+                if (!newFavorites.includes(entity.practice_id)) newFavorites.push(entity.practice_id);
+            } else {
+                newFavorites = newFavorites.filter(id => id !== entity.practice_id);
+            }
+            
+            // Reconstruct user object to ensure UserObj class can re-hydrate
+            const userData = {
+                role: user.role,
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                first_name: user.firstName,
+                last_name: user.lastName,
+                department: user.department,
+                favorite_practices: newFavorites
+            };
+            setUser(userData);
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     const handleVariant = (approval_status, buttonType=false) => {
         switch (approval_status) {
@@ -63,7 +106,7 @@ export default function NabidkaEntity({ entity }) {
 
                 <Container property="grid grid-cols-1">
                     {/* TITULEK */}
-                    <Container property="flex inline-block p-1 space-y-1">
+                    <Container property="flex inline-block p-1 space-y-1 items-center">
                         <Headings sizeTag="h5-bold" property="text-black">
                             {entity.title}
                         </Headings>
@@ -79,6 +122,19 @@ export default function NabidkaEntity({ entity }) {
                             </Button>
                         </Container>)
                         }
+
+                        {user.isStudent() && (
+                            <Container property={"justify-end ml-auto"}>
+                                <Button
+                                    icon={isFavorite ? "heart-filled" : "heart"}
+                                    iconColor={isFavorite ? "text-red-500" : "text-gray-400"}
+                                    onClick={handleHeartClick}
+                                    noVariant={true}
+                                    iconSize="20"
+                                    hover={false}
+                                />
+                            </Container>
+                        )}
                         
                     </Container>
 

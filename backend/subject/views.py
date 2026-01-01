@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 # Create your views here.
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -62,7 +62,10 @@ class SubjectViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Get department-specific subjects",
-        description="Returns all subjects belonging to the department(s) associated with the logged-in professor. **Permissions: Authenticated Professor**",
+        description=(
+            "Returns all subjects belonging to the department(s) associated with the logged-in professor. "
+            "**Permissions: Authenticated Professor**"
+        ),
         responses={200: SubjectSerializer(many=True), 400: OpenApiResponse(description="User has no assigned department")},
     )
     @action(detail=False, methods=["get"], url_path="department-subjects")

@@ -123,109 +123,106 @@ export default function PozvankyListPage() {
 		? searchFiltered.filter((n) => selectedCompanies.includes(n.employer_name))
 		: searchFiltered;
 
-	return(
-		<Container property="min-h-screen">
-			<Nav/>
-			<Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-				<BackButton/>
-				<Container property={"flex items-center justify-between mb-6 mt-4"}>
-					<Headings sizeTag={"h3"} property={"mt-2"}>
-						Zaslané pozvánky
-					</Headings>
-				</Container>
-				<Paragraph property={"text-red-500"}>Tato stránka obsahuje pouze dummy data.</Paragraph>
-
-				{/*Filtrace */}
-				{user.isAdmin() && (
-				<Container property={"flex flex-col gap-3 mb-6 mt-4"}>
-					<SearchBar
-						id="search"
-						value={searchQuery}
-						placeholder="Hledat podle projektu, jména, firmy nebo katedry..."
-						onChange={(e) => setSearchQuery(e.target.value)}
-						onClear={() => setSearchQuery("")}
-					/>
-					<Container property={"flex items-center gap-3"}>
-						<DropDown
-							id="company"
-							variant="facultyGreen"
-							placeholder="Vyberte organizaci pro filtrování"
-							value={companySelectValue}
-							onChange={onCompanySelect}
-							options={availableOptions.map((name) => ({ label: name, value: name }))}
-						/>
-						<Container property={"flex items-center flex-wrap gap-2"}>
-							{selectedCompanies.map((name) => (
-								<Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
-									{name}
-								</Button>
-							))}
-						</Container>
-					</Container>
-				</Container>
-			)}
-
-
-				<Container property={"mt-4 rounded-lg"}>
-					{loading ? (
-						<Paragraph>Načítání...</Paragraph>
-					) : data.length === 0 ? (
-						<Paragraph property="text-center text-gray-500 py-8">
-							Zatím nemáte žádné zaslané pozvánky.
-						</Paragraph>
-					) : (
-						user.isAdmin() ? (
-							displayCompanyNames.length === 0 ? (
-								<Paragraph property="text-center text-gray-500 py-8">
-									Žádné výsledky.
-								</Paragraph>
-							) : (
-								<Container property={"space-y-6"}>
-									{displayCompanyNames.map((name) => (
-										<Container id={toId(name)} key={name}>
-											<Headings sizeTag={"h4"}>{`Firma: ${name}`}</Headings>
-											<Container property={"flex flex-wrap gap-4 mt-2"}>
-												{(groupedByEmployer[name] || []).map((entity) => (
-													<PozvankyEntity
-														key={entity.id}
-														entity={entity}
-														onCancel={handleCancelInvitation}
-														onView={handleViewProfile}
-													/>
-												))}
-											</Container>
-										</Container>
-									))}
-								</Container>
-							)
-						) : (
-							<Container property={"grid grid-cols-1 gap-4"}>
-								{filteredData.map((entity) => (
-									<PozvankyEntity
-										key={entity.id}
-										entity={entity}
-										onCancel={handleCancelInvitation}
-										onView={handleViewProfile}
-									/>
-								))}
-							</Container>
-						)
-					)}
-				</Container>
-			</Container>
-
-			{/* Popup pro potvrzení zrušení pozvánky */}
-			{showPopup && (
-				<PopUpCon
-					title="Potvrzení zrušení pozvánky"
-					text={`Opravdu chcete zrušit pozvánku pro ${selectedEntity?.recipient_name} na projekt "${selectedEntity?.project_title}"?`}
-					onSubmit={handleConfirmCancel}
-					onReject={handleClosePopup}
-					onClose={handleClosePopup}
-					onSubmitText="Ano"
-					onRejectText="Ne"
-				/>
-			)}
-		</Container>
-	)
-}
+	    return(
+	        <>
+	            <BackButton/>
+	            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+	                <Headings sizeTag={"h3"} property={"mt-2"}>
+	                    Zaslané pozvánky
+	                </Headings>
+	            </Container>
+	            <Paragraph property={"text-red-500"}>Tato stránka obsahuje pouze dummy data.</Paragraph>
+	
+	            {/*Filtrace */}
+	            {user.isAdmin() && (
+	            <Container property={"flex flex-col gap-3 mb-6 mt-4"}>
+	                <SearchBar
+	                    id="search"
+	                    value={searchQuery}
+	                    placeholder="Hledat podle projektu, jména, firmy nebo katedry..."
+	                    onChange={(e) => setSearchQuery(e.target.value)}
+	                    onClear={() => setSearchQuery("")}
+	                />
+	                <Container property={"flex items-center gap-3"}>
+	                    <DropDown
+	                        id="company"
+	                        variant="facultyGreen"
+	                        placeholder="Vyberte organizaci pro filtrování"
+	                        value={companySelectValue}
+	                        onChange={onCompanySelect}
+	                        options={availableOptions.map((name) => ({ label: name, value: name }))}
+	                    />
+	                    <Container property={"flex items-center flex-wrap gap-2"}>
+	                        {selectedCompanies.map((name) => (
+	                            <Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
+	                                {name}
+	                            </Button>
+	                        ))}
+	                    </Container>
+	                </Container>
+	            </Container>
+	        )}
+	
+	
+	            <Container property={"mt-4 rounded-lg"}>
+	                {loading ? (
+	                    <Paragraph>Načítání...</Paragraph>
+	                ) : data.length === 0 ? (
+	                    <Paragraph property="text-center text-gray-500 py-8">
+	                        Zatím nemáte žádné zaslané pozvánky.
+	                    </Paragraph>
+	                ) : (
+	                    user.isAdmin() ? (
+	                        displayCompanyNames.length === 0 ? (
+	                            <Paragraph property="text-center text-gray-500 py-8">
+	                                Žádné výsledky.
+	                            </Paragraph>
+	                        ) : (
+	                            <Container property={"space-y-6"}>
+	                                {displayCompanyNames.map((name) => (
+	                                    <Container id={toId(name)} key={name}>
+	                                        <Headings sizeTag={"h4"}>{`Firma: ${name}`}</Headings>
+	                                        <Container property={"flex flex-wrap gap-4 mt-2"}>
+	                                            {(groupedByEmployer[name] || []).map((entity) => (
+	                                                <PozvankyEntity
+	                                                    key={entity.id}
+	                                                    entity={entity}
+	                                                    onCancel={handleCancelInvitation}
+	                                                    onView={handleViewProfile}
+	                                                />
+	                                            ))}
+	                                        </Container>
+	                                    </Container>
+	                                ))}
+	                            </Container>
+	                        )
+	                    ) : (
+	                        <Container property={"grid grid-cols-1 gap-4"}>
+	                            {filteredData.map((entity) => (
+	                                <PozvankyEntity
+	                                    key={entity.id}
+	                                    entity={entity}
+	                                    onCancel={handleCancelInvitation}
+	                                    onView={handleViewProfile}
+	                                />
+	                            ))}
+	                        </Container>
+	                    )
+	                )}
+	            </Container>
+	
+	            {/* Popup pro potvrzení zrušení pozvánky */}
+	            {showPopup && (
+	                <PopUpCon
+	                    title="Potvrzení zrušení pozvánky"
+	                    text={`Opravdu chcete zrušit pozvánku pro ${selectedEntity?.recipient_name} na projekt "${selectedEntity?.project_title}"?`}
+	                    onSubmit={handleConfirmCancel}
+	                    onReject={handleClosePopup}
+	                    onClose={handleClosePopup}
+	                    onSubmitText="Ano"
+	                    onRejectText="Ne"
+	                />
+	            )}
+	        </>
+	    )
+	}

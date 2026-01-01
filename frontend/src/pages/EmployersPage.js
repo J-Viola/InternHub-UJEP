@@ -72,55 +72,52 @@ export default function EmployersPage() {
     };
 
     return (
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                <BackButton/>
-                
-                <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                    <Headings sizeTag={"h3"} property={"mt-2"}>
-                        Správa zaměstnavatelů
-                    </Headings>
-                </Container>
+        <>
+            <BackButton/>
+            
+            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                <Headings sizeTag={"h3"} property={"mt-2"}>
+                    Správa zaměstnavatelů
+                </Headings>
+            </Container>
 
-                <Container>
-                    <Button 
-                        onClick={handleCreateEmployer}
-                        icon={"plus"}
-                    >
-                        Přidat zaměstnavatele
-                    </Button>
-                </Container>
+            <Container>
+                <Button 
+                    onClick={handleCreateEmployer}
+                    icon={"plus"}
+                >
+                    Přidat zaměstnavatele
+                </Button>
+            </Container>
 
-                <Container property={"mt-4 rounded-lg"}>
-                    {loading ? (
-                        <Paragraph>Načítání...</Paragraph>
-                    ) : employers.length === 0 ? (
-                        <Paragraph property="text-center text-gray-500 py-8">
-                            Zatím nejsou žádní zaměstnavatelé k zobrazení.
-                        </Paragraph>
-                    ) : (
-                        <Container property={"grid grid-cols-1 gap-4"}>
-                            {employers.map(employer => (
-                                <EmployerEntity
-                                    key={employer.employer_id}
-                                    entity={employer}
-                                    onClick={() => handleEditEmployer(employer)}
-                                    buttons={[
-                                        {
-                                            icon: "edit",
-                                            btnfunction: () => handleEditEmployer(employer)
-                                        },
-                                        {
-                                            icon: "cross",
-                                            btnfunction: () => handleDeleteClick(employer)
-                                        }
-                                    ]}
-                                />
-                            ))}
-                        </Container>
-                    )}
-                </Container>
+            <Container property={"mt-4 rounded-lg"}>
+                {loading ? (
+                    <Paragraph>Načítání...</Paragraph>
+                ) : employers.length === 0 ? (
+                    <Paragraph property="text-center text-gray-500 py-8">
+                        Zatím nejsou žádní zaměstnavatelé k zobrazení.
+                    </Paragraph>
+                ) : (
+                    <Container property={"grid grid-cols-1 gap-4"}>
+                        {employers.map(employer => (
+                            <EmployerEntity
+                                key={employer.employer_id}
+                                entity={employer}
+                                onClick={() => handleEditEmployer(employer)}
+                                buttons={[
+                                    {
+                                        icon: "edit",
+                                        btnfunction: () => handleEditEmployer(employer)
+                                    },
+                                    {
+                                        icon: "cross",
+                                        btnfunction: () => handleDeleteClick(employer)
+                                    }
+                                ]}
+                            />
+                        ))}
+                    </Container>
+                )}
             </Container>
 
             {/* Popup pro potvrzení smazání */}
@@ -135,6 +132,6 @@ export default function EmployersPage() {
                     onRejectText="Zrušit"
                 />
             )}
-        </Container>
+        </>
     );
 } 

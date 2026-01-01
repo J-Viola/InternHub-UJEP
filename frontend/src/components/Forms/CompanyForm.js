@@ -16,6 +16,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
     const companyAPI = useCompanyAPI();
 
     const [icoValue, setICOValue] = useState(''); // Local state for ICO input, before it's part of formData
+    const [searchResults, setSearchResults] = useState([]); // Array of found companies
     const [entity, setEntity] = useState(null);
     const [aresFetched, setAresFetched] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -80,6 +81,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
 
     const handleARESCall = async (icoValue) => {
         setLocalErrors({}); // Clear previous local errors
+        setSearchResults([]); // Clear previous results
         if (!icoValue) {
             setLocalErrors(prev => ({ ...prev, ico: "Zadejte IČO" }));
             addMessage("Zadejte IČO", "E");
@@ -90,16 +92,11 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
             setLoading(true);
             const response = await ares.getEntityByICO(icoValue);
             if (response) {
-                setEntity(response);
-                setFormData(prev => ({
-                    ...prev,
-                    companyName: response.obchodniJmeno || '',
-                    address: response.sidlo?.textovaAdresa || '',
-                    ico: icoValue,
-                    dic: response.dic || ''
-                }));
-                setAresFetched(true);
-                addMessage("Údaje byly úspěšně načteny z ARES", "S");
+                // ARES typically returns one specific entity for an ICO
+                setSearchResults([response]);
+                addMessage("Nalezeny údaje v ARES", "S");
+            } else {
+                addMessage("Žádné údaje pro toto IČO nebyly nalezeny", "W");
             }
         } catch (error) {
             setLocalErrors(prev => ({ ...prev, ico: "Chyba při načítání údajů z ARES" }));
@@ -107,6 +104,20 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
         } finally {
             setLoading(false);
         }
+    };
+
+    const selectCompany = (company) => {
+        setEntity(company);
+        setFormData(prev => ({
+            ...prev,
+            companyName: company.obchodniJmeno || '',
+            address: company.sidlo?.textovaAdresa || '',
+            ico: company.ico,
+            dic: company.dic || ''
+        }));
+        setAresFetched(true);
+        setSearchResults([]); // Clear results after selection
+        addMessage("Údaje firmy byly předvyplněny", "S");
     };
 
     const validateForm = () => {
@@ -207,24 +218,50 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     </Headings>
                 </Container>
                 {!isEditing && (
-                    <Container property={"grid gap-2 grid-cols-2 mb-4"}>
-                        <TextField
-                            id={"ico"}
-                            required={true}
-                            label={"Vyplnění údajů pomocí systému ARES"} 
-                            placeholder={"Zadejte IČO firmy"}
-                            value={icoValue}
-                            onChange={(value) => setICOValue(value.ico)} 
-                            property={"w-full"}
-                            error={localErrors.ico || errors.ico}
-                        />
-                        <Button
-                            property={"w-1/3 mt-6 px-4 justify-self-end"} 
-                            onClick={() => handleARESCall(icoValue)}
-                            variant={"blueSmall"}
-                        >
-                            Hledat
-                        </Button>
+                    <Container property={"mb-6"}>
+                        <Container property={"grid gap-2 grid-cols-2 mb-2"}>
+                            <TextField
+                                id={"ico"}
+                                required={true}
+                                label={"Vyplnění údajů pomocí systému ARES"} 
+                                placeholder={"Zadejte IČO firmy"}
+                                value={icoValue}
+                                onChange={(value) => setICOValue(value.ico)} 
+                                property={"w-full"}
+                                error={localErrors.ico || errors.ico}
+                            />
+                            <Button
+                                property={"w-1/3 mt-6 px-4 justify-self-end"} 
+                                onClick={() => handleARESCall(icoValue)}
+                                variant={"blueSmall"}
+                            >
+                                Hledat
+                            </Button>
+                        </Container>
+
+                        {/* Search Results Section */}
+                        {searchResults.length > 0 && (
+                            <Container property="bg-white border border-gray-200 rounded-lg p-4 mt-2 shadow-sm">
+                                <Headings sizeTag="h5" property="mb-2 font-bold text-gray-700">Výsledky vyhledávání</Headings>
+                                {searchResults.map((result, index) => (
+                                    <div key={index} className="flex flex-col md:flex-row justify-between items-center p-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                                        <div className="flex flex-col mb-2 md:mb-0">
+                                            <span className="font-bold text-lg">{result.obchodniJmeno}</span>
+                                            <span className="text-sm text-gray-600">IČO: {result.ico}</span>
+                                            <span className="text-sm text-gray-600">{result.sidlo?.textovaAdresa}</span>
+                                        </div>
+                                        <Button 
+                                            variant="secondary" 
+                                            onClick={() => selectCompany(result)}
+                                            icon="check"
+                                            property="whitespace-nowrap"
+                                        >
+                                            Vybrat
+                                        </Button>
+                                    </div>
+                                ))}
+                            </Container>
+                        )}
                     </Container>
                 )}
 

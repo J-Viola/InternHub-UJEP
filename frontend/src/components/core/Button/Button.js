@@ -3,7 +3,7 @@ import Paragraph from "@components/core/Text/Paragraph";
 import { FiBook, FiEdit, FiSearch, FiFilter, FiPlus, FiEye, FiEyeOff, FiSettings } from "react-icons/fi";
 import { TbUsers } from "react-icons/tb";
 import { RxCross1, RxCheck } from "react-icons/rx";
-import { FaAngleDown, FaAngleUp, FaRegFileAlt, FaLock, FaUser, FaArrowLeft, FaSave, FaDownload, FaUpload, FaCalendarAlt } from "react-icons/fa";
+import { FaAngleDown, FaAngleUp, FaRegFileAlt, FaLock, FaUser, FaArrowLeft, FaSave, FaDownload, FaUpload, FaCalendarAlt, FaHeart, FaRegHeart } from "react-icons/fa";
 import { MdOutlineManageAccounts, MdPersonOutline  } from "react-icons/md";
 
 export default function Button({id, children, text, property, onClick, textSize = "base", hover=true ,pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false }) {
@@ -33,9 +33,9 @@ export default function Button({id, children, text, property, onClick, textSize 
         upload: <FaUpload size={iconSize} className={iconColor} />,
         save: <FaSave  size={iconSize} className={iconColor} />,
         manage: <MdOutlineManageAccounts size={iconSize} className={iconColor} />,
-        doc: <FaRegFileAlt size={"19"} className={iconColor} />
-
-
+        doc: <FaRegFileAlt size={"19"} className={iconColor} />,
+        heart: <FaRegHeart size={iconSize} className={iconColor} />,
+        "heart-filled": <FaHeart size={iconSize} className={iconColor} />,
     }
 
     const baseIconLayout = "inline-flex items-center gap-1"

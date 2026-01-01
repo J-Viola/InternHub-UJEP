@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Container from "@core/Container/Container";
 import TextField from "@core/Form/TextField";
 import TextBox from "@core/Form/TextBox";
@@ -21,16 +21,34 @@ const convertToBase64 = (file) => {
 };
 
 export default function ProfileForm({ formData, handleInputChange, handleSubmit }) {
-
     const handleProfilePicChange = async (file) => {
         if (file) {
             try {
                 const base64 = await convertToBase64(file);
-                handleInputChange('profile_picture', base64);
+                handleInputChange({ profile_picture: base64 });
             } catch (error) {
                 console.error("Error converting file to base64:", error);
             }
         }
+    };
+
+    const handleSkillChange = (index, value) => {
+        const newSkills = [...(formData.skills || [])];
+        newSkills[index] = value;
+        handleInputChange({ skills: newSkills });
+    };
+
+    const handleAddSkillRow = () => {
+        const currentSkills = formData.skills || [];
+        if (currentSkills.length < 5) {
+            handleInputChange({ skills: [...currentSkills, ""] });
+        }
+    };
+
+    const handleRemoveSkill = (index) => {
+        const newSkills = [...(formData.skills || [])];
+        newSkills.splice(index, 1);
+        handleInputChange({ skills: newSkills });
     };
 
     return (
@@ -40,6 +58,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     Údaje profilu
                 </Headings>
             </Container>
+            {/* ... inputs ... */}
             <Container property={"grid gap-2 grid-cols-3"}>
                 <TextField 
                     id={"first_name"}
@@ -47,7 +66,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Jméno"} 
                     placeholder={"Zadejte jméno"}
                     value={formData?.first_name || ''}
-                    onChange={(value) => handleInputChange('first_name', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -56,7 +75,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Příjmení"} 
                     placeholder={"Zadejte příjmení"}
                     value={formData?.last_name || ''}
-                    onChange={(value) => handleInputChange('last_name', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -65,7 +84,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"E-mailová adresa"} 
                     placeholder={"Zadejte e-mailovou adresu"}
                     value={formData?.email || ''}
-                    onChange={(value) => handleInputChange('email', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -74,7 +93,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Telefonní číslo"} 
                     placeholder={"Zadejte telefonní číslo"}
                     value={formData?.phone || ''}
-                    onChange={(value) => handleInputChange('phone', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -83,7 +102,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Titul před jménem"} 
                     placeholder={"např. Ing., Mgr."}
                     value={formData?.title_before || ''}
-                    onChange={(value) => handleInputChange('title_before', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -92,16 +111,16 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Titul za jménem"} 
                     placeholder={"např. Ph.D."}
                     value={formData?.title_after || ''}
-                    onChange={(value) => handleInputChange('title_after', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
                     id={"street"}
                     required={false}
-                    label={"Ulice"} 
+                    label={"Trvalé bydliště (Ulice)"} 
                     placeholder={"Zadejte ulici"}
                     value={formData?.street || ''}
-                    onChange={(value) => handleInputChange('street', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -110,7 +129,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Číslo popisné"} 
                     placeholder={"Zadejte číslo popisné"}
                     value={formData?.street_number || ''}
-                    onChange={(value) => handleInputChange('street_number', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -119,7 +138,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Město"} 
                     placeholder={"Zadejte město"}
                     value={formData?.city || ''}
-                    onChange={(value) => handleInputChange('city', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -128,7 +147,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"PSČ"} 
                     placeholder={"Zadejte PSČ"}
                     value={formData?.zip_code || ''}
-                    onChange={(value) => handleInputChange('zip_code', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -137,7 +156,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Obor"} 
                     placeholder={"Zadejte obor studia"}
                     value={formData?.field_of_study || ''}
-                    onChange={(value) => handleInputChange('field_of_study', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -146,7 +165,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Specializace"} 
                     placeholder={"Zadejte specializaci"}
                     value={formData?.specialization || ''}
-                    onChange={(value) => handleInputChange('specialization', value)}
+                    onChange={handleInputChange}
                 />
                 
                 <TextField 
@@ -155,44 +174,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"Ročník"} 
                     placeholder={"Zadejte ročník"}
                     value={formData?.year_of_study || ''}
-                    onChange={(value) => handleInputChange('year_of_study', value)}
+                    onChange={handleInputChange}
                 />
-                
-                {/*<TextField 
-                    id={"company_name"}
-                    required={false}
-                    label={"Název firmy"} 
-                    placeholder={"Zadejte název firmy"}
-                    value={formData?.employer_profile?.company_name || ''}
-                    onChange={(value) => handleInputChange('company_name', value)}
-                />
-                
-                <TextField 
-                    id={"ico"}
-                    required={false}
-                    label={"IČO"} 
-                    placeholder={"Zadejte IČO"}
-                    value={formData?.employer_profile?.ico || ''}
-                    onChange={(value) => handleInputChange('ico', value)}
-                />
-                
-                <TextField 
-                    id={"address"}
-                    required={false}
-                    label={"Adresa organizace"} 
-                    placeholder={"Zadejte adresu organizace"}
-                    value={formData?.employer_profile?.address || ''}
-                    onChange={(value) => handleInputChange('address', value)}
-                />
-                
-                <TextField 
-                    id={"organization_city"}
-                    required={false}
-                    label={"Město organizace"} 
-                    placeholder={"Zadejte město organizace"}
-                    value={formData?.employer_profile?.city || ''}
-                    onChange={(value) => handleInputChange('organization_city', value)}
-                />*/}
             </Container>
 
             <Container property={"w-full gap-2 mt-2 flex-cols"}>
@@ -202,17 +185,43 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     label={"O mě"}
                     placeholder={"Napište něco o sobě"}
                     value={formData?.additional_info || ''}
-                    onChange={(value) => handleInputChange('additional_info', value)}
+                    onChange={handleInputChange}
                 />
                 
-                <TextBox
-                    id={"skills"}
-                    required={false}
-                    label={"Moje schopnosti"}
-                    placeholder={"Popište svoje znalosti, zkušenosti a dovednosti"}
-                    value={formData?.skills || ''}
-                    onChange={(value) => handleInputChange('skills', value)}
-                />
+                {/* Skills Section - Dynamic Inputs */}
+                <Container property="mt-4">
+                    <Headings sizeTag="h5" property="mb-2 font-bold">Skills (maximálně 5)</Headings>
+                    <div className="flex flex-col gap-2 mb-2">
+                        {formData?.skills?.map((skill, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    className="px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 border-gray-300 w-full max-w-md"
+                                    placeholder={`Dovednost ${index + 1}`}
+                                    value={skill}
+                                    onChange={(e) => handleSkillChange(index, e.target.value)}
+                                />
+                                <Button 
+                                    onClick={() => handleRemoveSkill(index)} 
+                                    icon="cross" 
+                                    noVariant={true} 
+                                    iconColor="text-red-600"
+                                    property="hover:bg-red-100 p-1 rounded"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                    {(!formData?.skills || formData.skills.length < 5) && (
+                        <Button 
+                            onClick={handleAddSkillRow} 
+                            icon="plus" 
+                            variant="blueSmall"
+                            property="w-fit"
+                        >
+                            Přidat dovednost
+                        </Button>
+                    )}
+                </Container>
             </Container>
 
             <Container property={"w-full gap-2 mt-2 flex-cols"}>
@@ -243,12 +252,16 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                     accept={"image/*"}
                     onChange={handleProfilePicChange}
                 />
-                {/*<UploadFile
-                    id={"resume"}
-                    label={"CV/Životopis"}
-                    accept={".pdf,.doc,.docx"}
-                    onChange={(file) => handleInputChange('resume', file)}
-                />*/}
+                
+                {/* Upload CV */}
+                <Container property="mt-4">
+                     <UploadFile
+                        id={"cv_file"}
+                        label={"Nahrát CV/Životopis (PDF)"}
+                        accept={".pdf"}
+                        onChange={(file) => handleInputChange({ cv_file: file })}
+                    />
+                </Container>
             </Container>
 
             <Container property={"flex justify-end mt-4"}>
@@ -260,4 +273,5 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
             </Container>
         </>
     );
-} 
+}
+ 

@@ -140,22 +140,22 @@ class DocumentHelper:
         student_practice.save()
 
 
+def validate_contract_document_type(value):
+    if value and value.document_type != DocumentType.CONTRACT:
+        raise ValidationError("Document must be of type CONTRACT")
+
+
+def validate_feedback_document_type(value):
+    if value and value.document_type != DocumentType.FEEDBACK:
+        raise ValidationError("Document must be of type FEEDBACK")
+
+
+def validate_content_document_type(value):
+    if value and value.document_type != DocumentType.CONTENT:
+        raise ValidationError("Document must be of type CONTENT")
+
+
 class StudentPractice(models.Model):
-    @staticmethod
-    def validate_contract_document_type(value):
-        if value and value.document_type != DocumentType.CONTRACT:
-            raise ValidationError("Document must be of type CONTRACT")
-
-    @staticmethod
-    def validate_feedback_document_type(value):
-        if value and value.document_type != DocumentType.FEEDBACK:
-            raise ValidationError("Document must be of type FEEDBACK")
-
-    @staticmethod
-    def validate_content_document_type(value):
-        if value and value.document_type != DocumentType.CONTENT:
-            raise ValidationError("Document must be of type CONTENT")
-
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         "users.StudentUser",

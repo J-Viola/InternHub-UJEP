@@ -25,7 +25,9 @@ from .serializers import (
 class DepartmentStudentListView(generics.ListAPIView):
     @extend_schema(
         summary="List students in department",
-        description="Returns a list of students belonging to the same department as the logged-in user. **Permissions: Authenticated User**",
+        description=(
+            "Returns a list of students belonging to the same department as the logged-in user. " "**Permissions: Authenticated User**"
+        ),
         tags=["Department"],
     )
     def get(self, request, *args, **kwargs):
@@ -79,7 +81,9 @@ class DepartmentUserRoleDetailView(generics.RetrieveUpdateDestroyAPIView):
 class DepartmentProfessorListView(generics.ListAPIView):
     @extend_schema(
         summary="List professors in department",
-        description="Returns a list of professors belonging to the same department as the logged-in user. **Permissions: Authenticated User**",
+        description=(
+            "Returns a list of professors belonging to the same department as the logged-in user. " "**Permissions: Authenticated User**"
+        ),
         tags=["Department"],
     )
     def get(self, request, *args, **kwargs):

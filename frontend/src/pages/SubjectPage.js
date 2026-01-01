@@ -62,55 +62,52 @@ export default function SubjectPage() {
     };
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                <BackButton/>
-                <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                    <Headings sizeTag={"h3"} property={"mt-2"}>
-                        Předměty {getDepartmentName() && `- ${getDepartmentName()}`}
-                    </Headings>
-                </Container>
-                
-                <Container property={"flex items-center justify-between mb-6"}>
-                    <Button
-                        variant={"primarySmall"}
-                        icon={"plus"}
-                        onClick={handleCreateSubject}
-                        text={"Založit předmět"}
-                    />
-                </Container>
-
-                {/* PŘEDMĚTY */}
-                <Container property={"mt-4"}>
-                    {loading ? (
-                        <Container property="flex justify-center items-center py-8">
-                            <Paragraph>Načítání předmětů...</Paragraph>
-                        </Container>
-                    ) : entities.length === 0 ? (
-                        <Container property="flex justify-center items-center py-8">
-                            <Paragraph>Žádné předměty nebyly nalezeny</Paragraph>
-                        </Container>
-                    ) : (
-                        entities.map((entity) => (
-                            <SubjectEntity
-                                key={entity.subject_id}
-                                entity={entity}
-                                attributes={{
-                                    "Počet hodin": "hours_required"
-                                }}
-                                buttons={[
-                                    {
-                                        icon: "edit",
-                                        btnfunction: () => handleEditSubject(entity.subject_id)
-                                    }
-                                ]}
-                                onClick={() => handleEditSubject(entity.subject_id)}
-                            />
-                        ))
-                    )}
-                </Container>
+        <>
+            <BackButton/>
+            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                <Headings sizeTag={"h3"} property={"mt-2"}>
+                    Předměty {getDepartmentName() && `- ${getDepartmentName()}`}
+                </Headings>
             </Container>
-        </Container>
+            
+            <Container property={"flex items-center justify-between mb-6"}>
+                <Button
+                    variant={"primarySmall"}
+                    icon={"plus"}
+                    onClick={handleCreateSubject}
+                    text={"Založit předmět"}
+                />
+            </Container>
+
+            {/* PŘEDMĚTY */}
+            <Container property={"mt-4"}>
+                {loading ? (
+                    <Container property="flex justify-center items-center py-8">
+                        <Paragraph>Načítání předmětů...</Paragraph>
+                    </Container>
+                ) : entities.length === 0 ? (
+                    <Container property="flex justify-center items-center py-8">
+                        <Paragraph>Žádné předměty nebyly nalezeny</Paragraph>
+                    </Container>
+                ) : (
+                    entities.map((entity) => (
+                        <SubjectEntity
+                            key={entity.subject_id}
+                            entity={entity}
+                            attributes={{
+                                "Počet hodin": "hours_required"
+                            }}
+                            buttons={[
+                                {
+                                    icon: "edit",
+                                    btnfunction: () => handleEditSubject(entity.subject_id)
+                                }
+                            ]}
+                            onClick={() => handleEditSubject(entity.subject_id)}
+                        />
+                    ))
+                )}
+            </Container>
+        </>
     )   
 }

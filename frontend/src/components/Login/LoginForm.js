@@ -76,6 +76,15 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                     property="m-4"
                     onChange={handleAccess}
                 />
+                <Container property="flex justify-end m-4 mt-0">
+                    <Paragraph 
+                        variant="small" 
+                        property="text-blue-600 cursor-pointer hover:underline"
+                        onClick={() => navigate("/reset-password")}
+                    >
+                        Zapomněli jste heslo?
+                    </Paragraph>
+                </Container>
                 </>
                 ):
                 (

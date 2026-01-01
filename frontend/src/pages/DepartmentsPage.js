@@ -76,54 +76,51 @@ export default function DepartmentsPage() {
     };
 
     return (
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                <BackButton/>
-                
-                <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                    <Headings sizeTag={"h3"} property={"mt-2"}>
-                        Správa kateder
-                    </Headings>
-                </Container>
+        <>
+            <BackButton/>
+            
+            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                <Headings sizeTag={"h3"} property={"mt-2"}>
+                    Správa kateder
+                </Headings>
+            </Container>
 
-                <Container>
-                    <Button 
-                        onClick={handleCreateDepartment}
-                        icon={"plus"}
-                    >
-                        Založit katedru
-                    </Button>
-                </Container>
+            <Container>
+                <Button 
+                    onClick={handleCreateDepartment}
+                    icon={"plus"}
+                >
+                    Založit katedru
+                </Button>
+            </Container>
 
-                <Container property={"mt-4 rounded-lg"}>
-                    {loading ? (
-                        <Paragraph>Načítání...</Paragraph>
-                    ) : departments.length === 0 ? (
-                        <Paragraph property="text-center text-gray-500 py-8">
-                            Zatím nejsou žádné katedry k zobrazení.
-                        </Paragraph>
-                    ) : (
-                        <Container property={"grid grid-cols-1 gap-4"}>
-                            {departments.map(department => (
-                                <DepartmentEntity
-                                    key={department.department_id}
-                                    entity={department}
-                                    buttons={[
-                                        {
-                                            icon: "eye",
-                                            btnfunction: () => handleViewDepartment(department)
-                                        },
-                                        {
-                                            icon: "edit",
-                                            btnfunction: () => handleEditDepartment(department)
-                                        }
-                                    ]}
-                                />
-                            ))}
-                        </Container>
-                    )}
-                </Container>
+            <Container property={"mt-4 rounded-lg"}>
+                {loading ? (
+                    <Paragraph>Načítání...</Paragraph>
+                ) : departments.length === 0 ? (
+                    <Paragraph property="text-center text-gray-500 py-8">
+                        Zatím nejsou žádné katedry k zobrazení.
+                    </Paragraph>
+                ) : (
+                    <Container property={"grid grid-cols-1 gap-4"}>
+                        {departments.map(department => (
+                            <DepartmentEntity
+                                key={department.department_id}
+                                entity={department}
+                                buttons={[
+                                    {
+                                        icon: "eye",
+                                        btnfunction: () => handleViewDepartment(department)
+                                    },
+                                    {
+                                        icon: "edit",
+                                        btnfunction: () => handleEditDepartment(department)
+                                    }
+                                ]}
+                            />
+                        ))}
+                    </Container>
+                )}
             </Container>
 
             {/* Popup pro potvrzení smazání */}
@@ -138,6 +135,6 @@ export default function DepartmentsPage() {
                     onRejectText="Zrušit"
                 />
             )}
-        </Container>
+        </>
     );
 } 

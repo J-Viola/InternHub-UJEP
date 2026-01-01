@@ -167,37 +167,29 @@ export default function UpravitNabidku() {
 
     if (loading) {
         return (
-            <Container property="min-h-screen">
-                <Nav/>
-                <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <BackButton/>
-                    <Container property="bg-gray-50 mt-2 p-4 rounded-lg">
-                        <Container property="text-center py-8">
-                            <Paragraph>Načítání formuláře...</Paragraph>
-                        </Container>
-                    </Container>
+            <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
+                <BackButton/>
+                <Container property="text-center py-8">
+                    <Paragraph>Načítání formuláře...</Paragraph>
                 </Container>
-            </Container>
+            </ContainerForEntity>
         );
     }
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <BackButton/>
-                <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
-                    {user.isDepartmentMg() && ("Editace nabídky nefunguje pro Vaší roli správně..")}
-                    <NabidkaForm
-                        formData={formData}
-                        organizationUsers={organizationUsers}
-                        subjects={subjects}
-                        handleChange={handleChange}
-                        handleSubmit={handleUpdate}
-                        isEdit={true}
-                    />
-                </Container>
+        <>
+            <BackButton/>
+            <Container property={"bg-white mt-2 p-8 rounded-lg shadow-sm"}>
+                {user.isDepartmentMg() && ("Editace nabídky nefunguje pro Vaší roli správně..")}
+                <NabidkaForm
+                    formData={formData}
+                    organizationUsers={organizationUsers}
+                    subjects={subjects}
+                    handleChange={handleChange}
+                    handleSubmit={handleUpdate}
+                    isEdit={true}
+                />
             </Container>
-        </Container>
+        </>
     )
 }

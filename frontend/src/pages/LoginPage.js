@@ -85,12 +85,9 @@ export default function LoginPage() {
     }
 
     return (
-        <>
-        <Nav/>              
-        <Container property="min-h-screen flex items-center justify-center bg-gray-100">
+        <Container property="flex items-center justify-center">
             <LoginForm handleSTAGLogin={initiateSTAGLogin} handleOrganizationLogin={handleOrganizationLogin}/>
         </Container>
-        </>
     );
 }
 

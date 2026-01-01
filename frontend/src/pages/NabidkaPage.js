@@ -29,17 +29,12 @@ export default function NabidkaPage() {
     const [ uniqueSubjects, setSubjects ] = useState([])
 
     const initParamLoad = () => {
-        console.log("initParamLoad called - full url", fullUrl);
         const urlParams = stripUrlParams(fullUrl);
-        console.log("URL params", urlParams);
         
         if (urlParams && Object.keys(urlParams).length > 0) {
-            console.log("Mám params data");
             setFilterValue(urlParams);
-            console.log("FILTER DATA Z PARAMS", urlParams);
             fetchDataWithParams(urlParams);
         } else {
-            console.log("No URL params, setting empty filter");
             setFilterValue({});
             fetchData();
         }
@@ -47,13 +42,10 @@ export default function NabidkaPage() {
 
     const initFilterOptions = async() =>{
         try {
-            console.log("Initializing filter options...");
             const locations = await codelist.getUniqueLocations();
-            console.log("Locations", locations)
             setLocations(locations);
 
             const subjects = await codelist.getUniqueSubjects();
-            console.log("Subjects", subjects)
             setSubjects(subjects);
         } catch (error) {
             console.error("Error initializing filter options:", error);
@@ -63,7 +55,6 @@ export default function NabidkaPage() {
     //fetch s parametry
     const fetchDataWithParams = async (params) => {
         try {
-            console.log("Fetching with URL params:", params);
             const result = await nabidkaAPI.getNabidky(params);
             setData(result);
         } catch (error) {
@@ -74,9 +65,7 @@ export default function NabidkaPage() {
     //fetch s aktuálními filtry
     const fetchData = async () => {
         try {
-            console.log("fetchData called with filters:", filterValue);
             const result = await nabidkaAPI.getNabidky(filterValue);
-            console.log("fetchData result:", result);
             setData(result);
         } catch (error) {
             console.error("Chyba při načítání nabídek:", error);
@@ -88,24 +77,13 @@ export default function NabidkaPage() {
         initFilterOptions();
 
         const pending = sessionStorage.getItem("pendingMessage");
-        console.log("pendingMessage v NabidkaPage:", pending);
         if (pending) {
             const { text, type } = JSON.parse(pending);
-            console.log("Volám addMessage:", text, type);
             addMessage(text, type);
             sessionStorage.removeItem("pendingMessage");
         }
     }, []);
 
-    useEffect(() => {
-        console.log("filter values", filterValue);
-    }, [filterValue]);
-
-    //DEBUG
-    useEffect(() => {
-        console.log(data);
-    },[data])
-        
     const handleFilterChange = (e, id, value, directValue = false) => {
         setFilterValue(prev => {
             const newValue = directValue ? value : e.target.value;
@@ -131,30 +109,26 @@ export default function NabidkaPage() {
 
     const handleSearchSubmit = () => {
         const queryString = makeQuery(filterValue);
-        console.log("QueryString", queryString);
         setParams(currentUrl, queryString);
         fetchData(); // api call
     };
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <FilterNabidka 
-                    filterValue={filterValue}
-                    handleFilterChange={handleFilterChange}
-                    onSearchClear={handleSearchClear}
-                    onSearchSubmit={handleSearchSubmit}
-                    locations={uniqueLocations}
-                    subjects={uniqueSubjects}
-                />
-                
-                <Container property="grid grid-cols-1 gap-4 mt-2">
-                    {data && data.map((entity, index) => (
-                        <NabidkaEntity key={entity.practice_id || index} entity={entity}/>
-                    ))}
-                </Container>
+        <>
+            <FilterNabidka 
+                filterValue={filterValue}
+                handleFilterChange={handleFilterChange}
+                onSearchClear={handleSearchClear}
+                onSearchSubmit={handleSearchSubmit}
+                locations={uniqueLocations}
+                subjects={uniqueSubjects}
+            />
+            
+            <Container property="grid grid-cols-1 gap-4 mt-2">
+                {data && data.map((entity, index) => (
+                    <NabidkaEntity key={entity.practice_id || index} entity={entity}/>
+                ))}
             </Container>
-        </Container>
+        </>
     )
 }

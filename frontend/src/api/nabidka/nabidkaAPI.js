@@ -202,6 +202,16 @@ export const useNabidkaAPI = () => {
         }
     };
 
+    const toggleFavorite = async (id) => {
+        try {
+            const response = await api.post(`/practices/${id}/toggle_favorite/`);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při změně oblíbených:', error);
+            throw error;
+        }
+    };
+
     return {
         getNabidky,
         getNabidkaById,
@@ -213,6 +223,7 @@ export const useNabidkaAPI = () => {
         changeStatus,
         calculateEndDate,
         updateNabidka,
-        getAdminPractices
+        getAdminPractices,
+        toggleFavorite
     };
 };

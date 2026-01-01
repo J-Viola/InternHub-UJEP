@@ -2,7 +2,7 @@ from django.http import FileResponse
 from django.utils import timezone  # Import timezone from django.utils
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework import generics, serializers, status
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from rest_framework import permissions
 from api.permissions import IsOrganizationOwner
 from practices.models import Practice
 from student_practices.models import (
@@ -172,7 +171,10 @@ class OrganizationApplicationsView(APIView):
 
     @extend_schema(
         summary="Get pending applications for organization",
-        description="Returns a list of all pending student applications for the practices belonging to the logged-in organization. **Permissions: Organization User**",
+        description=(
+            "Returns a list of all pending student applications for the practices belonging to the logged-in organization. "
+            "**Permissions: Organization User**"
+        ),
         tags=["Student Practices"],
         responses={200: ListStudentPracticeSerializer(many=True)},
     )
@@ -210,7 +212,10 @@ class StudentPracticeStatusUpdateView(APIView):
 
     @extend_schema(
         summary="Update student practice status",
-        description="Updates the approval or progress status of a student practice. **Permissions: Practice Organization Owner, Subject Teacher, or Admin**",
+        description=(
+            "Updates the approval or progress status of a student practice. "
+            "**Permissions: Practice Organization Owner, Subject Teacher, or Admin**"
+        ),
         tags=["Student Practices"],
         request=StudentPracticeStatusUpdateSerializer,
         responses={200: StudentPracticeStatusUpdateSerializer},
@@ -255,7 +260,10 @@ class StudentPracticeUploadDocumentView(APIView):
 
     @extend_schema(
         summary="Upload a document for a student practice",
-        description="Uploads a file and attaches it to the specified StudentPractice record. **Permissions: Student (Owner) or Authorized Personnel**",
+        description=(
+            "Uploads a file and attaches it to the specified StudentPractice record. "
+            "**Permissions: Student (Owner) or Authorized Personnel**"
+        ),
         tags=["Documents"],
         parameters=[
             OpenApiParameter(

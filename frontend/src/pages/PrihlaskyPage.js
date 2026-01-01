@@ -130,107 +130,104 @@ export default function PrihlaskyPage() {
 	const onRemoveCompany = (name) => setSelectedCompanies(selectedCompanies.filter((n) => n !== name));
 	const availableOptions = allCompanyNames.filter((n) => !selectedCompanies.includes(n));
 
-	return(
-	<Container property="min-h-screen">
-		<Nav/>
-		<Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-			<BackButton/>
-			<Container property={"flex items-center justify-between mb-6 mt-4"}>
-				<Headings sizeTag={"h3"} property={"mt-2"}>
-					Nevyřízené přihlášky
-				</Headings>
-			</Container>
-
-			{user.isAdmin() && (
-				<Container property={"flex flex-col gap-3 mb-6 mt-4"}>
-					<SearchBar
-						id="search"
-						value={searchQuery}
-						placeholder="Hledat podle studenta, katedry, firmy nebo názvu praxe..."
-						onChange={(e) => setSearchQuery(e.target.value)}
-						onClear={() => setSearchQuery("")}
-					/>
-					<Container property={"flex items-center gap-3"}>
-						<DropDown
-							id="company"
-							variant="facultyGreen"
-							placeholder="Vyberte organizaci pro filtrování"
-							value={companySelectValue}
-							onChange={onCompanySelect}
-							options={availableOptions.map((name) => ({ label: name, value: name }))}
-						/>
-						<Container property={"flex items-center flex-wrap gap-2"}>
-							{selectedCompanies.map((name) => (
-								<Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
-									{name}
-								</Button>
-							))}
-						</Container>
-					</Container>
-				</Container>
-			)}
-
-			<Container property={"mt-4 rounded-lg"}>
-				{!data ? (
-					<Paragraph>Načítání...</Paragraph>
-				) : user.isAdmin() ? (
-					displayCompanyNames.length === 0 ? (
-						<Paragraph property="text-center text-gray-500 py-8">
-							Žádné výsledky.
-						</Paragraph>
-					) : (
-						<Container property={"space-y-6"}>
-							{displayCompanyNames.map((name) => (
-								<Container id={toId(name)} key={name}>
-									<Headings sizeTag={"h4"}>{name}</Headings>
-									<Container property={"flex flex-wrap gap-4 mt-2"}>
-										{groupedByEmployer[name].map((entity) => (
-											<PrihlaskaEntity
-												onClick={onProfile}
-												key={entity.student_practice_id}
-												entity={entity}
-												onSettings={onSettings}
-												onProfile={onProfile}
-											/>
-										))}
-									</Container>
-								</Container>
-							))}
-						</Container>
-					)
-				) : data.length === 0 ? (
-					<Paragraph property="text-center text-gray-500 py-8">
-						Zatím nemáte žádné data k zobrazení.
-					</Paragraph>
-				) : (
-					<Container property={"grid grid-cols-1 gap-4"}>
-						{searchFiltered.length === 0 ? (
-							<Paragraph property="text-center text-gray-500 py-8">Žádné výsledky.</Paragraph>
-						) : (
-							searchFiltered.map((entity) => (
-								<PrihlaskaEntity
-									onClick={onProfile}
-									key={entity.student_practice_id}
-									entity={entity}
-									onSettings={onSettings}
-									onProfile={onProfile}
-								/>
-							))
-						)}
-					</Container>
-				)}
-			</Container>
-		</Container>
-		{showPopup && selectedEntity && (
-			<PopUpCon
-				onClose={handleClosePopup}
-				title={"Změnit stav přihlášky"}
-				text={`Opravdu si přejete změnit stav přihlášky studenta ${selectedEntity.student_full_name}?`}
-				onSubmit={handleSubmit}
-				onReject={handleReject}
-				variant="gray"
-			/>
-		)}
-	</Container>
-	)
-}
+	    return(
+	        <>
+	            <BackButton/>
+	            <Container property={"flex items-center justify-between mb-6 mt-4"}>
+	                <Headings sizeTag={"h3"} property={"mt-2"}>
+	                    Nevyřízené přihlášky
+	                </Headings>
+	            </Container>
+	
+	            {user.isAdmin() && (
+	                <Container property={"flex flex-col gap-3 mb-6 mt-4"}>
+	                    <SearchBar
+	                        id="search"
+	                        value={searchQuery}
+	                        placeholder="Hledat podle studenta, katedry, firmy nebo názvu praxe..."
+	                        onChange={(e) => setSearchQuery(e.target.value)}
+	                        onClear={() => setSearchQuery("")}
+	                    />
+	                    <Container property={"flex items-center gap-3"}>
+	                        <DropDown
+	                            id="company"
+	                            variant="facultyGreen"
+	                            placeholder="Vyberte organizaci pro filtrování"
+	                            value={companySelectValue}
+	                            onChange={onCompanySelect}
+	                            options={availableOptions.map((name) => ({ label: name, value: name }))}
+	                        />
+	                        <Container property={"flex items-center flex-wrap gap-2"}>
+	                            {selectedCompanies.map((name) => (
+	                                <Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
+	                                    {name}
+	                                </Button>
+	                            ))}
+	                        </Container>
+	                    </Container>
+	                </Container>
+	            )}
+	
+	            <Container property={"mt-4 rounded-lg"}>
+	                {!data ? (
+	                    <Paragraph>Načítání...</Paragraph>
+	                ) : user.isAdmin() ? (
+	                    displayCompanyNames.length === 0 ? (
+	                        <Paragraph property="text-center text-gray-500 py-8">
+	                            Žádné výsledky.
+	                        </Paragraph>
+	                    ) : (
+	                        <Container property={"space-y-6"}>
+	                            {displayCompanyNames.map((name) => (
+	                                <Container id={toId(name)} key={name}>
+	                                    <Headings sizeTag={"h4"}>{name}</Headings>
+	                                    <Container property={"flex flex-wrap gap-4 mt-2"}>
+	                                        {groupedByEmployer[name].map((entity) => (
+	                                            <PrihlaskaEntity
+	                                                onClick={onProfile}
+	                                                key={entity.student_practice_id}
+	                                                entity={entity}
+	                                                onSettings={onSettings}
+	                                                onProfile={onProfile}
+	                                            />
+	                                        ))}
+	                                    </Container>
+	                                </Container>
+	                            ))}
+	                        </Container>
+	                    )
+	                ) : data.length === 0 ? (
+	                    <Paragraph property="text-center text-gray-500 py-8">
+	                        Zatím nemáte žádné data k zobrazení.
+	                    </Paragraph>
+	                ) : (
+	                    <Container property={"grid grid-cols-1 gap-4"}>
+	                        {searchFiltered.length === 0 ? (
+	                            <Paragraph property="text-center text-gray-500 py-8">Žádné výsledky.</Paragraph>
+	                        ) : (
+	                            searchFiltered.map((entity) => (
+	                                <PrihlaskaEntity
+	                                    onClick={onProfile}
+	                                    key={entity.student_practice_id}
+	                                    entity={entity}
+	                                    onSettings={onSettings}
+	                                    onProfile={onProfile}
+	                                />
+	                            ))
+	                        )}
+	                    </Container>
+	                )}
+	            </Container>
+	            {showPopup && selectedEntity && (
+	                <PopUpCon
+	                    onClose={handleClosePopup}
+	                    title={"Změnit stav přihlášky"}
+	                    text={`Opravdu si přejete změnit stav přihlášky studenta ${selectedEntity.student_full_name}?`}
+	                    onSubmit={handleSubmit}
+	                    onReject={handleReject}
+	                    variant="gray"
+	                />
+	            )}
+	        </>
+	    )
+	}

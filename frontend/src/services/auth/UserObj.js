@@ -8,6 +8,7 @@ class User {
         this.email = DUMMY_MODE ? "test@example.com" : "";
         this.isAuthenticated = false;
         this.department = "";
+        this.favorite_practices = [];
     }
 
     setUser(data) {
@@ -26,6 +27,7 @@ class User {
         if (data.first_name) this.firstName = data.first_name;
         if (data.last_name) this.lastName = data.last_name;
         if (data.department) this.department = data.department;
+        if (data.favorite_practices) this.favorite_practices = data.favorite_practices;
     }
 
     // Role checks

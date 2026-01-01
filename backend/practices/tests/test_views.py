@@ -12,6 +12,7 @@ from users.models import (
     ApprovalStatus,
     EmployerProfile,
     OrganizationUser,
+    ProfessorUser,
     StudentUser,
 )
 
@@ -63,6 +64,14 @@ class PracticeViewTests(TestCase):
         # Setup Dept & Subject
         self.dept = Department.objects.create(department_name="IT", department_code="KI")
         self.subject = Subject.objects.create(subject_name="Java", department=self.dept)
+
+        # Setup Professor
+        from users.models import StagRole
+
+        self.prof_role = StagRole.objects.create(role="VY", role_name="Vyučující")
+        self.professor = ProfessorUser.objects.create(
+            email="prof@test.com", first_name="Prof", last_name="User", is_active=True, stag_role=self.prof_role, department=self.dept
+        )
 
         # Setup Practice
         self.practice = Practice.objects.create(
@@ -165,7 +174,8 @@ class PracticeViewTests(TestCase):
         url = f"/api/practices/{self.practice.practice_id}/change-pending/"
         data = {"approval_status": ApprovalStatus.APPROVED.value}
 
-        # Authenticate as someone with permission (ChangePendingView is AllowAny currently but logic might change)
+        # Authenticate as someone with permission
+        self.client.force_authenticate(user=self.professor)
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

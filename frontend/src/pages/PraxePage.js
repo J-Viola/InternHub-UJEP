@@ -112,101 +112,98 @@ export default function PraxePage() {
     }
 
     return(
-        <Container property="min-h-screen">
-            <Nav/>
-            <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-                {user.isOrganizationUser() || user.isAdmin() ? (
-                    // Render pro organizaci
-                    <>
-                        <BackButton/>
-                        <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                            <Headings sizeTag={"h3"} property={"mt-2"}>
-                                Vytvořené stáže
-                            </Headings>
-                        </Container>
+        <>
+            {user.isOrganizationUser() || user.isAdmin() ? (
+                // Render pro organizaci
+                <>
+                    <BackButton/>
+                    <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                        <Headings sizeTag={"h3"} property={"mt-2"}>
+                            Vytvořené stáže
+                        </Headings>
+                    </Container>
 
-                        <Container>
-                            <Button 
-                                onClick={() => navigate('/vytvorit-nabidku')}
-                                icon={"plus"}
-                            >
-                                Založit stáž
-                            </Button>
-                        </Container>
+                    <Container>
+                        <Button 
+                            onClick={() => navigate('/vytvorit-nabidku')}
+                            icon={"plus"}
+                        >
+                            Založit stáž
+                        </Button>
+                    </Container>
 
-                        <Container property={"mt-4 rounded-lg"}>
-                            {!data ? (
-                                <Paragraph>Načítání...</Paragraph>
-                            ) : data.length === 0 ? (
-                                <Paragraph property="text-center text-gray-500 py-8">
-                                    Zatím nemáte žádné vytvořené stáže.
-                                </Paragraph>
-                            ) : (
-                                <Container property={"grid grid-cols-1 gap-4"}>
-                                    {data?.map(entity => (
-                                        <PraxeEntity
-                                            type={"organization_practices"}
-                                            key={`practice-${entity.practice_id}`}
-                                            entity={entity}
-                                            onClick={() => handleClick(entity, "organization_practices")}
-                                            onView={() =>
-                                                entity.approval_status !== 0
-                                                    ? navigate(`/students/${entity.practice_id}?view=true`)
-                                                    : navigate(`/nabidka/${entity.practice_id}`)
-                                            }
-                                        />
-                                    ))}
-                                </Container>
-                            )}
-                        </Container>
-                    </>
-                ) : (
-                    // Render pro studenta
-                    <>  
-                        <BackButton/>
-                        <Container property={"flex flex-col gap-2"}>
-                            {!data ? (
-                                <Paragraph>Načítání...</Paragraph>
-                            ) : (
-                                <>
-                                    <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Podané přihlášky 
-                                        {data.student_practices ? (" " + `(${data.student_practices.length})`) : ""}
-                                    </Headings>
-                                    {/* Student Practices */}
-                                    {data.student_practices?.map(entity => (
-                                        <PraxeEntity
-                                            type={"student_practices"}
-                                            key={`practice-${entity.practice_title}-${entity.application_date}`}
-                                            entity={entity}
-                                            onClick={() => handleClick(entity, "student_practices")}
-                                            onView={() => handleView(entity, "student_practices")}
-                                        />
-                                    ))}
-                                    
-                                    <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Pozvánky od firem
-                                        {data.employer_invitations ? (" " + `(${data.employer_invitations.length})`) : ""}
-                                    </Headings>
-                                    {/* Employer Invitations */}
-                                    {data.employer_invitations?.map(entity => (
-                                        <PraxeEntity
-                                            type={"employer_invitations"}
-                                            key={`invitation-${entity.practice_title}-${entity.submission_date}`}
-                                            entity={{
-                                                ...entity,
-                                                application_date: entity.submission_date,
-                                                status: "Pozvánka" // Special status for invitations
-                                            }}
-                                            onClick={() => handleClick(entity, "employer_invitations")}
-                                            onView={() => handleView(entity, "employer_invitations")}
-                                        />
-                                    ))}
-                                </>
-                            )}
-                        </Container>
-                    </>
-                )}
-            </Container>
+                    <Container property={"mt-4 rounded-lg"}>
+                        {!data ? (
+                            <Paragraph>Načítání...</Paragraph>
+                        ) : data.length === 0 ? (
+                            <Paragraph property="text-center text-gray-500 py-8">
+                                Zatím nemáte žádné vytvořené stáže.
+                            </Paragraph>
+                        ) : (
+                            <Container property={"grid grid-cols-1 gap-4"}>
+                                {data?.map(entity => (
+                                    <PraxeEntity
+                                        type={"organization_practices"}
+                                        key={`practice-${entity.practice_id}`}
+                                        entity={entity}
+                                        onClick={() => handleClick(entity, "organization_practices")}
+                                        onView={() =>
+                                            entity.approval_status !== 0
+                                                ? navigate(`/students/${entity.practice_id}?view=true`)
+                                                : navigate(`/nabidka/${entity.practice_id}`)
+                                        }
+                                    />
+                                ))}
+                            </Container>
+                        )}
+                    </Container>
+                </>
+            ) : (
+                // Render pro studenta
+                <>  
+                    <BackButton/>
+                    <Container property={"flex flex-col gap-2"}>
+                        {!data ? (
+                            <Paragraph>Načítání...</Paragraph>
+                        ) : (
+                            <>
+                                <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Podané přihlášky 
+                                    {data.student_practices ? (" " + `(${data.student_practices.length})`) : ""}
+                                </Headings>
+                                {/* Student Practices */}
+                                {data.student_practices?.map(entity => (
+                                    <PraxeEntity
+                                        type={"student_practices"}
+                                        key={`practice-${entity.practice_title}-${entity.application_date}`}
+                                        entity={entity}
+                                        onClick={() => handleClick(entity, "student_practices")}
+                                        onView={() => handleView(entity, "student_practices")}
+                                    />
+                                ))}
+                                
+                                <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Pozvánky od firem
+                                    {data.employer_invitations ? (" " + `(${data.employer_invitations.length})`) : ""}
+                                </Headings>
+                                {/* Employer Invitations */}
+                                {data.employer_invitations?.map(entity => (
+                                    <PraxeEntity
+                                        type={"employer_invitations"}
+                                        key={`invitation-${entity.practice_title}-${entity.submission_date}`}
+                                        entity={{
+                                            ...entity,
+                                            application_date: entity.submission_date,
+                                            status: "Pozvánka" // Special status for invitations
+                                        }}
+                                        onClick={() => handleClick(entity, "employer_invitations")}
+                                        onView={() => handleView(entity, "employer_invitations")}
+                                    />
+                                ))}
+                            </>
+                        )}
+                    </Container>
+                </>
+            )}
             {popUp && renderPopUp()}
-        </Container>
+        </>
     )
 }

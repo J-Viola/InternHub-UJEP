@@ -56,6 +56,30 @@ class PracticeViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), IsOrganizationUser()]
         return [permissions.IsAuthenticated()]
 
+    @extend_schema(
+        summary="Toggle favorite practice",
+        description="Adds or removes the practice from the user's favorites. **Permissions: Authenticated Student**",
+        tags=["Practices"],
+        responses={200: OpenApiResponse(description="Favorite status toggled")},
+    )
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def toggle_favorite(self, request, pk=None):
+        """
+        POST /api/practices/{id}/toggle_favorite/
+        """
+        user = request.user
+        if not hasattr(user, "favorite_practices"):
+            return Response({"detail": "User cannot have favorite practices"}, status=status.HTTP_400_BAD_REQUEST)
+
+        practice = self.get_object()
+
+        if user.favorite_practices.filter(pk=practice.pk).exists():
+            user.favorite_practices.remove(practice)
+            return Response({"detail": "Removed from favorites", "is_favorite": False})
+        else:
+            user.favorite_practices.add(practice)
+            return Response({"detail": "Added to favorites", "is_favorite": True})
+
     @extend_schema(summary="List all active practices")
     def list(self, request, *args, **kwargs):
         # GET /api/practices/
@@ -336,7 +360,10 @@ class PracticeViewSet(viewsets.ModelViewSet):
 class RunningPracticeListView(generics.ListAPIView):
     @extend_schema(
         summary="List running practices for department",
-        description="Returns a list of practices that are currently active and have students, with student statistics. **Permissions: Department Head/Teacher**",
+        description=(
+            "Returns a list of practices that are currently active and have students, with student statistics. "
+            "**Permissions: Department Head/Teacher**"
+        ),
         tags=["Practices"],
     )
     def get(self, request, *args, **kwargs):
@@ -385,7 +412,9 @@ class RunningPracticeListView(generics.ListAPIView):
 class AdminPracticesListView(generics.ListAPIView):
     @extend_schema(
         summary="List all practices (Admin)",
-        description="Returns a list of all practices, divided into approved and pending, with detailed statistics. **Permissions: Admin/Staff**",
+        description=(
+            "Returns a list of all practices, divided into approved and pending, with detailed statistics. " "**Permissions: Admin/Staff**"
+        ),
         tags=["Practices - Admin"],
     )
     def get(self, request, *args, **kwargs):
@@ -431,7 +460,9 @@ class AdminPracticesListView(generics.ListAPIView):
 class PracticesForApprovingListView(generics.ListAPIView):
     @extend_schema(
         summary="List practices waiting for approval",
-        description="Returns a list of practices within the teacher's department that are waiting for approval. **Permissions: STAG Teacher**",
+        description=(
+            "Returns a list of practices within the teacher's department that are waiting for approval. " "**Permissions: STAG Teacher**"
+        ),
         tags=["Practices - Admin"],
     )
     def get(self, request, *args, **kwargs):

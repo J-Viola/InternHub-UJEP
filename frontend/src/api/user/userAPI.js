@@ -159,10 +159,76 @@ export const useUserAPI = () => {
 
     const updateProfile = async (userData) => {
         try {
-            const response = await api.patch('/users/profile/', userData);
+            const formData = new FormData();
+            
+            Object.keys(userData).forEach(key => {
+                const value = userData[key];
+                
+                if (value === null || value === undefined) return;
+
+                if (key === 'employer_profile') return; // Skip nested read-only or complex objects if not needed for update
+
+                // Skip cv_file if it is not a File object (meaning it's likely an existing URL string)
+                if (key === 'cv_file' && !(value instanceof File)) {
+                    return;
+                }
+
+                // Skip profile_picture if it is an existing URL (starts with http or /)
+                // We only want to send it if it's a new Base64 string (starts with data:)
+                if (key === 'profile_picture' && typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'))) {
+                    return;
+                }
+
+                if (key === 'skills' && Array.isArray(value)) {
+                    // Send as JSON string for JSONField in multipart
+                    formData.append(key, JSON.stringify(value));
+                } else if (value instanceof File) {
+                    formData.append(key, value);
+                } else if (typeof value === 'object' && !Array.isArray(value)) {
+                     formData.append(key, JSON.stringify(value)); 
+                } else {
+                    formData.append(key, value);
+                }
+            });
+
+            const response = await api.patch('/users/profile/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
             return response.data;
         } catch (error) {
             console.error('Chyba při aktualizaci profilu:', error);
+            throw error;
+        }
+    };
+
+    const changePassword = async (passwordData) => {
+        try {
+            const response = await api.post('/users/change-password/', passwordData);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při změně hesla:', error);
+            throw error;
+        }
+    };
+
+    const requestPasswordReset = async (email) => {
+        try {
+            const response = await api.post('/users/password-reset/', { email });
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při žádosti o reset hesla:', error);
+            throw error;
+        }
+    };
+
+    const confirmPasswordReset = async (data) => {
+        try {
+            const response = await api.post('/users/password-reset-confirm/', data);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při potvrzení resetu hesla:', error);
             throw error;
         }
     };
@@ -177,6 +243,9 @@ export const useUserAPI = () => {
         createUser,
         updateUser,
         getUserById,
-        updateProfile
+        updateProfile,
+        changePassword,
+        requestPasswordReset,
+        confirmPasswordReset
     };
 };
