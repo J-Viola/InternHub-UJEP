@@ -15,7 +15,6 @@ app_name = "practices"
 router = routers.DefaultRouter()
 router.register(r"", PracticeViewSet, basename="practices")
 urlpatterns = [
-    path("", include(router.urls)),
     path(
         "running-practices/",
         RunningPracticeListView.as_view(),
@@ -29,4 +28,5 @@ urlpatterns = [
     path("<int:id>/change-pending/", ChangePendingView.as_view(), name="change-pending"),
     path("get-end-date/", GetEndDateView.as_view(), name="change-pending"),
     path("admin-practices/", AdminPracticesListView.as_view(), name="admin-practices"),
+    path("", include(router.urls)),
 ]

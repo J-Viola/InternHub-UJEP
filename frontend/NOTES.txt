@@ -1,10 +1,12 @@
-VYTVOŘIT NABÍDKU - do formuláře přidat do dropdown na úvazek - 0.5/1 
-    - dopočet do konce praxe podle pracovního kalendáře (najít API) => hodit do datepickeru, který bude locked pro usera. Výstu API dosadím do formulářových hodnot
+# Status k 1.1.2026
 
-STUDENT PRACTICES - spojovačka pro studenta s praxé - přihlášky - HOTOVO
+[x] VYTVOŘIT NABÍDKU - do formuláře přidat do dropdown na úvazek - 0.5/1 (Hotovo: Dropdown v NabidkaForm.js existuje)
+    - dopočet do konce praxe podle pracovního kalendáře (Hotovo: API endpoint /practices/get-end-date/ a frontend logika v VytvoritNabidku.js)
 
-API -> podle access tokenu mi vrátí veškeré podané přihlášky a případné pozvánky od firem
+[x] STUDENT PRACTICES - spojovačka pro studenta s praxé - přihlášky (Hotovo)
 
-SCHVALOVACÍ KOLEČKO - practice má pending, stav mění škola
+[x] API -> podle access tokenu mi vrátí veškeré podané přihlášky a případné pozvánky od firem (Hotovo: Endpoint /practices/get_practice_user_relations/ a stránka /moje-prihlasky)
 
-PŘÍZNAK PRO GET NABÍDKY PODLE ID - potřebuji znát vztah mezi přihlášeným uživatelem a příslušnou nabídkou kvůli UI
+[x] SCHVALOVACÍ KOLEČKO - practice má pending, stav mění škola (Hotovo: Backend views existují)
+
+[x] PŘÍZNAK PRO GET NABÍDKY PODLE ID - potřebuji znát vztah mezi přihlášeným uživatelem a příslušnou nabídkou kvůli UI (Hotovo: PracticeSerializer vrací student_practice_status)

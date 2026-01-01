@@ -298,6 +298,15 @@ export default function ProfilPage() {
 
                     {/* EDIT PROFILE BUTTON */}
                     <Container property="flex items-center justify-end gap-2">
+                        {!id && userData.user_type === 'student' && (
+                            <Button 
+                                onClick={() => navigate(`/moje-prihlasky`)} 
+                                icon={"list"}
+                                variant="secondary"
+                            >
+                                Moje přihlášky
+                            </Button>
+                        )}
                         {!id && userData.user_type !== 'student' && userData.user_type !== 'professor' && (
                             <Button 
                                 onClick={() => navigate(`/change-password`)} 

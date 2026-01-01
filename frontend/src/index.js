@@ -33,6 +33,7 @@ import ChangePasswordPage from '@pages/ChangePasswordPage';
 import PasswordResetRequestPage from '@pages/PasswordResetRequestPage';
 import PasswordResetConfirmPage from '@pages/PasswordResetConfirmPage';
 import MainLayout from '@components/Layout/MainLayout';
+import StudentApplicationsPage from '@pages/StudentApplicationsPage';
 
 const AppRoutes = () => {
   const { isInitializing } = useAuth();
@@ -72,6 +73,7 @@ const AppRoutes = () => {
         <Route path="/pozvanky-list" element={<PozvankyListPage/>} />
         <Route path="/departments" element={<DepartmentsPage/>} />
         <Route path="/companies" element={<CompaniesPage/>} />
+        <Route path="/moje-prihlasky" element={<StudentApplicationsPage/>} />
       </Route>
     </Routes>
   );
