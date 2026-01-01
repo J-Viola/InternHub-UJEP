@@ -59,12 +59,17 @@ class HasDocumentAccess(permissions.BasePermission):
 
             subject = sp.practice.subject
             user_subjects = subject.user_subjects
-            is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
+            is_professor_for_subject = user_subjects.filter(
+                user=user, role=UserSubjectType.Professor
+            ).exists()
             if is_professor_for_subject:
                 return True
 
             # Check if professor is head of the department
-            if user.department_role == DepartmentRole.HEAD and user.department == subject.department:
+            if (
+                user.department_role == DepartmentRole.HEAD
+                and user.department == subject.department
+            ):
                 return True
 
         elif isinstance(user, OrganizationUser):

@@ -4,6 +4,7 @@ from rest_framework import routers
 from .views import (
     AdminPracticeListView,
     CreateInvitationView,
+    DocumentReviewView,
     EmployerInvitationApprovalView,
     EmployerInvitationViewSet,
     OrganizationApplicationsView,
@@ -73,5 +74,10 @@ urlpatterns = [
         "upload-document/<int:document_id>",
         StudentPracticeUploadDocumentView.as_view(),
         name="student-practice-upload-document",
+    ),
+    path(
+        "review-document/<int:document_id>",
+        DocumentReviewView.as_view(),
+        name="document-review",
     ),
 ]

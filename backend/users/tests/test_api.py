@@ -30,7 +30,9 @@ class CustomTokenObtainPairSerializerTests(TestCase):
 
     @patch("users.serializers.validate_stag_ticket")
     @patch("users.serializers.get_or_create_stag_user")
-    def test_authenticates_with_valid_stag_ticket(self, mock_get_user, mock_validate_ticket):
+    def test_authenticates_with_valid_stag_ticket(
+        self, mock_get_user, mock_validate_ticket
+    ):
         # Mock validate_stag_ticket to return some data
         mock_validate_ticket.return_value = {"some": "data"}
 
@@ -291,7 +293,9 @@ class OrganizationUserListTests(APITestCase):
         self.client = APIClient()
         from users.models import ApprovalStatus, EmployerProfile, OrganizationUser
 
-        self.owner = OrganizationUser.objects.create(email="owner@test.com", is_active=True)
+        self.owner = OrganizationUser.objects.create(
+            email="owner@test.com", is_active=True
+        )
         self.profile = EmployerProfile.objects.create(
             employer_id=self.owner.id,
             company_name="My Corp",
@@ -300,11 +304,15 @@ class OrganizationUserListTests(APITestCase):
         self.owner.employer_profile = self.profile
         self.owner.save()
 
-        self.employee = OrganizationUser.objects.create(email="emp@test.com", is_active=True)
+        self.employee = OrganizationUser.objects.create(
+            email="emp@test.com", is_active=True
+        )
         self.employee.employer_profile = self.profile
         self.employee.save()
 
-        self.other = OrganizationUser.objects.create(email="other@test.com", is_active=True)  # No profile
+        self.other = OrganizationUser.objects.create(
+            email="other@test.com", is_active=True
+        )  # No profile
 
     def test_list_users_in_organization(self):
         self.client.force_authenticate(user=self.owner)

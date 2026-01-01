@@ -85,6 +85,7 @@ function Nav({}) {
     const studentDict = {
         [t('nav.internship_offers')]: "/nabidka",
         [t('nav.my_internships')]: "/praxe",
+        [t('nav.my_applications')]: "/moje-prihlasky",
         [t('nav.profile')]: "/profil",
         [t('nav.logout')]: "/logout",
     };
@@ -116,6 +117,9 @@ function Nav({}) {
     };
 
     const departmentDict = {
+        [t('nav.users')] : {
+            [t('nav.school_users')]: "/users/department_users",
+        },
         [t('nav.students')] : "/students",
         [t('nav.subjects')] : "/subjects",
         [t('nav.internship_management')] : "/sprava-stazi",

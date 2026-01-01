@@ -22,7 +22,9 @@ class EmployerInvitationApprovalSerializer(serializers.Serializer):
 class EmployerInvitationSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source="invitation_id", read_only=True)
     recipient_name = serializers.CharField(source="user.full_name", read_only=True)
-    employer_name = serializers.CharField(source="employer.company_name", read_only=True)
+    employer_name = serializers.CharField(
+        source="employer.company_name", read_only=True
+    )
     department = serializers.SerializerMethodField()
     project_title = serializers.CharField(source="practice.title", read_only=True)
     recipient_id = serializers.IntegerField(source="user.user_id", read_only=True)
@@ -45,7 +47,9 @@ class EmployerInvitationSerializer(serializers.ModelSerializer):
         # Try to get student's department via subjects
         # This is simplified; student might have multiple departments
         if obj.user and hasattr(obj.user, "user_subjects"):
-            subjects = obj.user.user_subjects.filter(role=0).select_related("subject__department")  # Role 0 = Student
+            subjects = obj.user.user_subjects.filter(role=0).select_related(
+                "subject__department"
+            )  # Role 0 = Student
             if subjects.exists():
                 return subjects.first().subject.department.department_name
         return ""
@@ -111,11 +115,15 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
     - cancelled_by_user_info: informace o uživateli, který zrušil (read-only)
     """
 
-    practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
+    practice = serializers.PrimaryKeyRelatedField(
+        queryset=Practice.objects.all(), write_only=True, required=True
+    )
     title = serializers.CharField(source="practice.title", read_only=True)
     logo = serializers.CharField(source="practice.image_base64", read_only=True)
 
-    cancelled_by_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
+    cancelled_by_user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), write_only=True, required=False
+    )
     cancelled_by_user_info = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -155,7 +163,10 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
         """
         practice = data.get("practice")
         user = self.context["request"].user if "request" in self.context else None
-        if user and StudentPractice.objects.filter(practice=practice, user=user).exists():
+        if (
+            user
+            and StudentPractice.objects.filter(practice=practice, user=user).exists()
+        ):
             raise serializers.ValidationError(PracticeMessages.ALREADY_APPLIED)
         hours = data.get("hours_completed", 0)
         if hours < 0:
@@ -191,16 +202,24 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     - hours_completed: počet dokončených hodin
     """
 
-    practice_id = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), required=True)
+    practice_id = serializers.PrimaryKeyRelatedField(
+        queryset=Practice.objects.all(), required=True
+    )
     practice_title = serializers.CharField(source="practice.title", read_only=True)
     title = serializers.CharField(source="practice.title", read_only=True)
-    department_name = serializers.CharField(source="practice.subject.department.department_name", read_only=True)
+    department_name = serializers.CharField(
+        source="practice.subject.department.department_name", read_only=True
+    )
     application_date = FormattedDateField(read_only=True)
     student_full_name = serializers.CharField(source="user.full_name", read_only=True)
     user_id = serializers.IntegerField(source="user.user_id", read_only=True)
     # pro admin list view
-    employer_id = serializers.IntegerField(source="practice.employer.employer_id", read_only=True)
-    employer_name = serializers.CharField(source="practice.employer.company_name", read_only=True)
+    employer_id = serializers.IntegerField(
+        source="practice.employer.employer_id", read_only=True
+    )
+    employer_name = serializers.CharField(
+        source="practice.employer.company_name", read_only=True
+    )
     can_approve = serializers.SerializerMethodField()
 
     class Meta:
@@ -235,7 +254,11 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     def get_can_approve(self, obj):
         from .utils import can_approve_practice
 
-        return can_approve_practice(self.context.get("request").user, obj) if "request" in self.context else False
+        return (
+            can_approve_practice(self.context.get("request").user, obj)
+            if "request" in self.context
+            else False
+        )
 
 
 class StudentPracticeStatusSerializer(serializers.ModelSerializer):
@@ -264,7 +287,9 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
                 "last_name": obj.user.last_name,
                 "full_name": obj.user.full_name,
                 "email": obj.user.email,
-                "os_cislo": (obj.user.os_cislo if hasattr(obj.user, "os_cislo") else None),
+                "os_cislo": (
+                    obj.user.os_cislo if hasattr(obj.user, "os_cislo") else None
+                ),
             }
         return None
 
@@ -286,8 +311,12 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     student_practice_status = serializers.SerializerMethodField()
     title = serializers.CharField(source="practice.title", read_only=True)
     description = serializers.CharField(source="practice.description", read_only=True)
-    responsibilities = serializers.CharField(source="practice.responsibilities", read_only=True)
-    available_positions = serializers.IntegerField(source="practice.available_positions", read_only=True)
+    responsibilities = serializers.CharField(
+        source="practice.responsibilities", read_only=True
+    )
+    available_positions = serializers.IntegerField(
+        source="practice.available_positions", read_only=True
+    )
     start_date = FormattedDateField(source="practice.start_date", read_only=True)
     end_date = FormattedDateField(read_only=True)
     is_active = serializers.BooleanField(source="practice.is_active", read_only=True)
@@ -321,7 +350,11 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     def get_can_approve(self, obj):
         from .utils import can_approve_practice
 
-        return can_approve_practice(self.context.get("request").user, obj) if "request" in self.context else False
+        return (
+            can_approve_practice(self.context.get("request").user, obj)
+            if "request" in self.context
+            else False
+        )
 
     def get_contact_user_info(self, obj):
         if obj.practice.contact_user:
@@ -352,9 +385,30 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     def get_student_practice_documents(self, obj):
         student_practice_documents = []
         if obj.contract_document:
-            student_practice_documents.append({"id": obj.contract_document.document_id, "type": "contract"})
+            student_practice_documents.append(
+                {
+                    "id": obj.contract_document.document_id,
+                    "type": "contract",
+                    "status": obj.contract_document.status,
+                    "review_note": obj.contract_document.review_note,
+                }
+            )
         if obj.content_document:
-            student_practice_documents.append({"id": obj.content_document.document_id, "type": "content"})
+            student_practice_documents.append(
+                {
+                    "id": obj.content_document.document_id,
+                    "type": "content",
+                    "status": obj.content_document.status,
+                    "review_note": obj.content_document.review_note,
+                }
+            )
         if obj.feedback_document:
-            student_practice_documents.append({"id": obj.feedback_document.document_id, "type": "feedback"})
+            student_practice_documents.append(
+                {
+                    "id": obj.feedback_document.document_id,
+                    "type": "feedback",
+                    "status": obj.feedback_document.status,
+                    "review_note": obj.feedback_document.review_note,
+                }
+            )
         return student_practice_documents

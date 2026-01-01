@@ -302,7 +302,14 @@
     "doc_check": "Document Check",
     "check_status": "Document status:",
     "checked": "COMPLETED",
-    "not_checked": "PENDING"
+    "not_checked": "PENDING",
+    "status_pending": "Pending review",
+    "status_approved": "Approved",
+    "status_rejected": "Returned for revision",
+    "note": "Note",
+    "reject_note_prompt": "Enter the reason for returning the document:",
+    "review_success": "Document reviewed successfully",
+    "review_error": "Error reviewing document"
   },
   "applications": {
     "title": "Pending Applications",

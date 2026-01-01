@@ -134,7 +134,9 @@ class IsOrganizationOwnerTests(TestCase):
 class IsStagUserTests(TestCase):
     def setUp(self):
         self.perm = IsStagUser()
-        self.dept = Department.objects.create(department_name="KI", department_code="KI")
+        self.dept = Department.objects.create(
+            department_name="KI", department_code="KI"
+        )
 
     def test_grants_student(self):
         self.assertTrue(self.perm.has_permission(make_request(make_student()), None))
@@ -159,17 +161,23 @@ class IsStagUserTests(TestCase):
 class IsStagStudentTests(TestCase):
     def setUp(self):
         self.perm = IsStagStudent()
-        self.dept = Department.objects.create(department_name="KI2", department_code="KI2")
+        self.dept = Department.objects.create(
+            department_name="KI2", department_code="KI2"
+        )
 
     def test_grants_student(self):
-        self.assertTrue(self.perm.has_permission(make_request(make_student("s3@test.com")), None))
+        self.assertTrue(
+            self.perm.has_permission(make_request(make_student("s3@test.com")), None)
+        )
 
     def test_denies_professor(self):
         prof = make_professor("prof2@test.com", self.dept)
         self.assertFalse(self.perm.has_permission(make_request(prof), None))
 
     def test_denies_org_user(self):
-        self.assertFalse(self.perm.has_permission(make_request(make_org_user("org3@test.com")), None))
+        self.assertFalse(
+            self.perm.has_permission(make_request(make_org_user("org3@test.com")), None)
+        )
 
 
 # ===========================================================================
@@ -180,17 +188,23 @@ class IsStagStudentTests(TestCase):
 class IsStagTeacherTests(TestCase):
     def setUp(self):
         self.perm = IsStagTeacher()
-        self.dept = Department.objects.create(department_name="KI3", department_code="KI3")
+        self.dept = Department.objects.create(
+            department_name="KI3", department_code="KI3"
+        )
 
     def test_grants_professor(self):
         prof = make_professor("prof3@test.com", self.dept)
         self.assertTrue(self.perm.has_permission(make_request(prof), None))
 
     def test_denies_student(self):
-        self.assertFalse(self.perm.has_permission(make_request(make_student("s4@test.com")), None))
+        self.assertFalse(
+            self.perm.has_permission(make_request(make_student("s4@test.com")), None)
+        )
 
     def test_denies_org_user(self):
-        self.assertFalse(self.perm.has_permission(make_request(make_org_user("org4@test.com")), None))
+        self.assertFalse(
+            self.perm.has_permission(make_request(make_org_user("org4@test.com")), None)
+        )
 
 
 # ===========================================================================
@@ -201,7 +215,9 @@ class IsStagTeacherTests(TestCase):
 class IsStagAdminTests(TestCase):
     def setUp(self):
         self.perm = IsStagAdmin()
-        self.dept = Department.objects.create(department_name="KI4", department_code="KI4")
+        self.dept = Department.objects.create(
+            department_name="KI4", department_code="KI4"
+        )
 
     def test_grants_vk_professor(self):
         prof = make_professor("vk@test.com", self.dept, role_str=StagRoleEnum.VK.value)
@@ -212,7 +228,9 @@ class IsStagAdminTests(TestCase):
         self.assertFalse(self.perm.has_permission(make_request(prof), None))
 
     def test_denies_student(self):
-        self.assertFalse(self.perm.has_permission(make_request(make_student("s5@test.com")), None))
+        self.assertFalse(
+            self.perm.has_permission(make_request(make_student("s5@test.com")), None)
+        )
 
     def test_denies_anonymous(self):
         self.assertFalse(self.perm.has_permission(make_request(AnonymousUser()), None))
@@ -275,8 +293,12 @@ class HasRolePermissionTests(TestCase):
 class CanViewStudentProfileTests(TestCase):
     def setUp(self):
         self.perm = CanViewStudentProfile()
-        self.dept = Department.objects.create(department_name="KI5", department_code="KI5")
-        self.other_dept = Department.objects.create(department_name="KM5", department_code="KM5")
+        self.dept = Department.objects.create(
+            department_name="KI5", department_code="KI5"
+        )
+        self.other_dept = Department.objects.create(
+            department_name="KM5", department_code="KM5"
+        )
 
         self.student = make_student("target@test.com")
 
@@ -291,7 +313,9 @@ class CanViewStudentProfileTests(TestCase):
         self.prof_same = make_professor("ps@test.com", self.dept)
         self.prof_diff = make_professor("pd@test.com", self.other_dept, role_str="vy2")
 
-        self.subject = Subject.objects.create(subject_code="KI001", department=self.dept)
+        self.subject = Subject.objects.create(
+            subject_code="KI001", department=self.dept
+        )
         UserSubject.objects.create(
             user=self.student,
             subject=self.subject,

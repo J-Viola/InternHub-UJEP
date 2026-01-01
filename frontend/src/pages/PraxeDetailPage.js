@@ -83,6 +83,22 @@ export default function PraxeDetailPage() {
         input.click();
     };
 
+    const handleReview = async (documentId, status) => {
+        // Simple prompt for note if rejecting, or just approve
+        let note = "";
+        if (status === 2) { // REJECTED
+            note = prompt(t('docs.reject_note_prompt')) || "";
+        }
+        
+        try {
+            await documentAPI.reviewDocument(documentId, status, note);
+            addMessage(t('docs.review_success'), "S");
+            fetchData();
+        } catch (error) {
+            addMessage(t('docs.review_error'), "E");
+        }
+    };
+
     const handlePopUp = () => {
         setPopUp(!popUp);
     }
@@ -181,7 +197,7 @@ export default function PraxeDetailPage() {
                 (user.isProfessor() && entity.student_practice_status.workflow_status !== "REJECTED") ||
                 !["PENDING", "REJECTED"].includes(entity.student_practice_status.workflow_status)
             ) && (
-                <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload} handleManage={handleDocsPopUp}/>
+                <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload} handleManage={handleDocsPopUp} handleReview={handleReview}/>
             )}
 
 

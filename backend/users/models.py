@@ -44,7 +44,10 @@ class UserManager(PolymorphicManager, BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
-        if extra_fields.get("is_staff") is not True or extra_fields.get("is_superuser") is not True:
+        if (
+            extra_fields.get("is_staff") is not True
+            or extra_fields.get("is_superuser") is not True
+        ):
             raise ValueError(UserMessages.SUPERUSER_INVALID_FLAGS)
         return self.create_user(email, password, **extra_fields)
 
@@ -82,15 +85,21 @@ class StagRole(models.Model):
 
 class EmployerProfile(models.Model):
     employer_id = models.AutoField(primary_key=True)
-    company_name = models.CharField(max_length=100, blank=True, default="", db_index=True)
-    ico = models.CharField(unique=True, max_length=15, blank=True, null=True, db_index=True)
+    company_name = models.CharField(
+        max_length=100, blank=True, default="", db_index=True
+    )
+    ico = models.CharField(
+        unique=True, max_length=15, blank=True, null=True, db_index=True
+    )
     dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
     city = models.TextField(blank=True, default="")
     address = models.TextField(blank=True, default="")
     zip_code = models.IntegerField(blank=True, null=True)
     company_profile = models.TextField(blank=True, default="")
     approval_status = enum.EnumField(ApprovalStatus)
-    logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
+    logo = models.ImageField(
+        upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -167,11 +176,15 @@ class OrganizationUser(User):
 
     @property
     def role(self):
-        return self.organization_role.name if self.organization_role is not None else None
+        return (
+            self.organization_role.name if self.organization_role is not None else None
+        )
 
 
 class StagUser(User):
-    stag_role = models.ForeignKey(StagRole, models.PROTECT, blank=True, null=True, related_name="stag_users")
+    stag_role = models.ForeignKey(
+        StagRole, models.PROTECT, blank=True, null=True, related_name="stag_users"
+    )
 
     class Meta:
         db_table = "stag_users"
@@ -185,7 +198,9 @@ class StagUser(User):
 
 
 class StudentUser(StagUser):
-    profile_picture = models.ImageField(upload_to=settings.STORAGE_URL + "images/profiles", blank=True, null=True)
+    profile_picture = models.ImageField(
+        upload_to=settings.STORAGE_URL + "images/profiles", blank=True, null=True
+    )
     os_cislo = models.CharField(unique=True, max_length=64, blank=True, null=True)
     field_of_study = models.CharField(max_length=100, blank=True, default="")
     year_of_study = models.IntegerField(blank=True, null=True)
@@ -207,8 +222,12 @@ class StudentUser(StagUser):
 
     # New fields
     skills = models.JSONField(default=list, blank=True)
-    cv_file = models.FileField(upload_to=settings.STORAGE_URL + "documents/cvs", blank=True, null=True)
-    favorite_practices = models.ManyToManyField("practices.Practice", related_name="favorited_by", blank=True)
+    cv_file = models.FileField(
+        upload_to=settings.STORAGE_URL + "documents/cvs", blank=True, null=True
+    )
+    favorite_practices = models.ManyToManyField(
+        "practices.Practice", related_name="favorited_by", blank=True
+    )
 
     class Meta:
         db_table = "student_users"
@@ -246,7 +265,9 @@ class ProfessorUser(StagUser):
 
 class ActionLog(models.Model):
     action_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, models.SET_NULL, blank=True, null=True, related_name="action_logs")
+    user = models.ForeignKey(
+        User, models.SET_NULL, blank=True, null=True, related_name="action_logs"
+    )
     action_type = models.CharField(max_length=50, blank=True, default="")
     object_type = models.CharField(max_length=50, blank=True, default="")
     object_id = models.IntegerField(blank=True, null=True)
@@ -268,7 +289,9 @@ class UserSubjectType(enum.Enum):
 
 class UserSubject(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(StagUser, models.CASCADE, blank=True, null=True, related_name="user_subjects")
+    user = models.ForeignKey(
+        StagUser, models.CASCADE, blank=True, null=True, related_name="user_subjects"
+    )
     subject = models.ForeignKey(
         "subject.Subject",
         models.CASCADE,
@@ -277,10 +300,13 @@ class UserSubject(models.Model):
         related_name="user_subjects",
     )
     role = enum.EnumField(UserSubjectType)
+    is_active = models.BooleanField(default=True, db_index=True)
+    last_synced_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "user_subjects"
         unique_together = (("user", "subject"),)
 
     def __str__(self):
-        return f"{self.user} - {self.subject} ({self.role})"
+        status = "Active" if self.is_active else "Inactive"
+        return f"{self.user} - {self.subject} ({self.role}) [{status}]"

@@ -89,7 +89,9 @@ class PasswordResetRequestView(APIView):
         summary="Request password reset email",
         tags=["Auth"],
         request=PasswordResetRequestSerializer,
-        responses={200: OpenApiResponse(description="If email exists, reset link was sent")},
+        responses={
+            200: OpenApiResponse(description="If email exists, reset link was sent")
+        },
     )
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
@@ -124,7 +126,9 @@ class PasswordResetRequestView(APIView):
             pass
 
         return Response(
-            {"message": "Pokud email v systému existuje, byl na něj odeslán odkaz pro obnovu hesla."},
+            {
+                "message": "Pokud email v systému existuje, byl na něj odeslán odkaz pro obnovu hesla."
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -146,9 +150,14 @@ class PasswordResetConfirmView(APIView):
             uid = force_str(urlsafe_base64_decode(serializer.validated_data["uidb64"]))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({"detail": UserMessages.INVALID_LINK}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": UserMessages.INVALID_LINK},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if not default_token_generator.check_token(user, serializer.validated_data["token"]):
+        if not default_token_generator.check_token(
+            user, serializer.validated_data["token"]
+        ):
             return Response(
                 {"detail": UserMessages.INVALID_TOKEN},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -184,11 +193,16 @@ class ChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
 
         if not user.check_password(serializer.validated_data["old_password"]):
-            return Response({"old_password": ["INVALID_PASSWORD"]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"old_password": ["INVALID_PASSWORD"]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
-        return Response({"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK
+        )
 
 
 class LogoutView(generics.GenericAPIView):
@@ -312,10 +326,14 @@ class OrganizationUserListView(generics.ListAPIView):
         else:
             employer_profile = getattr(user, "employer_profile", None)
             if not employer_profile:
-                raise serializers.ValidationError({"detail": UserMessages.ORGANIZATION_MISSING})
+                raise serializers.ValidationError(
+                    {"detail": UserMessages.ORGANIZATION_MISSING}
+                )
 
             org_id = employer_profile.employer_id
-            return OrganizationUser.objects.filter(employer_profile_id=org_id).select_related("employer_profile")
+            return OrganizationUser.objects.filter(
+                employer_profile_id=org_id
+            ).select_related("employer_profile")
 
 
 class StudentProfileView(APIView):
@@ -332,7 +350,10 @@ class StudentProfileView(APIView):
         try:
             student = StudentUser.objects.get(pk=student_id)
         except StudentUser.DoesNotExist:
-            return Response({"detail": UserMessages.STUDENT_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": UserMessages.STUDENT_NOT_FOUND},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         self.check_object_permissions(request, student)
         serializer = StudentProfileSerializer(student, context={"request": request})
@@ -354,7 +375,11 @@ class AllStudentsListView(generics.ListAPIView):
     search_fields = ["first_name", "last_name", "email", "os_cislo"]
 
     def get_queryset(self):
-        return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
+        return (
+            StudentUser.objects.filter(is_active=True)
+            .select_related("stag_role")
+            .prefetch_related("user_subjects__subject__department")
+        )
 
 
 @extend_schema_view(
@@ -432,11 +457,17 @@ class CurrentUserProfileView(APIView):
         user = request.user
 
         if isinstance(user, StudentUser):
-            serializer = StudentUserProfileSerializer(user, data=request.data, partial=True)
+            serializer = StudentUserProfileSerializer(
+                user, data=request.data, partial=True
+            )
         elif isinstance(user, ProfessorUser):
-            serializer = ProfessorUserProfileSerializer(user, data=request.data, partial=True)
+            serializer = ProfessorUserProfileSerializer(
+                user, data=request.data, partial=True
+            )
         elif isinstance(user, OrganizationUser):
-            serializer = OrganizationUserProfileSerializer(user, data=request.data, partial=True)
+            serializer = OrganizationUserProfileSerializer(
+                user, data=request.data, partial=True
+            )
         else:
             serializer = UserProfileSerializer(user, data=request.data, partial=True)
 

@@ -194,7 +194,9 @@ class Command(BaseCommand):
                 # Vybereme náhodný předmět pro praxi
                 subject = random.choice(subjects) if subjects else None
 
-                if not Practice.objects.filter(title=prac_data["title"], employer=profile).exists():
+                if not Practice.objects.filter(
+                    title=prac_data["title"], employer=profile
+                ).exists():
                     Practice.objects.create(
                         employer=profile,
                         subject=subject,

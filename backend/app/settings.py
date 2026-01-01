@@ -27,7 +27,9 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
+    ","
+)
 
 AUTH_USER_MODEL = "users.User"
 
@@ -65,7 +67,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "api.middleware.DocumentPermissionMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -206,7 +207,9 @@ ARES_API_URL = os.environ.get(
 )
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
@@ -344,7 +347,9 @@ LOGGING = {
     "loggers": {
         "django": {
             # V produkci (DEBUG=False) logujeme jen na stdout — file logy se ztrácejí při restartu kontejneru
-            "handlers": ["file_info", "file_error", "console"] if DEBUG else ["console"],
+            "handlers": ["file_info", "file_error", "console"]
+            if DEBUG
+            else ["console"],
             "level": "INFO",
             "propagate": True,
         },

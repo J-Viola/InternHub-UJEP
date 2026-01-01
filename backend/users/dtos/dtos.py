@@ -16,13 +16,19 @@ class Adresa(BaseModel):
     nazevObce: str | None = Field(None, description="Název obce")
     kodCastiObce: int | None = Field(None, description="Kód části obce")
     nazevCastiObce: str | None = Field(None, description="Název části obce")
-    kodMestskeCastiObvodu: int | None = Field(None, description="Kód městské části/obvodu")
-    nazevMestskeCastiObvodu: str | None = Field(None, description="Název městské části/obvodu")
+    kodMestskeCastiObvodu: int | None = Field(
+        None, description="Kód městské části/obvodu"
+    )
+    nazevMestskeCastiObvodu: str | None = Field(
+        None, description="Název městské části/obvodu"
+    )
     kodUlice: int | None = Field(None, description="Kód ulice")
     nazevUlice: str | None = Field(None, description="Název ulice")
     cisloDomovni: int | None = Field(None, description="Číslo domovní")
     cisloOrientacni: int | None = Field(None, description="Číslo orientační")
-    cisloOrientacniPismeno: str | None = Field(None, description="Písmeno čísla orientačního")
+    cisloOrientacniPismeno: str | None = Field(
+        None, description="Písmeno čísla orientačního"
+    )
     kodAdresnihoMista: int | None = Field(None, description="Kód adresního místa")
     psc: int | None = Field(None, description="PSČ")
     textovaAdresa: str | None = Field(None, description="Textová podoba adresy")

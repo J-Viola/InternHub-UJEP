@@ -105,7 +105,11 @@ class UserAdmin(PolymorphicParentModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
-        if obj and type(obj) is User and not any(isinstance(obj, cm.base_model) for cm in self.child_models):
+        if (
+            obj
+            and type(obj) is User
+            and not any(isinstance(obj, cm.base_model) for cm in self.child_models)
+        ):
             return False  # Zakázat editaci čistého User objektu
         return super().has_change_permission(request, obj)
 

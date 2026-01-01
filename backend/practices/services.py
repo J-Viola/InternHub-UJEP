@@ -34,7 +34,9 @@ class PracticeService:
 
     @staticmethod
     def get_user_practices_and_invitations(user):
-        student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
+        student_practices = StudentPractice.objects.filter(user=user).select_related(
+            "practice", "practice__employer"
+        )
 
         sp_data = [
             {
@@ -48,9 +50,9 @@ class PracticeService:
             for sp in student_practices
         ]
 
-        invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related(
-            "practice", "practice__employer"
-        )
+        invitations = EmployerInvitation.objects.filter(
+            user=user, status=EmployerInvitationStatus.PENDING
+        ).select_related("practice", "practice__employer")
 
         inv_data = [
             {
@@ -79,7 +81,9 @@ class PracticeService:
         if StudentPractice.objects.filter(practice_id=practice_id, user=user).exists():
             raise ValueError(PracticeMessages.ALREADY_APPLIED)
 
-        practice = Practice.objects.filter(practice_id=practice_id, is_active=True).first()
+        practice = Practice.objects.filter(
+            practice_id=practice_id, is_active=True
+        ).first()
         if not practice:
             raise ValueError(PracticeMessages.NOT_FOUND)
 
@@ -115,12 +119,17 @@ class PracticeService:
 
         # Ongoing/Approved student practices (actual internships)
         approved_student_practices = StudentPractice.objects.filter(
-            practice__subject__department_id__in=dept_ids, approval_status=ApprovalStatus.APPROVED
-        ).select_related("user", "practice", "practice__subject", "practice__contact_user")
+            practice__subject__department_id__in=dept_ids,
+            approval_status=ApprovalStatus.APPROVED,
+        ).select_related(
+            "user", "practice", "practice__subject", "practice__contact_user"
+        )
 
         # Practice offers waiting for VK approval (the original wheel)
         to_approve_offers = Practice.objects.filter(
-            subject__department_id__in=dept_ids, approval_status=ApprovalStatus.PENDING, is_active=True
+            subject__department_id__in=dept_ids,
+            approval_status=ApprovalStatus.PENDING,
+            is_active=True,
         ).select_related("subject", "contact_user")
 
         return {
@@ -159,7 +168,9 @@ class PracticeService:
             .annotate(
                 approved_count=Count(
                     "student_practices",
-                    filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED),
+                    filter=Q(
+                        student_practices__approval_status=ApprovalStatus.APPROVED
+                    ),
                 ),
                 pending_count=Count(
                     "student_practices",

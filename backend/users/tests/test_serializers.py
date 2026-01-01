@@ -58,7 +58,11 @@ class OrganizationRegisterSerializerTests(TestCase):
     # --- Password matching ------------------------------------------------
 
     def test_password_mismatch_raises_error(self):
-        s = OrganizationRegisterSerializer(data=self._data(ico="12345678", password="StrongPass123!", password2="Different1!"))
+        s = OrganizationRegisterSerializer(
+            data=self._data(
+                ico="12345678", password="StrongPass123!", password2="Different1!"
+            )
+        )
         s.is_valid()
         self.assertIn("password", s.errors)
 

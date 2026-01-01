@@ -48,6 +48,16 @@ export default function FilterNabidka({
                     />
                 </Container>
 
+                <Container property={"w-full mt-6"}>
+                    <SearchBar
+                        id="skills"
+                        value={filterValue?.skills}
+                        placeholder={t('profile.skills')}
+                        onChange={(val) => handleFilterChange(null, "skills", val.target.value, true)}
+                        onClear={() => onSearchClear("skills")}
+                    />
+                </Container>
+
                 <DropDown
                     id="subject"
                     label={`${t('offers.filter.subject')}:`}

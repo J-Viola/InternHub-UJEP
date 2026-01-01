@@ -113,7 +113,9 @@ class EndDateRequestSerializerTests(TestCase):
         self.assertIn("start_date", s.errors)
 
     def test_missing_coefficient_rejected(self):
-        s = EndDateRequestSerializer(data={"start_date": date.today().strftime("%d.%m.%Y")})
+        s = EndDateRequestSerializer(
+            data={"start_date": date.today().strftime("%d.%m.%Y")}
+        )
         self.assertFalse(s.is_valid())
         self.assertIn("coefficient", s.errors)
 

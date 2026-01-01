@@ -33,6 +33,25 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
     ]
 
 
+    const handleSkillChange = (index, value) => {
+        const newSkills = [...(formData.skills || [])];
+        newSkills[index] = value;
+        handleChange({ target: { id: 'skills', value: newSkills } });
+    };
+
+    const handleAddSkillRow = () => {
+        const currentSkills = formData.skills || [];
+        if (currentSkills.length < 5) {
+            handleChange({ target: { id: 'skills', value: [...currentSkills, ""] } });
+        }
+    };
+
+    const handleRemoveSkill = (index) => {
+        const newSkills = [...(formData.skills || [])];
+        newSkills.splice(index, 1);
+        handleChange({ target: { id: 'skills', value: newSkills } });
+    };
+
     return(
             <>
                 <Container>
@@ -136,6 +155,40 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         onChange={handleChange}
                         error={errors.responsibilities}
                     />
+
+                    {/* SKILLS SECTION */}
+                    <Container property="mt-4">
+                        <Headings sizeTag="h5" property="mb-2 font-bold">{t('profile.skills_limit')}</Headings>
+                        <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {formData?.skills?.map((skill, index) => (
+                                <Container key={index} property="flex gap-2 items-center">
+                                    <TextField
+                                        id={`skill-${index}`}
+                                        placeholder={t('profile.skill_placeholder', { index: index + 1 })}
+                                        value={skill}
+                                        onChange={(e) => handleSkillChange(index, e.target.value)}
+                                        property="flex-grow"
+                                    />
+                                    <Button 
+                                        variant="redSmall" 
+                                        onClick={() => handleRemoveSkill(index)}
+                                        property="h-fit"
+                                    >
+                                        ✕
+                                    </Button>
+                                </Container>
+                            ))}
+                        </Container>
+                        {(!formData?.skills || formData.skills.length < 5) && (
+                            <Button 
+                                variant="blueSmall" 
+                                onClick={handleAddSkillRow}
+                                property="mt-2"
+                            >
+                                + {t('profile.add_skill')}
+                            </Button>
+                        )}
+                    </Container>
                 </Container>
 
 

@@ -42,6 +42,7 @@ class Practice(models.Model):
         null=True,
         related_name="practices",
     )
+    skills = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(blank=True, null=True, db_index=True)
     image_base64 = models.TextField(blank=True, default="")
     coefficient = models.FloatField()

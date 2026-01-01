@@ -62,7 +62,9 @@ class PracticeViewTests(TestCase):
         )
 
         # Setup Dept & Subject
-        self.dept = Department.objects.create(department_name="IT", department_code="KI")
+        self.dept = Department.objects.create(
+            department_name="IT", department_code="KI"
+        )
         self.subject = Subject.objects.create(subject_name="Java", department=self.dept)
 
         # Setup Professor
@@ -94,11 +96,13 @@ class PracticeViewTests(TestCase):
 
     def test_list_practices_authenticated(self):
         self.client.force_authenticate(user=self.student)
-        url = "/api/practices/"
+        url = "/api/practices/student/"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data["results"] if "results" in response.data else response.data
+        results = (
+            response.data["results"] if "results" in response.data else response.data
+        )
         self.assertTrue(len(results) > 0)
         self.assertEqual(results[0]["title"], "Java Dev")
 
@@ -114,24 +118,32 @@ class PracticeViewTests(TestCase):
             end_date=date(2024, 6, 1),
         )
 
-        url = "/api/practices/organization_practices/"
+        url = "/api/practices/employer/"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.data[0]
+        # Check results in paginated response
+        results = (
+            response.data["results"] if "results" in response.data else response.data
+        )
+        data = results[0]
 
-        self.assertEqual(data["approved_applications"], 1)
-        self.assertEqual(data["pending_applications"], 0)
+        self.assertEqual(data["approved_count"], 1)
+        self.assertEqual(data["pending_count"], 0)
 
     def test_apply_student_practice_action(self):
         self.client.force_authenticate(user=self.student)
-        url = "/api/practices/apply_student_practice/"
+        url = "/api/practices/student/apply/"
 
         data = {"practice": self.practice.practice_id}
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(StudentPractice.objects.filter(user=self.student, practice=self.practice).exists())
+        self.assertTrue(
+            StudentPractice.objects.filter(
+                user=self.student, practice=self.practice
+            ).exists()
+        )
 
     def test_apply_student_practice_duplicate_fail(self):
         StudentPractice.objects.create(
@@ -144,7 +156,7 @@ class PracticeViewTests(TestCase):
         )
 
         self.client.force_authenticate(user=self.student)
-        url = "/api/practices/apply_student_practice/"
+        url = "/api/practices/student/apply/"
         data = {"practice": self.practice.practice_id}
 
         response = self.client.post(url, data)
@@ -154,7 +166,7 @@ class PracticeViewTests(TestCase):
 
     def test_create_practice_as_organization(self):
         self.client.force_authenticate(user=self.org_user)
-        url = "/api/practices/"
+        url = "/api/practices/employer/"
 
         data = {
             "subject_id": self.subject.subject_id,
@@ -176,7 +188,7 @@ class PracticeViewTests(TestCase):
         self.practice.approval_status = ApprovalStatus.PENDING
         self.practice.save()
 
-        url = f"/api/practices/{self.practice.practice_id}/change-pending/"
+        url = f"/api/practices/staff/{self.practice.practice_id}/approve/"
         data = {"approval_status": ApprovalStatus.APPROVED.value}
 
         # Authenticate as someone with permission
@@ -190,7 +202,7 @@ class PracticeViewTests(TestCase):
     def test_create_practice_invalid_dates(self):
         """Test that end_date cannot be before start_date"""
         self.client.force_authenticate(user=self.org_user)
-        url = "/api/practices/"
+        url = "/api/practices/employer/"
 
         today = date.today()
         yesterday = today - timedelta(days=1)
@@ -211,20 +223,24 @@ class PracticeViewTests(TestCase):
     def test_student_cannot_delete_practice(self):
         """Test that a student cannot delete a practice"""
         self.client.force_authenticate(user=self.student)
-        url = f"/api/practices/{self.practice.practice_id}/"
+        # Use student URL or employer URL? Deletion is defined in EmployerViewSet.
+        # Students shouldn't even have access to that route.
+        url = f"/api/practices/employer/{self.practice.practice_id}/"
 
         response = self.client.delete(url)
+        # Since student is not an OrganizationUser, EmployerPracticeViewSet.get_permissions should fail
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(Practice.objects.filter(pk=self.practice.practice_id).exists())
 
     def test_organization_cannot_edit_other_practice(self):
         """Test that an organization cannot edit practice of another organization"""
         self.client.force_authenticate(user=self.other_org_user)
-        url = f"/api/practices/{self.practice.practice_id}/"
+        url = f"/api/practices/employer/{self.practice.practice_id}/"
 
         data = {"title": "Hacked Title"}
         response = self.client.patch(url, data)
 
+        # Permission class IsOrganizationOwner will catch this and return 403
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.practice.refresh_from_db()
         self.assertNotEqual(self.practice.title, "Hacked Title")

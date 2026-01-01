@@ -6,7 +6,7 @@ export const useDepartmentAPI = () => {
 
     const getNabidky = async (params = {}) => {
         try {
-            const response = await api.get('/practices/search/', { params })
+            const response = await api.get('/practices/student/', { params })
 
             if (response && response.data) {
                 return response.data.results || response.data

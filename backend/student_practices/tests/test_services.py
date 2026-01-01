@@ -19,9 +19,15 @@ from users.models import (
 
 class StudentPracticeServiceTests(TestCase):
     def setUp(self):
-        self.user = StudentUser.objects.create(email="student@test.com", first_name="S", last_name="U")
-        self.other_user = StudentUser.objects.create(email="thief@test.com", first_name="T", last_name="H")
-        self.employer_user = OrganizationUser.objects.create(email="emp@test.com", first_name="E", last_name="O")
+        self.user = StudentUser.objects.create(
+            email="student@test.com", first_name="S", last_name="U"
+        )
+        self.other_user = StudentUser.objects.create(
+            email="thief@test.com", first_name="T", last_name="H"
+        )
+        self.employer_user = OrganizationUser.objects.create(
+            email="emp@test.com", first_name="E", last_name="O"
+        )
         self.employer_profile = EmployerProfile.objects.create(
             employer_id=self.employer_user.id,
             company_name="Test Co",
@@ -48,7 +54,9 @@ class StudentPracticeServiceTests(TestCase):
         # Ensure StudentPractice does not exist initially for this specific test
         StudentPractice.objects.filter(user=self.user, practice=self.practice).delete()
 
-        result = StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "accept")
+        result = StudentPracticeService.process_invitation_approval(
+            self.user, self.invitation.invitation_id, "accept"
+        )
 
         self.invitation.refresh_from_db()
         self.assertEqual(self.invitation.status, EmployerInvitationStatus.ACCEPTED)
@@ -62,15 +70,23 @@ class StudentPracticeServiceTests(TestCase):
         self.assertIn("student_practice_id", result)
 
     def test_process_invitation_approval_reject(self):
-        StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "reject")
+        StudentPracticeService.process_invitation_approval(
+            self.user, self.invitation.invitation_id, "reject"
+        )
 
         self.invitation.refresh_from_db()
         self.assertEqual(self.invitation.status, EmployerInvitationStatus.REJECTED)
-        self.assertFalse(StudentPractice.objects.filter(user=self.user, practice=self.practice).exists())
+        self.assertFalse(
+            StudentPractice.objects.filter(
+                user=self.user, practice=self.practice
+            ).exists()
+        )
 
     def test_process_invitation_approval_invalid_action(self):
         with self.assertRaises(ValueError):
-            StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "invalid")
+            StudentPracticeService.process_invitation_approval(
+                self.user, self.invitation.invitation_id, "invalid"
+            )
 
     def test_process_invitation_not_found(self):
         with self.assertRaises(ValueError) as cm:
@@ -82,11 +98,17 @@ class StudentPracticeServiceTests(TestCase):
         self.invitation.save()
 
         with self.assertRaises(ValueError) as cm:
-            StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "accept")
+            StudentPracticeService.process_invitation_approval(
+                self.user, self.invitation.invitation_id, "accept"
+            )
         self.assertIn("INVITATION_PROCESSED", str(cm.exception))
 
     def test_process_invitation_wrong_user(self):
-        other_user = StudentUser.objects.create(email="other@student.cz", is_active=True)
+        other_user = StudentUser.objects.create(
+            email="other@student.cz", is_active=True
+        )
         with self.assertRaises(ValueError) as cm:
-            StudentPracticeService.process_invitation_approval(other_user, self.invitation.invitation_id, "accept")
+            StudentPracticeService.process_invitation_approval(
+                other_user, self.invitation.invitation_id, "accept"
+            )
         self.assertIn("INVITATION_NOT_FOUND", str(cm.exception))

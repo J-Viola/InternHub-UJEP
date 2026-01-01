@@ -67,7 +67,9 @@ def register_organization(validated_data):
             employer_id=user.id,
             ico=ico,
             dic=dic if dic else (ares_data.dic or ""),
-            company_name=(company_name if company_name else (ares_data.obchodniJmeno or "")),
+            company_name=(
+                company_name if company_name else (ares_data.obchodniJmeno or "")
+            ),
             address=address if address else address_ares,
             zip_code=zip_code_ares,
             approval_status=ApprovalStatus.PENDING,
@@ -223,7 +225,9 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
     ucitIdno = info.get("ucitIdno")
 
     try:
-        stagRole, created = StagRole.objects.get_or_create(role=role, defaults={"role_name": roleName})
+        stagRole, created = StagRole.objects.get_or_create(
+            role=role, defaults={"role_name": roleName}
+        )
         if not created and stagRole.role_name != roleName:
             # If role existed, but its role_name is different from what STAG provided, update it.
             stagRole.role_name = roleName
@@ -243,7 +247,9 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 f"violation and no fallback by role_name found. Error: {e}"
             )
         except Exception as e_inner:
-            raise AuthenticationFailed(f"An unexpected error occurred during STAG role handling: {e_inner}")
+            raise AuthenticationFailed(
+                f"An unexpected error occurred during STAG role handling: {e_inner}"
+            )
 
     user = None
 
@@ -273,7 +279,9 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                         import time
 
                         timestamp = int(time.time())
-                        existing_user.email = f"archived_{timestamp}_{existing_user.email}"
+                        existing_user.email = (
+                            f"archived_{timestamp}_{existing_user.email}"
+                        )
                         existing_user.is_active = False
                         existing_user.save()
                     else:
@@ -328,7 +336,9 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                         import time
 
                         timestamp = int(time.time())
-                        existing_user.email = f"archived_{timestamp}_{existing_user.email}"
+                        existing_user.email = (
+                            f"archived_{timestamp}_{existing_user.email}"
+                        )
                         existing_user.is_active = False
                         existing_user.save()
                     else:
@@ -349,11 +359,19 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 department = Department.objects.get(department_code=katedra)
             except Department.DoesNotExist:
                 if settings.DEMO_LOGIN:
-                    department, _ = Department.objects.get_or_create(department_code=settings.DEMO_DEPARTMENT_CODE)
+                    department, _ = Department.objects.get_or_create(
+                        department_code=settings.DEMO_DEPARTMENT_CODE
+                    )
                 else:
-                    raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
+                    raise AuthenticationFailed(
+                        f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému"
+                    )
 
-            department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
+            department_role = (
+                DepartmentRole.HEAD
+                if stagRole.role == StagRoleEnum.VK
+                else DepartmentRole.TEACHER
+            )
 
             user = ProfessorUser.objects.create(
                 email=email,
@@ -374,6 +392,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
 def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StudentUser):
     """
     Synchronizes STAG subjects with the database for student.
+    Performs a full sync: adds new subjects and removes subjects the student is no longer enrolled in.
     SKIPPED if STAG_MOCK is True to preserve seeded development data.
     """
     if getattr(settings, "STAG_MOCK", False):
@@ -382,15 +401,21 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
     client = get_stag_client()
     items = client.get_student_subjects(stag_ticket, osCislo)
 
+    valid_subject_codes = set()
+
     if settings.DEMO_LOGIN:
-        subject, _ = Subject.objects.get_or_create(subject_code=settings.DEMO_SUBJECT_CODE)
-        UserSubject.objects.get_or_create(
+        subject, _ = Subject.objects.get_or_create(
+            subject_code=settings.DEMO_SUBJECT_CODE
+        )
+        UserSubject.objects.update_or_create(
             subject=subject,
             user=user,
             defaults={
                 "role": UserSubjectType.Student,
+                "is_active": True,
             },
         )
+        valid_subject_codes.add(settings.DEMO_SUBJECT_CODE)
 
     for subj in items:
         zkratka = subj.get("zkratka")
@@ -399,9 +424,12 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
 
         department = None
         if katedra_kod:
-            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+            department, _ = Department.objects.get_or_create(
+                department_code=katedra_kod, defaults={"department_name": katedra_kod}
+            )
 
         if zkratka:
+            valid_subject_codes.add(zkratka)
             subjInDb, created = Subject.objects.get_or_create(
                 subject_code=zkratka,
                 defaults={"subject_name": nazev or zkratka, "department": department},
@@ -412,18 +440,26 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
                 subjInDb.department = department
                 subjInDb.save()
 
-            UserSubject.objects.get_or_create(
+            # Ensure relationship is active
+            UserSubject.objects.update_or_create(
                 subject=subjInDb,
                 user=user,
                 defaults={
                     "role": UserSubjectType.Student,
+                    "is_active": True,
                 },
             )
+
+    # Soft-delete subjects the user is no longer enrolled in
+    UserSubject.objects.filter(
+        user=user, role=UserSubjectType.Student, is_active=True
+    ).exclude(subject__subject_code__in=valid_subject_codes).update(is_active=False)
 
 
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
     """
     Synchronizes STAG roles with the database.
+    Performs a full sync: adds new subjects and removes subjects the teacher no longer teaches.
     SKIPPED if STAG_MOCK is True to preserve seeded development data.
     """
     if getattr(settings, "STAG_MOCK", False):
@@ -432,6 +468,8 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
     client = get_stag_client()
     items = client.get_teacher_subjects(stag_ticket, ucitIdno)
 
+    valid_subject_codes = set()
+
     for subj in items:
         zkratka = subj.get("zkratka")
         nazev = subj.get("nazev")
@@ -439,9 +477,12 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
 
         department = None
         if katedra_kod:
-            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+            department, _ = Department.objects.get_or_create(
+                department_code=katedra_kod, defaults={"department_name": katedra_kod}
+            )
 
         if zkratka:
+            valid_subject_codes.add(zkratka)
             subjInDb, created = Subject.objects.get_or_create(
                 subject_code=zkratka,
                 defaults={"subject_name": nazev or zkratka, "department": department},
@@ -451,8 +492,16 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
                 subjInDb.department = department
                 subjInDb.save()
 
-            UserSubject.objects.get_or_create(
+            UserSubject.objects.update_or_create(
                 subject=subjInDb,
                 user=user,
-                defaults={"role": UserSubjectType.Professor},
+                defaults={
+                    "role": UserSubjectType.Professor,
+                    "is_active": True,
+                },
             )
+
+    # Soft-delete subjects the teacher is no longer assigned to
+    UserSubject.objects.filter(
+        user=user, role=UserSubjectType.Professor, is_active=True
+    ).exclude(subject__subject_code__in=valid_subject_codes).update(is_active=False)

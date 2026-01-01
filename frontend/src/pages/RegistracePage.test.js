@@ -85,7 +85,7 @@ describe('RegistracePage', () => {
         registerBtn.click();
 
         await waitFor(() => {
-            expect(mockAddMessage).toHaveBeenCalledWith('registration.error: Email already exists', 'E');
+            expect(mockAddMessage).toHaveBeenCalledWith('Email already exists', 'E');
         });
         await waitFor(() => {
             expect(screen.getByText('Email already exists')).toBeInTheDocument();

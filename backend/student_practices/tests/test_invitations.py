@@ -82,7 +82,9 @@ class EmployerInvitationTests(APITestCase):
 
     def test_create_invitation_unauthorized_practice(self):
         # Create another org
-        other_org_user = OrganizationUser.objects.create_user(email="otherorg@test.com", password="password123", is_active=True)
+        other_org_user = OrganizationUser.objects.create_user(
+            email="otherorg@test.com", password="password123", is_active=True
+        )
         # Give them their own profile so they are a valid Org Owner for the permission check
         other_profile = EmployerProfile.objects.create(
             employer_id=other_org_user.id,
@@ -123,7 +125,11 @@ class EmployerInvitationTests(APITestCase):
         self.assertEqual(invitation.status, EmployerInvitationStatus.ACCEPTED)
 
         # Verify StudentPractice created
-        self.assertTrue(StudentPractice.objects.filter(user=self.student, practice=self.practice).exists())
+        self.assertTrue(
+            StudentPractice.objects.filter(
+                user=self.student, practice=self.practice
+            ).exists()
+        )
         sp = StudentPractice.objects.get(user=self.student, practice=self.practice)
         # Now it is NOT_STARTED and PENDING until school approves
         self.assertEqual(sp.progress_status, ProgressStatus.NOT_STARTED)
@@ -152,7 +158,11 @@ class EmployerInvitationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         invitation.refresh_from_db()
         self.assertEqual(invitation.status, EmployerInvitationStatus.REJECTED)
-        self.assertFalse(StudentPractice.objects.filter(user=self.student, practice=self.practice).exists())
+        self.assertFalse(
+            StudentPractice.objects.filter(
+                user=self.student, practice=self.practice
+            ).exists()
+        )
 
     def test_manage_invitation_unauthorized_user(self):
         invitation = EmployerInvitation.objects.create(

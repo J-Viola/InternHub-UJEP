@@ -302,7 +302,14 @@
     "doc_check": "Kontrola dokumentů",
     "check_status": "Kontrola dokumentu:",
     "checked": "PROBĚHLA",
-    "not_checked": "NEPROBĚHLA"
+    "not_checked": "NEPROBĚHLA",
+    "status_pending": "Čeká na kontrolu",
+    "status_approved": "Schváleno",
+    "status_rejected": "Vráceno k opravě",
+    "note": "Poznámka",
+    "reject_note_prompt": "Zadejte důvod vrácení dokumentu:",
+    "review_success": "Dokument byl úspěšně zkontrolován",
+    "review_error": "Chyba při kontrole dokumentu"
   },
   "applications": {
     "title": "Nevyřízené přihlášky",

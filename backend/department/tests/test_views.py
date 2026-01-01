@@ -20,12 +20,20 @@ class DepartmentViewTests(TestCase):
         self.client = APIClient()
 
         # Create Department
-        self.department = Department.objects.create(department_name="Computer Science", department_code="KI")
-        self.other_department = Department.objects.create(department_name="Mathematics", department_code="KMA")
+        self.department = Department.objects.create(
+            department_name="Computer Science", department_code="KI"
+        )
+        self.other_department = Department.objects.create(
+            department_name="Mathematics", department_code="KMA"
+        )
 
         # Create StagRole
-        self.stag_role_vy = StagRole.objects.create(role=StagRoleEnum.VY, role_name="Teacher")
-        self.stag_role_st = StagRole.objects.create(role=StagRoleEnum.ST, role_name="Student")
+        self.stag_role_vy = StagRole.objects.create(
+            role=StagRoleEnum.VY, role_name="Teacher"
+        )
+        self.stag_role_st = StagRole.objects.create(
+            role=StagRoleEnum.ST, role_name="Student"
+        )
 
         # Create Professor
         self.professor = ProfessorUser.objects.create(
@@ -51,7 +59,9 @@ class DepartmentViewTests(TestCase):
             stag_role=self.stag_role_st,
             is_active=True,
         )
-        UserSubject.objects.create(user=self.student, subject=self.subject, role=UserSubjectType.Student)
+        UserSubject.objects.create(
+            user=self.student, subject=self.subject, role=UserSubjectType.Student
+        )
 
         # Create Student in OTHER Department
         self.other_subject = Subject.objects.create(
@@ -88,7 +98,9 @@ class DepartmentViewTests(TestCase):
             len(response.data), 1
         )  # Should include pagination if StandardResultsSetPagination is used, but let's check structure
         # If paginated, data is in response.data['results']
-        results = response.data["results"] if "results" in response.data else response.data
+        results = (
+            response.data["results"] if "results" in response.data else response.data
+        )
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["user_id"], self.student.id)
@@ -98,7 +110,9 @@ class DepartmentViewTests(TestCase):
         response = self.client.get(self.url_professors)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data["results"] if "results" in response.data else response.data
+        results = (
+            response.data["results"] if "results" in response.data else response.data
+        )
 
         # Should see themselves (and potentially others if added)
         self.assertTrue(any(p["user_id"] == self.professor.id for p in results))

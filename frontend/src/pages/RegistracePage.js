@@ -31,9 +31,14 @@ export default function RegistracePage() {
             console.error(error);
             if (error.details) {
                 setErrors(error.details);
+            } else if (error.response?.data) {
+                setErrors(error.response.data);
             }
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('registration.check_form') }), "E");
+            const errorCode = error.code;
+            const detail = error.response?.data?.detail;
+            const fallback = detail || t('registration.check_form');
+            const message = errorCode ? t(`api_errors.${errorCode}`, { defaultValue: fallback }) : fallback;
+            addMessage(message, "E");
         }
     }
 

@@ -33,7 +33,9 @@ describe('DocsPanel', () => {
     });
     useUser.mockReturnValue({
       user: {
-        isDepartmentMg: jest.fn().mockReturnValue(false)
+        isDepartmentMg: jest.fn().mockReturnValue(false),
+        isDepartmentUser: jest.fn().mockReturnValue(false),
+        isAdmin: jest.fn().mockReturnValue(false)
       }
     });
   });
@@ -60,7 +62,7 @@ describe('DocsPanel', () => {
       />
     );
 
-    expect(screen.getByText('docs.check_status')).toBeInTheDocument();
+    expect(screen.getByText('docs.check_status:')).toBeInTheDocument();
     expect(screen.getByText('docs.checked')).toBeInTheDocument();
     expect(screen.getByText('docs.title')).toBeInTheDocument();
 
@@ -118,7 +120,9 @@ describe('DocsPanel', () => {
   test('renders manage button for department manager', () => {
     useUser.mockReturnValue({
       user: {
-        isDepartmentMg: jest.fn().mockReturnValue(true)
+        isDepartmentMg: jest.fn().mockReturnValue(true),
+        isDepartmentUser: jest.fn().mockReturnValue(true),
+        isAdmin: jest.fn().mockReturnValue(false)
       }
     });
 

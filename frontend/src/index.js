@@ -70,7 +70,7 @@ const AppRoutes = () => {
         <Route path="/vytvorit-nabidku" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><VytvoritNabidku /></ProtectedRoute>} />
         <Route path="/upravit-nabidku/:id" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><UpravitNabidku /></ProtectedRoute>} />
         <Route path="/logout" element={<ProtectedRoute><LogoutUser /></ProtectedRoute>} />
-        <Route path="/users/:type" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><UserCRUDPage /></ProtectedRoute>} />
+        <Route path="/users/:type" element={<ProtectedRoute allowedRoles={['VK', 'OWNER', 'INSERTER', 'admin']}><UserCRUDPage /></ProtectedRoute>} />
         <Route path="/prihlasky" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PrihlaskyPage /></ProtectedRoute>} />
         <Route path="/sprava-stazi" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'admin']}><SpravaStaziPage /></ProtectedRoute>} />
         <Route path="/formular" element={<ProtectedRoute><FormPage /></ProtectedRoute>} />

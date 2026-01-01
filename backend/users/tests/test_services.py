@@ -37,7 +37,9 @@ class UserServiceTests(TestCase):
         self.assertTrue(EmployerProfile.objects.filter(employer_id=user.id).exists())
         profile = EmployerProfile.objects.get(employer_id=user.id)
         self.assertEqual(profile.ico, "12345678")
-        self.assertEqual(profile.company_name, "Test Corp")  # Should use provided name over ARES if provided
+        self.assertEqual(
+            profile.company_name, "Test Corp"
+        )  # Should use provided name over ARES if provided
         self.assertEqual(profile.approval_status, ApprovalStatus.PENDING)
 
     @patch("users.services.fetch_ares_data")
@@ -50,7 +52,9 @@ class UserServiceTests(TestCase):
     @patch("users.services.fetch_ares_data")
     def test_update_organization_from_ares_success(self, mock_fetch_ares):
         # Setup existing user
-        user = OrganizationUser.objects.create(email="update@test.com", first_name="U", last_name="D")
+        user = OrganizationUser.objects.create(
+            email="update@test.com", first_name="U", last_name="D"
+        )
 
         # Mock ARES
         mock_ares_dto = MagicMock(spec=EkonomickySubjektDTO)

@@ -65,11 +65,21 @@ class DocumentType(enum.Enum):
     FEEDBACK = 2
 
 
+class DocumentStatus(enum.Enum):
+    PENDING = 0
+    APPROVED = 1
+    REJECTED = 2
+
+
 class UploadedDocument(models.Model):
     document_id = models.AutoField(primary_key=True)
-    document = models.FileField(upload_to="documents", blank=True, null=True, db_index=True)
+    document = models.FileField(
+        upload_to="documents", blank=True, null=True, db_index=True
+    )
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = enum.EnumField(DocumentType)
+    status = enum.EnumField(DocumentStatus, default=DocumentStatus.PENDING)
+    review_note = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "uploaded_documents"
@@ -81,11 +91,65 @@ class UploadedDocument(models.Model):
     def student_practice(self):
         for rel in self._meta.get_fields():
             # Check by name to avoid reference issues before class definition
-            if isinstance(rel, OneToOneRel) and rel.related_model.__name__ == "StudentPractice":
+            if (
+                isinstance(rel, OneToOneRel)
+                and rel.related_model.__name__ == "StudentPractice"
+            ):
                 related_object = getattr(self, rel.get_accessor_name(), None)
                 if related_object is not None:
                     return related_object
         return None
+
+    def user_has_permission(self, user):
+        """
+        Centralized permission check for document access.
+        """
+        if not user or not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        sp = self.student_practice
+        if not sp:
+            # If document is not linked to any student practice,
+            # we might need additional logic here for other types of documents.
+            return False
+
+        # Lazy imports to avoid circular dependencies
+        from users.models import (
+            DepartmentRole,
+            OrganizationUser,
+            ProfessorUser,
+            StudentUser,
+            UserSubjectType,
+        )
+
+        # 1. Student access (must be the owner)
+        if isinstance(user, StudentUser):
+            return sp.user_id == user.user_id
+
+        # 2. Professor / Department Head access
+        if isinstance(user, ProfessorUser):
+            subject = sp.practice.subject
+            # Check if professor is assigned to the subject
+            if subject.user_subjects.filter(
+                user=user, role=UserSubjectType.Professor
+            ).exists():
+                return True
+            # Check if professor is head of department
+            if (
+                user.department_role == DepartmentRole.HEAD
+                and user.department_id == subject.department_id
+            ):
+                return True
+
+        # 3. Organization access
+        if isinstance(user, OrganizationUser):
+            # Check if user belongs to the employer organization of the practice
+            return sp.practice.employer_id == user.employer_profile_id
+
+        return False
 
 
 class DocumentHelper:
@@ -124,7 +188,9 @@ class DocumentHelper:
             return None
 
     @staticmethod
-    def create_name_for_document(document_type: DocumentType, user_id: int, file_name: str):
+    def create_name_for_document(
+        document_type: DocumentType, user_id: int, file_name: str
+    ):
         import os
         import uuid
 
@@ -134,10 +200,16 @@ class DocumentHelper:
 
         # Sanitize original file name to prevent path traversal
         safe_file_name = os.path.basename(file_name)
-        ext = safe_file_name.rsplit(".", 1)[-1].lower() if "." in safe_file_name else "docx"
+        ext = (
+            safe_file_name.rsplit(".", 1)[-1].lower()
+            if "." in safe_file_name
+            else "docx"
+        )
 
         unique_suffix = uuid.uuid4().hex[:6]
-        return f"{document_type.name.lower()}_{user_id}_{timestamp}_{unique_suffix}.{ext}"
+        return (
+            f"{document_type.name.lower()}_{user_id}_{timestamp}_{unique_suffix}.{ext}"
+        )
 
     @staticmethod
     def assign_default_documents(student_practice):
@@ -150,11 +222,17 @@ class DocumentHelper:
             user_id = random.randint(0, 99999999)
 
         if not student_practice.contract_document:
-            student_practice.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT, user_id)
+            student_practice.contract_document = DocumentHelper.create_default_document(
+                DocumentType.CONTRACT, user_id
+            )
         if not student_practice.content_document:
-            student_practice.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
+            student_practice.content_document = DocumentHelper.create_default_document(
+                DocumentType.CONTENT, user_id
+            )
         if not student_practice.feedback_document:
-            student_practice.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
+            student_practice.feedback_document = DocumentHelper.create_default_document(
+                DocumentType.FEEDBACK, user_id
+            )
 
         student_practice.save()
 

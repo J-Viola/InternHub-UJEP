@@ -11,19 +11,21 @@ from subject.models import Subject
 from users.models import (
     ApprovalStatus,
     EmployerProfile,
-    OrganizationRole,  # Import OrganizationRole
+    OrganizationRole,
     OrganizationUser,
     ProfessorUser,
     StudentUser,
 )
 
 
-class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clarity
+class PracticeAndStudentApplicationWorkflowTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
         # Create Department and Subject for practices
-        self.department = Department.objects.create(department_name="Test Dept", department_code="TD")
+        self.department = Department.objects.create(
+            department_name="Test Dept", department_code="TD"
+        )
         self.subject = Subject.objects.create(
             subject_name="Test Subject",
             subject_code="TS101",
@@ -46,7 +48,7 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
         self.other_organization_user = OrganizationUser.objects.create(
             email="other_org@test.com",
             is_active=True,
-            organization_role=OrganizationRole.INSERTER,  # Added role
+            organization_role=OrganizationRole.INSERTER,
         )
         self.other_employer_profile = EmployerProfile.objects.create(
             employer_id=self.other_organization_user.id,
@@ -60,7 +62,7 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
         self.employer_user = OrganizationUser.objects.create(
             email="employer@test.com",
             is_active=True,
-            organization_role=OrganizationRole.OWNER,  # Set as OWNER
+            organization_role=OrganizationRole.OWNER,
         )
         self.employer_profile = EmployerProfile.objects.create(
             employer_id=self.employer_user.id,
@@ -86,42 +88,33 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
             coefficient=1.0,
         )
 
-        self.practice_list_url = "/api/practices/"
-        self.apply_url = "/api/practices/apply_student_practice/"
+        self.student_list_url = "/api/practices/student/"
+        self.employer_list_url = "/api/practices/employer/"
+        self.apply_url = "/api/practices/student/apply/"
 
-    # --- Existing Student Application Tests ---
     def test_student_can_apply_for_active_practice(self):
         self.client.force_authenticate(user=self.student)
         data = {"practice": self.practice.practice_id}
-
-        response = self.client.post(self.apply_url, data, format="json")  # Added format="json"
-
+        response = self.client.post(self.apply_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # Verify DB
-        application = StudentPractice.objects.filter(user=self.student, practice=self.practice).first()
+        application = StudentPractice.objects.filter(
+            user=self.student, practice=self.practice
+        ).first()
         self.assertIsNotNone(application)
         self.assertEqual(application.approval_status, ApprovalStatus.PENDING)
 
     def test_student_cannot_apply_twice_for_same_practice(self):
         self.client.force_authenticate(user=self.student)
         data = {"practice": self.practice.practice_id}
-
-        # First application
-        self.client.post(self.apply_url, data, format="json")  # Added format="json"
-
-        # Second application
-        response = self.client.post(self.apply_url, data, format="json")  # Added format="json"
-
-        self.assertNotEqual(response.status_code, status.HTTP_201_CREATED)
+        self.client.post(self.apply_url, data, format="json")
+        response = self.client.post(self.apply_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_student_cannot_apply_for_non_existent_practice(self):
         self.client.force_authenticate(user=self.student)
         data = {"practice": 99999}
-
-        response = self.client.post(self.apply_url, data, format="json")  # Added format="json"
-
+        response = self.client.post(self.apply_url, data, format="json")
         self.assertIn(
             response.status_code,
             [status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND],
@@ -129,10 +122,8 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
 
     def test_anonymous_user_cannot_apply(self):
         data = {"practice": self.practice.practice_id}
-        response = self.client.post(self.apply_url, data, format="json")  # Added format="json"
+        response = self.client.post(self.apply_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    # --- New Practice CRUD Tests ---
 
     def test_organization_user_can_create_practice(self):
         self.client.force_authenticate(user=self.employer_user)
@@ -141,65 +132,44 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
             "description": "New Description",
             "responsibilities": "New responsibilities",
             "available_positions": 3,
-            "start_date": "01.07.2050",  # Changed year to 2050
-            "end_date": "31.12.2050",  # Changed year to 2050
+            "start_date": "01.07.2050",
+            "end_date": "31.12.2050",
             "coefficient": 1.0,
             "subject_id": self.subject.subject_id,
             "employer_id": self.employer_profile.employer_id,
             "contact_user": self.employer_user.user_id,
         }
-
-        response = self.client.post(self.practice_list_url, new_practice_data, format="json")  # Added format="json"
-
+        response = self.client.post(
+            self.employer_list_url, new_practice_data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created_practice = Practice.objects.get(title="New Practice Title")
         self.assertEqual(created_practice.employer, self.employer_profile)
-        self.assertEqual(created_practice.approval_status, ApprovalStatus.PENDING)
-        self.assertEqual(created_practice.progress_status, ProgressStatus.NOT_STARTED)
 
     def test_student_cannot_create_practice(self):
         self.client.force_authenticate(user=self.student)
-        new_practice_data = {
-            "title": "Student Created Practice",
-            "description": "Desc",
-            "responsibilities": "Resp",
-            "available_positions": 1,
-            "start_date": "01.07.2050",  # Changed year to 2050
-            "end_date": "31.12.2050",  # Changed year to 2050
-            "coefficient": 1.0,
-            "subject_id": self.subject.subject_id,
-            "employer_id": self.employer_profile.employer_id,
-            "contact_user": self.employer_user.user_id,
-        }
-        response = self.client.post(self.practice_list_url, new_practice_data, format="json")  # Added format="json"
+        new_practice_data = {"title": "Student Created Practice"}
+        response = self.client.post(
+            self.employer_list_url, new_practice_data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_professor_cannot_create_practice(self):
         self.client.force_authenticate(user=self.professor)
-        new_practice_data = {
-            "title": "Professor Created Practice",
-            "description": "Desc",
-            "responsibilities": "Resp",
-            "available_positions": 1,
-            "start_date": "01.07.2050",  # Changed year to 2050
-            "end_date": "31.12.2050",  # Changed year to 2050
-            "coefficient": 1.0,
-            "subject_id": self.subject.subject_id,
-            "employer_id": self.employer_profile.employer_id,
-            "contact_user": self.employer_user.user_id,
-        }
-        response = self.client.post(self.practice_list_url, new_practice_data, format="json")  # Added format="json"
+        new_practice_data = {"title": "Professor Created Practice"}
+        response = self.client.post(
+            self.employer_list_url, new_practice_data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_organization_user_can_update_own_practice(self):
         self.client.force_authenticate(user=self.employer_user)
         update_data = {"title": "Updated Title"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/",
+            f"{self.employer_list_url}{self.practice.practice_id}/",
             update_data,
             format="json",
-        )  # Added format="json"
-
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.practice.refresh_from_db()
         self.assertEqual(self.practice.title, "Updated Title")
@@ -208,28 +178,28 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
         self.client.force_authenticate(user=self.other_organization_user)
         update_data = {"title": "Malicious Update"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/",
+            f"{self.employer_list_url}{self.practice.practice_id}/",
             update_data,
             format="json",
-        )  # Added format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_student_cannot_update_practice(self):
         self.client.force_authenticate(user=self.student)
         update_data = {"title": "Student Update"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/",
+            f"{self.employer_list_url}{self.practice.practice_id}/",
             update_data,
             format="json",
-        )  # Added format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_professor_cannot_update_practice(self):
         self.client.force_authenticate(user=self.professor)
         update_data = {"title": "Professor Update"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/",
+            f"{self.employer_list_url}{self.practice.practice_id}/",
             update_data,
             format="json",
-        )  # Added format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

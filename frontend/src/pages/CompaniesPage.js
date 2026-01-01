@@ -46,7 +46,7 @@ export default function CompaniesPage() {
     };
 
     const handleViewStages = (company) => {
-        navigate(`/praxe?company=${company.company_id}`);
+        navigate(`/nabidka?company_name=${encodeURIComponent(company.company_name)}`);
     };
 
 

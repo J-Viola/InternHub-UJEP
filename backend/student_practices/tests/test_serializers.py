@@ -19,15 +19,21 @@ from users.models import ApprovalStatus, EmployerProfile, OrganizationUser, Stud
 
 class EmployerInvitationApprovalSerializerTests(TestCase):
     def test_accept_action_is_valid(self):
-        s = EmployerInvitationApprovalSerializer(data={"invitation_id": 1, "action": "accept"})
+        s = EmployerInvitationApprovalSerializer(
+            data={"invitation_id": 1, "action": "accept"}
+        )
         self.assertTrue(s.is_valid(), s.errors)
 
     def test_reject_action_is_valid(self):
-        s = EmployerInvitationApprovalSerializer(data={"invitation_id": 2, "action": "reject"})
+        s = EmployerInvitationApprovalSerializer(
+            data={"invitation_id": 2, "action": "reject"}
+        )
         self.assertTrue(s.is_valid(), s.errors)
 
     def test_invalid_action_rejected(self):
-        s = EmployerInvitationApprovalSerializer(data={"invitation_id": 1, "action": "approve"})
+        s = EmployerInvitationApprovalSerializer(
+            data={"invitation_id": 1, "action": "approve"}
+        )
         self.assertFalse(s.is_valid())
         self.assertIn("action", s.errors)
 
@@ -42,7 +48,9 @@ class EmployerInvitationApprovalSerializerTests(TestCase):
         self.assertIn("action", s.errors)
 
     def test_non_integer_invitation_id_rejected(self):
-        s = EmployerInvitationApprovalSerializer(data={"invitation_id": "abc", "action": "accept"})
+        s = EmployerInvitationApprovalSerializer(
+            data={"invitation_id": "abc", "action": "accept"}
+        )
         self.assertFalse(s.is_valid())
         self.assertIn("invitation_id", s.errors)
 
@@ -54,7 +62,9 @@ class EmployerInvitationApprovalSerializerTests(TestCase):
 
 class CreateInvitationSerializerTests(TestCase):
     def test_valid_data_passes(self):
-        s = CreateInvitationSerializer(data={"practice_id": 1, "student_ids": [10, 20, 30]})
+        s = CreateInvitationSerializer(
+            data={"practice_id": 1, "student_ids": [10, 20, 30]}
+        )
         self.assertTrue(s.is_valid(), s.errors)
 
     def test_empty_student_ids_list_is_valid(self):
@@ -78,7 +88,9 @@ class CreateInvitationSerializerTests(TestCase):
         self.assertIn("practice_id", s.errors)
 
     def test_non_integer_in_student_ids_rejected(self):
-        s = CreateInvitationSerializer(data={"practice_id": 1, "student_ids": [1, "bad", 3]})
+        s = CreateInvitationSerializer(
+            data={"practice_id": 1, "student_ids": [1, "bad", 3]}
+        )
         self.assertFalse(s.is_valid())
         self.assertIn("student_ids", s.errors)
 

@@ -25,9 +25,15 @@ class StudentPracticeViewTests(TestCase):
         self.client = APIClient()
 
         # Users
-        self.student = StudentUser.objects.create(email="student@test.com", first_name="S", last_name="U", is_active=True)
-        self.other_student = StudentUser.objects.create(email="other@test.com", first_name="O", last_name="S", is_active=True)
-        self.employer_user = OrganizationUser.objects.create(email="emp@test.com", first_name="E", last_name="O", is_active=True)
+        self.student = StudentUser.objects.create(
+            email="student@test.com", first_name="S", last_name="U", is_active=True
+        )
+        self.other_student = StudentUser.objects.create(
+            email="other@test.com", first_name="O", last_name="S", is_active=True
+        )
+        self.employer_user = OrganizationUser.objects.create(
+            email="emp@test.com", first_name="E", last_name="O", is_active=True
+        )
         self.employer_profile = EmployerProfile.objects.create(
             employer_id=self.employer_user.id,
             company_name="Test Co",

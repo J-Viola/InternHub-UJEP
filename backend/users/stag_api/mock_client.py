@@ -103,7 +103,11 @@ class MockStagClient(StagDataProvider):
 
     def get_student_subjects(self, ticket: str, os_cislo: str):
         # Return generic subjects for any mock student
-        if ticket.startswith("mock-student:") or ticket == "student-ticket" or ticket == "demo-ticket":
+        if (
+            ticket.startswith("mock-student:")
+            or ticket == "student-ticket"
+            or ticket == "demo-ticket"
+        ):
             return [
                 {
                     "zkratka": "OP1",

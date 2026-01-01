@@ -90,80 +90,85 @@ export default function NabidkaEntity({ entity }) {
     return(
         <ContainerForEntity
             id={entity.practice_id}
-            variant={user.isDepartmentUser() || user.isOrganizationUser() || user.isAdmin() ? handleVariant(entity.approval_status) : "gray"}
+            variant="white"
             onClick={handleClick}
-            property="hover:shadow-lg transition-shadow duration-200"
+            property="p-6 mt-4 border border-black rounded-[10px] shadow-md hover:shadow-lg transition-all duration-200 relative"
         >
-            <Container property="grid grid-cols-[auto,1fr] gap-4">
-                {/* OBRÁZEK PRAXE */}
-                <Container property="w-24 h-24 rounded-lg overflow-hidden">
+            <Container property="flex flex-row gap-8 items-start w-full">
+                
+                {/* LOGO */}
+                <Container property="w-32 h-32 shrink-0 flex items-center justify-center">
                     <Image
                         src={entity.image_base64}
                         alt={entity.title}
                         className="w-full h-full"
-                        objectFit="cover"
-                        fallbackSrc="https://via.placeholder.com/96x96/3B82F6/FFFFFF?text=P"
+                        objectFit="contain"
                     />
                 </Container>
 
-                <Container property="grid grid-cols-1">
-                    {/* TITULEK */}
-                    <Container property="flex inline-block p-1 space-y-1 items-center">
-                        <Headings sizeTag="h5-bold" property="text-black">
+                {/* CONTENT BLOCK */}
+                <Container property="flex flex-col gap-2 flex-grow min-w-0">
+                    
+                    {/* TITLE */}
+                    <Container property="flex justify-between items-start">
+                        <Headings sizeTag="h4" property="text-black font-bold leading-tight">
                             {entity.title}
                         </Headings>
+                        
+                        {/* ACTIONS (Heart / Status) */}
+                        <Container property="flex gap-4 items-center shrink-0 ml-4">
+                             {(user.isDepartmentMg() || user.isAdmin() || user.isOrganizationUser()) &&
+                                <Button
+                                    variant={handleVariant(entity.approval_status, true)}
+                                    onClick={handleClick}
+                                    hover={false}
+                                    property="px-3 py-1 text-[10px] font-black uppercase tracking-widest border-black"
+                                >
+                                    {approvalTag(entity.approval_status)}
+                                </Button>
+                            }
 
-                        {(user.isDepartmentMg() || user.isAdmin() || user.isOrganizationUser()) &&
-                        (<Container property={"justify-end ml-auto"}>
-                            <Button
-                                variant={handleVariant(entity.approval_status, true)}
-                                onClick={handleClick}
-                                hover={false}
-                            >
-                                {approvalTag(entity.approval_status)}
-                            </Button>
-                        </Container>)
-                        }
-
-                        {user.isStudent() && (
-                            <Container property={"justify-end ml-auto"}>
+                            {user.isStudent() && (
                                 <Button
                                     icon={isFavorite ? "heart-filled" : "heart"}
                                     iconColor={isFavorite ? "text-red-500" : "text-gray-400"}
                                     onClick={handleHeartClick}
                                     noVariant={true}
-                                    iconSize="20"
+                                    iconSize="28"
                                     hover={false}
                                 />
-                            </Container>
-                        )}
-
-                    </Container>
-
-                    {/* ANOTACE */}
-                    <Container property="p-1 space-y-1">
-                        <Container property="space-y-1">
-                            <Paragraph variant="base" property="text-gray-600 line-clamp-3">
-                                {entity.description}
-                            </Paragraph>
-                        </Container>
-
-                        {/* MÍSTO KONÁNÍ + TERMÍN */}
-                        <Container property="flex flex-wrap justify-between items-center gap-2">
-                            <Container property="bg-blue-400 px-2 p-1 rounded-lg">
-                                <Paragraph variant="small" property="text-white">
-                                    {entity.employer.address}
-                                </Paragraph>
-                            </Container>
-                            {entity.start_date && entity.end_date && (
-                                <Container property="bg-blue-100 px-2 p-1 rounded-lg">
-                                    <Paragraph variant="small" property="text-blue-700">
-                                        {entity.start_date} - {entity.end_date}
-                                    </Paragraph>
-                                </Container>
                             )}
                         </Container>
                     </Container>
+
+                    {/* DESCRIPTION */}
+                    <Paragraph property="text-black text-base leading-relaxed mb-4 line-clamp-3">
+                        {entity.description}
+                    </Paragraph>
+
+                    {/* TAGS ROW */}
+                    <Container property="flex flex-wrap gap-3 mt-auto items-center">
+                        {/* MÍSTO */}
+                        <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap">
+                            {t('offers.location')}: {entity.employer.address}
+                        </Container>
+                        
+                        {/* SKILLS */}
+                        {entity.skills && Array.isArray(entity.skills) && entity.skills.map((skill, index) => (
+                            <Container 
+                                key={index} 
+                                property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap"
+                            >
+                                {skill}
+                            </Container>
+                        ))}
+
+                        {/* TERMÍN (Datum - Datum) */}
+                        <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap ml-auto">
+                            {entity.start_date} - {entity.end_date}
+                        </Container>
+                    </Container>
+
                 </Container>
             </Container>
         </ContainerForEntity>

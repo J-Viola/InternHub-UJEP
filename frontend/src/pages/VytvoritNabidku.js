@@ -43,9 +43,14 @@ export default function VytvoritNabidku() {
             console.error("Chyba při vytváření nabídky:", error);
             if (error.details) {
                 setErrors(error.details);
+            } else if (error.response?.data) {
+                setErrors(error.response.data);
             }
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('form.create_error_unknown') }), "E");
+            const errorCode = error.code;
+            const detail = error.response?.data?.detail;
+            const fallback = detail || t('form.create_error_unknown');
+            const message = errorCode ? t(`api_errors.${errorCode}`, { defaultValue: fallback }) : fallback;
+            addMessage(message, "E");
         }
     }
 

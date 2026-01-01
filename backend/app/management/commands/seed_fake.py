@@ -27,10 +27,18 @@ class Command(BaseCommand):
     help = "Vygeneruje náhodná (fake) data pro testování zátěže a UI."
 
     def add_arguments(self, parser):
-        parser.add_argument("--students", type=int, default=10, help="Počet studentů k vytvoření")
-        parser.add_argument("--companies", type=int, default=5, help="Počet firem k vytvoření")
-        parser.add_argument("--practices", type=int, default=20, help="Počet praxí k vytvoření")
-        parser.add_argument("--applications", type=int, default=15, help="Počet přihlášek k vytvoření")
+        parser.add_argument(
+            "--students", type=int, default=10, help="Počet studentů k vytvoření"
+        )
+        parser.add_argument(
+            "--companies", type=int, default=5, help="Počet firem k vytvoření"
+        )
+        parser.add_argument(
+            "--practices", type=int, default=20, help="Počet praxí k vytvoření"
+        )
+        parser.add_argument(
+            "--applications", type=int, default=15, help="Počet přihlášek k vytvoření"
+        )
 
     def handle(self, *args, **options):
         self.stdout.write("Zahajuji generování fake dat...")
@@ -44,7 +52,11 @@ class Command(BaseCommand):
             student_role = StagRole.objects.get(role="st")
             teacher_role = StagRole.objects.get(role="vy")
         except StagRole.DoesNotExist:
-            self.stdout.write(self.style.ERROR("Chybí role 'st' nebo 'vy'. Nejdříve spusťte 'python manage.py seed_db'."))
+            self.stdout.write(
+                self.style.ERROR(
+                    "Chybí role 'st' nebo 'vy'. Nejdříve spusťte 'python manage.py seed_db'."
+                )
+            )
             return
 
         # 0. Generování Profesora (Vyučujícího) a Kateder
@@ -136,11 +148,28 @@ class Command(BaseCommand):
                 street=fake.street_name(),
                 street_number=fake.building_number(),
                 zip_code=fake.postcode().replace(" ", ""),
+                skills=random.sample(
+                    [
+                        "Python",
+                        "Java",
+                        "React",
+                        "SQL",
+                        "Git",
+                        "Docker",
+                        "C#",
+                        "JavaScript",
+                        "HTML",
+                        "CSS",
+                    ],
+                    k=random.randint(2, 5),
+                ),
             )
             created_students.append(student)
 
             # KLÍČOVÉ: Propojíme studenta s konkrétním předmětem katedry
-            UserSubject.objects.create(user=student, subject=target_subj, role=UserSubjectType.Student)
+            UserSubject.objects.create(
+                user=student, subject=target_subj, role=UserSubjectType.Student
+            )
 
         # 2. Generování Firem a jejich Uživatelů
         count_companies = options["companies"]
@@ -181,7 +210,11 @@ class Command(BaseCommand):
             created_profiles = list(EmployerProfile.objects.all())
 
         if not created_profiles or not subjects:
-            self.stdout.write(self.style.WARNING("Nedostatek firem nebo předmětů pro generování praxí."))
+            self.stdout.write(
+                self.style.WARNING(
+                    "Nedostatek firem nebo předmětů pro generování praxí."
+                )
+            )
         else:
             self.stdout.write(f" - Generuji {count_practices} praxí...")
             for _ in range(count_practices):
@@ -195,13 +228,29 @@ class Command(BaseCommand):
                     description=fake.text(max_nb_chars=500),
                     responsibilities=fake.text(max_nb_chars=200),
                     available_positions=random.randint(1, 5),
-                    start_date=timezone.now().date() + timezone.timedelta(days=random.randint(10, 30)),
-                    end_date=timezone.now().date() + timezone.timedelta(days=random.randint(90, 180)),
+                    start_date=timezone.now().date()
+                    + timezone.timedelta(days=random.randint(10, 30)),
+                    end_date=timezone.now().date()
+                    + timezone.timedelta(days=random.randint(90, 180)),
                     progress_status=ProgressStatus.NOT_STARTED,
                     approval_status=ApprovalStatus.APPROVED,
                     contact_user=contact_user,
                     is_active=True,
                     coefficient=1.0,
+                    skills=random.sample(
+                        [
+                            "Backend",
+                            "Frontend",
+                            "Data Science",
+                            "Testing",
+                            "DevOps",
+                            "GIS",
+                            "Networking",
+                            "Security",
+                            "Marketing",
+                        ],
+                        k=random.randint(1, 4),
+                    ),
                 )
                 created_practices.append(practice)
 
@@ -214,7 +263,9 @@ class Command(BaseCommand):
                 practice = random.choice(created_practices)
 
                 # Zabráníme duplicitám
-                if StudentPractice.objects.filter(user=student, practice=practice).exists():
+                if StudentPractice.objects.filter(
+                    user=student, practice=practice
+                ).exists():
                     continue
 
                 # Náhodný stav přihlášky
@@ -238,14 +289,17 @@ class Command(BaseCommand):
                 student_practice = StudentPractice.objects.create(
                     user=student,
                     practice=practice,
-                    application_date=timezone.now().date() - timezone.timedelta(days=random.randint(1, 10)),
+                    application_date=timezone.now().date()
+                    - timezone.timedelta(days=random.randint(1, 10)),
                     approval_status=app_status,
                     progress_status=prog_status,
                     school_approved=school_app,
                     employer_approved=emp_app,
                     start_date=practice.start_date,
                     end_date=practice.end_date,
-                    hours_completed=random.randint(0, 50) if prog_status == ProgressStatus.IN_PROGRESS else 0,
+                    hours_completed=random.randint(0, 50)
+                    if prog_status == ProgressStatus.IN_PROGRESS
+                    else 0,
                 )
 
                 # Přiřadíme defaultní dokumenty

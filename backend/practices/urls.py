@@ -3,30 +3,35 @@ from rest_framework import routers
 
 from .views import (
     AdminPracticesListView,
-    ChangePendingView,
+    EmployerPracticeViewSet,
     GetEndDateView,
-    PracticesForApprovingListView,
-    PracticeViewSet,
-    RunningPracticeListView,
+    StaffPracticeViewSet,
+    StudentPracticeViewSet,
 )
 
 app_name = "practices"
 
-router = routers.DefaultRouter()
-router.register(r"", PracticeViewSet, basename="practices")
+student_router = routers.DefaultRouter()
+student_router.register(
+    r"student", StudentPracticeViewSet, basename="student-practices"
+)
+
+employer_router = routers.DefaultRouter()
+employer_router.register(
+    r"employer", EmployerPracticeViewSet, basename="employer-practices"
+)
+
+staff_router = routers.DefaultRouter()
+staff_router.register(r"staff", StaffPracticeViewSet, basename="staff-practices")
+
+
 urlpatterns = [
-    path(
-        "running-practices/",
-        RunningPracticeListView.as_view(),
-        name="running-practices",
-    ),
-    path(
-        "practices-for-approval/",
-        PracticesForApprovingListView.as_view(),
-        name="practices-for-approval",
-    ),
-    path("<int:id>/change-pending/", ChangePendingView.as_view(), name="change-pending"),
-    path("get-end-date/", GetEndDateView.as_view(), name="change-pending"),
+    # Utils
+    path("get-end-date/", GetEndDateView.as_view(), name="get-end-date"),
+    # Admin
     path("admin-practices/", AdminPracticesListView.as_view(), name="admin-practices"),
-    path("", include(router.urls)),
+    # API Routers
+    path("", include(student_router.urls)),
+    path("", include(employer_router.urls)),
+    path("", include(staff_router.urls)),
 ]

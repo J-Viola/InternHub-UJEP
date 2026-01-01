@@ -357,6 +357,7 @@ export default function StudentPage() {
             <Container property={"mt-auto"}>
                 <SearchBar
                     id={"name"}
+                    variant={"student"}
                     value={filterValues.name}
                     placeholder={t('students.search_placeholder')}
                     onChange={handleChange}

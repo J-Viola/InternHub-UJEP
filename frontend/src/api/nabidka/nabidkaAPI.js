@@ -6,7 +6,7 @@ export const useNabidkaAPI = () => {
 
     const getNabidky = async (params = {}) => {
         try {
-            const response = await api.get('/practices/search/', { params });
+            const response = await api.get('/practices/student/', { params });
 
             if (response && response.data) {
                 // Backend returns paginated shape: { count, next, previous, results }
@@ -43,7 +43,7 @@ export const useNabidkaAPI = () => {
 
     const getNabidkaById = async (id) => {
         try {
-            const response = await api.get(`/practices/${id}`)
+            const response = await api.get(`/practices/student/${id}/`)
 
             if (response && response.data) {
                 return response.data
@@ -61,7 +61,7 @@ export const useNabidkaAPI = () => {
         try {
             const formData = buildFormData(data);
 
-            const response = await api.post('/practices/', formData, {
+            const response = await api.post('/practices/employer/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -85,7 +85,7 @@ export const useNabidkaAPI = () => {
         try {
             const formData = buildFormData(data);
 
-            const response = await api.post('/practices/apply_student_practice/', formData, {
+            const response = await api.post('/practices/student/apply/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -103,7 +103,7 @@ export const useNabidkaAPI = () => {
 
     const getPracticeUserRelations = async () => {
         try {
-            const response = await api.get('/practices/get_practice_user_relations/');
+            const response = await api.get('/practices/student/get_practice_user_relations/');
 
             if (response && response.data) {
                 return response.data;
@@ -118,7 +118,7 @@ export const useNabidkaAPI = () => {
 
     const getOrganizationPractices = async () => {
         try {
-            const response = await api.get('/practices/organization_practices/');
+            const response = await api.get('/practices/employer/');
 
             if (response && response.data) {
                 return response.data;
@@ -133,7 +133,7 @@ export const useNabidkaAPI = () => {
 
     const getNabidkyByUserDepartment = async () => {
         try {
-            const response = await api.get('/practices/by_user_department/');
+            const response = await api.get('/practices/staff/department_overview/');
             if (response && response.data) {
                 return response.data;
             }
@@ -146,7 +146,7 @@ export const useNabidkaAPI = () => {
 
     const changeStatus = async (id, status) => {
         try {
-            const response = await api.post(`/practices/${id}/change-pending/`, status);
+            const response = await api.post(`/practices/staff/${id}/approve/`, status);
             if (response && response.data) {
                 return response.data;
             }
@@ -178,7 +178,7 @@ export const useNabidkaAPI = () => {
             const formData = buildFormData(data);
 
             const method = isPartial ? 'patch' : 'put';
-            const response = await api[method](`/practices/${id}/`, formData, {
+            const response = await api[method](`/practices/employer/${id}/`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -200,7 +200,7 @@ export const useNabidkaAPI = () => {
 
     const toggleFavorite = async (id) => {
         try {
-            const response = await api.post(`/practices/${id}/toggle_favorite/`);
+            const response = await api.post(`/practices/student/${id}/toggle_favorite/`);
             return response.data;
         } catch (error) {
             console.error('Chyba při změně oblíbených:', error);

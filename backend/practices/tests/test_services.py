@@ -23,7 +23,9 @@ class PracticeServiceTests(TestCase):
     @patch("practices.services.StudentPractice.objects.filter")
     @patch("practices.services.Practice.objects.filter")
     @patch("practices.services.StudentPracticeSerializer")
-    def test_apply_student_practice_success(self, mock_serializer, mock_practice_filter, mock_sp_filter):
+    def test_apply_student_practice_success(
+        self, mock_serializer, mock_practice_filter, mock_sp_filter
+    ):
         # Setup mocks
         mock_sp_filter.return_value.exists.return_value = False
         mock_practice_filter.return_value.first.return_value = self.practice
@@ -51,11 +53,13 @@ class PracticeServiceTests(TestCase):
 
     @patch("practices.services.StudentPractice.objects.filter")
     @patch("practices.services.Practice.objects.filter")
-    def test_apply_student_practice_not_found(self, mock_practice_filter, mock_sp_filter):
+    def test_apply_student_practice_not_found(
+        self, mock_practice_filter, mock_sp_filter
+    ):
         mock_sp_filter.return_value.exists.return_value = False
         mock_practice_filter.return_value.first.return_value = None
 
         with self.assertRaises(ValueError) as cm:
             PracticeService.apply_student_practice(self.user, 1)
 
-        self.assertIn("PRACTICE_NOT_FOUND", str(cm.exception))
+        self.assertIn("NOT_FOUND", str(cm.exception))

@@ -34,33 +34,31 @@ export default function StudentApplicationCard({ entity }) {
     return (
         <ContainerForEntity
             variant={"white"}
-            property="hover:shadow-lg transition-shadow duration-200 border border-gray-200"
+            property="pl-8 pr-8 py-4 mt-2 border border-black rounded-[10px] shadow-none hover:shadow-sm transition-shadow duration-200"
             onClick={() => navigate(`/nabidka/${entity.practice_id}`)}
         >
-            <Container property="grid grid-cols-[auto,1fr] gap-4 items-center p-4">
-                {/* LOGO */}
-                <Container property="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                    <Image
-                        src={entity.company_logo}
-                        alt={entity.practice_title}
-                        className="w-full h-full"
-                        objectFit="cover"
-                        fallbackSrc="https://via.placeholder.com/64x64?text=LOGO"
-                    />
+            <Container property="grid grid-cols-[1.5fr,1.5fr,auto] gap-4 items-center w-full">
+                {/* Column 1: Title */}
+                <Container property="min-w-0">
+                    <Headings sizeTag="h5-bold" property="truncate text-black">
+                        {entity.practice_title}
+                    </Headings>
                 </Container>
 
-                <Container property="flex flex-col gap-1">
-                    <Headings sizeTag="h5-bold">{entity.practice_title}</Headings>
-                    <Paragraph variant="small" property="text-gray-500">
+                {/* Column 2: Date */}
+                <Container property="text-center">
+                    <Paragraph property="font-medium text-gray-500 text-sm">
                         {t('internships.applied_on')}: {entity.application_date}
                     </Paragraph>
                 </Container>
 
-                <Container property="justify-self-end">
+                {/* Column 3: Status Badge */}
+                <Container property="flex justify-end">
                      <Button
                         variant={handleVariant(entity.workflow_status)}
                         pointer={false}
                         hover={false}
+                        property="px-4 py-1 text-xs"
                     >
                         {entity.workflow_status_label}
                     </Button>

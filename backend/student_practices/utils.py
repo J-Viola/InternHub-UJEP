@@ -39,7 +39,9 @@ def can_approve_practice(user: User, student_practice) -> bool:
 
         # 3. Vyučující předmětu
         if hasattr(user, "user_subjects"):
-            if user.user_subjects.filter(subject=practice_subject, role=UserSubjectType.Professor).exists():
+            if user.user_subjects.filter(
+                subject=practice_subject, role=UserSubjectType.Professor
+            ).exists():
                 return True
 
     if is_org:
@@ -47,7 +49,10 @@ def can_approve_practice(user: User, student_practice) -> bool:
         if student_practice.employer_approved:
             return False
 
-        if hasattr(user, "employer_profile") and student_practice.practice.employer_id == user.employer_profile_id:
+        if (
+            hasattr(user, "employer_profile")
+            and student_practice.practice.employer_id == user.employer_profile_id
+        ):
             return True
 
     return False

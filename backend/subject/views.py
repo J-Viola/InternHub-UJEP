@@ -84,7 +84,9 @@ class SubjectViewSet(viewsets.ModelViewSet):
             return Response({"error": PracticeMessages.NO_DEPARTMENT}, status=400)
 
         # Get all subjects from the user's departments
-        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related("department")
+        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related(
+            "department"
+        )
 
         # Serialize the subjects
         serializer = self.get_serializer(subjects, many=True)

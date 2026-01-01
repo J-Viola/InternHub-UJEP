@@ -8,5 +8,3 @@ COPY ./.docker/Database/startup.sh .
 
 # Opravíme line endings a nastavíme execute permissions
 RUN sed -i 's/\r$//' startup.sh && chmod +x startup.sh
-
-ENTRYPOINT ["bash", "/app/database/startup.sh"]

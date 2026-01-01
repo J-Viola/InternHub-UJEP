@@ -174,26 +174,36 @@ export default function NabidkaDetailPage() {
                 !["PENDING", "REJECTED"].includes(entity.student_practice_status.workflow_status) && (
                 <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload}/>
             )}
-            <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
-                <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
+            <ContainerForEntity property="p-8 mb-8 mt-4 border border-black rounded-[10px] shadow-none bg-white">
+                <Container property="grid grid-cols-[auto,1fr] gap-8 items-start mb-8 pb-8 border-b border-gray-100">
 
                     {/* LOGO */}
-                    <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
-                        <Headings sizeTag="h4" property="text-white">
-                            <Image
-                                src={entity?.image_base64}
-                                alt={entity?.title}
-                                objectFit="cover"
-                            />
-                        </Headings>
+                    <Container property="w-40 h-40 rounded-[10px] bg-gray-50 border border-gray-200 overflow-hidden flex items-center justify-center p-2">
+                        <Image
+                            src={entity?.image_base64}
+                            alt={entity?.title}
+                            className="w-full h-full"
+                            objectFit="contain"
+                        />
                     </Container>
 
                     {/* TITLE */}
-                    <Container>
-                        <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
-                        <Container property={"flex flex-row gap-2 mt-2"}>
-                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{t('offers.location')}: {entity?.employer?.address || t('common.not_specified')}</Button>
-                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
+                    <Container property="flex flex-col gap-4">
+                        <Headings sizeTag="h2" property="text-black font-black uppercase tracking-tight">
+                            {entity?.title}
+                        </Headings>
+                        <Container property="flex flex-wrap gap-3 mt-2">
+                            <Container property="bg-[#cffafe] text-cyan-800 px-4 py-1.5 rounded-full font-bold text-sm border border-cyan-200 shadow-sm">
+                                {t('offers.location')}: {entity?.employer?.address || t('common.not_specified')}
+                            </Container>
+                            <Container property="bg-[#fef3c7] text-amber-800 px-4 py-1.5 rounded-full font-bold text-sm border border-amber-200 shadow-sm">
+                                {entity?.start_date} - {entity?.end_date}
+                            </Container>
+                            {entity?.skills?.map((skill, index) => (
+                                <Container key={index} property="bg-green-100 text-green-700 px-4 py-1.5 rounded-full font-bold text-sm border border-green-200 shadow-sm">
+                                    #{skill}
+                                </Container>
+                            ))}
                         </Container>
                     </Container>
 

@@ -23,8 +23,21 @@ export const useDocumentsAPI = () => {
         }
     };
 
+    const reviewDocument = async (documentId, status, review_note = "") => {
+        try {
+            const res = await api.patch(`/student-practices/review-document/${documentId}`, {
+                status,
+                review_note
+            });
+            return res.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
     return {
         downloadDocument,
         uploadDocument,
+        reviewDocument,
     };
 };
