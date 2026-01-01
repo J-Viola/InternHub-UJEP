@@ -135,16 +135,6 @@ export default function ProfilPage() {
 
                     <Container property={"w-full mt-2 grid-cols-1 space-y-6"}>
 
-                        {/* O MĚ */}
-                        {userData.additional_info && (
-                            <Container property="p-1 space-y-1 mb-4">
-                                <Headings sizeTag={"h4"}>O mě</Headings>
-                                <Paragraph>
-                                    {userData.additional_info}
-                                </Paragraph>
-                            </Container>
-                        )}
-
                         {/* OSOBNÍ ÚDAJE */}
                         <Container property="p-1 space-y-1">
                             <Headings sizeTag={"h4"}>Osobní údaje</Headings>
@@ -236,6 +226,49 @@ export default function ProfilPage() {
                             </Container>
                         )}
 
+                        {/* O MĚ */}
+                        {userData.additional_info && (
+                            <Container property="p-1 space-y-1 mb-4">
+                                <Headings sizeTag={"h4"}>O mě</Headings>
+                                <Paragraph>
+                                    {userData.additional_info}
+                                </Paragraph>
+                            </Container>
+                        )}
+
+                        {/* SKILLS - pouze pro studenty */}
+                        {userData.user_type === 'student' && userData.skills && userData.skills.length > 0 && (
+                            <Container property="p-1 space-y-1">
+                                <Headings sizeTag={"h4"}>Skills</Headings>
+                                <div className="flex flex-wrap gap-2">
+                                    {userData.skills.map((skill, index) => (
+                                        <span
+                                            key={index}
+                                            className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full"
+                                        >
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </Container>
+                        )}
+
+                        {/* CV - pouze pro studenty, pokud backend vrací URL */}
+                        {userData.user_type === 'student' && userData.cv_file && (
+                            <Container property="p-1 space-y-1">
+                                <Headings sizeTag={"h4"}>CV</Headings>
+                                <a
+                                    href={userData.cv_file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline flex items-center gap-2"
+                                >
+                                    <Button icon="download" noVariant={true} iconColor="text-blue-600" />
+                                    Stáhnout CV
+                                </a>
+                            </Container>
+                        )}
+
                         {/* ORGANIZACE - pouze pro organizační uživatele */}
                         {userData.user_type === 'organization' && userData.employer_profile && (
                             <Container property="p-1 space-y-1">
@@ -266,31 +299,6 @@ export default function ProfilPage() {
                                         </Container>
                                     )}
                                 </Container>
-                            </Container>
-                        )}
-
-                        {/* SKILLS - pouze pro studenty */}
-                        {userData.user_type === 'student' && userData.skills && userData.skills.length > 0 && (
-                            <Container property="p-1 space-y-1">
-                                <Headings sizeTag={"h4"}>Skills</Headings>
-                                <div className="flex flex-wrap gap-2">
-                                    {userData.skills.map((skill, index) => (
-                                        <span key={index} className="bg-blue-100 text-blue-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            </Container>
-                        )}
-
-                        {/* CV - pouze pro studenty */}
-                        {userData.user_type === 'student' && userData.cv_file && (
-                            <Container property="p-1 space-y-1">
-                                <Headings sizeTag={"h4"}>CV</Headings>
-                                <a href={userData.cv_file} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-2">
-                                    <Button icon="download" noVariant={true} iconColor="text-blue-600" />
-                                    Stáhnout CV
-                                </a>
                             </Container>
                         )}
 

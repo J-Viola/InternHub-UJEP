@@ -189,11 +189,13 @@ export default function PraxeDetailPage() {
                 </Container>
                 {/* DESCRIPTION */}
                 <Container property={"editor-content mt-2"}>
+                    <Headings sizeTag="h3" property="mb-2">Popis pozice</Headings>
                     <Paragraph>{entity?.description}</Paragraph>
                 </Container>
 
                 {/* RESPONSIBILITY */}
-                <Container property={"editor-content mt-2"}>
+                <Container property={"editor-content mt-4"}>
+                    <Headings sizeTag="h3" property="mb-2">Náplň práce</Headings>
                     <Paragraph>{entity?.responsibilities}</Paragraph>
                 </Container>
 

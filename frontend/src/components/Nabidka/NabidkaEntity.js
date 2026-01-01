@@ -146,13 +146,20 @@ export default function NabidkaEntity({ entity }) {
                             </Paragraph>
                         </Container>
                         
-                        {/* MÍSTO KONÁNÍ */}
-                        <Container property="flex justify-between items-center">
+                        {/* MÍSTO KONÁNÍ + TERMÍN */}
+                        <Container property="flex flex-wrap justify-between items-center gap-2">
                             <Container property="bg-blue-400 px-2 p-1 rounded-lg">
                                 <Paragraph variant="small" property="text-white">
                                     {entity.employer.address}
                                 </Paragraph>
                             </Container>
+                            {entity.start_date && entity.end_date && (
+                                <Container property="bg-blue-100 px-2 p-1 rounded-lg">
+                                    <Paragraph variant="small" property="text-blue-700">
+                                        {entity.start_date} - {entity.end_date}
+                                    </Paragraph>
+                                </Container>
+                            )}
                         </Container>
                     </Container>
                 </Container>

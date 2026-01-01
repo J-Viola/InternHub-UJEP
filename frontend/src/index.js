@@ -9,7 +9,6 @@ import NabidkaDetailPage from '@pages/NabidkaDetailPage';
 import ProfilPage from '@pages/ProfilPage';
 import PraxePage from '@pages/PraxePage';
 import StudentPage from '@pages/StudentsPage';
-import VytvorenePraxe from '@pages/VytvorenePraxePage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
 import UpravitNabidku from '@pages/UpravitNabidku';
 import RegistracePage from '@pages/RegistracePage';
@@ -61,7 +60,6 @@ const AppRoutes = () => {
         <Route path="/praxe" element={<PraxePage />} />
         <Route path="/karta-praxe/:id" element={<PraxeDetailPage />} />
         <Route path="/students/:id?" element={<StudentPage />} />
-        <Route path="/SprInPrihlaseni" element={<VytvorenePraxe />} />
         <Route path="/vytvorit-nabidku" element={<VytvoritNabidku />} />
         <Route path="/upravit-nabidku/:id" element={<UpravitNabidku />} />
         <Route path="/logout" element={<LogoutUser />} />

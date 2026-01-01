@@ -214,7 +214,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
             <>
                 <Container>
                      <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        {isEditing ? 'Upravit společnost' : 'Údaje firmy'}
+                        {isEditing ? 'Upravit společnost' : 'Údaje společnosti'}
                     </Headings>
                 </Container>
                 {!isEditing && (
@@ -379,7 +379,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     id="companyLogo"
                     property={"mt-4"}
                     onChange={handleFileChange}
-                    label={"Nahrát logo organizace"}
+                    label={"Nahraj logo"}
                     accept="image/*"
                     previewOn={true}
                 />

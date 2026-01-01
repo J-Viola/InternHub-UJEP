@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Container from "@core/Container/Container";
+import Headings from "@core/Text/Headings";
 import Nav from "@components/core/Nav";
 import NabidkaEntity from "@components/Nabidka/NabidkaEntity";
 import { useSearchParams } from "react-router-dom";
@@ -115,6 +116,12 @@ export default function NabidkaPage() {
 
     return(
         <>
+            <Container property={"flex items-center justify-between mb-4 mt-4"}>
+                <Headings sizeTag={"h3"}>
+                    Nabídka praxí
+                </Headings>
+            </Container>
+
             <FilterNabidka 
                 filterValue={filterValue}
                 handleFilterChange={handleFilterChange}

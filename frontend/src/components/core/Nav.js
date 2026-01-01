@@ -156,6 +156,12 @@ function Nav({}) {
     };
 
     useEffect(() => {
+        // Pokud není uživatel autentizovaný, navigaci vyčistíme
+        if (!user || !user.isAuthenticated) {
+            setNaviagation({});
+            return;
+        }
+
         if (user.isOwner()) {
             setNaviagation(ownerDict);
         } else if (user.isStudent()) {
@@ -168,6 +174,9 @@ function Nav({}) {
             setNaviagation(professorDict);
         } else if (user.isAdmin()) {
             setNaviagation(adminDict);
+        } else {
+            // Fallback pro neznámou roli – žádná navigace
+            setNaviagation({});
         }
     }, [user]);
 
