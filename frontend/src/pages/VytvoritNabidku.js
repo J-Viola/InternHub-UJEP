@@ -9,9 +9,9 @@ import TextBox from "@core/Form/TextBox";
 import DropDown from "@core/Form/DropDown";
 import CustomDatePicker from "@core/Form/DatePicker";
 import NabidkaForm from "@components/Forms/NabidkaForm";
-import { useCodeListAPI } from "src/api/code_list/code_listAPI";
-import { useUserAPI } from "src/api/user/userAPI";
-import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
+import { useCodeListAPI } from "@api/code_list/code_listAPI";
+import { useUserAPI } from "@api/user/userAPI";
+import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 

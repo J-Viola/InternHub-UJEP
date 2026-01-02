@@ -15,7 +15,7 @@ import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
-import { useDocumentsAPI } from "src/api/documents/documentsAPI";
+import { useDocumentsAPI } from "@api/documents/documentsAPI";
 import { useNavigate } from "react-router-dom";
 import handleToDoAlert from "@utils/ToDoAlert";
 

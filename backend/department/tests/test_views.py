@@ -64,8 +64,8 @@ class DepartmentViewTests(TestCase):
             role=UserSubjectType.Student,
         )
 
-        self.url_students = "/api/department/department-students/"
-        self.url_professors = "/api/department/department-professor/"
+        self.url_students = "/api/departments/department-students/"
+        self.url_professors = "/api/departments/department-professor/"
 
     def test_department_student_list_access_denied_unauthenticated(self):
         response = self.client.get(self.url_students)
@@ -83,7 +83,7 @@ class DepartmentViewTests(TestCase):
         results = response.data["results"] if "results" in response.data else response.data
 
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]["id"], self.student.id)
+        self.assertEqual(results[0]["user_id"], self.student.id)
 
     def test_professor_sees_own_department_professors(self):
         self.client.force_authenticate(user=self.professor)
@@ -93,4 +93,4 @@ class DepartmentViewTests(TestCase):
         results = response.data["results"] if "results" in response.data else response.data
 
         # Should see themselves (and potentially others if added)
-        self.assertTrue(any(p["id"] == self.professor.id for p in results))
+        self.assertTrue(any(p["user_id"] == self.professor.id for p in results))

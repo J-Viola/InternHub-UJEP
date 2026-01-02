@@ -1,6 +1,29 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import NabidkaForm from '@components/Forms/NabidkaForm'; // Cesta k NabidkaForm.js
+import NabidkaForm from '@components/Forms/NabidkaForm';
+
+// Explicit mocks for components used in NabidkaForm
+jest.mock('@core/Form/DatePicker', () => ({ id, label, value, onChange }) => (
+  <input
+    data-testid={`datepicker-${id}`}
+    aria-label={label}
+    value={value || ''}
+    onChange={(e) => onChange({ [id]: e.target.value })}
+  />
+));
+
+jest.mock('@core/Form/DropDown', () => ({ id, label, options, value, onChange }) => (
+  <select
+    data-testid={`dropdown-${id}`}
+    aria-label={label}
+    value={value || ''}
+    onChange={(e) => onChange({ [id]: e.target.value })}
+  >
+    {options.map(opt => (
+      <option key={opt.value} value={opt.value}>{opt.label}</option>
+    ))}
+  </select>
+));
 
 describe('NabidkaForm Component', () => {
   const mockOrganizationUsers = [

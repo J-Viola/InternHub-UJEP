@@ -4,7 +4,7 @@ import BackButton from "@core/Button/BackButton";
 import Nav from "@components/core/Nav";
 import CompanyForm from "@components/Forms/CompanyForm";
 import { useUserAPI } from "@api/user/userAPI";
-import { useAuth } from "src/services/auth/Auth";
+import { useAuth } from "@auth/Auth";
 import { useMessage } from "@hooks/MessageContext";
 
 
