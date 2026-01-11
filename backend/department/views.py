@@ -12,7 +12,9 @@ from department.services import (
     get_department_professors,
     get_department_students,
 )
+from users.models import ProfessorUser
 from users.permissions import IsOrganizationUser, IsStagTeacher
+from users.serializers import ProfessorUserProfileSerializer
 
 from .serializers import (
     AdminDepartmentSerializer,
@@ -20,6 +22,12 @@ from .serializers import (
     ProfessorDetailSerializer,
     StudentDetailSerializer,
 )
+
+
+class DepartmentProfessorDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ProfessorUser.objects.all()
+    serializer_class = ProfessorUserProfileSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class DepartmentStudentListView(generics.ListAPIView):

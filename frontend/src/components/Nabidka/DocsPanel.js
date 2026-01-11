@@ -6,7 +6,6 @@ import Paragraph from "@components/core/Text/Paragraph"
 import Headings from "@core/Text/Headings"
 import Button from "@core/Button/Button";
 import { useUser } from "@hooks/UserProvider";
-import handleToDoAlert from "@utils/ToDoAlert"
 
 
 function DocContainer({doc_info, handleDownload, handleUpload}) {

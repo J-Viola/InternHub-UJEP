@@ -91,6 +91,28 @@ export default function NabidkaDetailPage() {
         setPopUp(!popUp);
     }
 
+    const handleApprove = async () => {
+        try {
+            await nabidkaAPI.changeStatus(id, { "approval_status": 1 });
+            addMessage("Nabídka byla úspěšně schválena", "S");
+            setPopUp(false);
+            fetchData();
+        } catch (error) {
+            addMessage("Chyba při schvalování nabídky", "E");
+        }
+    };
+
+    const handleReject = async () => {
+        try {
+            await nabidkaAPI.changeStatus(id, { "approval_status": 2 });
+            addMessage("Nabídka byla zamítnuta", "S");
+            setPopUp(false);
+            fetchData();
+        } catch (error) {
+            addMessage("Chyba při zamítání nabídky", "E");
+        }
+    };
+
     const onSubmit = async() => {
         try {
             const res = await nabidkaAPI.applyNabidka({
@@ -112,8 +134,7 @@ export default function NabidkaDetailPage() {
     }
 
     const onReject = () => {
-        // TODO: Implementovat odmítnutí přihlášky (API volání, případně navigace)
-        console.log("Přihláška odmítnuta");
+        setPopUp(false);
     }
 
     const renderContactInfo = () => {
@@ -223,7 +244,7 @@ export default function NabidkaDetailPage() {
                                 variant={"primary"} 
                                 icon={"gear"} 
                                 property={"px-8"} 
-                                onClick={() => handleToDoAlert()}
+                                onClick={handlePopUp}
                             >
                                 Spravovat
                             </Button>
@@ -236,7 +257,7 @@ export default function NabidkaDetailPage() {
                                 variant={"primary"} 
                                 icon={"gear"} 
                                 property={"px-8"} 
-                                onClick={() => navigate(`/sprava-stazi`)}
+                                onClick={handlePopUp}
                             >
                                 Spravovat nabídku
                             </Button>
@@ -289,14 +310,26 @@ export default function NabidkaDetailPage() {
                 </Container>
             )}
                 
-            {/* PODÁNÍ PŘIHLÁŠKY */}
-            {popUp && (
+            {/* POPUP KONTEXT - STUDENT vs DEPARTMENT */}
+            {popUp && user.isStudent() && (
                 <PopUpCon 
                     onClose={handlePopUp} 
                     title= {"Přihláška"} 
                     text={"Opravdu si přejete podat přihlášku?"}
                     onSubmit={onSubmit}
                     onReject={onReject}
+                ></PopUpCon>
+            )}
+
+            {popUp && user.isDepartmentMg() && (
+                <PopUpCon 
+                    onClose={handlePopUp} 
+                    title= {"Správa nabídky"} 
+                    text={`Opravdu chcete změnit stav nabídky: ${entity?.title}?`}
+                    onSubmit={handleApprove}
+                    onSubmitText="Schválit"
+                    onReject={handleReject}
+                    onRejectText="Zamítnout"
                 ></PopUpCon>
             )}
         </>

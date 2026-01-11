@@ -58,7 +58,6 @@ export default function SpravaStaziPage() {
 
     const handleReject = async () => {
         if (!selectedEntity) return;
-        // TODO: Implementovat zamítnutí stáže (API volání, případně refresh dat)
         const newStatus = {
             "approval_status": 2
         }

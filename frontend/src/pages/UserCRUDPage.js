@@ -39,6 +39,7 @@ export default function UserCRUDPage() {
     const translateRoles = (dataArr) => {
         return dataArr.map(entity => ({
             ...entity,
+            id: entity.id || entity.user_id,
             roleText: rolesTranslator[entity.role] || entity.role
         }));
     };
@@ -90,8 +91,7 @@ export default function UserCRUDPage() {
         if (userType === 'org') {
             navigate(`/formular?type=org_users&action=edit&id=${entity.id}`);
         } else {
-            // TODO: Implementovat editaci katederního uživatele
-            addMessage('Katederní uživatelé se upravují přes IS STAG', 'info');
+            navigate(`/formular?type=department_users&action=edit&id=${entity.id}`);
         }
     };
 

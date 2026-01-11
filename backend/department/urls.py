@@ -4,6 +4,7 @@ from rest_framework import routers
 from .views import (
     AdminDepartmentViewSet,
     AllDepartmentProfessorListView,
+    DepartmentProfessorDetailView,
     DepartmentProfessorListView,
     DepartmentStudentListView,
     DepartmentUserRoleDetailView,
@@ -39,5 +40,10 @@ urlpatterns = [
         "department-professor/all/",
         AllDepartmentProfessorListView.as_view(),
         name="departmentprofessor-all",
+    ),
+    path(
+        "department-professor/<int:pk>/",
+        DepartmentProfessorDetailView.as_view(),
+        name="departmentprofessor-detail",
     ),
 ]

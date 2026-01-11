@@ -379,7 +379,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     id="companyLogo"
                     property={"mt-4"}
                     onChange={handleFileChange}
-                    label={"Nahraj logo"}
+                    label={"Nahrát logo organizace"}
                     accept="image/*"
                     previewOn={true}
                 />

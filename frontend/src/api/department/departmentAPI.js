@@ -95,6 +95,32 @@ export const useDepartmentAPI = () => {
         }
     };
 
+    const getProfessorById = async (id) => {
+        try {
+            const response = await api.get(`/departments/department-professor/${id}/`);
+            if (response?.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při získávání profesora:", error);
+            throw error;
+        }
+    };
+
+    const updateProfessor = async (id, data) => {
+        try {
+            const response = await api.patch(`/departments/department-professor/${id}/`, data);
+            if (response?.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při aktualizaci profesora:", error);
+            throw error;
+        }
+    };
+
     return {
         getAllDepartments,
         getDepartmentById,
@@ -102,5 +128,7 @@ export const useDepartmentAPI = () => {
         updateDepartment,
         deleteDepartment,
         getDepartmentStudents,
+        getProfessorById,
+        updateProfessor,
     };
 };

@@ -24,6 +24,7 @@ import UserForm from "@components/Forms/UserForm";
 import DepartmentForm from "@components/Forms/DepartmentForm";
 import CompanyForm from "@components/Forms/CompanyForm";
 import EmployerForm from "@components/Forms/EmployerForm";
+import ProfessorForm from "@components/Forms/ProfessorForm";
 
 export default function FormPage() {
     const [searchParams] = useSearchParams();
@@ -78,6 +79,15 @@ export default function FormPage() {
                         id={id}
                         handleCreate={handleCreate(userAPI.createUser)}
                         handleUpdate={handleUpdate(userAPI.updateUser, id)}
+                    />
+                );
+            case 'department_users':
+                return (
+                    <ProfessorForm
+                        action={action}
+                        id={id}
+                        handleCreate={() => console.log("Create not implemented")}
+                        handleUpdate={handleUpdate(departmentAPI.updateProfessor, id)}
                     />
                 );
             case 'department':
