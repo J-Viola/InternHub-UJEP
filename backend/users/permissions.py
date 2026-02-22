@@ -76,6 +76,32 @@ class IsStagAdmin(permissions.BasePermission):
         )
 
 
+class HasRolePermission(permissions.BasePermission):
+    """
+    Checks if the view's ``required_roles`` attribute contains the user's role.
+    Returns True when the view defines no required_roles.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.is_superuser:
+            return True
+
+        required_roles = getattr(view, "required_roles", [])
+        if not required_roles:
+            return True
+
+        if isinstance(request.user, OrganizationUser):
+            return request.user.organization_role in required_roles
+
+        if hasattr(request.user, "stag_role") and request.user.stag_role:
+            return request.user.stag_role.role in required_roles
+
+        return request.user.is_superuser
+
+
 class CanViewStudentProfile(permissions.BasePermission):
     """
     Custom permission to allow access to student profile only for:

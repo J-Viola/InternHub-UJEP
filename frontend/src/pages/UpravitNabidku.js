@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
-import Nav from "@components/core/Nav";
-import Headings from "@core/Text/Headings";
 import BackButton from "@core/Button/BackButton";
-import Button from "@core/Button/Button";
-import TextField from "@core/Form/TextField";
-import TextBox from "@core/Form/TextBox";
-import DropDown from "@core/Form/DropDown";
-import CustomDatePicker from "@core/Form/DatePicker";
 import NabidkaForm from "@components/Forms/NabidkaForm";
 import { useCodeListAPI } from "src/api/code_list/code_listAPI";
 import { useUserAPI } from "src/api/user/userAPI";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
 import { useNavigate, useParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
-import handleToDoAlert from "@utils/ToDoAlert";
 import { useUser } from "@hooks/UserProvider";
+import ContainerForEntity from "@core/Container/ContainerForEntity";
 
 export default function UpravitNabidku() {
     const [ formData, setFormData ] = useState({})
@@ -34,35 +27,35 @@ export default function UpravitNabidku() {
         const initFetch = async() => {
             try {
                 setLoading(true);
-                
+
                 const subjectsRes = await codeList.getUniqueSubjects();
                 setSubjects(subjectsRes);
-                
+
                 const usersRes = await userAPI.getOrganizationUsers();
                 setOrganizationUsers(usersRes);
-                
+
                 const practiceRes = await nabidkaAPI.getNabidkaById(id);
-                
+
                 if (practiceRes) {
                     let contactUserId = practiceRes.contact_user;
-                    
+
                     if (practiceRes.contact_user_info && !contactUserId) {
                         const fullName = `${practiceRes.contact_user_info.first_name} ${practiceRes.contact_user_info.last_name}`;
                         console.log("Hledám uživatele:", fullName);
                         console.log("Dostupní uživatelé:", usersRes);
-                        
-                        const contactUser = usersRes.find(user => 
+
+                        const contactUser = usersRes.find(user =>
                             user.label === fullName
                         );
-                        
+
                         console.log("Nalezený uživatel:", contactUser);
-                        
+
                         if (contactUser) {
                             contactUserId = contactUser.value;
                             console.log("Nastavuji contact_user:", contactUserId);
                         }
                     }
-                    
+
                     const transformedData = {
                         title: practiceRes.title,
                         description: practiceRes.description,
@@ -93,7 +86,7 @@ export default function UpravitNabidku() {
 
     const handleUpdate = async () => {
         try {
-            const res = await nabidkaAPI.updateNabidka(id, formData, false); 
+            const res = await nabidkaAPI.updateNabidka(id, formData, false);
             if (res) {
                 navigate(-1);
             }
@@ -135,18 +128,18 @@ export default function UpravitNabidku() {
 
     useEffect(() => {
         console.log("useEffect triggered - organizationUsers:", organizationUsers.length, "formData:", formData);
-        
+
         if (organizationUsers.length > 0 && formData && formData.contact_user_info && !formData.contact_user) {
             const fullName = `${formData.contact_user_info.first_name} ${formData.contact_user_info.last_name}`;
             console.log("Hledám uživatele:", fullName);
             console.log("Dostupní uživatelé:", organizationUsers);
-            
-            const contactUser = organizationUsers.find(user => 
+
+            const contactUser = organizationUsers.find(user =>
                 user.label === fullName
             );
-            
+
             console.log("Nalezený uživatel:", contactUser);
-            
+
             if (contactUser) {
                 console.log("Nastavuji contact_user na:", contactUser.value);
                 setFormData(prev => ({

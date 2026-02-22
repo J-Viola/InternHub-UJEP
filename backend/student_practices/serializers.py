@@ -4,7 +4,11 @@ from rest_framework import serializers
 
 from api.helpers import FormattedDateField
 from practices.models import Practice
-from student_practices.models import EmployerInvitation, StudentPractice, UploadedDocument
+from student_practices.models import (
+    EmployerInvitation,
+    StudentPractice,
+    UploadedDocument,
+)
 from users.models import ApprovalStatus, User
 
 

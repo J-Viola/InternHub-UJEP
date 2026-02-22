@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
-import Nav from "@components/core/Nav";
 import BackButton from "@core/Button/BackButton";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useParams } from "react-router-dom";
-import HTMLReactParser from "html-react-parser";
 import Button from "@core/Button/Button";
 import DocsPanel from "@components/Nabidka/DocsPanel";
 import PopUpCon from "@core/Container/PopUpCon";
@@ -17,7 +15,6 @@ import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "src/api/documents/documentsAPI";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
-import handleToDoAlert from "@utils/ToDoAlert";
 
 
 export default function PraxeDetailPage() {
@@ -36,19 +33,16 @@ export default function PraxeDetailPage() {
 
     const fetchData = async () => {
         try {
-            console.log("Fetching nabídka with ID:", id);
             const result = await studentpraticeAPI.getStudentPracticeCard(id);
-            console.log("result", result)
             setEntity(result);
             setDocs(result.student_practice_documents || []);
         } catch (error) {
-            console.error("Chyba při načítání nabídky:", error);
+            addMessage("Chyba při načítání karty praxe", "E");
         }
     };
 
     useEffect(() => {
         if (id) {
-            console.log("id", id)
             fetchData();
         }
     }, [id]);
@@ -108,7 +102,6 @@ export default function PraxeDetailPage() {
                 fetchData();
             }
         } catch (error) {
-            console.error("Chyba při podání přihlášky:", error);
             if (error.response?.data?.detail) {
                 addMessage(error.response.data.detail, "E");
             } else {
@@ -167,7 +160,7 @@ export default function PraxeDetailPage() {
 
             <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                 <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
-                        
+
                     {/* LOGO */}
                     <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
                         <Image
@@ -255,13 +248,13 @@ export default function PraxeDetailPage() {
                     />
                 </Container>
             )}
-                
+
             {/* PODÁNÍ PŘIHLÁŠKY - STUDENT */}
             {popUp && user && user.isStudent() && (
-                <PopUpCon 
+                <PopUpCon
                     useCustomContainer={true}
-                    onClose={handlePopUp} 
-                    title={"Přihláška"} 
+                    onClose={handlePopUp}
+                    title={"Přihláška"}
                     text={"Opravdu si přejete podat přihlášku?"}
                     onSubmit={handleApply}
                     onSubmitText="Podat"
@@ -272,9 +265,9 @@ export default function PraxeDetailPage() {
 
             {/* SCHVALOVÁNÍ PŘIHLÁŠKY - UČITEL/ORGANIZACE */}
             {popUp && user && (user.isDepartmentUser() || user.isOrganizationUser()) && (
-                <PopUpCon 
-                    onClose={handlePopUp} 
-                    title={"Správa přihlášky"} 
+                <PopUpCon
+                    onClose={handlePopUp}
+                    title={"Správa přihlášky"}
                     text={`Chcete schválit nebo zamítnout přihlášku studenta ${entity?.student_practice_status?.student_info?.full_name}?`}
                     onSubmit={handleApprove}
                     onSubmitText="Schválit"
@@ -285,13 +278,13 @@ export default function PraxeDetailPage() {
 
             {/* KONTROLA DOKUMENTŮ */}
             {docsPopUp && (
-                <PopUpCon 
+                <PopUpCon
                     useCustomContainer={true}
-                    onClose={handleDocsPopUp} 
-                    title={"Kontrola dokumentů"} 
+                    onClose={handleDocsPopUp}
+                    title={"Kontrola dokumentů"}
                     text={"Proces není definován"}
                 />
             )}
         </>
     )
-} 
+}

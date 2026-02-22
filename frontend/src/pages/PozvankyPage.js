@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
-import Nav from "@components/core/Nav";
 import Headings from "@core/Text/Headings";
 import BackButton from "@core/Button/BackButton";
 import Button from "@core/Button/Button";
-import TextField from "@core/Form/TextField";
-import TextBox from "@core/Form/TextBox";
-import DropDown from "@core/Form/DropDown";
-import CustomDatePicker from "@core/Form/DatePicker";
-import NabidkaForm from "@components/Forms/NabidkaForm";
-import { useCodeListAPI } from "src/api/code_list/code_listAPI";
-import { useUserAPI } from "src/api/user/userAPI";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
-import handleToDoAlert from "@utils/ToDoAlert";
 import { useUser } from "@hooks/UserProvider";
-import SubjectForm from "@components/Forms/SubjectForm";
 import NabidkaEntityInline from "@components/Nabidka/NabidkaEntityInline";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
@@ -24,7 +14,6 @@ import { useMessage } from "@hooks/MessageContext";
 
 export default function InvitationPage() {
     const [searchParams] = useSearchParams();
-    const [formData, setFormData] = useState({});
     const [nabidky, setNabidky] = useState([]);
     const [selectedNabidka, setSelectedNabidka] = useState(null);
     const [showConfirmPopup, setShowConfirmPopup] = useState(false);
@@ -39,11 +28,11 @@ export default function InvitationPage() {
         const id = searchParams.get('id');
         console.log('Type:', type);
         console.log('ID:', id);
-        
+
         if (type === 'create' && id) {
             const studentIds = id.split(',').map(id => parseInt(id.trim()));
             console.log('Vybraní studenti:', studentIds);
-            
+
             // Načíst nabídky organizace
             if (user.isOrganizationUser()) {
                 getOrganizationPractices().then(res => {
@@ -87,7 +76,7 @@ export default function InvitationPage() {
 
     const handleConfirmCreate = async () => {
         console.log('Vytvořit pozvánku pro:', selectedNabidka, 'a studenty:', studentIds);
-        
+
         if (!selectedNabidka || studentIds.length === 0) return;
 
         try {
@@ -130,7 +119,7 @@ export default function InvitationPage() {
                     </Button>
                 )}
             </Container>
-            
+
             {type === 'create' && studentIds.length > 0 && (
                 <Container property={"bg-facultyColLight mt-2 p-4 rounded-lg border border-black"}>
                     <Paragraph variant="baseBold" property="mb-2">
@@ -157,12 +146,12 @@ export default function InvitationPage() {
                     <Headings sizeTag={"h4"} property={"mb-4"}>
                         Vyberte, na jakou stáž má být pozvánka vázána
                     </Headings>
-                    
+
                     {nabidky.length > 0 ? (
                         <Container property={"space-y-3"}>
                             {nabidky.map((nabidka) => (
-                                <NabidkaEntityInline 
-                                    key={nabidka.practice_id} 
+                                <NabidkaEntityInline
+                                    key={nabidka.practice_id}
                                     entity={nabidka}
                                     isSelected={selectedNabidka?.practice_id === nabidka.practice_id}
                                     onClick={() => handleSelectNabidka(nabidka)}
@@ -177,7 +166,7 @@ export default function InvitationPage() {
                     )}
                 </Container>
             )}
-            
+
             {(!type || !id) && (
                 <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
                     <Paragraph>Žádné parametry pro vytvoření pozvánky.</Paragraph>

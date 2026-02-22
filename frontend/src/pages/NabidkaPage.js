@@ -1,80 +1,77 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
-import Nav from "@components/core/Nav";
+import Paragraph from "@components/core/Text/Paragraph";
 import NabidkaEntity from "@components/Nabidka/NabidkaEntity";
-import { useSearchParams } from "react-router-dom";
 import FilterNabidka from "@components/Nabidka/FilterNabidka";
-import { makeQuery, useCurrentUrl, useSetParams, useFullUrl, useClearParams, useStripParams } from "@hooks/SearchParams"
-import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
+import { makeQuery, useCurrentUrl, useSetParams, useFullUrl, useStripParams } from "@hooks/SearchParams";
+import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useCodeListAPI } from "@api/code_list/code_listAPI";
 import { useMessage } from "@hooks/MessageContext";
+import Pagination from "@components/core/Pagination";
+import useDebounce from "@hooks/useDebounce";
+import { useUser } from "@hooks/UserProvider";
 
-
+const PAGE_SIZE = 10;
 
 export default function NabidkaPage() {
     const currentUrl = useCurrentUrl();
     const setParams = useSetParams();
     const fullUrl = useFullUrl();
-    const clearParams = useClearParams();
     const stripUrlParams = useStripParams();
-    const [ searchParams ] = useSearchParams();
-    const [ filterValue, setFilterValue ] = useState({ title: "" });
-    const [ filterOptions, setFilterOptions ] = useState({});
-    const [data, setData] = useState(null);
+    const [filterValue, setFilterValue] = useState({});
+    const [data, setData] = useState([]);
+    const [count, setCount] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const [uniqueLocations, setLocations] = useState([]);
+    const [uniqueSubjects, setSubjects] = useState([]);
+
     const nabidkaAPI = useNabidkaAPI();
     const codelist = useCodeListAPI();
     const { addMessage } = useMessage();
+    const { user } = useUser();
 
-    const [ uniqueLocations, setLocations ] = useState([])
-    const [ uniqueSubjects, setSubjects ] = useState([])
+    const totalPages = Math.ceil(count / PAGE_SIZE);
 
-    const initParamLoad = () => {
-        const urlParams = stripUrlParams(fullUrl);
-        
-        if (urlParams && Object.keys(urlParams).length > 0) {
-            setFilterValue(urlParams);
-            fetchDataWithParams(urlParams);
-        } else {
-            setFilterValue({});
-            fetchData();
-        }
-    }
+    // Debounce the title text so we auto-search 400 ms after the user stops typing
+    const debouncedTitle = useDebounce(filterValue.title, 400);
 
-    const initFilterOptions = async() =>{
+    const fetchData = useCallback(async (filters = filterValue, page = currentPage) => {
+        setLoading(true);
+        setError(null);
         try {
-            const locations = await codelist.getUniqueLocations();
+            const result = await nabidkaAPI.getNabidky({ ...filters, page, page_size: PAGE_SIZE });
+            setData(result.results);
+            setCount(result.count);
+        } catch {
+            setError("Nepodařilo se načíst nabídky. Zkuste to prosím znovu.");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const initFilterOptions = async () => {
+        try {
+            const [locations, subjects] = await Promise.all([
+                codelist.getUniqueLocations(),
+                codelist.getUniqueSubjects(),
+            ]);
             setLocations(locations);
-
-            const subjects = await codelist.getUniqueSubjects();
             setSubjects(subjects);
-        } catch (error) {
-            console.error("Error initializing filter options:", error);
-        }
-    }
-
-    //fetch s parametry
-    const fetchDataWithParams = async (params) => {
-        try {
-            const result = await nabidkaAPI.getNabidky(params);
-            setData(result);
-        } catch (error) {
-            console.error("Chyba při načítání nabídek:", error);
-        }
-    };
-
-    //fetch s aktuálními filtry
-    const fetchData = async () => {
-        try {
-            const result = await nabidkaAPI.getNabidky(filterValue);
-            setData(result);
-        } catch (error) {
-            console.error("Chyba při načítání nabídek:", error);
+        } catch {
+            // filter options are non-critical, silently ignore
         }
     };
 
     useEffect(() => {
-        initParamLoad();
+        const urlParams = stripUrlParams(fullUrl);
+        const initialFilters = (urlParams && Object.keys(urlParams).length > 0) ? urlParams : {};
+        setFilterValue(initialFilters);
+        setCurrentPage(1);
+        fetchData(initialFilters, 1);
         initFilterOptions();
 
         const pending = sessionStorage.getItem("pendingMessage");
@@ -89,14 +86,13 @@ export default function NabidkaPage() {
         setFilterValue(prev => {
             const newValue = directValue ? value : e.target.value;
             const key = directValue ? id : e.target.id;
-            const updatedFilter = { ...prev };
-            
-            if (newValue === "" || newValue === null || newValue === undefined) {
-                delete updatedFilter[key];
+            const updated = { ...prev };
+            if (newValue === "" || newValue == null) {
+                delete updated[key];
             } else {
-                updatedFilter[key] = newValue;
+                updated[key] = newValue;
             }
-            return updatedFilter;
+            return updated;
         });
     };
 
@@ -108,21 +104,45 @@ export default function NabidkaPage() {
         });
     };
 
+    // Auto-fetch when title text changes (debounced)
+    useEffect(() => {
+        setCurrentPage(1);
+        fetchData(filterValue, 1);
+    }, [debouncedTitle]);
+
     const handleSearchSubmit = () => {
         const queryString = makeQuery(filterValue);
         setParams(currentUrl, queryString);
-        fetchData(); // api call
+        setCurrentPage(1);
+        fetchData(filterValue, 1);
     };
 
-    return(
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        fetchData(filterValue, page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const isShowingFavorites = filterValue.favorites === "true";
+    const handleFavoritesToggle = () => {
+        const newFilters = { ...filterValue };
+        if (isShowingFavorites) {
+            delete newFilters.favorites;
+        } else {
+            newFilters.favorites = "true";
+        }
+        setFilterValue(newFilters);
+        setCurrentPage(1);
+        fetchData(newFilters, 1);
+    };
+
+    return (
         <>
             <Container property={"flex items-center justify-between mb-4 mt-4"}>
-                <Headings sizeTag={"h3"}>
-                    Nabídka praxí
-                </Headings>
+                <Headings sizeTag={"h3"}>Nabídka praxí</Headings>
             </Container>
 
-            <FilterNabidka 
+            <FilterNabidka
                 filterValue={filterValue}
                 handleFilterChange={handleFilterChange}
                 onSearchClear={handleSearchClear}
@@ -130,12 +150,56 @@ export default function NabidkaPage() {
                 locations={uniqueLocations}
                 subjects={uniqueSubjects}
             />
-            
-            <Container property="grid grid-cols-1 gap-4 mt-2">
-                {data && data.map((entity, index) => (
-                    <NabidkaEntity key={entity.practice_id || index} entity={entity}/>
-                ))}
-            </Container>
+
+            {user?.isStudent() && (
+                <Container property="flex justify-end mb-4 -mt-4">
+                    <button
+                        onClick={handleFavoritesToggle}
+                        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border transition-colors duration-200 ${
+                            isShowingFavorites
+                                ? "bg-red-50 border-red-300 text-red-600"
+                                : "bg-white border-gray-300 text-gray-500 hover:border-red-300 hover:text-red-500"
+                        }`}
+                    >
+                        <span>{isShowingFavorites ? "♥" : "♡"}</span>
+                        {isShowingFavorites ? "Zobrazuji oblíbené" : "Oblíbené"}
+                    </button>
+                </Container>
+            )}
+
+            {loading && (
+                <Container property="flex justify-center py-12">
+                    <Paragraph property="text-gray-500">Načítání nabídek...</Paragraph>
+                </Container>
+            )}
+
+            {!loading && error && (
+                <Container property="flex justify-center py-12">
+                    <Paragraph property="text-red-500">{error}</Paragraph>
+                </Container>
+            )}
+
+            {!loading && !error && data.length === 0 && (
+                <Container property="flex justify-center py-12">
+                    <Paragraph property="text-gray-500">Žádné nabídky nebyly nalezeny.</Paragraph>
+                </Container>
+            )}
+
+            {!loading && !error && data.length > 0 && (
+                <>
+                    <Container property="grid grid-cols-1 gap-4 mt-2">
+                        {data.map((entity, index) => (
+                            <NabidkaEntity key={entity.practice_id || index} entity={entity} />
+                        ))}
+                    </Container>
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </>
+            )}
         </>
-    )
+    );
 }

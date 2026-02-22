@@ -1,7 +1,6 @@
 import React, {useState} from "react";
 import Container from "@core/Container/Container";
 import BackButton from "@core/Button/BackButton";
-import Nav from "@components/core/Nav";
 import CompanyForm from "@components/Forms/CompanyForm";
 import { useUserAPI } from "@api/user/userAPI";
 import { useAuth } from "@auth/Auth";
@@ -17,12 +16,12 @@ export default function RegistracePage() {
     const handleRegistration = async (companyData) => {
         setErrors({});
         try {
-            const res = await user.postRegister(companyData);
+            await user.postRegister(companyData);
             addMessage("Registrace úspěšná", "S");
-            
+
             const logData = {
                 "email": companyData.executiveEmail,
-                "password": companyData.executivePassword1   
+                "password": companyData.executivePassword1
             };
             await login(logData);
 
@@ -41,7 +40,7 @@ export default function RegistracePage() {
     }
 
     const renderForm = () => {
-        return <CompanyForm 
+        return <CompanyForm
             handleCreate={handleRegistration}
             errors={errors}
         />;

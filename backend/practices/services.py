@@ -28,7 +28,7 @@ class PracticeService:
 
             with open(logo.path, "rb") as img_file:
                 return prefix + base64.b64encode(img_file.read()).decode("utf-8")
-        except Exception:
+        except (OSError, ValueError):
             return None
 
     @staticmethod

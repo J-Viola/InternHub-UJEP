@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import Nav from "@core/Nav";
+import React, { useEffect, useState, useCallback } from "react";
 import Container from "@core/Container/Container";
 import UserEntity from "@components/User/UserEntity";
 import Headings from "@core/Text/Headings";
@@ -13,13 +12,21 @@ import { useUser } from "@hooks/UserProvider";
 import { useUserAPI } from "src/api/user/userAPI";
 import Button from "@components/core/Button/Button";
 import {useNabidkaAPI} from "../api/nabidka/nabidkaAPI";
+import Pagination from "@core/Pagination";
+import useDebounce from "@hooks/useDebounce";
+
+const PAGE_SIZE = 10;
 
 export default function StudentPage() {
     const { getDepartmentStudents } = useDepartmentAPI();
     const [entities, setEntities] = useState([]);
     const [practice, setPractice] = useState();
-    const [filterValues, setFilterValue] = useState({"name" : ""})
+    const [filterValues, setFilterValue] = useState({"name" : ""});
     const [selectedStudents, setSelectedStudents] = useState(new Set());
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [count, setCount] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
     const navigate = useNavigate()
     const { getStudentsByPracticeId } = useStudentPracticeAPI()
     const { getNabidkaById } = useNabidkaAPI()
@@ -29,62 +36,75 @@ export default function StudentPage() {
     const { getAllStudents } = useUserAPI();
 
 
+    // admin / org-without-view use server-side pagination + search
+    const isPaginated = !!user && !id && (
+        user.isAdmin() || (user.isOrganizationUser() && searchParams.get('view') !== 'true')
+    );
+    const totalPages = Math.ceil(count / PAGE_SIZE);
+
+    // Delay BE requests until user stops typing (400 ms)
+    const debouncedSearchName = useDebounce(filterValues.name, 400);
+
+    // Non-paginated modes: load once on route change
     useEffect(() => {
-        if (id) {
-            loadStudentsByPractice();
-            loadPractice();
-            return;
-        }
-        if (user.isAdmin()) {
-            loadAllStudents();
-        }
-        
-        if (user.isDepartmentUser()) {
-            loadDepartmentStudents();
-        } else if (user.isOrganizationUser()) {
-            loadOrganizationStudents();
-        }
-    }, [searchParams]);
+        if (isPaginated) return;
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                if (id) {
+                    await Promise.all([loadStudentsByPractice(), loadPractice()]);
+                    return;
+                }
+                if (user.isDepartmentUser()) {
+                    await loadDepartmentStudents();
+                } else if (user.isOrganizationUser()) {
+                    // view=true: show department students
+                    const res = await getDepartmentStudents();
+                    setEntities(res);
+                }
+            } catch {
+                setError("Nepodařilo se načíst studenty.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, [id, searchParams.get('view')]);
 
-    const loadPractice = () => {
-          console.log("Mám id", id);
-        getNabidkaById(id).then(fetchedPractice => {
-            setPractice(fetchedPractice);
-        });
-    }
-    const loadStudentsByPractice = () => {
-        console.log("Mám id", id);
-        getStudentsByPracticeId(id).then(fetchedStudents => {
-            setEntities(fetchedStudents);
-        });
+    // Paginated modes: reload on page or search change
+    const loadPagedStudents = useCallback(async (page, search) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await getAllStudents({ page, pageSize: PAGE_SIZE, search });
+            setEntities(res.results ?? []);
+            setCount(res.count ?? 0);
+        } catch {
+            setError("Nepodařilo se načíst studenty.");
+        } finally {
+            setLoading(false);
+        }
+    }, [getAllStudents]);
+
+    useEffect(() => {
+        if (!isPaginated) return;
+        loadPagedStudents(currentPage, debouncedSearchName);
+    }, [isPaginated, currentPage, debouncedSearchName]);
+
+    const loadPractice = async () => {
+        const fetchedPractice = await getNabidkaById(id);
+        setPractice(fetchedPractice);
     };
 
-    const loadAllStudents = () => {
-        getAllStudents().then(res => {
-            setEntities(res.results);
-        });
+    const loadStudentsByPractice = async () => {
+        const fetchedStudents = await getStudentsByPracticeId(id);
+        setEntities(fetchedStudents);
     };
 
-    const loadDepartmentStudents = () => {
-        getDepartmentStudents().then(res => {
-            setEntities(res);
-        });
-    };
-
-    const loadOrganizationStudents = () => {
-        const viewParam = searchParams.get('view');
-        
-        if (viewParam === 'true') {
-            // View mode - pouze přihlášené studenty
-            getDepartmentStudents().then(res => {
-                setEntities(res);
-            });
-        } else {
-            // Normal mode - všechny studenty
-            getAllStudents().then(res => {
-                setEntities(res.results);
-            });
-        }
+    const loadDepartmentStudents = async () => {
+        const res = await getDepartmentStudents();
+        setEntities(res);
     };
 
 
@@ -99,7 +119,7 @@ export default function StudentPage() {
                 btnfunction: () => navigate(`/profil/${entity?.user_id}`)
             }
         ];
-        
+
         const hasNotPractice = [
             {
                 icon: "user",
@@ -112,7 +132,7 @@ export default function StudentPage() {
 
     const getOrganizationButtons = (entity) => {
         const isSelected = selectedStudents.has(entity.user_id);
-        
+
         return [
             {
                 icon: isSelected ? "check" : "plus",
@@ -153,60 +173,60 @@ export default function StudentPage() {
 
     const getAttributes = () => {
         const viewParam = searchParams.get('view');
-        
+
         if (user.isOrganizationUser() && !id) {
-            return viewParam === 'true' 
+            return viewParam === 'true'
                 ? { "Osobní číslo": "os_cislo" }  // View mode
                 : { "Osobní číslo": "os_cislo", "": "department" };  // Normal mode
         }
 
         if (user.isAdmin()) {
-            return { 
+            return {
                 "Osobní číslo": "os_cislo",
                 "": "department"
-            
+
             };
         }
-        
+
         if (!id) {
             return { "Osobní číslo": "os_cislo" };  // Department users
         } else if (!user.isOrganizationUser()) {
             return {  // Student practice
                 "Podání": "application_date",
-                "Stav": "approval_status", 
+                "Stav": "approval_status",
                 "Hodiny": "hours_completed"
             };
         }
-        
+
         return { "Osobní číslo": "os_cislo" };  // Fallback
     };
 
 
     const getTitle = () => {
         const viewParam = searchParams.get('view');
-        
+
         if (id) {
             return `Přihlášení k praxi - ${practice ? practice.title : ''}`;
         }
-        
+
         if (user.isDepartmentUser()) {
-            return entities[0] && entities[0].department 
+            return entities[0] && entities[0].department
                 ? `Studenti katedry - ${entities[0].department}`
                 : "Studenti katedry";
         }
-        
+
         if (user.isOrganizationUser()) {
             return viewParam === 'true' ? "Přihlášení k praxi" : "Studenti";
         }
-        
+
         return "Studenti";
     };
 
 
-    const filteredEntities = entities.filter(entity => {
+    // Paginated modes: BE handles search, no client-side filter needed
+    const filteredEntities = isPaginated ? entities : entities.filter(entity => {
         if (!filterValues.name) return true;
         const search = filterValues.name.toLowerCase();
-        
         return (
             (entity.student_full_name && entity.student_full_name.toLowerCase().includes(search)) ||
             (entity.first_name && entity.first_name.toLowerCase().includes(search)) ||
@@ -221,31 +241,35 @@ export default function StudentPage() {
         navigate(`/profil/${entity?.user_id}`);
     };
 
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handleClear = () => {
         setFilterValue({ "name": "" });
+        if (isPaginated) setCurrentPage(1);
     };
-    
+
     const handleChange = (e) => {
         const { id, value } = e.target;
-        setFilterValue(prev => ({
-            ...prev,
-            [id]: value
-        }));
+        setFilterValue(prev => ({ ...prev, [id]: value }));
+        if (isPaginated) setCurrentPage(1);
     };
 
     const handleInvite = () => {
         const selectedIds = Array.from(selectedStudents);
         if (selectedIds.length > 0) {
-            const selectedStudentsData = entities.filter(entity => 
+            const selectedStudentsData = entities.filter(entity =>
                 selectedIds.includes(entity.user_id)
             );
-            const studentNames = selectedStudentsData.map(student => 
-                student.student_full_name || 
+            const studentNames = selectedStudentsData.map(student =>
+                student.student_full_name ||
                 `${student.first_name || ''} ${student.last_name || ''}`.trim() ||
                 student.name ||
                 'Neznámý student'
             );
-            
+
             const queryParams = new URLSearchParams({
                 type: 'create',
                 id: selectedIds.join(','),
@@ -277,11 +301,11 @@ export default function StudentPage() {
         if (id) {
             return getStudentPracticeButtons(entity);
         }
-        
+
         if (user.isOrganizationUser() && searchParams.get('view') !== 'true') {
             return getOrganizationButtons(entity);
         }
-        
+
         return getDepartmentButtons(entity.approved_practice?.approval_status, entity);
     };
 
@@ -296,11 +320,6 @@ export default function StudentPage() {
         return !user.isOrganizationUser() || searchParams.get('view') === 'true';
     };
 
-
-    // Debug
-    useEffect(() => {
-        console.log("Entities", entities);
-    },[entities])
 
     return (
         <>
@@ -322,9 +341,18 @@ export default function StudentPage() {
                     onClear={handleClear}
                 />
             </Container>
-            
+
             <Container property={"mt-4"}>
-                {filteredEntities.map(entity => (
+                {loading && (
+                    <Paragraph property="text-center text-gray-500 py-8">Načítání studentů...</Paragraph>
+                )}
+                {!loading && error && (
+                    <Paragraph property="text-center text-red-500 py-8">{error}</Paragraph>
+                )}
+                {!loading && !error && filteredEntities.length === 0 && (
+                    <Paragraph property="text-center text-gray-500 py-8">Žádní studenti nebyli nalezeni.</Paragraph>
+                )}
+                {!loading && !error && filteredEntities.map(entity => (
                     <UserEntity
                         key={entity.user_id}
                         entity={entity}
@@ -335,6 +363,13 @@ export default function StudentPage() {
                         statusView={renderEntityStatusView()}
                     />
                 ))}
+                {!loading && !error && isPaginated && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                )}
             </Container>
         </>
     );

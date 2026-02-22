@@ -1,5 +1,6 @@
+from django.db import transaction
 from django.http import FileResponse
-from django.utils import timezone  # Import timezone from django.utils
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, permissions, serializers, status
@@ -11,7 +12,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from api.permissions import IsOrganizationOwner
 from practices.models import Practice
 from student_practices.models import (
     DocumentHelper,
@@ -26,6 +26,7 @@ from student_practices.permissions import (
 )
 from student_practices.services import StudentPracticeService
 from users.models import ApprovalStatus
+from users.permissions import IsOrganizationOwner
 
 from .serializers import (
     CreateInvitationSerializer,
@@ -208,7 +209,10 @@ class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
 
 
 class StudentPracticeStatusUpdateView(APIView):
-    permission_classes = [IsAuthenticated, IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | permissions.IsAdminUser]
+    permission_classes = [
+        IsAuthenticated,
+        IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | permissions.IsAdminUser,
+    ]
 
     @extend_schema(
         summary="Update student practice status",
@@ -281,6 +285,7 @@ class StudentPracticeUploadDocumentView(APIView):
             404: OpenApiResponse(description="StudentPractice not found"),
         },
     )
+    @transaction.atomic
     def post(self, request, document_id):
         document = get_object_or_404(UploadedDocument, pk=document_id)
         self.check_object_permissions(request, document)

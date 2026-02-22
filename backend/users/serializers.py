@@ -28,6 +28,7 @@ User = get_user_model()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     service_ticket = serializers.CharField(write_only=True, required=False)
+    stag_user_info = serializers.JSONField(write_only=True, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,10 +44,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         ticket = attrs.pop("service_ticket", None)
+        stag_user_info = attrs.pop("stag_user_info", None)
 
         if ticket:
             try:
-                stag_data = validate_stag_ticket(ticket)
+                stag_data = validate_stag_ticket(ticket, stag_user_info=stag_user_info)
                 user = get_or_create_stag_user(stag_data, ticket)
                 if not user:
                     raise AuthenticationFailed("Could not create or retrieve STAG user.")
@@ -56,12 +58,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
                 refresh = self.get_token(user)
                 refresh["type"] = UserType.STAG.value
-                refresh["service_ticket"] = ticket
                 return {
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),
                     "user": user,
                 }
+            except AuthenticationFailed:
+                raise
             except Exception as e:
                 raise AuthenticationFailed(str(e))
 
@@ -102,7 +105,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class OrganizationRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-    ico = serializers.RegexField(regex=r"^\d{1,8}$", write_only=True, required=True)
+    ico = serializers.RegexField(regex=r"^\d{8}$", write_only=True, required=True)
     email = serializers.CharField(write_only=True, required=True)
     phone = serializers.CharField(write_only=True, required=True)
     logo = serializers.ImageField(write_only=True, required=False)
@@ -179,7 +182,7 @@ class LogoutSerializer(serializers.Serializer):
 
 
 class AresJusticeSerializer(serializers.Serializer):
-    ico = serializers.RegexField(regex=r"\d{8}")
+    ico = serializers.RegexField(regex=r"^\d{8}$")
 
 
 class UserInfoSerializer(serializers.ModelSerializer):
@@ -191,7 +194,15 @@ class UserInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "firstName", "lastName", "department", "favorite_practices"]
+        fields = [
+            "id",
+            "email",
+            "role",
+            "firstName",
+            "lastName",
+            "department",
+            "favorite_practices",
+        ]
 
     def get_role(self, obj):
         if obj.is_superuser or obj.email == "admin@admin.com":
@@ -462,7 +473,7 @@ class OrganizationUserListSerializer(serializers.ModelSerializer):
             if isinstance(obj.organization_role, int):
                 try:
                     return OrganizationRole(obj.organization_role).name
-                except Exception:
+                except ValueError:
                     return str(obj.organization_role)
             # If it's an Enum object
             elif hasattr(obj.organization_role, "name"):

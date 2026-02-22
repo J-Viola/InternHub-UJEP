@@ -11,14 +11,16 @@ export default function StudentApplicationsPage() {
     const { getPracticeUserRelations } = useNabidkaAPI();
     const [data, setData] = useState({ student_practices: [], employer_invitations: [] });
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const fetchData = async () => {
         try {
             setLoading(true);
+            setError(null);
             const res = await getPracticeUserRelations();
             if (res) setData(res);
-        } catch (error) {
-            console.error("Error fetching student applications:", error);
+        } catch {
+            setError("Nepodařilo se načíst přihlášky. Zkuste to prosím znovu.");
         } finally {
             setLoading(false);
         }
@@ -35,25 +37,31 @@ export default function StudentApplicationsPage() {
 
             {loading ? (
                 <Paragraph>Načítání...</Paragraph>
+            ) : error ? (
+                <Paragraph property="text-red-600">{error}</Paragraph>
             ) : (
                 <Container property="grid gap-8">
                     {/* INVITATIONS SECTION */}
-                    {data.employer_invitations && data.employer_invitations.length > 0 && (
-                        <Container>
-                            <Headings sizeTag="h3" property="mb-4 text-blue-600">
-                                Pozvánky od firem
-                            </Headings>
+                    <Container>
+                        <Headings sizeTag="h3" property="mb-4 text-blue-600">
+                            Pozvánky od firem
+                        </Headings>
+                        {data.employer_invitations && data.employer_invitations.length > 0 ? (
                             <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {data.employer_invitations.map((inv) => (
-                                    <StudentInvitationCard 
-                                        key={inv.invitation_id} 
-                                        entity={inv} 
+                                    <StudentInvitationCard
+                                        key={inv.invitation_id}
+                                        entity={inv}
                                         onResponse={fetchData}
                                     />
                                 ))}
                             </Container>
-                        </Container>
-                    )}
+                        ) : (
+                            <Paragraph property="text-gray-500 italic">
+                                Nemáte žádné čekající pozvánky od firem.
+                            </Paragraph>
+                        )}
+                    </Container>
 
                     {/* APPLICATIONS SECTION */}
                     <Container>
@@ -63,9 +71,9 @@ export default function StudentApplicationsPage() {
                         {data.student_practices && data.student_practices.length > 0 ? (
                             <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {data.student_practices.map((app) => (
-                                    <StudentApplicationCard 
-                                        key={app.student_practice_id} 
-                                        entity={app} 
+                                    <StudentApplicationCard
+                                        key={app.student_practice_id}
+                                        entity={app}
                                     />
                                 ))}
                             </Container>

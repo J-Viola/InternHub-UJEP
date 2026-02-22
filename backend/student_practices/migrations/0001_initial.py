@@ -8,55 +8,81 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='EmployerInvitation',
+            name="EmployerInvitation",
             fields=[
-                ('invitation_id', models.AutoField(primary_key=True, serialize=False)),
-                ('submission_date', models.DateField(blank=True, null=True)),
-                ('expiration_date', models.DateField(blank=True, null=True)),
-                ('message', models.TextField(blank=True, default='')),
-                ('status', django_enumfield.db.fields.EnumField(enum=student_practices.models.EmployerInvitationStatus)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                ("invitation_id", models.AutoField(primary_key=True, serialize=False)),
+                ("submission_date", models.DateField(blank=True, null=True)),
+                ("expiration_date", models.DateField(blank=True, null=True)),
+                ("message", models.TextField(blank=True, default="")),
+                (
+                    "status",
+                    django_enumfield.db.fields.EnumField(
+                        enum=student_practices.models.EmployerInvitationStatus
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'db_table': 'employer_invitations',
+                "db_table": "employer_invitations",
             },
         ),
         migrations.CreateModel(
-            name='StudentPractice',
+            name="StudentPractice",
             fields=[
-                ('student_practice_id', models.AutoField(primary_key=True, serialize=False)),
-                ('application_date', models.DateField(blank=True, null=True)),
-                ('approval_status', django_enumfield.db.fields.EnumField(enum=users.models.ApprovalStatus)),
-                ('progress_status', django_enumfield.db.fields.EnumField(enum=practices.models.ProgressStatus)),
-                ('hours_completed', models.IntegerField(blank=True, null=True)),
-                ('cancellation_reason', models.TextField(blank=True, default='')),
-                ('year', models.IntegerField(blank=True, null=True)),
-                ('start_date', models.DateField()),
-                ('end_date', models.DateField()),
+                (
+                    "student_practice_id",
+                    models.AutoField(primary_key=True, serialize=False),
+                ),
+                ("application_date", models.DateField(blank=True, null=True)),
+                (
+                    "approval_status",
+                    django_enumfield.db.fields.EnumField(
+                        enum=users.models.ApprovalStatus
+                    ),
+                ),
+                (
+                    "progress_status",
+                    django_enumfield.db.fields.EnumField(
+                        enum=practices.models.ProgressStatus
+                    ),
+                ),
+                ("hours_completed", models.IntegerField(blank=True, null=True)),
+                ("cancellation_reason", models.TextField(blank=True, default="")),
+                ("year", models.IntegerField(blank=True, null=True)),
+                ("start_date", models.DateField()),
+                ("end_date", models.DateField()),
             ],
             options={
-                'db_table': 'student_practices',
+                "db_table": "student_practices",
             },
         ),
         migrations.CreateModel(
-            name='UploadedDocument',
+            name="UploadedDocument",
             fields=[
-                ('document_id', models.AutoField(primary_key=True, serialize=False)),
-                ('document', models.FileField(blank=True, null=True, upload_to='storage/documents')),
-                ('uploaded_at', models.DateTimeField(blank=True, null=True)),
-                ('document_type', django_enumfield.db.fields.EnumField(enum=student_practices.models.DocumentType)),
+                ("document_id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "document",
+                    models.FileField(
+                        blank=True, null=True, upload_to="storage/documents"
+                    ),
+                ),
+                ("uploaded_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "document_type",
+                    django_enumfield.db.fields.EnumField(
+                        enum=student_practices.models.DocumentType
+                    ),
+                ),
             ],
             options={
-                'db_table': 'uploaded_documents',
+                "db_table": "uploaded_documents",
             },
         ),
     ]

@@ -26,5 +26,20 @@ format: ## Formats code and fixes linting issues inside backend container
 	docker container exec internhub-backend ruff format .
 	docker container exec internhub-backend ruff check --fix .
 
-test: ## Runs tests for the backend
-	docker container exec internhub-backend python manage.py test --noinput --settings=app.test_settings
+test: ## Runs tests for the backend (pytest)
+	docker container exec internhub-backend pytest
+
+test-frontend: ## Runs tests for the frontend
+	docker container exec internhub-frontend npm test -- --watchAll=false --passWithNoTests
+
+migrate: ## Runs Django migrations inside the backend container
+	docker container exec internhub-backend python manage.py migrate
+
+seed: ## Seeds the database with demo data inside the backend container
+	docker container exec internhub-backend python manage.py seed --settings=app.settings
+
+lint-frontend: ## Runs ESLint on the frontend source
+	docker container exec internhub-frontend npx eslint src --ext .js,.jsx
+
+logs: ## Tails the last 100 lines of all container logs
+	docker compose logs --tail=100 -f

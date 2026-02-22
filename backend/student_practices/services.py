@@ -31,20 +31,22 @@ class StudentPracticeService:
             try:
                 student = StudentUser.objects.get(pk=student_id)
 
-                # Check for existing invitation or practice
-                if EmployerInvitation.objects.filter(practice=practice, user=student).exists():
-                    continue
+                # Skip if student already has an active practice for this offer
                 if StudentPractice.objects.filter(practice=practice, user=student).exists():
                     continue
 
-                EmployerInvitation.objects.create(
-                    employer=practice.employer,
-                    user=student,
+                # Use get_or_create to avoid race condition on duplicate invitations
+                _, created = EmployerInvitation.objects.get_or_create(
                     practice=practice,
-                    status=EmployerInvitationStatus.PENDING,
-                    submission_date=date.today(),
+                    user=student,
+                    defaults={
+                        "employer": practice.employer,
+                        "status": EmployerInvitationStatus.PENDING,
+                        "submission_date": date.today(),
+                    },
                 )
-                created_count += 1
+                if created:
+                    created_count += 1
             except StudentUser.DoesNotExist:
                 errors.append(f"Student ID {student_id} neexistuje.")
 

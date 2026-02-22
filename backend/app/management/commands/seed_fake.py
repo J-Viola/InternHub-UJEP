@@ -43,7 +43,10 @@ class Command(BaseCommand):
 
         # 0. Generování Profesora (Vyučujícího)
         self.stdout.write(" - Generuji Profesora...")
-        department, _ = Department.objects.get_or_create(department_name="Katedra informatiky", defaults={"description": "KI PřF UJEP"})
+        department, _ = Department.objects.get_or_create(
+            department_name="Katedra informatiky",
+            defaults={"description": "KI PřF UJEP"},
+        )
 
         if not ProfessorUser.objects.filter(email="professor@ujep.cz").exists():
             ProfessorUser.objects.create(

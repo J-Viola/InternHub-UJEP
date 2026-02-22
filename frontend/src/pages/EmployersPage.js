@@ -4,7 +4,6 @@ import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
-import Nav from "@components/core/Nav";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useEmployerAPI } from "@api/employer/employerAPI";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +15,7 @@ export default function EmployersPage() {
     const [loading, setLoading] = useState(true);
     const [showDeletePop, setShowDeletePop] = useState(false);
     const [selectedEmployer, setSelectedEmployer] = useState(null);
-    
+
     const employerAPI = useEmployerAPI();
     const navigate = useNavigate();
     const { showMessage } = useMessage();
@@ -54,7 +53,7 @@ export default function EmployersPage() {
 
     const handleDeleteConfirm = async () => {
         if (!selectedEmployer) return;
-        
+
         try {
             await employerAPI.deleteEmployer(selectedEmployer.employer_id);
             showMessage('Zaměstnavatel byl úspěšně smazán', 'success');
@@ -74,7 +73,7 @@ export default function EmployersPage() {
     return (
         <>
             <BackButton/>
-            
+
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
                     Správa zaměstnavatelů
@@ -82,7 +81,7 @@ export default function EmployersPage() {
             </Container>
 
             <Container>
-                <Button 
+                <Button
                     onClick={handleCreateEmployer}
                     icon={"plus"}
                 >
@@ -122,7 +121,7 @@ export default function EmployersPage() {
 
             {/* Popup pro potvrzení smazání */}
             {showDeletePop && (
-                <PopUpCon 
+                <PopUpCon
                     onClose={handleDeleteCancel}
                     title="Potvrdit smazání"
                     text={`Opravdu chcete smazat zaměstnavatele "${selectedEmployer?.employer_name}"? Tato akce je nevratná.`}
@@ -134,4 +133,4 @@ export default function EmployersPage() {
             )}
         </>
     );
-} 
+}

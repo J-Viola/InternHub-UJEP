@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 
 AUTH_USER_MODEL = "users.User"
 
@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "corsheaders",
-    # "verify_email.apps.VerifyEmailConfig",
 ]
 
 MIDDLEWARE = [
@@ -161,6 +160,24 @@ DEMO_DEPARTMENT_CODE = os.environ.get("DEMO_DEPARTMENT_CODE", "DEMO")
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
 STAG_MOCK = os.environ.get("STAG_MOCK", "False") == "True"
+
+# Produkční bezpečnostní kontroly — zabrání spuštění s nebezpečnou konfigurací
+if not DEBUG:
+    import sys
+
+    if STAG_MOCK:
+        print(
+            "SECURITY ERROR: STAG_MOCK=True je zakázáno v produkci. Nastav STAG_MOCK=False.",
+            file=sys.stderr,
+        )  # noqa: T201
+        sys.exit(1)
+    if DEMO_LOGIN:
+        print(
+            "SECURITY ERROR: DEMO_LOGIN=1 je zakázáno v produkci. Nastav DEMO_LOGIN=0.",
+            file=sys.stderr,
+        )  # noqa: T201
+        sys.exit(1)
+
 ARES_API_URL = os.environ.get(
     "ARES_API_URL",
     "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty",
@@ -178,6 +195,16 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     ],
     "EXCEPTION_HANDLER": "api.exceptions.custom_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "200/hour",
+        "user": "2000/hour",
+        "login": "10/min",
+        "password_reset": "5/hour",
+    },
 }
 
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
@@ -200,7 +227,7 @@ SIMPLE_JWT = {
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST")
 EMAIL_PORT = os.environ.get("EMAIL_PORT")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_HOST_USER = os.environ.get("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
@@ -255,6 +282,9 @@ CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 # Debug settings
 # DEBUG is set via env var at the top of file
 
+# Ensure the logs directory exists before configuring file handlers
+(BASE_DIR / "logs").mkdir(exist_ok=True)
+
 # Debug and error logging settings
 LOGGING = {
     "version": 1,
@@ -289,7 +319,8 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["file_info", "file_error", "console"],
+            # V produkci (DEBUG=False) logujeme jen na stdout — file logy se ztrácejí při restartu kontejneru
+            "handlers": ["file_info", "file_error", "console"] if DEBUG else ["console"],
             "level": "INFO",
             "propagate": True,
         },

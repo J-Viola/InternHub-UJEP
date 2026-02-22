@@ -19,8 +19,13 @@ RUN pip install gunicorn
 # Copy application code
 COPY backend/ .
 
-# Collect static files (optional, can be done at runtime if using shared volume)
-# RUN python manage.py collectstatic --noinput
+# Create logs directory and non-root user
+RUN mkdir -p /app/backend/logs \
+    && addgroup --system appgroup \
+    && adduser --system --ingroup appgroup appuser \
+    && chown -R appuser:appgroup /app/backend
+
+USER appuser
 
 EXPOSE 8000
 

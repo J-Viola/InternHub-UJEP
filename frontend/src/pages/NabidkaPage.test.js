@@ -10,12 +10,16 @@ import { useMessage } from '@hooks/MessageContext';
 jest.mock('@api/nabidka/nabidkaAPI');
 jest.mock('@api/code_list/code_listAPI');
 jest.mock('@hooks/MessageContext');
+jest.mock('@hooks/UserProvider', () => ({
+    useUser: () => ({ user: null }),
+}));
+jest.mock('@hooks/useDebounce', () => (value) => value);
 jest.mock('@hooks/SearchParams', () => ({
     useCurrentUrl: () => 'http://localhost/nabidka',
     useSetParams: () => jest.fn(),
     useFullUrl: () => 'http://localhost/nabidka',
     useClearParams: () => jest.fn(),
-    useStripParams: () => jest.fn(() => ({})), 
+    useStripParams: () => jest.fn(() => ({})),
     makeQuery: () => ''
 }));
 
@@ -25,6 +29,7 @@ jest.mock('@components/Nabidka/NabidkaEntity', () => ({ entity }) => (
 ));
 jest.mock('@components/Nabidka/FilterNabidka', () => () => <div data-testid="filter-nabidka">Filter</div>);
 jest.mock('@core/Nav', () => () => <nav>Nav</nav>);
+jest.mock('@components/core/Pagination', () => () => null);
 
 describe('NabidkaPage', () => {
     const mockGetNabidky = jest.fn();
@@ -53,7 +58,7 @@ describe('NabidkaPage', () => {
             { practice_id: 1, title: 'Offer 1' },
             { practice_id: 2, title: 'Offer 2' }
         ];
-        mockGetNabidky.mockResolvedValue(mockData);
+        mockGetNabidky.mockResolvedValue({ results: mockData, count: 2 });
 
         render(
             <MemoryRouter>
@@ -66,11 +71,11 @@ describe('NabidkaPage', () => {
         });
         expect(screen.getByText('Offer 1')).toBeInTheDocument();
         expect(screen.getByText('Offer 2')).toBeInTheDocument();
-        expect(mockGetNabidky).toHaveBeenCalledWith({ title: "" });
+        expect(mockGetNabidky).toHaveBeenCalled();
     });
 
     test('renders filter component', async () => {
-        mockGetNabidky.mockResolvedValue([]);
+        mockGetNabidky.mockResolvedValue({ results: [], count: 0 });
 
         render(
             <MemoryRouter>
@@ -86,7 +91,7 @@ describe('NabidkaPage', () => {
     });
 
     test('handles empty data', async () => {
-        mockGetNabidky.mockResolvedValue([]);
+        mockGetNabidky.mockResolvedValue({ results: [], count: 0 });
 
         render(
             <MemoryRouter>

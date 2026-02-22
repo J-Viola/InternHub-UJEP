@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
-import Nav from "@components/core/Nav";
-import Headings from "@core/Text/Headings";
 import BackButton from "@core/Button/BackButton";
-import Button from "@core/Button/Button";
-import TextField from "@core/Form/TextField";
-import TextBox from "@core/Form/TextBox";
-import DropDown from "@core/Form/DropDown";
-import CustomDatePicker from "@core/Form/DatePicker";
 import NabidkaForm from "@components/Forms/NabidkaForm";
 import { useCodeListAPI } from "@api/code_list/code_listAPI";
 import { useUserAPI } from "@api/user/userAPI";
@@ -29,8 +22,8 @@ export default function VytvoritNabidku() {
 
     useEffect(()=> {
         const initFetch = async() => {
-            const res1 = await codeList.getUniqueSubjects().then(val => setSubjects(val))
-            const res2 = await userAPI.getOrganizationUsers().then(val => setOrganizationUsers(val))
+            await codeList.getUniqueSubjects().then(val => setSubjects(val))
+            await userAPI.getOrganizationUsers().then(val => setOrganizationUsers(val))
         }
         initFetch();
     },[])

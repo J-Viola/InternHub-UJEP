@@ -1,7 +1,11 @@
 from enum import Enum as PythonEnum
 
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 from django_enumfield import enum
 from polymorphic.models import PolymorphicManager, PolymorphicModel
@@ -23,7 +27,7 @@ class StagRoleEnum(PythonEnum):
 
 
 class UserManager(PolymorphicManager, BaseUserManager):
-    use_in_migrations = True
+    use_in_migrations = False
 
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -191,7 +195,11 @@ class StudentUser(StagUser):
     zip_code = models.CharField(max_length=10, blank=True, default="")
     city = models.CharField(max_length=100, blank=True, default="")
     specialization = models.CharField(max_length=100, blank=True, default="")
-    practices = models.ManyToManyField("practices.Practice", through="student_practices.StudentPractice", related_name="student_users")
+    practices = models.ManyToManyField(
+        "practices.Practice",
+        through="student_practices.StudentPractice",
+        related_name="student_users",
+    )
 
     # New fields
     skills = models.JSONField(default=list, blank=True)
@@ -247,7 +255,13 @@ class UserSubjectType(enum.Enum):
 class UserSubject(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(StagUser, models.CASCADE, blank=True, null=True, related_name="user_subjects")
-    subject = models.ForeignKey("subject.Subject", models.CASCADE, blank=True, null=True, related_name="user_subjects")
+    subject = models.ForeignKey(
+        "subject.Subject",
+        models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="user_subjects",
+    )
     role = enum.EnumField(UserSubjectType)
 
     class Meta:

@@ -70,6 +70,8 @@ describe('VytvoritNabidku', () => {
 
         await waitFor(() => {
             expect(mockGetUniqueSubjects).toHaveBeenCalled();
+        });
+        await waitFor(() => {
             expect(mockGetOrganizationUsers).toHaveBeenCalled();
         });
     });
@@ -88,6 +90,8 @@ describe('VytvoritNabidku', () => {
 
         await waitFor(() => {
             expect(mockCalculateEndDate).toHaveBeenCalledWith('01.01.2025', '1.0');
+        });
+        await waitFor(() => {
             expect(screen.getByTestId('end-date')).toHaveTextContent('01.06.2025');
         });
     });
@@ -106,6 +110,8 @@ describe('VytvoritNabidku', () => {
 
         await waitFor(() => {
             expect(mockCreateNabidka).toHaveBeenCalled();
+        });
+        await waitFor(() => {
             expect(mockNavigate).toHaveBeenCalledWith(-1);
         });
     });

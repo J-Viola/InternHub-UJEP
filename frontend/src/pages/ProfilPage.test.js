@@ -90,6 +90,8 @@ describe('ProfilPage', () => {
 
         await waitFor(() => {
             expect(mockGetStudentProfile).toHaveBeenCalledWith('2');
+        });
+        await waitFor(() => {
             expect(screen.getByText('Petr Student')).toBeInTheDocument();
         });
     });

@@ -4,26 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('practices', '0002_initial'),
-        ('users', '0003_alter_employerprofile_city_and_more'),
+        ("practices", "0002_initial"),
+        ("users", "0003_alter_employerprofile_city_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='studentuser',
-            name='cv_file',
-            field=models.FileField(blank=True, null=True, upload_to='storage/documents/cvs'),
+            model_name="studentuser",
+            name="cv_file",
+            field=models.FileField(
+                blank=True, null=True, upload_to="storage/documents/cvs"
+            ),
         ),
         migrations.AddField(
-            model_name='studentuser',
-            name='favorite_practices',
-            field=models.ManyToManyField(blank=True, related_name='favorited_by', to='practices.practice'),
+            model_name="studentuser",
+            name="favorite_practices",
+            field=models.ManyToManyField(
+                blank=True, related_name="favorited_by", to="practices.practice"
+            ),
         ),
         migrations.AddField(
-            model_name='studentuser',
-            name='skills',
+            model_name="studentuser",
+            name="skills",
             field=models.JSONField(blank=True, default=list),
         ),
     ]

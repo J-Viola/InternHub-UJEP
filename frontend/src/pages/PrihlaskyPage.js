@@ -4,8 +4,6 @@ import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
-import Nav from "@components/core/Nav";
-import { useParams } from "react-router-dom";
 import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import PrihlaskaEntity from "@components/Prihlasky/PrihlaskaEntity";
 import PopUpCon from "@core/Container/PopUpCon";
@@ -54,7 +52,7 @@ export default function PrihlaskyPage() {
 		}
 	}
 
-	
+
 	const handleReject = async () => {
 		if (!selectedEntity) return;
 		try {
@@ -77,7 +75,7 @@ export default function PrihlaskyPage() {
 				setData(res);
 				console.log("Admin pending applications", res);
 			}
-			else {    
+			else {
 				try {
 					const res = await studentpracticeAPI.getOrganizationApplications();
 					setData(res);
@@ -138,7 +136,7 @@ export default function PrihlaskyPage() {
 	                    Nevyřízené přihlášky
 	                </Headings>
 	            </Container>
-	
+
 	            {user.isAdmin() && (
 	                <Container property={"flex flex-col gap-3 mb-6 mt-4"}>
 	                    <SearchBar
@@ -167,7 +165,7 @@ export default function PrihlaskyPage() {
 	                    </Container>
 	                </Container>
 	            )}
-	
+
 	            <Container property={"mt-4 rounded-lg"}>
 	                {!data ? (
 	                    <Paragraph>Načítání...</Paragraph>

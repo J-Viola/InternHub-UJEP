@@ -1,24 +1,14 @@
 // zde bude switch podle paramu na příslušný formulář - tohle bude sloužit pro založení předmětů, organizačních účtů atd..
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Container from "@core/Container/Container";
-import Nav from "@components/core/Nav";
-import Headings from "@core/Text/Headings";
 import BackButton from "@core/Button/BackButton";
-import Button from "@core/Button/Button";
-import TextField from "@core/Form/TextField";
-import TextBox from "@core/Form/TextBox";
-import DropDown from "@core/Form/DropDown";
-import CustomDatePicker from "@core/Form/DatePicker";
-import NabidkaForm from "@components/Forms/NabidkaForm";
-import { useCodeListAPI } from "src/api/code_list/code_listAPI";
 import { useUserAPI } from "src/api/user/userAPI";
 import { useSubjectAPI } from "src/api/subject/subjectAPI";
 import { useDepartmentAPI } from "src/api/department/departmentAPI";
 import { useCompanyAPI } from "src/api/company/companyAPI";
 import { useEmployerAPI } from "src/api/employer/employerAPI";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
-import { useUser } from "@hooks/UserProvider";
 import SubjectForm from "@components/Forms/SubjectForm";
 import UserForm from "@components/Forms/UserForm";
 import DepartmentForm from "@components/Forms/DepartmentForm";
@@ -28,7 +18,6 @@ import ProfessorForm from "@components/Forms/ProfessorForm";
 
 export default function FormPage() {
     const [searchParams] = useSearchParams();
-    const [formData, setFormData] = useState({});
     const navigate = useNavigate();
 
     // API hooks
@@ -60,7 +49,7 @@ export default function FormPage() {
         const type = searchParams.get('type');
         const action = searchParams.get('action');
         const id = searchParams.get('id');
-        
+
         switch(type) {
             case 'subject':
                 return (
@@ -121,7 +110,7 @@ export default function FormPage() {
                 return <Paragraph>Neznámý typ formuláře: {type}</Paragraph>;
         }
     };
-    
+
     return(
         <>
             <BackButton/>

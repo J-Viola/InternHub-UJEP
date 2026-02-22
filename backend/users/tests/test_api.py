@@ -93,7 +93,10 @@ class RegisterSerializerTests(TestCase):
     def test_register_with_valid_data(self, mock_fetch_ares):
         # Mock ARES response
         mock_fetch_ares.return_value = EkonomickySubjektDTO(
-            ico="12345678", obchodniJmeno="Test Company", sidlo=Adresa(textovaAdresa="Test Address", psc=12345), dic="CZ12345678"
+            ico="12345678",
+            obchodniJmeno="Test Company",
+            sidlo=Adresa(textovaAdresa="Test Address", psc=12345),
+            dic="CZ12345678",
         )
 
         data = {
@@ -162,7 +165,10 @@ class RegisterViewTests(APITestCase):
     def test_registers_user_successfully(self, mock_fetch_ares):
         # Mock ARES response
         mock_fetch_ares.return_value = EkonomickySubjektDTO(
-            ico="12345678", obchodniJmeno="Test Company", sidlo=Adresa(textovaAdresa="Test Address", psc=12345), dic="CZ12345678"
+            ico="12345678",
+            obchodniJmeno="Test Company",
+            sidlo=Adresa(textovaAdresa="Test Address", psc=12345),
+            dic="CZ12345678",
         )
 
         url = reverse("users:register")

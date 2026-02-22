@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
-import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
-import Nav from "@components/core/Nav";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
@@ -14,33 +12,31 @@ import { useUser } from "@hooks/UserProvider";
 export default function SpravaStaziPage() {
     const [approved, setApproved] = useState([]);
     const [toApprove, setToApprove] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
     const navigate = useNavigate();
-    const [ showPop, setPop ] = useState(false);
+    const [showPop, setPop] = useState(false);
     const [selectedEntity, setSelectedEntity] = useState(null);
     const { user } = useUser();
 
     const fetchData = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            if (user.isAdmin()) {
-                const res = await nabidkaAPI.getAdminPractices();
-                setApproved(res.approved_practices || []);
-                setToApprove(res.to_approve_practices || []);
-            } else {
-                const res = await nabidkaAPI.getNabidkyByUserDepartment();
-                setApproved(res.approved_practices || []);
-                setToApprove(res.to_approve_practices || []);
-            }
-        } catch (error) {
+            const res = user.isAdmin()
+                ? await nabidkaAPI.getAdminPractices()
+                : await nabidkaAPI.getNabidkyByUserDepartment();
+            setApproved(res.approved_practices || []);
+            setToApprove(res.to_approve_practices || []);
+        } catch {
+            setError("Nepodařilo se načíst stáže.");
             setApproved([]);
             setToApprove([]);
+        } finally {
+            setLoading(false);
         }
     };
-
-    const handlePop = () => {
-        setPop(!showPop);
-    }
-
 
     const handleApprove = async () => {
         if (!selectedEntity) return;
@@ -48,7 +44,7 @@ export default function SpravaStaziPage() {
         const newStatus = {
             "approval_status": 1
         }
-        
+
         await nabidkaAPI.changeStatus(selectedEntity.practice_id, newStatus);
         setPop(false);
         setSelectedEntity(null);
@@ -77,10 +73,6 @@ export default function SpravaStaziPage() {
         fetchData();
     }, []);
 
-    useEffect(() => {
-        console.log(selectedEntity);
-    }, [selectedEntity])
-
     const handleView = (type, entity) => {
         if (type === "approved_practices") {
             navigate(`/nabidka/${entity.practice_id}`)
@@ -88,73 +80,83 @@ export default function SpravaStaziPage() {
         if (type === "to_approve_practices") {
             navigate(`/nabidka/${entity.practice_id}`)
         }
-        
+
     }
 
     const handleClick = (type, entity = null) => {
         if (type === "to_approve_practices") {
-            console.log("To to_approve_practices")
-            setSelectedEntity(entity)
+            setSelectedEntity(entity);
             setPop(true);
         }
-
         if (type === "approved_practices") {
-            console.log("To approved_practices")
-            navigate(`/students/${entity?.practice_id}`)
-
+            navigate(`/students/${entity?.practice_id}`);
         }
-        
-    }
+    };
 
     return(
         <>
             <BackButton/>
-            
+
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
                     Probíhající stáže
                 </Headings>
             </Container>
-            <Container property={"mb-8 space-y-4"}>
-                {approved.length === 0 ? (
-                    <Paragraph property="text-center text-gray-500 py-8">
-                        Žádné schválené stáže.
-                    </Paragraph>
-                ) : (
-                    approved.map((entity) => (
-                        <PraxeDepartmentEntity 
-                            key={entity.practice_id} 
-                            entity={entity} 
-                            type="approved"
-                            onView={() => handleView("approved_practices", entity)}
-                            onClick={() => handleClick("approved_practices", entity)
-                            }
-                        />
-                    ))
-                )}
-            </Container>
-            <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                <Headings sizeTag={"h3"} property={"mt-2"}>
-                    Schvalovací kolečko
-                </Headings>
-            </Container>
-            <Container property={"mt-4 mb-8 space-y-4"}>
-                {toApprove.length === 0 ? (
-                    <Paragraph property="text-center text-gray-500 py-8">
-                        Žádné stáže čekající na schválení.
-                    </Paragraph>
-                ) : (
-                    toApprove.map((entity) => (
-                        <PraxeDepartmentEntity 
-                            key={entity.practice_id} 
-                            entity={entity} 
-                            onView={() => handleView("to_approve_practices", entity)}
-                            onClick={() => handleClick("to_approve_practices", entity)}
-                            type="to_approve" />
-                        ))
-                )}
-            </Container>
-            {showPop && 
+
+            {loading && (
+                <Paragraph property="text-center text-gray-500 py-8">Načítání stáží...</Paragraph>
+            )}
+
+            {!loading && error && (
+                <Paragraph property="text-center text-red-500 py-8">{error}</Paragraph>
+            )}
+
+            {!loading && !error && (
+                <>
+                    <Container property={"mb-8 space-y-4"}>
+                        {approved.length === 0 ? (
+                            <Paragraph property="text-center text-gray-500 py-8">
+                                Žádné schválené stáže.
+                            </Paragraph>
+                        ) : (
+                            approved.map((entity) => (
+                                <PraxeDepartmentEntity
+                                    key={entity.practice_id}
+                                    entity={entity}
+                                    type="approved"
+                                    onView={() => handleView("approved_practices", entity)}
+                                    onClick={() => handleClick("approved_practices", entity)}
+                                />
+                            ))
+                        )}
+                    </Container>
+
+                    <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                        <Headings sizeTag={"h3"} property={"mt-2"}>
+                            Schvalovací kolečko
+                        </Headings>
+                    </Container>
+
+                    <Container property={"mt-4 mb-8 space-y-4"}>
+                        {toApprove.length === 0 ? (
+                            <Paragraph property="text-center text-gray-500 py-8">
+                                Žádné stáže čekající na schválení.
+                            </Paragraph>
+                        ) : (
+                            toApprove.map((entity) => (
+                                <PraxeDepartmentEntity
+                                    key={entity.practice_id}
+                                    entity={entity}
+                                    onView={() => handleView("to_approve_practices", entity)}
+                                    onClick={() => handleClick("to_approve_practices", entity)}
+                                    type="to_approve"
+                                />
+                            ))
+                        )}
+                    </Container>
+                </>
+            )}
+            {showPop &&
                 <PopUpCon
                     onClose={handleClosePop}
                     onSubmit={handleApprove}

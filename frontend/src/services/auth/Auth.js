@@ -1,46 +1,37 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { createApiClient } from "@api/apiClient";
-import axios from 'axios';
-import { useUser } from "@hooks/UserProvider"; // předpokládám, že máte useUser hook
+import { useUser } from "@hooks/UserProvider";
 import { useNavigate } from "react-router-dom";
-import { useMessage } from "@hooks/MessageContext";
 
 const AuthContext = createContext(null);
+
+// Routes that should stay on the current page after a successful token refresh
+const PUBLIC_PATHS = ['/', '/login', '/registrace', '/reset-password'];
 
 function AuthProvider({ children }) {
     const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || null);
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
-    const [isInitializing, setIsInitializing] = useState(true); // Loading state
-    const { user, setUser, cleanUser } = useUser(); // použití useUser hooku
+    const [isInitializing, setIsInitializing] = useState(true);
+    const { setUser, cleanUser } = useUser();
     const navigate = useNavigate();
-    const [apiClient] = useState(() => createApiClient(navigate)); // Inicializace při vytvoření
-    const { addMessage } = useMessage();
-    
-    console.log("STORAGE:", localStorage?.getItem("refreshToken"));
+    const [apiClient] = useState(() => createApiClient(navigate));
 
-    // Funkce pro aktualizaci session - refresh tokenu
+    // Refresh the access token using the stored refresh token
     const refreshUX = async () => {
-        console.log("refreshUX called, apiClient:", !!apiClient, "refreshToken:", !!refreshToken);
         if (!apiClient || !refreshToken) {
-            console.log("refreshUX: missing apiClient or refreshToken");
-            return;
+            return false;
         }
-        
+
         try {
-            console.log("Calling refresh endpoint with token:", refreshToken);
-            const res = await apiClient.post('/users/token/refresh/', {'refresh': refreshToken}, { withCredentials: true });
-            console.log("Refresh response:", res?.data);
-            
+            const res = await apiClient.post('/users/token/refresh/', { 'refresh': refreshToken }, { withCredentials: true });
+
             if (res?.data?.access) {
-                console.log("Setting new access token:", res.data.access);
                 setAccessToken(res.data.access);
-                
-                // Pokud je v response i refresh token, aktualizujeme ho
+
                 if (res.data.refresh) {
                     setRefreshToken(res.data.refresh);
                 }
-                
-                // USER DATA
+
                 if (res.data.user) {
                     setUser(res.data.user);
                     localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -48,100 +39,68 @@ function AuthProvider({ children }) {
                 return true;
             }
         } catch (error) {
-            console.error('Refresh token failed:', error);
             return false;
         }
-    }
+        return false;
+    };
 
-    // Mám refresh token v localStorage, tak ho rovnou lognu
+    // On mount: attempt to restore session from stored refresh token
     useEffect(() => {
         const storedRefreshToken = localStorage.getItem("refreshToken");
         const currentPath = window.location.pathname;
-        console.log("useEffect check - stored token:", !!storedRefreshToken, "current path:", currentPath);
-        
+
         if (storedRefreshToken) {
-            console.log("Mám refresh token v localStorage, volám refreshUX");
-            
             refreshUX().then((success) => {
-                if (success) {
-                    console.log("Refresh successful");
-                    // Přesměrujeme pouze pokud nejsme už na /nabidka
-                    if (currentPath !== '/nabidka') {
-                        console.log("Redirecting to /nabidka");
-                        setTimeout(() => {
-                            navigate('/nabidka');
-                        }, 1000);
-                    } else {
-                        console.log("Already on /nabidka, no redirect needed");
-                    }
-                } else {
-                    console.log("Refresh failed, staying on current page");
+                if (success && PUBLIC_PATHS.some(p => currentPath === p || currentPath.startsWith('/reset-password'))) {
+                    // Only redirect to /nabidka when the user is currently on a public/login page
+                    navigate('/nabidka');
                 }
             }).finally(() => {
                 setIsInitializing(false);
             });
         } else {
-            setIsInitializing(false); // Není uložený refresh token, takže inicializace dokončena
+            setIsInitializing(false);
         }
-    }, [])
+    }, []);
 
-    // Aktualizace session pro lepší UX - intervalově
+    // Periodic token refresh every 4.5 minutes
     useEffect(() => {
-        // Spustíme interval pouze pokud máme refresh token
         if (refreshToken) {
-            console.log("Nastavuji interval pro refresh token..");
-            let intervalId = setInterval(refreshUX, 1000 * 60 * 4.5); // 4.5 minuty
-            return () => {
-                console.log("Clearing refresh interval");
-                clearInterval(intervalId);
-            };
-        }
-    }, [refreshToken]); // Spustí se při změně refreshToken, ale interval se nastaví pouze jednou    
-
-    // Debug logging
-    useEffect(() => {
-        console.log("RefreshT:", refreshToken);
-        if (accessToken) {
-            console.log("Access Token", accessToken);
+            const intervalId = setInterval(refreshUX, 1000 * 60 * 4.5);
+            return () => clearInterval(intervalId);
         }
     }, [refreshToken]);
 
-    // Aktualizace API klienta při změně ACCESS tokenu
+    // Attach Authorization header and handle 401 auto-refresh on every access token change
     useEffect(() => {
         if (!apiClient) return;
 
-        // Request interceptor
         const requestInterceptor = apiClient.interceptors.request.use(
             (config) => {
                 if (accessToken) {
-                    config.headers['Authorization'] = `Bearer ${accessToken ? accessToken : "NENÍ"}`;
+                    config.headers['Authorization'] = `Bearer ${accessToken}`;
                 }
                 return config;
             },
-            (error) => {
-                return Promise.reject(error);
-            }
+            (error) => Promise.reject(error)
         );
 
-        // Response interceptor
         const responseInterceptor = apiClient.interceptors.response.use(
             (response) => response,
             async (error) => {
                 if (error.response?.status === 401) {
                     try {
-                        const res = await apiClient.post('/users/token/refresh/', {'refresh': refreshToken}, { withCredentials: true });
+                        const res = await apiClient.post('/users/token/refresh/', { 'refresh': refreshToken }, { withCredentials: true });
                         if (res?.data?.access) {
                             setAccessToken(res.data.access);
-
                             error.config.headers.Authorization = `Bearer ${res.data.access}`;
                             return apiClient(error.config);
                         }
-                    } catch (refreshError) {
+                    } catch {
                         setAccessToken(null);
                         setRefreshToken(null);
                         localStorage.removeItem("refreshToken");
                         cleanUser();
-                        //window.location.href = '/';
                     }
                 }
                 throw error;
@@ -156,82 +115,57 @@ function AuthProvider({ children }) {
 
     const login = async (loginData) => {
         if (!apiClient) throw new Error('API není inicializován!');
-        
-        try {
-            const response = await apiClient.post('/users/login/', loginData, {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                withCredentials: true
-            });
-            
-            //console.log('Login response:', response.data);  // Debug log
-            
-            if (response.data) {
-                console.log("RESPONSE", response.data)
-                console.log("Nastavuji access token:", response.data.access);
-                setAccessToken(response.data.access);
-                setRefreshToken(response.data.refresh);
-                
-                // Access token se ukládá pouze do state, ne do localStorage
-                
-                // USER DATA
-                if (response.data.user) {
-                    setUser(response.data.user);
-                    sessionStorage.setItem("pendingMessage", JSON.stringify({
-                        text: `Uživatel ${user?.email ? user.email : ""} byl úspěšně přihlášen`,
-                        type: "S"
-                    }));
-                }
-                
-                if (response.data.refresh) {
-                    localStorage.setItem("refreshToken", response.data.refresh);
-                }
-                
-                // Store user data in localStorage
-                if (response.data.user) {
-                    localStorage.setItem("user", JSON.stringify(response.data.user));
-                }
-        
-                
-                // Počkáme chvilku než se state aktualizuje a pak redirect
-                setTimeout(() => {
-                    console.log("Redirect na /nabidka");
-                    navigate('/nabidka');
-                }, 100);
+
+        const response = await apiClient.post('/users/login/', loginData, {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true
+        });
+
+        if (response.data) {
+            setAccessToken(response.data.access);
+            setRefreshToken(response.data.refresh);
+
+            if (response.data.user) {
+                setUser(response.data.user);
+                sessionStorage.setItem("pendingMessage", JSON.stringify({
+                    text: `Uživatel ${response.data.user?.email ?? ""} byl úspěšně přihlášen`,
+                    type: "S"
+                }));
+                localStorage.setItem("user", JSON.stringify(response.data.user));
             }
-            
-            return response;
-        } catch (error) {
-            console.error('Login error:', error);  // Debug log
-            throw error;
+
+            if (response.data.refresh) {
+                localStorage.setItem("refreshToken", response.data.refresh);
+            }
+
+            setTimeout(() => navigate('/nabidka'), 100);
         }
+
+        return response;
     };
 
     const logout = async () => {
         if (!apiClient) throw new Error('API není inicializován!');
-        
+
         try {
-            await apiClient.post('/users/logout/', {'refresh': refreshToken});
+            await apiClient.post('/users/logout/', { 'refresh': refreshToken });
+        } finally {
             setAccessToken(null);
             setRefreshToken(null);
             localStorage.removeItem("refreshToken");
-
             cleanUser();
             navigate('/');
-        } catch (error) {
-            throw error;
         }
     };
 
     return (
-        <AuthContext.Provider value={{ 
-            accessToken, 
-            refreshToken, 
-            login, 
+        <AuthContext.Provider value={{
+            accessToken,
+            refreshToken,
+            login,
             logout,
             apiClient,
-            isInitializing // Přidáno do kontextu
+            isInitializing,
         }}>
             {children}
         </AuthContext.Provider>

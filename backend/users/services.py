@@ -170,15 +170,21 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
     return None
 
 
-def validate_stag_ticket(ticket: str):
+def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
     """
     Validates STAG service ticket and returns user details.
+    In mock mode, accepts pre-decoded stagUserInfo from the STAG redirect URL directly.
+    In real mode, always validates the ticket against the STAG API.
     """
-    client = get_stag_client()
-    # If using Mock client (via settings or DEMO_LOGIN), it handles fake tickets.
-    # Real client handles real tickets.
+    from users.stag_api.mock_client import MockStagClient
 
-    details = client.validate_ticket(ticket)
+    client = get_stag_client()
+
+    if stag_user_info and isinstance(client, MockStagClient):
+        # Dev/mock mode: trust the stagUserInfo sent by the STAG server in the redirect URL
+        details = stag_user_info
+    else:
+        details = client.validate_ticket(ticket)
 
     email = details.get("email")
     jmeno = details.pop("jmeno")
@@ -390,7 +396,8 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
 
         if zkratka:
             subjInDb, created = Subject.objects.get_or_create(
-                subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
+                subject_code=zkratka,
+                defaults={"subject_name": nazev or zkratka, "department": department},
             )
 
             # Update department if missing or changed (optional, prioritizing STAG data)
@@ -425,7 +432,8 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
 
         if zkratka:
             subjInDb, created = Subject.objects.get_or_create(
-                subject_code=zkratka, defaults={"subject_name": nazev or zkratka, "department": department}
+                subject_code=zkratka,
+                defaults={"subject_name": nazev or zkratka, "department": department},
             )
 
             if department and subjInDb.department != department:

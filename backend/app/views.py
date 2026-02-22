@@ -6,4 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    return JsonResponse(str(request.session.items()), safe=False)
+    if not (request.user.is_authenticated and request.user.is_staff):
+        return JsonResponse({"detail": "Not found."}, status=404)
+    return JsonResponse({"session_keys": list(request.session.keys())})

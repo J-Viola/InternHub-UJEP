@@ -5,14 +5,24 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from users.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser, StudentUser
+from users.models import (
+    ApprovalStatus,
+    EmployerProfile,
+    OrganizationRole,
+    OrganizationUser,
+    StudentUser,
+)
 
 
 class ProfileUpdateTests(APITestCase):
     def setUp(self):
         # Setup Student
         self.student = StudentUser.objects.create_user(
-            email="student@test.com", password="password123", first_name="Jan", last_name="Student", is_active=True
+            email="student@test.com",
+            password="password123",
+            first_name="Jan",
+            last_name="Student",
+            is_active=True,
         )
 
         # Setup Organization User
@@ -25,7 +35,9 @@ class ProfileUpdateTests(APITestCase):
             organization_role=OrganizationRole.OWNER,
         )
         self.profile = EmployerProfile.objects.create(
-            employer_id=self.org_user.id, company_name="Test Co", approval_status=ApprovalStatus.APPROVED
+            employer_id=self.org_user.id,
+            company_name="Test Co",
+            approval_status=ApprovalStatus.APPROVED,
         )
         self.org_user.employer_profile = self.profile
         self.org_user.save()

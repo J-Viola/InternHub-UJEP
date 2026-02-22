@@ -5,7 +5,13 @@ class Subject(models.Model):
     subject_id = models.AutoField(primary_key=True)
     subject_code = models.CharField(unique=True, max_length=50, blank=True, null=True)
     subject_name = models.CharField(max_length=100, blank=True, default="")
-    department = models.ForeignKey("department.Department", models.DO_NOTHING, blank=True, null=True, related_name="subjects")
+    department = models.ForeignKey(
+        "department.Department",
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        related_name="subjects",
+    )
     hours_required = models.IntegerField(blank=True, null=True)
     subject_manager = models.ForeignKey(
         "users.ProfessorUser",

@@ -21,7 +21,15 @@ from .models import (
 class StudentUserAdmin(PolymorphicChildModelAdmin):
     base_model = StudentUser
     show_in_index = True
-    list_display = ("email", "first_name", "last_name", "os_cislo", "field_of_study", "year_of_study", "is_active")
+    list_display = (
+        "email",
+        "first_name",
+        "last_name",
+        "os_cislo",
+        "field_of_study",
+        "year_of_study",
+        "is_active",
+    )
     search_fields = ("email", "last_name", "os_cislo", "first_name")
     list_filter = ("is_active", "year_of_study", "field_of_study")
 
@@ -30,7 +38,14 @@ class StudentUserAdmin(PolymorphicChildModelAdmin):
 class ProfessorUserAdmin(PolymorphicChildModelAdmin):
     base_model = ProfessorUser
     show_in_index = True
-    list_display = ("email", "first_name", "last_name", "department", "department_role", "is_active")
+    list_display = (
+        "email",
+        "first_name",
+        "last_name",
+        "department",
+        "department_role",
+        "is_active",
+    )
     search_fields = ("email", "last_name")
     list_filter = ("is_active", "department")
 
@@ -39,7 +54,13 @@ class ProfessorUserAdmin(PolymorphicChildModelAdmin):
 class OrganizationUserAdmin(PolymorphicChildModelAdmin):
     base_model = OrganizationUser
     show_in_index = True
-    list_display = ("email", "full_name", "employer_profile", "organization_role", "is_active")
+    list_display = (
+        "email",
+        "full_name",
+        "employer_profile",
+        "organization_role",
+        "is_active",
+    )
     search_fields = ("email", "last_name", "employer_profile__company_name")
     list_filter = ("is_active", "organization_role")
 
@@ -54,7 +75,14 @@ class UserAdmin(PolymorphicParentModelAdmin):
     base_model = User
     child_models = (StudentUser, ProfessorUser, OrganizationUser)
     list_filter = (PolymorphicChildModelFilter, "is_active", "is_superuser", "is_staff")
-    list_display = ("email", "first_name", "last_name", "is_active", "is_superuser", "polymorphic_ctype")
+    list_display = (
+        "email",
+        "first_name",
+        "last_name",
+        "is_active",
+        "is_superuser",
+        "polymorphic_ctype",
+    )
     search_fields = ("email", "first_name", "last_name")
     ordering = ("email",)
 
@@ -103,10 +131,23 @@ class RoleAdmin(admin.ModelAdmin):
 
 @admin.register(ActionLog)
 class ActionLogAdmin(admin.ModelAdmin):
-    list_display = ("action_date", "user", "action_type", "object_type", "action_description")
+    list_display = (
+        "action_date",
+        "user",
+        "action_type",
+        "object_type",
+        "action_description",
+    )
     list_filter = ("action_type", "object_type", "action_date")
     search_fields = ("user__email", "action_description")
-    readonly_fields = ("action_date", "user", "action_type", "object_type", "object_id", "action_description")
+    readonly_fields = (
+        "action_date",
+        "user",
+        "action_type",
+        "object_type",
+        "object_id",
+        "action_description",
+    )
 
     def has_add_permission(self, request):
         return False

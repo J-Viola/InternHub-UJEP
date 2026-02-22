@@ -5,29 +5,46 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('practices', '0001_initial'),
-        ('subject', '0001_initial'),
-        ('users', '0001_initial'),
+        ("practices", "0001_initial"),
+        ("subject", "0001_initial"),
+        ("users", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='practice',
-            name='contact_user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='practices', to='users.organizationuser'),
+            model_name="practice",
+            name="contact_user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="practices",
+                to="users.organizationuser",
+            ),
         ),
         migrations.AddField(
-            model_name='practice',
-            name='employer',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='practices', to='users.employerprofile'),
+            model_name="practice",
+            name="employer",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="practices",
+                to="users.employerprofile",
+            ),
         ),
         migrations.AddField(
-            model_name='practice',
-            name='subject',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='practices', to='subject.subject'),
+            model_name="practice",
+            name="subject",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="practices",
+                to="subject.subject",
+            ),
         ),
     ]

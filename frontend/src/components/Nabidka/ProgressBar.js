@@ -4,22 +4,22 @@ import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@core/Text/Paragraph";
 
-export default function ProgressPanel({ 
+export default function ProgressPanel({
     subject,
     currentValueSingle,
     goalValueSingle,
     noteSingle = "Plnění aktuální karty v rámci kritéria předmětu:",
     currentValueAll,
     goalValueAll,
-    noteAll = "Plnění všech probíhajících karet v rámci kritéria předmětu: XXX",
+    noteAll = "Plnění všech probíhajících karet v rámci kritéria předmětu:",
     title = "Průběh",
     property = ""
 }) {
     const progressPercentageSingle = goalValueSingle > 0 ? (currentValueSingle / goalValueSingle) * 100 : 0;
     const progressPercentageAll = goalValueAll > 0 ? (currentValueAll / goalValueAll) * 100 : 0;
-    const fillColor = '#1CAA34'; 
+    const fillColor = '#1CAA34';
     const emptyColor = '#e5e7eb';
-    
+
     return (
         <ContainerForEntity property={"pl-8 pr-8"}>
             <Container property={`${property}`}>
@@ -58,7 +58,7 @@ export default function ProgressPanel({
                             Naplnění kritéria: {Math.round(progressPercentageSingle)}%
                         </Paragraph>
                     </Container>
-                    
+
                 </Container>
             </Container>
 
@@ -69,7 +69,7 @@ export default function ProgressPanel({
             {/* POZNÁMKA */}
             {noteAll && (
                 <Paragraph property="mb-1 text-sm text-gray-700">
-                    {noteAll}
+                    {`${noteAll} ${subject}`}
                 </Paragraph>
             )}
                 <Container property="mb-2 m-4">
@@ -92,7 +92,7 @@ export default function ProgressPanel({
                             Naplnění kritéria: {Math.round(progressPercentageAll)}%
                         </Paragraph>
                     </Container>
-                    
+
                 </Container>
             </Container>
             )}

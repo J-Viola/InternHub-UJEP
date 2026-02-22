@@ -4,7 +4,15 @@ from rest_framework.test import APIClient
 
 from department.models import Department
 from subject.models import Subject
-from users.models import DepartmentRole, ProfessorUser, StagRole, StagRoleEnum, StudentUser, UserSubject, UserSubjectType
+from users.models import (
+    DepartmentRole,
+    ProfessorUser,
+    StagRole,
+    StagRoleEnum,
+    StudentUser,
+    UserSubject,
+    UserSubjectType,
+)
 
 
 class DepartmentViewTests(TestCase):

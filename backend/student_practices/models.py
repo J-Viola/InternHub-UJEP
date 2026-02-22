@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import logging
 import random
 
 from django.conf import settings
@@ -11,6 +12,8 @@ from django_enumfield import enum
 
 from practices.models import ProgressStatus
 from users.models import ApprovalStatus
+
+logger = logging.getLogger(__name__)
 
 
 class EmployerInvitationStatus(enum.Enum):
@@ -65,7 +68,7 @@ class DocumentType(enum.Enum):
 
 class UploadedDocument(models.Model):
     document_id = models.AutoField(primary_key=True)
-    document = models.FileField(upload_to="documents", blank=True, null=True)
+    document = models.FileField(upload_to="documents", blank=True, null=True, db_index=True)
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = enum.EnumField(DocumentType)
 
@@ -110,7 +113,7 @@ class DocumentHelper:
             document.save()
             return document
         except FileNotFoundError:
-            print(f"WARNING: Default document {file_path} not found.")
+            logger.warning("Default document %s not found.", file_path)
             return None
 
     @staticmethod

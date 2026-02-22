@@ -5,18 +5,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('subject', '0001_initial'),
-        ('users', '0001_initial'),
+        ("subject", "0001_initial"),
+        ("users", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='subject',
-            name='subject_manager',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='managed_subjects', to='users.professoruser'),
+            model_name="subject",
+            name="subject_manager",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="managed_subjects",
+                to="users.professoruser",
+            ),
         ),
     ]

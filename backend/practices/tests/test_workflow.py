@@ -24,7 +24,11 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
 
         # Create Department and Subject for practices
         self.department = Department.objects.create(department_name="Test Dept", department_code="TD")
-        self.subject = Subject.objects.create(subject_name="Test Subject", subject_code="TS101", department=self.department)
+        self.subject = Subject.objects.create(
+            subject_name="Test Subject",
+            subject_code="TS101",
+            department=self.department,
+        )
 
         # Create Users
         self.student = StudentUser.objects.create(
@@ -118,7 +122,10 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
 
         response = self.client.post(self.apply_url, data, format="json")  # Added format="json"
 
-        self.assertIn(response.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND])
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND],
+        )
 
     def test_anonymous_user_cannot_apply(self):
         data = {"practice": self.practice.practice_id}
@@ -188,7 +195,9 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
         self.client.force_authenticate(user=self.employer_user)
         update_data = {"title": "Updated Title"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/", update_data, format="json"
+            f"{self.practice_list_url}{self.practice.practice_id}/",
+            update_data,
+            format="json",
         )  # Added format="json"
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -199,7 +208,9 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
         self.client.force_authenticate(user=self.other_organization_user)
         update_data = {"title": "Malicious Update"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/", update_data, format="json"
+            f"{self.practice_list_url}{self.practice.practice_id}/",
+            update_data,
+            format="json",
         )  # Added format="json"
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -207,7 +218,9 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
         self.client.force_authenticate(user=self.student)
         update_data = {"title": "Student Update"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/", update_data, format="json"
+            f"{self.practice_list_url}{self.practice.practice_id}/",
+            update_data,
+            format="json",
         )  # Added format="json"
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -215,6 +228,8 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):  # Renamed for clari
         self.client.force_authenticate(user=self.professor)
         update_data = {"title": "Professor Update"}
         response = self.client.patch(
-            f"{self.practice_list_url}{self.practice.practice_id}/", update_data, format="json"
+            f"{self.practice_list_url}{self.practice.practice_id}/",
+            update_data,
+            format="json",
         )  # Added format="json"
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

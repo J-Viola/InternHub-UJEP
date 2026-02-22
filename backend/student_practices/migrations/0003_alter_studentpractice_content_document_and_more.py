@@ -6,30 +6,56 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('student_practices', '0002_initial'),
+        ("student_practices", "0002_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='studentpractice',
-            name='content_document',
-            field=models.OneToOneField(limit_choices_to={'document_type': student_practices.models.DocumentType(1)}, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='student_practice_content', to='student_practices.uploadeddocument', validators=[student_practices.models.validate_content_document_type]),
+            model_name="studentpractice",
+            name="content_document",
+            field=models.OneToOneField(
+                limit_choices_to={
+                    "document_type": student_practices.models.DocumentType(1)
+                },
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="student_practice_content",
+                to="student_practices.uploadeddocument",
+                validators=[student_practices.models.validate_content_document_type],
+            ),
         ),
         migrations.AlterField(
-            model_name='studentpractice',
-            name='contract_document',
-            field=models.OneToOneField(limit_choices_to={'document_type': student_practices.models.DocumentType(0)}, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='student_practice_contract', to='student_practices.uploadeddocument', validators=[student_practices.models.validate_contract_document_type]),
+            model_name="studentpractice",
+            name="contract_document",
+            field=models.OneToOneField(
+                limit_choices_to={
+                    "document_type": student_practices.models.DocumentType(0)
+                },
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="student_practice_contract",
+                to="student_practices.uploadeddocument",
+                validators=[student_practices.models.validate_contract_document_type],
+            ),
         ),
         migrations.AlterField(
-            model_name='studentpractice',
-            name='feedback_document',
-            field=models.OneToOneField(limit_choices_to={'document_type': student_practices.models.DocumentType(2)}, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='student_practice_feedback', to='student_practices.uploadeddocument', validators=[student_practices.models.validate_feedback_document_type]),
+            model_name="studentpractice",
+            name="feedback_document",
+            field=models.OneToOneField(
+                limit_choices_to={
+                    "document_type": student_practices.models.DocumentType(2)
+                },
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="student_practice_feedback",
+                to="student_practices.uploadeddocument",
+                validators=[student_practices.models.validate_feedback_document_type],
+            ),
         ),
         migrations.AlterField(
-            model_name='uploadeddocument',
-            name='document',
-            field=models.FileField(blank=True, null=True, upload_to='documents'),
+            model_name="uploadeddocument",
+            name="document",
+            field=models.FileField(blank=True, null=True, upload_to="documents"),
         ),
     ]

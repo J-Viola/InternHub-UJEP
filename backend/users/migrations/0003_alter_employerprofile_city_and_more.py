@@ -4,35 +4,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0002_alter_employerprofile_city_and_more'),
+        ("users", "0002_alter_employerprofile_city_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='employerprofile',
-            name='city',
-            field=models.TextField(blank=True, default=''),
+            model_name="employerprofile",
+            name="city",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AlterField(
-            model_name='stagrole',
-            name='description',
-            field=models.TextField(blank=True, default=''),
+            model_name="stagrole",
+            name="description",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AlterField(
-            model_name='studentuser',
-            name='field_of_study',
-            field=models.CharField(blank=True, default='', max_length=100),
+            model_name="studentuser",
+            name="field_of_study",
+            field=models.CharField(blank=True, default="", max_length=100),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='password',
-            field=models.CharField(blank=True, default='', max_length=128),
+            model_name="user",
+            name="password",
+            field=models.CharField(blank=True, default="", max_length=128),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='title_before',
-            field=models.CharField(blank=True, default='', max_length=50),
+            model_name="user",
+            name="title_before",
+            field=models.CharField(blank=True, default="", max_length=50),
         ),
     ]

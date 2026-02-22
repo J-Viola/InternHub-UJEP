@@ -14,8 +14,8 @@ jest.mock('@hooks/MessageContext');
 // Mock child components
 jest.mock('@components/Forms/CompanyForm', () => ({ handleCreate, errors }) => (
     <div data-testid="company-form">
-        <button onClick={() => handleCreate({ 
-            executiveEmail: 'boss@test.com', 
+        <button onClick={() => handleCreate({
+            executiveEmail: 'boss@test.com',
             executivePassword1: 'pass123',
             companyName: 'Test Corp'
         })}>
@@ -58,7 +58,11 @@ describe('RegistracePage', () => {
             expect(mockPostRegister).toHaveBeenCalledWith(expect.objectContaining({
                 companyName: 'Test Corp'
             }));
+        });
+        await waitFor(() => {
             expect(mockAddMessage).toHaveBeenCalledWith('Registrace úspěšná', 'S');
+        });
+        await waitFor(() => {
             expect(mockLogin).toHaveBeenCalledWith({
                 email: 'boss@test.com',
                 password: 'pass123'
@@ -82,6 +86,8 @@ describe('RegistracePage', () => {
 
         await waitFor(() => {
             expect(mockAddMessage).toHaveBeenCalledWith('Chyba při registraci: Email already exists', 'E');
+        });
+        await waitFor(() => {
             expect(screen.getByText('Email already exists')).toBeInTheDocument();
         });
     });

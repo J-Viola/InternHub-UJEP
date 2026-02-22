@@ -66,7 +66,10 @@ class SubjectViewSet(viewsets.ModelViewSet):
             "Returns all subjects belonging to the department(s) associated with the logged-in professor. "
             "**Permissions: Authenticated Professor**"
         ),
-        responses={200: SubjectSerializer(many=True), 400: OpenApiResponse(description="User has no assigned department")},
+        responses={
+            200: SubjectSerializer(many=True),
+            400: OpenApiResponse(description="User has no assigned department"),
+        },
     )
     @action(detail=False, methods=["get"], url_path="department-subjects")
     def department_subjects(self, request):

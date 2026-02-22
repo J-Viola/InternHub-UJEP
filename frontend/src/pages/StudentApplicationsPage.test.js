@@ -85,4 +85,37 @@ describe('StudentApplicationsPage', () => {
         expect(screen.queryByTestId('app-card')).not.toBeInTheDocument();
         expect(screen.queryByTestId('inv-card')).not.toBeInTheDocument();
     });
+
+    test('renders empty invitations state when no invitations exist', async () => {
+        mockGetRelations.mockResolvedValue({
+            student_practices: [],
+            employer_invitations: []
+        });
+
+        render(
+            <MemoryRouter>
+                <StudentApplicationsPage />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Nemáte žádné čekající pozvánky od firem.')).toBeInTheDocument();
+        });
+    });
+
+    test('renders error state when API call fails', async () => {
+        mockGetRelations.mockRejectedValue(new Error('Network error'));
+
+        render(
+            <MemoryRouter>
+                <StudentApplicationsPage />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Nepodařilo se načíst přihlášky. Zkuste to prosím znovu.')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Načítání...')).not.toBeInTheDocument();
+    });
 });

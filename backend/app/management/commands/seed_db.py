@@ -7,7 +7,14 @@ from django.db import transaction
 from department.models import Department
 from practices.models import Practice, ProgressStatus
 from subject.models import Subject
-from users.models import ApprovalStatus, EmployerProfile, OrganizationRole, OrganizationUser, StagRole, User
+from users.models import (
+    ApprovalStatus,
+    EmployerProfile,
+    OrganizationRole,
+    OrganizationUser,
+    StagRole,
+    User,
+)
 
 
 class Command(BaseCommand):
@@ -36,20 +43,35 @@ class Command(BaseCommand):
         self.stdout.write(" - Kontrola STAG rolí...")
         roles = [
             {"role": "st", "role_name": "Student", "description": "Student VŠ"},
-            {"role": "vy", "role_name": "Vyučující", "description": "Vyučující na katedře"},
-            {"role": "vk", "role_name": "Vedení katedry", "description": "Vedoucí nebo tajemník"},
+            {
+                "role": "vy",
+                "role_name": "Vyučující",
+                "description": "Vyučující na katedře",
+            },
+            {
+                "role": "vk",
+                "role_name": "Vedení katedry",
+                "description": "Vedoucí nebo tajemník",
+            },
         ]
 
         for data in roles:
             obj, created = StagRole.objects.get_or_create(
-                role=data["role"], defaults={"role_name": data["role_name"], "description": data["description"]}
+                role=data["role"],
+                defaults={
+                    "role_name": data["role_name"],
+                    "description": data["description"],
+                },
             )
             if created:
                 self.stdout.write(f"   + Vytvořena role: {data['role_name']}")
 
     def seed_department(self):
         self.stdout.write(" - Kontrola Katedry...")
-        dept, created = Department.objects.get_or_create(department_name="Katedra informatiky", defaults={"description": "KI PřF UJEP"})
+        dept, created = Department.objects.get_or_create(
+            department_name="Katedra informatiky",
+            defaults={"description": "KI PřF UJEP"},
+        )
         if created:
             self.stdout.write("   + Vytvořena Katedra informatiky")
         return dept
@@ -66,7 +88,11 @@ class Command(BaseCommand):
         for data in subjects_data:
             subj, created = Subject.objects.get_or_create(
                 subject_code=data["code"],
-                defaults={"subject_name": data["name"], "department": department, "hours_required": data["hours"]},
+                defaults={
+                    "subject_name": data["name"],
+                    "department": department,
+                    "hours_required": data["hours"],
+                },
             )
             if created:
                 self.stdout.write(f"   + Vytvořen předmět: {data['name']}")
@@ -76,7 +102,13 @@ class Command(BaseCommand):
     def seed_superuser(self):
         email = "admin@admin.com"
         if not User.objects.filter(email=email).exists():
-            User.objects.create_superuser(email=email, password="demodemo", first_name="Hlavní", last_name="Administrátor", is_active=True)
+            User.objects.create_superuser(
+                email=email,
+                password="demodemo",
+                first_name="Hlavní",
+                last_name="Administrátor",
+                is_active=True,
+            )
             self.stdout.write(f"   + Vytvořen Superuser: {email} (heslo: password123)")
 
     def seed_companies_and_practices(self, subjects):
@@ -87,7 +119,10 @@ class Command(BaseCommand):
                 "email": "hr@techcorp.cz",
                 "desc": "Vývoj softwaru a cloudová řešení.",
                 "practices": [
-                    {"title": "Junior Python Developer", "desc": "Vývoj backendu v Djangu."},
+                    {
+                        "title": "Junior Python Developer",
+                        "desc": "Vývoj backendu v Djangu.",
+                    },
                     {"title": "React Frontend Trainee", "desc": "Tvorba UI komponent."},
                 ],
             },
@@ -97,8 +132,14 @@ class Command(BaseCommand):
                 "email": "jobs@softvision.cz",
                 "desc": "Konzultace a enterprise systémy.",
                 "practices": [
-                    {"title": "Java Enterprise Intern", "desc": "Práce na bankovních systémech."},
-                    {"title": "Tester Automation", "desc": "Psaní automatizovaných testů v Seleniu."},
+                    {
+                        "title": "Java Enterprise Intern",
+                        "desc": "Práce na bankovních systémech.",
+                    },
+                    {
+                        "title": "Tester Automation",
+                        "desc": "Psaní automatizovaných testů v Seleniu.",
+                    },
                 ],
             },
             {
@@ -107,7 +148,10 @@ class Command(BaseCommand):
                 "email": "info@datasmart.cz",
                 "desc": "Analýza dat a AI.",
                 "practices": [
-                    {"title": "Data Analyst Junior", "desc": "Zpracování dat v Python Pandas."},
+                    {
+                        "title": "Data Analyst Junior",
+                        "desc": "Zpracování dat v Python Pandas.",
+                    },
                 ],
             },
         ]

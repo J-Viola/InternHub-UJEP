@@ -4,36 +4,29 @@ import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
-import Nav from "@components/core/Nav";
-import PopUpCon from "@core/Container/PopUpCon";
-import { useAuth } from "@auth/Auth";
 import UserEntity from "@components/User/UserEntity";
 import { useParams } from "react-router-dom";
 import { useUserAPI } from "@api/user/userAPI";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "@hooks/UserProvider";
 import { useMessage } from "@hooks/MessageContext";
-import TextField from "@core/Form/TextField";
 import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@core/Form/DropDown";
 
 export default function UserCRUDPage() {
     const { type } = useParams("type");
-    
+
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userType, setUserType] = useState(type === 'department_users' ? 'department' : 'org'); // 'org' nebo 'department'
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeFilters, setActiveFilters] = useState([]);
     const [selectedCompanies, setSelectedCompanies] = useState([]);
     const [companySelectValue, setCompanySelectValue] = useState("");
     const userAPI = useUserAPI();
-    const { user } = useUser();
     const navigate = useNavigate();
     const { addMessage } = useMessage();
 
     const rolesTranslator = {"OWNER" : "Jednatel firmy", "INSERTER" : "Správce inzerátů"};
-    const headings = {"org_users":"Účty organizací", 
+    const headings = {"org_users":"Účty organizací",
         "department_users": "Uživatelské účty"};
 
     const translateRoles = (dataArr) => {
@@ -51,12 +44,12 @@ export default function UserCRUDPage() {
             if (userType === 'org') {
                 res = await userAPI.getOrganizationUsers(false);
                 //TO:DO - udělat api pro admina (není přiřazen k organizaci)
-                
+
 
             } else {
                 res = await userAPI.getAllDepartmentProfessors();
             }
-            
+
             if (res) {
                 setData(translateRoles(res));
             }
@@ -93,20 +86,6 @@ export default function UserCRUDPage() {
         } else {
             navigate(`/formular?type=department_users&action=edit&id=${entity.id}`);
         }
-    };
-
-    const handleViewStages = (entity) => {
-        // Navigace na stránku se stážemi pro danou organizaci
-        navigate(`/praxe?organization=${entity.id}`);
-    };
-
-    const handleViewProfile = (entity) => {
-        // Navigace na profil katederního uživatele
-        navigate(`/profil/${entity.id}`);
-    };
-
-    const handleUserTypeChange = (newType) => {
-        setUserType(newType);
     };
 
     const handleSearchChange = (e) => {
@@ -161,7 +140,7 @@ export default function UserCRUDPage() {
     return (
         <>
             <BackButton/>
-            
+
             {/* Filtr a vyhledávání */}
             <Container property={"mt-4 mb-6"}>
                 <Container property={"flex items-center gap-4 mb-4"}>
@@ -202,7 +181,7 @@ export default function UserCRUDPage() {
 
             {userType === 'org' && (
                 <Container>
-                    <Button 
+                    <Button
                         onClick={handleCreateUser}
                         icon={"plus"}
                     >

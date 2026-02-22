@@ -4,7 +4,6 @@ import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
-import Nav from "@components/core/Nav";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +15,7 @@ export default function DepartmentsPage() {
     const [loading, setLoading] = useState(true);
     const [showDeletePop, setShowDeletePop] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
-    
+
     const departmentAPI = useDepartmentAPI();
     const navigate = useNavigate();
     const { showMessage } = useMessage();
@@ -51,14 +50,9 @@ export default function DepartmentsPage() {
         navigate(`/formular?type=department&action=edit&id=${department.department_id}`);
     };
 
-    const handleDeleteClick = (department) => {
-        setSelectedDepartment(department);
-        setShowDeletePop(true);
-    };
-
     const handleDeleteConfirm = async () => {
         if (!selectedDepartment) return;
-        
+
         try {
             await departmentAPI.deleteDepartment(selectedDepartment.department_id);
             showMessage('Katedra byla úspěšně smazána', 'success');
@@ -78,7 +72,7 @@ export default function DepartmentsPage() {
     return (
         <>
             <BackButton/>
-            
+
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
                     Správa kateder
@@ -86,7 +80,7 @@ export default function DepartmentsPage() {
             </Container>
 
             <Container>
-                <Button 
+                <Button
                     onClick={handleCreateDepartment}
                     icon={"plus"}
                 >
@@ -125,7 +119,7 @@ export default function DepartmentsPage() {
 
             {/* Popup pro potvrzení smazání */}
             {showDeletePop && (
-                <PopUpCon 
+                <PopUpCon
                     onClose={handleDeleteCancel}
                     title="Potvrdit smazání"
                     text={`Opravdu chcete smazat katedru "${selectedDepartment?.department_name}"? Tato akce je nevratná.`}
@@ -137,4 +131,4 @@ export default function DepartmentsPage() {
             )}
         </>
     );
-} 
+}

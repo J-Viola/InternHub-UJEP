@@ -3,11 +3,11 @@ repos:
     rev: v4.5.0
     hooks:
     -   id: trailing-whitespace
-        files: ^backend/
+        files: ^(backend|frontend)/
     -   id: end-of-file-fixer
-        files: ^backend/
+        files: ^(backend|frontend)/
     -   id: check-yaml
-        files: ^backend/
+        files: ^(backend|frontend)/
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.8.2
@@ -19,3 +19,11 @@ repos:
     # Run the formatter.
     -   id: ruff-format
         files: ^backend/
+-   repo: local
+    hooks:
+    -   id: eslint-frontend
+        name: ESLint (frontend)
+        language: node
+        entry: bash -c 'cd frontend && npx eslint src --ext .js,.jsx'
+        files: ^frontend/src/.*\.(js|jsx)$
+        pass_filenames: false

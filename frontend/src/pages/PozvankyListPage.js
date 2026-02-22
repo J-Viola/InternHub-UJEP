@@ -4,8 +4,7 @@ import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
-import Nav from "@components/core/Nav";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PozvankyEntity from "@components/Pozvanky/PozvankyEntity";
 import PopUpCon from "@core/Container/PopUpCon";
 import { usePozvankyAPI } from "@api/pozvanky/pozvankyAPI";
@@ -36,10 +35,10 @@ export default function PozvankyListPage() {
 		try {
 			console.log('Zrušit pozvánku:', selectedEntity);
             await deleteInvitation(selectedEntity.id);
-			
+
 			// Odebrat z listu
 			setData(prevData => prevData.filter(item => item.id !== selectedEntity.id));
-			
+
 			setShowPopup(false);
 			setSelectedEntity(null);
 		} catch (error) {
@@ -66,7 +65,7 @@ export default function PozvankyListPage() {
 					await getPozvankyAdminList().then((res) => setData(res));
 				} else {
 					await getPozvankyList().then((res) => setData(res));
-				} 
+				}
 
 			} catch (error) {
 				console.error('Chyba při načítání pozvánek:', error);
@@ -131,8 +130,7 @@ export default function PozvankyListPage() {
 	                    Zaslané pozvánky
 	                </Headings>
 	            </Container>
-	            <Paragraph property={"text-red-500"}>Tato stránka obsahuje pouze dummy data.</Paragraph>
-	
+
 	            {/*Filtrace */}
 	            {user.isAdmin() && (
 	            <Container property={"flex flex-col gap-3 mb-6 mt-4"}>
@@ -162,8 +160,8 @@ export default function PozvankyListPage() {
 	                </Container>
 	            </Container>
 	        )}
-	
-	
+
+
 	            <Container property={"mt-4 rounded-lg"}>
 	                {loading ? (
 	                    <Paragraph>Načítání...</Paragraph>
@@ -210,7 +208,7 @@ export default function PozvankyListPage() {
 	                    )
 	                )}
 	            </Container>
-	
+
 	            {/* Popup pro potvrzení zrušení pozvánky */}
 	            {showPopup && (
 	                <PopUpCon

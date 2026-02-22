@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 
 const LogoutUser = () => {
-    const { refreshToken, logout } = useAuth();
+    const { logout } = useAuth();
     const { addMessage } = useMessage();
     const navigate = useNavigate();
     const hasLoggedOut = useRef(false);
@@ -12,7 +12,7 @@ const LogoutUser = () => {
     useEffect(() => {
         const performLogout = async () => {
             if (hasLoggedOut.current) return; // Zabrání více spuštěním
-            
+
             try {
                 hasLoggedOut.current = true;
                 await logout();
@@ -26,7 +26,7 @@ const LogoutUser = () => {
         };
 
         performLogout();
-    }, []); 
+    }, []);
 
     return (
         <div className="flex justify-center items-center min-h-screen">

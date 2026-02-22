@@ -5,8 +5,21 @@ from .models import EmployerInvitation, StudentPractice, UploadedDocument
 
 @admin.register(StudentPractice)
 class StudentPracticeAdmin(admin.ModelAdmin):
-    list_display = ("user", "practice", "approval_status", "progress_status", "year", "hours_completed", "application_date")
-    list_filter = ("approval_status", "progress_status", "year", "practice__subject__department")
+    list_display = (
+        "user",
+        "practice",
+        "approval_status",
+        "progress_status",
+        "year",
+        "hours_completed",
+        "application_date",
+    )
+    list_filter = (
+        "approval_status",
+        "progress_status",
+        "year",
+        "practice__subject__department",
+    )
     search_fields = ("user__email", "user__last_name", "practice__title")
     list_select_related = ("user", "practice")
     readonly_fields = ("contract_document", "content_document", "feedback_document")

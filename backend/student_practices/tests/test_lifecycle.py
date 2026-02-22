@@ -27,12 +27,23 @@ class StudentPracticeLifecycleTests(TestCase):
         self.subject = Subject.objects.create(subject_name="Praxe", subject_code="PRX", department=self.department)
 
         # 2. Setup Users
-        self.student = StudentUser.objects.create(email="student@test.com", first_name="Jan", last_name="Student", is_active=True)
+        self.student = StudentUser.objects.create(
+            email="student@test.com",
+            first_name="Jan",
+            last_name="Student",
+            is_active=True,
+        )
         self.other_student = StudentUser.objects.create(email="other@test.com", first_name="Petr", last_name="Cizi", is_active=True)
 
-        self.org_user = OrganizationUser.objects.create(email="org@test.com", is_active=True, organization_role=OrganizationRole.OWNER)
+        self.org_user = OrganizationUser.objects.create(
+            email="org@test.com",
+            is_active=True,
+            organization_role=OrganizationRole.OWNER,
+        )
         self.employer_profile = EmployerProfile.objects.create(
-            employer_id=self.org_user.id, company_name="Test Co", approval_status=ApprovalStatus.APPROVED
+            employer_id=self.org_user.id,
+            company_name="Test Co",
+            approval_status=ApprovalStatus.APPROVED,
         )
         self.org_user.employer_profile = self.employer_profile
         self.org_user.save()
@@ -78,7 +89,11 @@ class StudentPracticeLifecycleTests(TestCase):
         self.client.force_authenticate(user=self.org_user)
         status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
 
-        response = self.client.patch(status_url, {"approval_status": ApprovalStatus.APPROVED.value}, format="json")
+        response = self.client.patch(
+            status_url,
+            {"approval_status": ApprovalStatus.APPROVED.value},
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         student_practice.refresh_from_db()
@@ -90,21 +105,31 @@ class StudentPracticeLifecycleTests(TestCase):
         upload_url = f"/api/student-practices/upload-document/{contract_doc.document_id}"
 
         file = SimpleUploadedFile(
-            "contract.docx", b"content", content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "contract.docx",
+            b"content",
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         response = self.client.post(upload_url, {"document": file}, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # 4. Change Progress to IN_PROGRESS (by Org)
         self.client.force_authenticate(user=self.org_user)
-        response = self.client.patch(status_url, {"progress_status": ProgressStatus.IN_PROGRESS.value}, format="json")
+        response = self.client.patch(
+            status_url,
+            {"progress_status": ProgressStatus.IN_PROGRESS.value},
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         student_practice.refresh_from_db()
         self.assertEqual(student_practice.progress_status, ProgressStatus.IN_PROGRESS)
 
         # 5. Finish Practice (COMPLETED)
-        response = self.client.patch(status_url, {"progress_status": ProgressStatus.COMPLETED.value}, format="json")
+        response = self.client.patch(
+            status_url,
+            {"progress_status": ProgressStatus.COMPLETED.value},
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         student_practice.refresh_from_db()
@@ -126,7 +151,11 @@ class StudentPracticeLifecycleTests(TestCase):
 
         # Other student tries to approve
         self.client.force_authenticate(user=self.other_student)
-        response = self.client.patch(status_url, {"approval_status": ApprovalStatus.APPROVED.value}, format="json")
+        response = self.client.patch(
+            status_url,
+            {"approval_status": ApprovalStatus.APPROVED.value},
+            format="json",
+        )
 
         # Expect 403 Forbidden or 404 Not Found (if queryset filters by user)
         # Assuming standard permissions, it should be 403 or 404.

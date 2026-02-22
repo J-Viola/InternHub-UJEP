@@ -70,7 +70,12 @@ class PracticeViewTests(TestCase):
 
         self.prof_role = StagRole.objects.create(role="VY", role_name="Vyučující")
         self.professor = ProfessorUser.objects.create(
-            email="prof@test.com", first_name="Prof", last_name="User", is_active=True, stag_role=self.prof_role, department=self.dept
+            email="prof@test.com",
+            first_name="Prof",
+            last_name="User",
+            is_active=True,
+            stag_role=self.prof_role,
+            department=self.dept,
         )
 
         # Setup Practice

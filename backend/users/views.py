@@ -6,10 +6,12 @@ from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import filters as drf_filters
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -31,6 +33,7 @@ from users.permissions import (
     IsStagTeacher,
 )
 from users.services import fetch_ares_data, update_organization_from_ares
+from users.throttling import LoginThrottle, PasswordResetThrottle
 
 from .serializers import (
     AdminOrganizationSerializer,
@@ -56,8 +59,12 @@ from .serializers import (
 class RegisterView(generics.CreateAPIView):
     serializer_class = OrganizationRegisterSerializer
     permission_classes = (AllowAny,)
+    throttle_classes = [AnonRateThrottle]
 
-    @extend_schema(summary="Register a new organization user", responses={201: OpenApiResponse(description="User registered successfully")})
+    @extend_schema(
+        summary="Register a new organization user",
+        responses={201: OpenApiResponse(description="User registered successfully")},
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -76,6 +83,7 @@ class RegisterView(generics.CreateAPIView):
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     @extend_schema(
         summary="Request password reset email",
@@ -92,7 +100,10 @@ class PasswordResetRequestView(APIView):
             user = User.objects.get(email=email)
             # STAG users cannot reset password here
             if isinstance(user, StagUser):
-                return Response({"detail": "Uživatelé školy si mění heslo v systému STAG."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Uživatelé školy si mění heslo v systému STAG."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
@@ -113,7 +124,8 @@ class PasswordResetRequestView(APIView):
             pass
 
         return Response(
-            {"message": "Pokud email v systému existuje, byl na něj odeslán odkaz pro obnovu hesla."}, status=status.HTTP_200_OK
+            {"message": "Pokud email v systému existuje, byl na něj odeslán odkaz pro obnovu hesla."},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -137,11 +149,17 @@ class PasswordResetConfirmView(APIView):
             return Response({"detail": "Neplatný odkaz."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not default_token_generator.check_token(user, serializer.validated_data["token"]):
-            return Response({"detail": "Neplatný nebo expirovaný token."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Neplatný nebo expirovaný token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
-        return Response({"message": "Heslo bylo úspěšně změněno. Nyní se můžete přihlásit."}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Heslo bylo úspěšně změněno. Nyní se můžete přihlásit."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class ChangePasswordView(APIView):
@@ -158,7 +176,8 @@ class ChangePasswordView(APIView):
         user = request.user
         if isinstance(user, StagUser):
             return Response(
-                {"detail": "Uživatelé STAG nemohou měnit heslo v této aplikaci. Použijte systém STAG."}, status=status.HTTP_403_FORBIDDEN
+                {"detail": "Uživatelé STAG nemohou měnit heslo v této aplikaci. Použijte systém STAG."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         serializer = ChangePasswordSerializer(data=request.data)
@@ -256,6 +275,7 @@ class UpdateAresSubjectView(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [LoginThrottle]
 
     @extend_schema(
         summary="Login / Obtain JWT Token",
@@ -321,7 +341,10 @@ class StudentProfileView(APIView):
 
     @extend_schema(
         summary="Get student profile detail",
-        responses={200: StudentProfileSerializer, 404: OpenApiResponse(description="Student not found")},
+        responses={
+            200: StudentProfileSerializer,
+            404: OpenApiResponse(description="Student not found"),
+        },
     )
     def get(self, request, student_id):
         try:
@@ -346,6 +369,8 @@ class AllStudentsListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AllStudentsListSerializer
     pagination_class = StandardResultsSetPagination
+    filter_backends = [drf_filters.SearchFilter]
+    search_fields = ["first_name", "last_name", "email", "os_cislo"]
 
     def get_queryset(self):
         return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
@@ -383,14 +408,20 @@ class AdminOrganizationViewSet(ModelViewSet):
         serializer = self.get_serializer(department)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(summary="Register a new organization (Admin)", request=OrganizationRegisterSerializer)
+    @extend_schema(
+        summary="Register a new organization (Admin)",
+        request=OrganizationRegisterSerializer,
+    )
     def create(self, request, *args, **kwargs):
         serializer = OrganizationRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
         if hasattr(user, "employer_profile"):
-            return Response(self.get_serializer(user.employer_profile).data, status=status.HTTP_201_CREATED)
+            return Response(
+                self.get_serializer(user.employer_profile).data,
+                status=status.HTTP_201_CREATED,
+            )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(summary="Update organization detail (Admin)")

@@ -4,23 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Department',
+            name="Department",
             fields=[
-                ('department_id', models.AutoField(primary_key=True, serialize=False)),
-                ('department_name', models.CharField(blank=True, max_length=100, null=True, unique=True)),
-                ('department_code', models.CharField(blank=True, max_length=100, null=True, unique=True)),
-                ('description', models.TextField(blank=True, default='')),
+                ("department_id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "department_name",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, unique=True
+                    ),
+                ),
+                (
+                    "department_code",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, unique=True
+                    ),
+                ),
+                ("description", models.TextField(blank=True, default="")),
             ],
             options={
-                'db_table': 'departments',
+                "db_table": "departments",
             },
         ),
     ]

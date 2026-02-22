@@ -4,8 +4,6 @@ import Headings from "@core/Text/Headings";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
-import Nav from "@components/core/Nav";
-import PopUpCon from "@core/Container/PopUpCon";
 import { useCompanyAPI } from "@api/company/companyAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
@@ -14,7 +12,7 @@ import CompanyEntity from "@components/Company/CompanyEntity";
 export default function CompaniesPage() {
     const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     const companyAPI = useCompanyAPI();
     const navigate = useNavigate();
     const { addMessage } = useMessage();
@@ -55,7 +53,7 @@ export default function CompaniesPage() {
     return (
         <>
             <BackButton/>
-            
+
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
                     Správa společností
@@ -63,7 +61,7 @@ export default function CompaniesPage() {
             </Container>
 
             <Container>
-                <Button 
+                <Button
                     onClick={handleCreateCompany}
                     icon={"plus"}
                 >
@@ -101,4 +99,4 @@ export default function CompaniesPage() {
             </Container>
         </>
     );
-} 
+}

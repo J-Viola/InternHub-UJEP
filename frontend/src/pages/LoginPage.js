@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
 //import Headings from "@core/Text/Headings";
 //import Button from "@core/Button/Button";
-import Nav from "@components/core/Nav";
 import LoginForm from "@login/LoginForm";
 import { STAGLogin } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
@@ -12,6 +11,7 @@ import { useSearchParams } from "react-router-dom";
 
 export default function LoginPage() {
     const [ticket, setTicket] = useState(null);
+    const [stagUserInfo, setStagUserInfo] = useState(null);
     const { login } = useAuth();
     const { addMessage } = useMessage();
     const [searchParams] = useSearchParams();
@@ -20,9 +20,18 @@ export default function LoginPage() {
     // Zpracování parametrů z URL při načtení stránky
     useEffect(() => {
         const stagUserTicket = searchParams.get("stagUserTicket");
+        const  stagUserInfoRaw = searchParams.get("stagUserInfo");
         console.log("URL Params hook detected:", stagUserTicket);
-        
+
         if (stagUserTicket) {
+            if (stagUserInfoRaw) {
+                try {
+                    const decoded = JSON.parse(atob(stagUserInfoRaw));
+                    setStagUserInfo(decoded);
+                } catch (e) {
+                    console.warn("Nepodařilo se dekódovat stagUserInfo:", e);
+                }
+            }
             setTicket(stagUserTicket);
         }
     }, [searchParams]);
@@ -36,8 +45,10 @@ export default function LoginPage() {
             }
 
             try {
-                const response = await login({ service_ticket: ticket });
-                
+                const payload = { service_ticket: ticket };
+                if (stagUserInfo) payload.stag_user_info = stagUserInfo;
+                await login(payload);
+
             } catch (error) {
                 console.error("Chyba při STAG loginu:", error);
                 if (error.response) {
@@ -56,7 +67,7 @@ export default function LoginPage() {
         try{
             console.log("Organization login")
             const response = await login({email: loginData.email, password: loginData.password});
-            
+
             // Po úspěšném loginu se přesměruje na /nabidka
             if (response?.status === 200) {
                 console.log("Organization login successful, redirecting to /nabidka");
@@ -90,4 +101,3 @@ export default function LoginPage() {
         </Container>
     );
 }
-

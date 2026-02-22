@@ -1,24 +1,29 @@
 import { useApi } from "@hooks/useApi";
-import { useMessage } from "@hooks/MessageContext";
 //import { createParams } from "@api/createParams";
 
 export const useNabidkaAPI = () => {
     const api = useApi();
-    const { addMessage } = useMessage(); 
-    //const practices = api.dummyDB.practices;
 
     const getNabidky = async (params = {}) => {
         try {
-            const response = await api.get('/practices/search/', { params })
-            
-            if (response && response.data) {
-                return response.data.results || response.data
-            }
-            
-            return []
+            const response = await api.get('/practices/search/', { params });
 
+            if (response && response.data) {
+                // Backend returns paginated shape: { count, next, previous, results }
+                if (response.data.results !== undefined) {
+                    return {
+                        results: response.data.results,
+                        count: response.data.count ?? 0,
+                        next: response.data.next,
+                        previous: response.data.previous,
+                    };
+                }
+                // Fallback: plain array (no pagination)
+                return { results: response.data, count: response.data.length, next: null, previous: null };
+            }
+
+            return { results: [], count: 0, next: null, previous: null };
         } catch (error) {
-            console.error("Chyba při získávání nabídek:", error);
             throw error;
         }
     };
@@ -36,11 +41,11 @@ export const useNabidkaAPI = () => {
     const getNabidkaById = async (id) => {
         try {
             const response = await api.get(`/practices/${id}`)
-            
+
             if (response && response.data) {
                 return response.data
             }
-            
+
             return null
 
         } catch (error) {
@@ -52,7 +57,7 @@ export const useNabidkaAPI = () => {
     const createNabidka = async (data) => {
         try {
             const formData = new FormData();
-            
+
             Object.keys(data).forEach(key => {
                 formData.append(key, data[key]);
             });
@@ -62,7 +67,7 @@ export const useNabidkaAPI = () => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            
+
             if (response && response.data) {
                 sessionStorage.setItem("pendingMessage", JSON.stringify({
                     text: `Nabídka byla úspěšně vytvořena`,
@@ -80,7 +85,7 @@ export const useNabidkaAPI = () => {
     const applyNabidka = async (data) => {
         try {
             const formData = new FormData();
-            
+
             Object.keys(data).forEach(key => {
                 formData.append(key, data[key]);
             });
@@ -90,7 +95,7 @@ export const useNabidkaAPI = () => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            
+
             if (response && response.data) {
                 return response.data;
             }
@@ -162,7 +167,7 @@ export const useNabidkaAPI = () => {
                 start_date: startDate,
                 coefficient: employmentLoad
             });
-            
+
             if (response && response.data) {
                 return response.data.end_date;
             }
@@ -176,7 +181,7 @@ export const useNabidkaAPI = () => {
     const updateNabidka = async (id, data, isPartial = false) => {
         try {
             const formData = new FormData();
-            
+
             Object.keys(data).forEach(key => {
                 formData.append(key, data[key]);
             });
@@ -187,7 +192,7 @@ export const useNabidkaAPI = () => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            
+
             if (response && response.data) {
                 sessionStorage.setItem("pendingMessage", JSON.stringify({
                     text: `Nabídka byla úspěšně aktualizována`,

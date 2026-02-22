@@ -5,7 +5,7 @@ export const useUserAPI = () => {
 
     const postRegister = async (data) => {
         const formData = new FormData();
-        
+
         // data k předání
         formData.append('email', data.executiveEmail);
         formData.append('phone', data.executivePhone);
@@ -18,8 +18,7 @@ export const useUserAPI = () => {
         formData.append('last_name', data.executiveSurname);
         formData.append('title_before', data.titleBefore || '');
         formData.append('title_after', data.titleAfter || '');
-        formData.append('phone', data.executivePhone || '' )
-        formData.append('address', data.address || '' )
+        formData.append('address', data.address || '')
 
 
         if (data.logo) {
@@ -79,12 +78,13 @@ export const useUserAPI = () => {
         }
     };
 
-    const getAllStudents = async () => {
+    const getAllStudents = async ({ page = 1, pageSize = 10, search = '' } = {}) => {
         try {
-            const response = await api.get('/users/all-students/');
+            const params = { page, page_size: pageSize };
+            if (search) params.search = search;
+            const response = await api.get('/users/all-students/', { params });
             return response.data;
         } catch (error) {
-            console.error('Chyba při získávání všech studentů:', error);
             throw error;
         }
     };
@@ -160,10 +160,10 @@ export const useUserAPI = () => {
     const updateProfile = async (userData) => {
         try {
             const formData = new FormData();
-            
+
             Object.keys(userData).forEach(key => {
                 const value = userData[key];
-                
+
                 if (value === null || value === undefined) return;
 
                 if (key === 'employer_profile') return; // Skip nested read-only or complex objects if not needed for update
@@ -185,7 +185,7 @@ export const useUserAPI = () => {
                 } else if (value instanceof File) {
                     formData.append(key, value);
                 } else if (typeof value === 'object' && !Array.isArray(value)) {
-                     formData.append(key, JSON.stringify(value)); 
+                     formData.append(key, JSON.stringify(value));
                 } else {
                     formData.append(key, value);
                 }

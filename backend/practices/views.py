@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from django.db.models import Count, Q
@@ -11,7 +12,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.permissions import IsOrganizationOwner, IsOrganizationUser
 from api.views import StandardResultsSetPagination
 from department.models import Department
 from practices.filters import PracticeFilter
@@ -27,8 +27,10 @@ from practices.serializers import (
 )
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
-from users.models import ApprovalStatus, StudentUser
-from users.permissions import IsStagTeacher
+from users.models import ApprovalStatus, ProfessorUser, StagRoleEnum, StudentUser
+from users.permissions import IsOrganizationOwner, IsOrganizationUser, IsStagTeacher
+
+logger = logging.getLogger(__name__)
 
 
 # -------------------------------------------------------------
@@ -69,7 +71,10 @@ class PracticeViewSet(viewsets.ModelViewSet):
         """
         user = request.user
         if not hasattr(user, "favorite_practices"):
-            return Response({"detail": "User cannot have favorite practices"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "User cannot have favorite practices"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         practice = self.get_object()
 
@@ -305,6 +310,9 @@ class PracticeViewSet(viewsets.ModelViewSet):
         if address:
             queryset = queryset.filter(employer__address__icontains=address)
 
+        if request.query_params.get("favorites") == "true" and hasattr(request.user, "favorite_practices"):
+            queryset = queryset.filter(pk__in=request.user.favorite_practices.values_list("pk", flat=True))
+
         queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -373,18 +381,18 @@ class RunningPracticeListView(generics.ListAPIView):
     serializer_class = RunningPracticeSerializer
 
     def get_queryset(self):
-        # noqa: E501  # TODO: https://www.figma.com/proto/6MRkTbxu7nvjVRkxLjm8yi/InternHub-n%C3%A1vrh?node-id=3573-3353&p=f&t=2nsdb5rjnw1qMkGY-0&scaling=scale-down&content-scaling=fixed&page-id=3426%3A3813&starting-point-node-id=3564%3A5736&show-proto-sidebar=1
-        # Tohle má být horní část probíhajících praxí, ta spodní se budem muset řešit jinak (asi samostatnej call)
-        # Počet přihlášek
-        head_of_department = True
-        if head_of_department:
+        user = self.request.user
+        # Check if user is a department head (VK role) — sees all departments
+        is_head_of_department = (
+            isinstance(user, ProfessorUser)
+            and hasattr(user, "stag_role")
+            and user.stag_role
+            and user.stag_role.role == StagRoleEnum.VK.value
+        )
+        if is_head_of_department:
             dept_ids = Department.objects.all().values_list("department_id", flat=True).distinct()
         else:
-            dept_ids = (
-                Department.objects.filter(subjects__user_subjects__user=self.request.user)
-                .values_list("department_id", flat=True)
-                .distinct()
-            )
+            dept_ids = Department.objects.filter(subjects__user_subjects__user=user).values_list("department_id", flat=True).distinct()
 
         students = StudentUser.objects.filter(user_subjects__subject__department_id__in=dept_ids).distinct()
         practices = (
@@ -476,7 +484,7 @@ class PracticesForApprovingListView(generics.ListAPIView):
 
         practices_to_approve = Practice.objects.filter(subject__department_id__in=dept_ids, approval_status=ApprovalStatus.PENDING)
 
-        print(f"Found {practices_to_approve.count()} for approval")
+        logger.debug("Found %d practices for approval", practices_to_approve.count())
 
         return practices_to_approve
 

@@ -1,10 +1,10 @@
 Django>=5.0,<6.0
 djangorestframework
+pytest-django
 django-cors-headers
 markdown
 django-filter
 psycopg2-binary
-pydevd-pycharm
 requests
 pydantic
 pre-commit
@@ -12,9 +12,7 @@ ruff
 djangorestframework-simplejwt
 django-polymorphic
 django-model-utils
-django-verify-email
 drf-spectacular
 django-enumfield
-django-seed
 holidays
 Pillow

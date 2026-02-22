@@ -1,20 +1,16 @@
 import React, { useEffect, useState } from "react";
-import Nav from "@core/Nav";
 import Container from "@core/Container/Container";
 import SubjectEntity from "@components/Subjects/SubjectEntity";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
 import BackButton from "@core/Button/BackButton";
-import SearchBar from "@components/Filter/SearchBar";
 import { useSubjectAPI } from "@api/subject/subjectAPI";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Button from "@components/core/Button/Button";
-import handleToDoAlert from "@utils/ToDoAlert";
 
 export default function SubjectPage() {
     const [entities, setEntities] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
     const { getDepartmentSubjects } = useSubjectAPI();
     const navigate = useNavigate();
 
@@ -58,7 +54,7 @@ export default function SubjectPage() {
                     Předměty {getDepartmentName() && `- ${getDepartmentName()}`}
                 </Headings>
             </Container>
-            
+
             <Container property={"flex items-center justify-between mb-6"}>
                 <Button
                     variant={"primarySmall"}
@@ -98,5 +94,5 @@ export default function SubjectPage() {
                 )}
             </Container>
         </>
-    )   
+    )
 }

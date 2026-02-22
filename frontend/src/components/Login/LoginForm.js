@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from "react";
+import React, {useState, useCallback} from "react";
 import Container from "@core/Container/Container";
 import Button from "@core/Button/Button";
 import Headings from "@components/core/Text/Headings";
@@ -7,7 +7,7 @@ import Paragraph from "@components/core/Text/Paragraph";
 import TextField from "@core/Form/TextField";
 import { useNavigate } from "react-router-dom";
 
-export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) { 
+export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
     const [loginAccess, setLoginAccess] = useState({});
     const [studentId, setStudentId] = useState("");
     const [teacherId, setTeacherId] = useState("");
@@ -18,7 +18,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
             ...prevState,
             ...newValues
         }));
-        
+
     }, []);
 
     const handleStudentIdChange = (values) => {
@@ -39,46 +39,42 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
         window.location.href = `/?stagUserTicket=${ticket}`;
     };
 
-    useEffect(() => {
-        console.log("LoginAccess", loginAccess);
-    }, [loginAccess]);
-
     const handleButtonClick = () => {
-        console.log("ButtonClick");
+        // placeholder for icon click
     }
-    
+
     return (
         <Container property="min-h-screen flex items-center justify-center p-0 mx-auto">
             <Container property="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
                 <LoginSwitch getLoginType={handleAccess}/>
                 <Headings sizeTag="h4" property="text-center">Přihlášení</Headings>
-                
+
                { loginAccess.switch !== "STAG" ? (
                 <>
-                <TextField 
-                    id="email" 
-                    onIconClick={handleButtonClick} 
-                    icon="user" 
-                    required={true} 
-                    label="E-mail" 
-                    placeholder="E-mail" 
+                <TextField
+                    id="email"
+                    onIconClick={handleButtonClick}
+                    icon="user"
+                    required={true}
+                    label="E-mail"
+                    placeholder="E-mail"
                     property="m-4"
                     onChange={handleAccess}
                 />
-                <TextField 
+                <TextField
                     id="password"
                     type="password"
-                    onIconClick={handleButtonClick} 
-                    icon="lock" 
-                    required={true} 
-                    label="Heslo" 
-                    placeholder="*****" 
+                    onIconClick={handleButtonClick}
+                    icon="lock"
+                    required={true}
+                    label="Heslo"
+                    placeholder="*****"
                     property="m-4"
                     onChange={handleAccess}
                 />
                 <Container property="flex justify-end m-4 mt-0">
-                    <Paragraph 
-                        variant="small" 
+                    <Paragraph
+                        variant="small"
                         property="text-blue-600 cursor-pointer hover:underline"
                         onClick={() => navigate("/reset-password")}
                     >
@@ -94,74 +90,78 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                 )
                 }
 
-                {loginAccess.switch == "STAG" ? (
+                {loginAccess.switch === "STAG" ? (
                     <>
                         {/* STAG LOGIN */}
-                        <Button 
+                        <Button
                             property={"w-full items-center"}
                             onClick={handleSTAGLogin}
                         >
-                            Přihlaste se             
+                            Přihlaste se
                         </Button>
-                        <Button 
-                            property={"w-full items-center mt-4 bg-gray-500 hover:bg-gray-600"}
-                            onClick={() => window.location.href = "/?stagUserTicket=demo-ticket"}
-                        >
-                            Demo Login (Dev)
-                        </Button>
-                        
-                        <TextField 
-                            id="studentId" 
-                            label="Zadejte osCislo studenta (nepovinné)" 
-                            placeholder="S12345" 
-                            property="mt-4 mb-2"
-                            value={studentId}
-                            onChange={handleStudentIdChange}
-                        />
-                        <Button 
-                            property={"w-full items-center bg-blue-500 hover:bg-blue-600"}
-                            onClick={handleMockStudentLogin}
-                        >
-                            Mock Student (Dev)
-                        </Button>
+                        {process.env.NODE_ENV === 'development' && (
+                            <>
+                                <Button
+                                    property={"w-full items-center mt-4 bg-gray-500 hover:bg-gray-600"}
+                                    onClick={() => window.location.href = "/?stagUserTicket=demo-ticket"}
+                                >
+                                    Demo Login (Dev)
+                                </Button>
 
-                        <TextField 
-                            id="teacherId" 
-                            label="Zadejte ucitIdno učitele (nepovinné)" 
-                            placeholder="U98765" 
-                            property="mt-4 mb-2"
-                            value={teacherId}
-                            onChange={handleTeacherIdChange}
-                        />
-                        <Button 
-                            property={"w-full items-center bg-green-500 hover:bg-green-600"}
-                            onClick={handleMockTeacherLogin}
-                        >
-                            Mock Teacher (Dev)
-                        </Button>
+                                <TextField
+                                    id="studentId"
+                                    label="Zadejte osCislo studenta (nepovinné)"
+                                    placeholder="S12345"
+                                    property="mt-4 mb-2"
+                                    value={studentId}
+                                    onChange={handleStudentIdChange}
+                                />
+                                <Button
+                                    property={"w-full items-center bg-blue-500 hover:bg-blue-600"}
+                                    onClick={handleMockStudentLogin}
+                                >
+                                    Mock Student (Dev)
+                                </Button>
+
+                                <TextField
+                                    id="teacherId"
+                                    label="Zadejte ucitIdno učitele (nepovinné)"
+                                    placeholder="U98765"
+                                    property="mt-4 mb-2"
+                                    value={teacherId}
+                                    onChange={handleTeacherIdChange}
+                                />
+                                <Button
+                                    property={"w-full items-center bg-green-500 hover:bg-green-600"}
+                                    onClick={handleMockTeacherLogin}
+                                >
+                                    Mock Teacher (Dev)
+                                </Button>
+                            </>
+                        )}
                     </>
-                       
+
 
                 ):(
                     <>
                         {/* ORGANIZACE LOGIN */}
-                        <Button 
+                        <Button
                             property={"w-full items-center"}
                             onClick={() => handleOrganizationLogin(loginAccess)}
                         >
-                            Přihlaste se             
+                            Přihlaste se
                         </Button>
 
-                        <Button 
+                        <Button
                             property={"w-full items-center mt-2"}
                             variant="yellow"
                             onClick={() => navigate("/registrace")}
                         >
-                            Registrace             
+                            Registrace
                         </Button>
                     </>
                 )
-                
+
                 }
 
 

@@ -53,7 +53,7 @@ describe('NabidkaDetailPage', () => {
         });
         useUser.mockReturnValue({ user: mockUser });
         useMessage.mockReturnValue({ addMessage: mockAddMessage });
-        
+
         mockGetNabidkaById.mockResolvedValue(mockOffer);
     });
 
@@ -63,7 +63,7 @@ describe('NabidkaDetailPage', () => {
 
     test('renders offer details', async () => {
         mockUser.isStudent.mockReturnValue(true);
-        
+
         render(
             <MemoryRouter initialEntries={['/nabidka/1']}>
                 <Routes>
@@ -105,6 +105,8 @@ describe('NabidkaDetailPage', () => {
 
         await waitFor(() => {
             expect(mockApplyNabidka).toHaveBeenCalledWith({ practice: '1' });
+        });
+        await waitFor(() => {
             expect(mockAddMessage).toHaveBeenCalledWith('Přihláška byla úspěšně podána', 'S');
         });
     });
@@ -125,6 +127,8 @@ describe('NabidkaDetailPage', () => {
 
         await waitFor(() => {
             expect(screen.getByText('Zobrazit přihlášené')).toBeInTheDocument();
+        });
+        await waitFor(() => {
             expect(screen.getByText('Upravit nabídku')).toBeInTheDocument();
         });
     });

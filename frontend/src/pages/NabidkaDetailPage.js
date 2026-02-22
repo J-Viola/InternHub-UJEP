@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
-import Nav from "@components/core/Nav";
 import BackButton from "@core/Button/BackButton";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useParams } from "react-router-dom";
-import HTMLReactParser from "html-react-parser";
 import Button from "@core/Button/Button";
 import DocsPanel from "@components/Nabidka/DocsPanel";
 import PopUpCon from "@core/Container/PopUpCon";
@@ -17,7 +15,6 @@ import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "@api/documents/documentsAPI";
 import { useNavigate } from "react-router-dom";
-import handleToDoAlert from "@utils/ToDoAlert";
 
 export default function NabidkaDetailPage() {
     const { id } = useParams();
@@ -34,19 +31,16 @@ export default function NabidkaDetailPage() {
 
     const fetchData = async () => {
         try {
-            console.log("Fetching nabídka with ID:", id);
             const result = await nabidkaAPI.getNabidkaById(id);
-            console.log("result", result)
             setEntity(result);
             setDocs(result.student_practice_documents || []);
         } catch (error) {
-            console.error("Chyba při načítání nabídky:", error);
+            addMessage("Chyba při načítání nabídky", "E");
         }
     };
 
     useEffect(() => {
         if (id) {
-            console.log("id", id)
             fetchData();
         }
     }, [id]);
@@ -124,7 +118,6 @@ export default function NabidkaDetailPage() {
                 navigate(`/praxe`)
             }
         } catch (error) {
-            console.error("Chyba při podání přihlášky:", error);
             if (error.response?.data?.detail) {
                 addMessage(error.response.data.detail, "E");
             } else {
@@ -178,7 +171,7 @@ export default function NabidkaDetailPage() {
             )}
             <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                 <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-4">
-                        
+
                     {/* LOGO */}
                     <Container property="w-32 h-32 rounded-lg p-4 flex items-center justify-center">
                         <Headings sizeTag="h4" property="text-white">
@@ -231,19 +224,19 @@ export default function NabidkaDetailPage() {
 
                     {user && user.isDepartmentMg() && entity?.approval_status === 1 && (
                         <>
-                            <Button 
-                                variant={"primary"} 
-                                icon={"users"} 
-                                property={"px-8"} 
+                            <Button
+                                variant={"primary"}
+                                icon={"users"}
+                                property={"px-8"}
                                 onClick={() => navigate(`/students/${entity.practice_id}`)}
                             >
                                 Přihlášení studenti
                             </Button>
 
-                            <Button 
-                                variant={"primary"} 
-                                icon={"gear"} 
-                                property={"px-8"} 
+                            <Button
+                                variant={"primary"}
+                                icon={"gear"}
+                                property={"px-8"}
                                 onClick={handlePopUp}
                             >
                                 Spravovat
@@ -253,19 +246,19 @@ export default function NabidkaDetailPage() {
 
                     {user && user.isDepartmentMg() && entity?.approval_status === 0 && (
                         <>
-                            <Button 
-                                variant={"primary"} 
-                                icon={"gear"} 
-                                property={"px-8"} 
+                            <Button
+                                variant={"primary"}
+                                icon={"gear"}
+                                property={"px-8"}
                                 onClick={handlePopUp}
                             >
                                 Spravovat nabídku
                             </Button>
 
-                            <Button 
-                                variant={"primary"} 
-                                icon={"edit"} 
-                                property={"px-8"} 
+                            <Button
+                                variant={"primary"}
+                                icon={"edit"}
+                                property={"px-8"}
                                 onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
                             >
                                 Upravit inzerát
@@ -276,19 +269,19 @@ export default function NabidkaDetailPage() {
 
                     {user && (user.isOrganizationUser() || user.isAdmin()) && entity?.employer?.employer_id && (
                         <>
-                            <Button 
-                                variant={"primary"} 
-                                icon={"users"} 
-                                property={"px-8"} 
+                            <Button
+                                variant={"primary"}
+                                icon={"users"}
+                                property={"px-8"}
                                 onClick={() => navigate(`/students/${entity.practice_id}?view=true`)}
                             >
                                 Zobrazit přihlášené
                             </Button>
 
-                            <Button 
-                                variant={"primary"} 
-                                icon={"edit"} 
-                                property={"px-8"} 
+                            <Button
+                                variant={"primary"}
+                                icon={"edit"}
+                                property={"px-8"}
                                 onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
                             >
                                 Upravit nabídku
@@ -309,12 +302,12 @@ export default function NabidkaDetailPage() {
                     />
                 </Container>
             )}
-                
+
             {/* POPUP KONTEXT - STUDENT vs DEPARTMENT */}
             {popUp && user.isStudent() && (
-                <PopUpCon 
-                    onClose={handlePopUp} 
-                    title= {"Přihláška"} 
+                <PopUpCon
+                    onClose={handlePopUp}
+                    title= {"Přihláška"}
                     text={"Opravdu si přejete podat přihlášku?"}
                     onSubmit={onSubmit}
                     onReject={onReject}
@@ -322,9 +315,9 @@ export default function NabidkaDetailPage() {
             )}
 
             {popUp && user.isDepartmentMg() && (
-                <PopUpCon 
-                    onClose={handlePopUp} 
-                    title= {"Správa nabídky"} 
+                <PopUpCon
+                    onClose={handlePopUp}
+                    title= {"Správa nabídky"}
                     text={`Opravdu chcete změnit stav nabídky: ${entity?.title}?`}
                     onSubmit={handleApprove}
                     onSubmitText="Schválit"
@@ -334,4 +327,4 @@ export default function NabidkaDetailPage() {
             )}
         </>
     )
-} 
+}

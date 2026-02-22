@@ -20,7 +20,13 @@ class Practice(models.Model):
         null=True,
         related_name="practices",
     )
-    subject = models.ForeignKey("subject.Subject", models.PROTECT, blank=True, null=True, related_name="practices")
+    subject = models.ForeignKey(
+        "subject.Subject",
+        models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="practices",
+    )
     title = models.CharField(max_length=100, blank=True, default="")
     description = models.TextField(blank=True, default="")
     responsibilities = models.TextField(blank=True, default="")

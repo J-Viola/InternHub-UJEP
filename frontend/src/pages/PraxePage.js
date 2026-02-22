@@ -1,7 +1,5 @@
 import React, {useState, useEffect} from "react";
-import Nav from "@core/Nav";
 import Container from "@core/Container/Container";
-import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
 import PraxeEntity from "@components/Praxe/PraxeEntity";
@@ -14,52 +12,44 @@ import { useUser } from "@hooks/UserProvider";
 import BackButton from "@components/core/Button/BackButton";
 
 export default function PraxePage() {
-
     const [ selectedEntity, setSelectedEntity ] = useState({});
     const nabidkaAPI  = useNabidkaAPI();
     const studentPraciceAPI = useStudentPracticeAPI();
     const [ data, setData]  = useState(null);
     const [ popUp, setPopUp ] = useState(false);
+    const [ loading, setLoading ] = useState(true);
+    const [ error, setError ] = useState(null);
     const navigate = useNavigate();
     const { user } = useUser();
 
-
     useEffect(() => {
-        const initFetch = async() => {
-
-            if (user.isAdmin()) {
-                console.log("Jsem admin")
-                // TO:DO vytvořit endpoint pro admina -> admin nemá přiřazenou organizaci, proto nefunguje tento přístup - nutný backend zásah
-            }
-            if (user.isOrganizationUser()) {
-                console.log("Jsem organizace/admin")
-                try {
+        const initFetch = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                if (user.isOrganizationUser() || user.isAdmin()) {
                     const res = await nabidkaAPI.getOrganizationPractices();
                     setData(res);
-                } catch (error) {
-                    console.error("Chyba při načítání praxí organizace:", error);
+                } else if (user.isStudent()) {
+                    const res = await nabidkaAPI.getPracticeUserRelations();
+                    setData(res);
                 }
+            } catch {
+                setError("Nepodařilo se načíst stáže. Zkuste to prosím znovu.");
+            } finally {
+                setLoading(false);
             }
-            if (user.isStudent()) {
-                const res = await nabidkaAPI.getPracticeUserRelations();
-                setData(res);
-            }
-    
-        }
+        };
         initFetch();
-    }, [user])
+    }, [user]);
 
     const handlePopUp = () => {
         setPopUp(false);
         setSelectedEntity({});
-    }
+    };
 
-    // hook na entitu podle typu
     const handleClick = (entity, type) => {
-        console.log("clicked entity:", entity, "type:", type);
-        
         if (type === "employer_invitations") {
-            // Pro pozvánky - zobrazit popup pro přijetí/zamítnutí + načtu data
             setSelectedEntity({
                 ...entity,
                 type: "invitation",
@@ -67,54 +57,45 @@ export default function PraxePage() {
                 action: "respond_to_invitation"
             });
             setPopUp(true);
-        } else if (type === "student_practices") {
-            // tady handle
-
         } else if (type === "organization_practices") {
-            // Pro organizace - zobrazit detail praxe
             navigate(`/upravit-nabidku/${entity.practice_id}`);
         }
-    }
+    };
 
     const handleView = (entity, type) => {
-        console.log("View entity:", entity, "type:", type);
-        
-        if (type === "employer_invitations") {
-            navigate(`/nabidka/${entity.practice_id}`);
-        } else if (type === "student_practices") {
+        if (type === "employer_invitations" || type === "student_practices") {
             navigate(`/nabidka/${entity.practice_id}`);
         }
-    }
+    };
 
-    {/* const handleViewStudents = (entity) => {
-        navigate(`/students/${entity.practice_id}?view=true`)
-    }*/}
-
-    const handleInvivtaion = async (action) => {
+    const handleInvitation = async (action) => {
         if (action) {
-            const res = await studentPraciceAPI.manageEmployerInvitation(selectedEntity.invitation_id, action);
+            await studentPraciceAPI.manageEmployerInvitation(selectedEntity.invitation_id, action);
             handlePopUp();
         }
-        
-    }
+    };
 
-    // Pop Up render
-    const renderPopUp = () => {
-        return (
-            <PopUpCon 
-                title={selectedEntity.title} 
-                onClose={handlePopUp} 
-                text={"Opravdu si přejete zahájit tuto praxi?"}
-                onSubmit={() => handleInvivtaion("accept")}
-                onReject={() => handleInvivtaion("reject")}
-            />
-        )
-    }
+    const renderPopUp = () => (
+        <PopUpCon
+            title={selectedEntity.title}
+            onClose={handlePopUp}
+            text={"Opravdu si přejete zahájit tuto praxi?"}
+            onSubmit={() => handleInvitation("accept")}
+            onReject={() => handleInvitation("reject")}
+        />
+    );
 
-    return(
+    const renderLoading = () => (
+        <Paragraph property="text-center text-gray-500 py-8">Načítání stáží...</Paragraph>
+    );
+
+    const renderError = () => (
+        <Paragraph property="text-center text-red-500 py-8">{error}</Paragraph>
+    );
+
+    return (
         <>
             {user.isOrganizationUser() || user.isAdmin() ? (
-                // Render pro organizaci
                 <>
                     <BackButton/>
                     <Container property={"flex items-center justify-between mb-6 mt-4"}>
@@ -124,7 +105,7 @@ export default function PraxePage() {
                     </Container>
 
                     <Container>
-                        <Button 
+                        <Button
                             onClick={() => navigate('/vytvorit-nabidku')}
                             icon={"plus"}
                         >
@@ -133,15 +114,16 @@ export default function PraxePage() {
                     </Container>
 
                     <Container property={"mt-4 rounded-lg"}>
-                        {!data ? (
-                            <Paragraph>Načítání...</Paragraph>
-                        ) : data.length === 0 ? (
+                        {loading && renderLoading()}
+                        {!loading && error && renderError()}
+                        {!loading && !error && (!data || data.length === 0) && (
                             <Paragraph property="text-center text-gray-500 py-8">
                                 Zatím nemáte žádné vytvořené stáže.
                             </Paragraph>
-                        ) : (
+                        )}
+                        {!loading && !error && data && data.length > 0 && (
                             <Container property={"grid grid-cols-1 gap-4"}>
-                                {data?.map(entity => (
+                                {data.map(entity => (
                                     <PraxeEntity
                                         type={"organization_practices"}
                                         key={`practice-${entity.practice_id}`}
@@ -159,18 +141,22 @@ export default function PraxePage() {
                     </Container>
                 </>
             ) : (
-                // Render pro studenta
-                <>  
+                <>
                     <BackButton/>
                     <Container property={"flex flex-col gap-2"}>
-                        {!data ? (
-                            <Paragraph>Načítání...</Paragraph>
-                        ) : (
+                        {loading && renderLoading()}
+                        {!loading && error && renderError()}
+                        {!loading && !error && data && (
                             <>
-                                <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Podané přihlášky 
-                                    {data.student_practices ? (" " + `(${data.student_practices.length})`) : ""}
+                                <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>
+                                    Podané přihlášky
+                                    {data.student_practices ? ` (${data.student_practices.length})` : ""}
                                 </Headings>
-                                {/* Student Practices */}
+                                {data.student_practices?.length === 0 && (
+                                    <Paragraph property="text-center text-gray-500 py-4">
+                                        Nemáte žádné podané přihlášky.
+                                    </Paragraph>
+                                )}
                                 {data.student_practices?.map(entity => (
                                     <PraxeEntity
                                         type={"student_practices"}
@@ -180,11 +166,16 @@ export default function PraxePage() {
                                         onView={() => handleView(entity, "student_practices")}
                                     />
                                 ))}
-                                
-                                <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>Pozvánky od firem
-                                    {data.employer_invitations ? (" " + `(${data.employer_invitations.length})`) : ""}
+
+                                <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>
+                                    Pozvánky od firem
+                                    {data.employer_invitations ? ` (${data.employer_invitations.length})` : ""}
                                 </Headings>
-                                {/* Employer Invitations */}
+                                {data.employer_invitations?.length === 0 && (
+                                    <Paragraph property="text-center text-gray-500 py-4">
+                                        Nemáte žádné pozvánky.
+                                    </Paragraph>
+                                )}
                                 {data.employer_invitations?.map(entity => (
                                     <PraxeEntity
                                         type={"employer_invitations"}
@@ -192,7 +183,7 @@ export default function PraxePage() {
                                         entity={{
                                             ...entity,
                                             application_date: entity.submission_date,
-                                            status: "Pozvánka" // Special status for invitations
+                                            status: "Pozvánka"
                                         }}
                                         onClick={() => handleClick(entity, "employer_invitations")}
                                         onView={() => handleView(entity, "employer_invitations")}
@@ -205,5 +196,5 @@ export default function PraxePage() {
             )}
             {popUp && renderPopUp()}
         </>
-    )
+    );
 }

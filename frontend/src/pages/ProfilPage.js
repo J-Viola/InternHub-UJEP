@@ -4,11 +4,9 @@ import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import Headings from "@core/Text/Headings";
-import Nav from "@core/Nav";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useUserAPI } from "@api/user/userAPI";
 import { useParams, useSearchParams } from "react-router-dom";
-import handleToDoAlert from "@utils/ToDoAlert";
 import ProfileForm from "@components/Forms/ProfileForm";
 import { useNavigate } from "react-router-dom";
 import Image from "@core/Image/Image";
@@ -87,18 +85,18 @@ export default function ProfilPage() {
     return(
         <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
             <BackButton/>
-            
+
             {isEditMode ? (
-                <ProfileForm 
-                    formData={userData} 
-                    handleInputChange={handleInputChange} 
-                    handleSubmit={handleSubmit} 
+                <ProfileForm
+                    formData={userData}
+                    handleInputChange={handleInputChange}
+                    handleSubmit={handleSubmit}
                 />
             ) : (
                 // Zobrazení profilu
                 <>
                     <Container property="grid grid-cols-[auto,1fr] gap-4 mt-2 mb-8">
-                        
+
                         {/* PROFILE PIC */}
                         <Container property="w-32 h-32 bg-blue-600 rounded-lg p-4 flex items-center justify-center">
                             {userData.profile_picture ? (
@@ -307,8 +305,8 @@ export default function ProfilPage() {
                     {/* EDIT PROFILE BUTTON */}
                     <Container property="flex items-center justify-end gap-2">
                         {!id && userData.user_type === 'student' && (
-                            <Button 
-                                onClick={() => navigate(`/moje-prihlasky`)} 
+                            <Button
+                                onClick={() => navigate(`/moje-prihlasky`)}
                                 icon={"list"}
                                 variant="secondary"
                             >
@@ -316,16 +314,16 @@ export default function ProfilPage() {
                             </Button>
                         )}
                         {!id && userData.user_type !== 'student' && userData.user_type !== 'professor' && (
-                            <Button 
-                                onClick={() => navigate(`/change-password`)} 
+                            <Button
+                                onClick={() => navigate(`/change-password`)}
                                 icon={"lock"}
                                 variant="secondary"
                             >
                                 Změnit heslo
                             </Button>
                         )}
-                        <Button 
-                            onClick={() => navigate(`/profil/${id ? id :""}?edit=true`)} 
+                        <Button
+                            onClick={() => navigate(`/profil/${id ? id :""}?edit=true`)}
                             icon={"edit"}
                         >
                             Upravit profil
