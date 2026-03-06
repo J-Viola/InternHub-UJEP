@@ -11,9 +11,11 @@ import { usePozvankyAPI } from "@api/pozvanky/pozvankyAPI";
 import { useUser } from "@hooks/UserProvider";
 import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@components/core/Form/DropDown";
+import { useTranslation } from "react-i18next";
 
 export default function PozvankyListPage() {
 	const navigate = useNavigate();
+	const { t } = useTranslation();
 	const { getPozvankyList, getPozvankyAdminList, deleteInvitation } = usePozvankyAPI();
 	const [showPopup, setShowPopup] = useState(false);
 	const [selectedEntity, setSelectedEntity] = useState(null);
@@ -33,16 +35,12 @@ export default function PozvankyListPage() {
 	const handleConfirmCancel = async () => {
 		if (!selectedEntity) return;
 		try {
-			console.log('Zrušit pozvánku:', selectedEntity);
             await deleteInvitation(selectedEntity.id);
-
-			// Odebrat z listu
 			setData(prevData => prevData.filter(item => item.id !== selectedEntity.id));
-
 			setShowPopup(false);
 			setSelectedEntity(null);
 		} catch (error) {
-			console.error('Chyba při zrušení pozvánky:', error);
+			console.error(t('invitations.cancel_error'), error);
 		}
 	}
 
@@ -52,7 +50,6 @@ export default function PozvankyListPage() {
 	}
 
 	const handleViewProfile = (userId) => {
-		console.log('Zobrazit profil uživatele:', userId);
 		navigate(`/profil/${userId}`);
 	}
 
@@ -68,19 +65,17 @@ export default function PozvankyListPage() {
 				}
 
 			} catch (error) {
-				console.error('Chyba při načítání pozvánek:', error);
+				console.error(t('invitations.load_error'), error);
 			} finally {
 				setLoading(false);
 			}
 		};
 
 		initFetch();
-	}, []);
+	}, [user, getPozvankyAdminList, getPozvankyList, t]);
 
-	// group by pro admina
 	const toId = (name) => `firma-${(name || 'neznamy').toLowerCase()}`;
 
-	// vyhledávání
 	const searchFiltered = searchQuery
 		? (data || []).filter((n) => {
 			const q = searchQuery.toLowerCase();
@@ -93,21 +88,17 @@ export default function PozvankyListPage() {
 		})
 		: (data || []);
 
-	// seskupení podle firmy (po vyhledávání)
 	const groupedByEmployer = (searchFiltered || []).reduce((acc, item) => {
-		const name = item.employer_name || "Neznámá firma";
+		const name = item.employer_name || t('users.unknown_company');
 		(acc[name] = acc[name] || []).push(item);
 		return acc;
 	}, {});
 
-	// unikátní názvy firem dle vyhledávání
 	const allCompanyNames = Object.keys(groupedByEmployer);
-	// zobrazené firmy: pokud nejsou vybrané, zobrazím všechny
 	const displayCompanyNames = user.isAdmin()
 		? (selectedCompanies.length ? selectedCompanies.filter((n) => allCompanyNames.includes(n)) : allCompanyNames)
 		: [];
 
-	// přidání/odebrání filtrů
 	const onCompanySelect = (dict) => {
 		const name = dict?.company;
 		if (!name) return;
@@ -117,7 +108,6 @@ export default function PozvankyListPage() {
 	const onRemoveCompany = (name) => setSelectedCompanies(selectedCompanies.filter((n) => n !== name));
 	const availableOptions = allCompanyNames.filter((n) => !selectedCompanies.includes(n));
 
-	// data zobrazená v seznamu (pokud je admin a má vybraný filtr, omezíme data) po vyhledávání
 	const filteredData = (user.isAdmin() && selectedCompanies.length > 0)
 		? searchFiltered.filter((n) => selectedCompanies.includes(n.employer_name))
 		: searchFiltered;
@@ -127,7 +117,7 @@ export default function PozvankyListPage() {
 	            <BackButton/>
 	            <Container property={"flex items-center justify-between mb-6 mt-4"}>
 	                <Headings sizeTag={"h3"} property={"mt-2"}>
-	                    Zaslané pozvánky
+	                    {t('invitations.sent_title')}
 	                </Headings>
 	            </Container>
 
@@ -137,7 +127,7 @@ export default function PozvankyListPage() {
 	                <SearchBar
 	                    id="search"
 	                    value={searchQuery}
-	                    placeholder="Hledat podle projektu, jména, firmy nebo katedry..."
+	                    placeholder={t('invitations.search_placeholder')}
 	                    onChange={(e) => setSearchQuery(e.target.value)}
 	                    onClear={() => setSearchQuery("")}
 	                />
@@ -145,7 +135,7 @@ export default function PozvankyListPage() {
 	                    <DropDown
 	                        id="company"
 	                        variant="facultyGreen"
-	                        placeholder="Vyberte organizaci pro filtrování"
+	                        placeholder={t('users.select_company')}
 	                        value={companySelectValue}
 	                        onChange={onCompanySelect}
 	                        options={availableOptions.map((name) => ({ label: name, value: name }))}
@@ -164,22 +154,22 @@ export default function PozvankyListPage() {
 
 	            <Container property={"mt-4 rounded-lg"}>
 	                {loading ? (
-	                    <Paragraph>Načítání...</Paragraph>
+	                    <Paragraph>{t('common.loading')}</Paragraph>
 	                ) : data.length === 0 ? (
 	                    <Paragraph property="text-center text-gray-500 py-8">
-	                        Zatím nemáte žádné zaslané pozvánky.
+	                        {t('invitations.no_invitations')}
 	                    </Paragraph>
 	                ) : (
 	                    user.isAdmin() ? (
 	                        displayCompanyNames.length === 0 ? (
 	                            <Paragraph property="text-center text-gray-500 py-8">
-	                                Žádné výsledky.
+	                                {t('users.no_results')}
 	                            </Paragraph>
 	                        ) : (
 	                            <Container property={"space-y-6"}>
 	                                {displayCompanyNames.map((name) => (
 	                                    <Container id={toId(name)} key={name}>
-	                                        <Headings sizeTag={"h4"}>{`Firma: ${name}`}</Headings>
+	                                        <Headings sizeTag={"h4"}>{`${t('invitations.company_label')}: ${name}`}</Headings>
 	                                        <Container property={"flex flex-wrap gap-4 mt-2"}>
 	                                            {(groupedByEmployer[name] || []).map((entity) => (
 	                                                <PozvankyEntity
@@ -212,13 +202,13 @@ export default function PozvankyListPage() {
 	            {/* Popup pro potvrzení zrušení pozvánky */}
 	            {showPopup && (
 	                <PopUpCon
-	                    title="Potvrzení zrušení pozvánky"
-	                    text={`Opravdu chcete zrušit pozvánku pro ${selectedEntity?.recipient_name} na projekt "${selectedEntity?.project_title}"?`}
+	                    title={t('invitations.cancel_confirm_title')}
+	                    text={t('invitations.cancel_confirm_text', { name: selectedEntity?.recipient_name, project: selectedEntity?.project_title })}
 	                    onSubmit={handleConfirmCancel}
 	                    onReject={handleClosePopup}
 	                    onClose={handleClosePopup}
-	                    onSubmitText="Ano"
-	                    onRejectText="Ne"
+	                    onSubmitText={t('common.yes')}
+	                    onRejectText={t('common.no')}
 	                />
 	            )}
 	        </>

@@ -16,7 +16,8 @@ describe('StudentApplicationCard', () => {
         practice_title: 'Vývojář Reactu',
         application_date: '01.01.2026',
         company_logo: 'https://example.com/logo.png',
-        status: 0 // PENDING
+        workflow_status: 'PENDING',
+        workflow_status_label: 'Čeká na schválení'
     };
 
     test('renders application details correctly', () => {
@@ -27,12 +28,16 @@ describe('StudentApplicationCard', () => {
         );
 
         expect(screen.getByText('Vývojář Reactu')).toBeInTheDocument();
-        expect(screen.getByText('Datum podání: 01.01.2026')).toBeInTheDocument();
+        expect(screen.getByText(/01.01.2026/)).toBeInTheDocument();
         expect(screen.getByText('Čeká na schválení')).toBeInTheDocument();
     });
 
     test('renders approved status correctly', () => {
-        const approvedEntity = { ...mockEntity, status: 1 };
+        const approvedEntity = {
+            ...mockEntity,
+            workflow_status: 'APPROVED',
+            workflow_status_label: 'Schváleno'
+        };
         render(
             <MemoryRouter>
                 <StudentApplicationCard entity={approvedEntity} />
@@ -43,7 +48,11 @@ describe('StudentApplicationCard', () => {
     });
 
     test('renders rejected status correctly', () => {
-        const rejectedEntity = { ...mockEntity, status: 2 };
+        const rejectedEntity = {
+            ...mockEntity,
+            workflow_status: 'REJECTED',
+            workflow_status_label: 'Zamítnuto'
+        };
         render(
             <MemoryRouter>
                 <StudentApplicationCard entity={rejectedEntity} />
@@ -61,7 +70,7 @@ describe('StudentApplicationCard', () => {
         );
 
         fireEvent.click(screen.getByText('Vývojář Reactu'));
-        
+
         expect(mockedUsedNavigate).toHaveBeenCalledWith('/nabidka/123');
     });
 });

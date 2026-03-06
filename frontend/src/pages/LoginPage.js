@@ -5,23 +5,33 @@ import Container from "@core/Container/Container";
 import LoginForm from "@login/LoginForm";
 import { STAGLogin } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
+import { useUser } from "@hooks/UserProvider";
 import { useMessage } from "@hooks/MessageContext";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 
 export default function LoginPage() {
+    const { t } = useTranslation();
     const [ticket, setTicket] = useState(null);
     const [stagUserInfo, setStagUserInfo] = useState(null);
-    const { login } = useAuth();
+    const { login, isInitializing } = useAuth();
+    const { user } = useUser();
     const { addMessage } = useMessage();
     const [searchParams] = useSearchParams();
-    // hook pro user data
+    const navigate = useNavigate();
+
+    // Přesměrování pokud je uživatel již přihlášen
+    useEffect(() => {
+        if (!isInitializing && user && user.isAuthenticated) {
+            navigate("/nabidka");
+        }
+    }, [user, user.isAuthenticated, isInitializing, navigate]);
 
     // Zpracování parametrů z URL při načtení stránky
     useEffect(() => {
         const stagUserTicket = searchParams.get("stagUserTicket");
         const  stagUserInfoRaw = searchParams.get("stagUserInfo");
-        console.log("URL Params hook detected:", stagUserTicket);
 
         if (stagUserTicket) {
             if (stagUserInfoRaw) {
@@ -29,7 +39,7 @@ export default function LoginPage() {
                     const decoded = JSON.parse(atob(stagUserInfoRaw));
                     setStagUserInfo(decoded);
                 } catch (e) {
-                    console.warn("Nepodařilo se dekódovat stagUserInfo:", e);
+                    console.warn("Error decoding stagUserInfo:", e);
                 }
             }
             setTicket(stagUserTicket);
@@ -40,7 +50,6 @@ export default function LoginPage() {
     useEffect(() => {
         const handleSTAGLogin = async () => {
             if (!ticket) {
-                console.log("Žádný ticket k dispozici");
                 return;
             }
 
@@ -50,36 +59,29 @@ export default function LoginPage() {
                 await login(payload);
 
             } catch (error) {
-                console.error("Chyba při STAG loginu:", error);
+                console.error("Error during STAG login:", error);
                 if (error.response) {
-                    console.error("API error response:", error.response.data);
-                    addMessage("Chyba při STAG přihlášení: " + (error.response.data?.detail || error.message), "E");
+                    addMessage(`${t('login.error_stag')}: ${error.response.data?.detail || error.message}`, "E");
                 } else {
-                    addMessage("Chyba při STAG přihlášení: " + error.message, "E");
+                    addMessage(`${t('login.error_stag')}: ${error.message}`, "E");
                 }
             }
         };
 
         handleSTAGLogin();
-    }, [ticket, login, addMessage]);
+    }, [ticket, login, addMessage, stagUserInfo, t]);
 
     const handleOrganizationLogin = async (loginData) => {
         try{
-            console.log("Organization login")
             const response = await login({email: loginData.email, password: loginData.password});
 
-            // Po úspěšném loginu se přesměruje na /nabidka
-            if (response?.status === 200) {
-                console.log("Organization login successful, redirecting to /nabidka");
-                //addMessage("Přihlášení úspěšné", "S");
-            }
-
+            // Po úspěšném loginu se přesměruje na /nabidka (handled in useAuth or useEffect above)
         } catch (error) {
-            console.error("Chyba při loginu organizace:", error);
+            console.error("Error during organization login:", error);
             if (error.response) {
-                addMessage("Chyba při přihlášení: " + (error.response.data?.detail || error.message), "E");
+                addMessage(`${t('login.error_login')}: ${error.response.data?.detail || error.message}`, "E");
             } else {
-                addMessage("Chyba při přihlášení: " + error.message, "E");
+                addMessage(`${t('login.error_login')}: ${error.message}`, "E");
             }
         }
     }
@@ -87,11 +89,10 @@ export default function LoginPage() {
     // Hook - STAG komunikace
     const initiateSTAGLogin = async () => {
         try {
-            console.log("Iniciuji STAG login...");
             await STAGLogin();
         } catch (error) {
-            console.error("Chyba při iniciaci STAG loginu:", error);
-            addMessage("Chyba při iniciaci STAG přihlášení: " + error.message, "E");
+            console.error("Error initiating STAG login:", error);
+            addMessage(`${t('login.error_init_stag')}: ${error.message}`, "E");
         }
     }
 

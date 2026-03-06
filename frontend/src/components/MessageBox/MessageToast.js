@@ -15,7 +15,7 @@ function MessageToast() {
       case 'E':
         return 'bg-red-400';
       case 'W':
-        return 'bg-yellow-400';  
+        return 'bg-yellow-400';
       default:
         // neutral
         return 'bg-blue-400';

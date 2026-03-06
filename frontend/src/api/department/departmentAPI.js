@@ -7,11 +7,11 @@ export const useDepartmentAPI = () => {
     const getNabidky = async (params = {}) => {
         try {
             const response = await api.get('/practices/search/', { params })
-            
+
             if (response && response.data) {
                 return response.data.results || response.data
             }
-            
+
             return []
 
         } catch (error) {

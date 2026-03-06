@@ -38,4 +38,4 @@ export const usePozvankyAPI = () => {
         getPozvankyAdminList,
         deleteInvitation
     };
-}; 
+};

@@ -60,7 +60,7 @@ describe('RegistracePage', () => {
             }));
         });
         await waitFor(() => {
-            expect(mockAddMessage).toHaveBeenCalledWith('Registrace úspěšná', 'S');
+            expect(mockAddMessage).toHaveBeenCalledWith('registration.success', 'S');
         });
         await waitFor(() => {
             expect(mockLogin).toHaveBeenCalledWith({
@@ -85,7 +85,7 @@ describe('RegistracePage', () => {
         registerBtn.click();
 
         await waitFor(() => {
-            expect(mockAddMessage).toHaveBeenCalledWith('Chyba při registraci: Email already exists', 'E');
+            expect(mockAddMessage).toHaveBeenCalledWith('registration.error: Email already exists', 'E');
         });
         await waitFor(() => {
             expect(screen.getByText('Email already exists')).toBeInTheDocument();

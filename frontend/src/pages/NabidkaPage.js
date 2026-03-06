@@ -11,10 +11,12 @@ import { useMessage } from "@hooks/MessageContext";
 import Pagination from "@components/core/Pagination";
 import useDebounce from "@hooks/useDebounce";
 import { useUser } from "@hooks/UserProvider";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 10;
 
 export default function NabidkaPage() {
+    const { t } = useTranslation();
     const currentUrl = useCurrentUrl();
     const setParams = useSetParams();
     const fullUrl = useFullUrl();
@@ -47,11 +49,11 @@ export default function NabidkaPage() {
             setData(result.results);
             setCount(result.count);
         } catch {
-            setError("Nepodařilo se načíst nabídky. Zkuste to prosím znovu.");
+            setError(t('common.error'));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     const initFilterOptions = async () => {
         try {
@@ -139,7 +141,7 @@ export default function NabidkaPage() {
     return (
         <>
             <Container property={"flex items-center justify-between mb-4 mt-4"}>
-                <Headings sizeTag={"h3"}>Nabídka praxí</Headings>
+                <Headings sizeTag={"h3"}>{t('offers.title')}</Headings>
             </Container>
 
             <FilterNabidka
@@ -162,14 +164,14 @@ export default function NabidkaPage() {
                         }`}
                     >
                         <span>{isShowingFavorites ? "♥" : "♡"}</span>
-                        {isShowingFavorites ? "Zobrazuji oblíbené" : "Oblíbené"}
+                        {isShowingFavorites ? t('offers.showing_favorites') : t('offers.favorites_only')}
                     </button>
                 </Container>
             )}
 
             {loading && (
                 <Container property="flex justify-center py-12">
-                    <Paragraph property="text-gray-500">Načítání nabídek...</Paragraph>
+                    <Paragraph property="text-gray-500">{t('offers.loading')}</Paragraph>
                 </Container>
             )}
 
@@ -181,7 +183,7 @@ export default function NabidkaPage() {
 
             {!loading && !error && data.length === 0 && (
                 <Container property="flex justify-center py-12">
-                    <Paragraph property="text-gray-500">Žádné nabídky nebyly nalezeny.</Paragraph>
+                    <Paragraph property="text-gray-500">{t('offers.no_results')}</Paragraph>
                 </Container>
             )}
 

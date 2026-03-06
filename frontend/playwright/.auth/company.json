@@ -1,0 +1,22 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcyMzgyODE1LCJpYXQiOjE3NzIzODI1MTUsImp0aSI6ImIwYTc2NjQ1NzliYzRlMGQ4YmY1Y2QxYmJiZjAzODMwIiwidXNlcl9pZCI6IjIiLCJ0eXBlIjoiT1dORVIifQ.JV-JIT1m0jZ7KAST4ij-SYPpMwZ-zqNoW7QG45nwcA4"
+        },
+        {
+          "name": "user",
+          "value": "{\"id\":2,\"email\":\"hr@techcorp.cz\",\"role\":\"OWNER\",\"firstName\":\"Jan\",\"lastName\":\"Manažer\",\"department\":null,\"favorite_practices\":[]}"
+        },
+        {
+          "name": "refreshToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MjQ2ODkxNSwiaWF0IjoxNzcyMzgyNTE1LCJqdGkiOiIzYTJlN2M3ZjY3MjM0NmVmYTY3ODY5Y2ZjNmIxM2YwMiIsInVzZXJfaWQiOiIyIiwidHlwZSI6Ik9XTkVSIn0.1n_q-i9maiKp7TOtvI32qSwKIU-PnxBK04VWrN4zNMQ"
+        }
+      ]
+    }
+  ]
+}

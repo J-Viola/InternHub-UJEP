@@ -30,9 +30,9 @@ class MockStagClient(StagDataProvider):
         # Handle generic mock teacher login
         if ticket == "teacher-ticket":
             return {
-                "email": "petr.svoboda@ujep.cz",
+                "email": "professor@ujep.cz",
                 "jmeno": "Petr",
-                "prijmeni": "Svoboda",
+                "prijmeni": "Vomáčka",
                 "stagUserInfo": [
                     {
                         "role": "VY",
@@ -106,12 +106,11 @@ class MockStagClient(StagDataProvider):
         if ticket.startswith("mock-student:") or ticket == "student-ticket" or ticket == "demo-ticket":
             return [
                 {
-                    "zkratka": "KI/PPRO",
-                    "nazev": "Pokročilé programování",
+                    "zkratka": "OP1",
+                    "nazev": "Odborná praxe 1",
                     "katedra": "KI",
                 },
-                {"zkratka": "KI/DAT", "nazev": "Databázové systémy", "katedra": "KI"},
-                {"zkratka": "KMA/MAT1", "nazev": "Matematika 1", "katedra": "KMA"},
+                {"zkratka": "TP", "nazev": "Terénní praxe", "katedra": "KG"},
             ]
         return []
 
@@ -120,14 +119,14 @@ class MockStagClient(StagDataProvider):
         if ticket.startswith("mock-teacher:") or ticket == "teacher-ticket":
             return [
                 {
-                    "zkratka": "KI/PPRO",
-                    "nazev": "Pokročilé programování",
+                    "zkratka": "OP1",
+                    "nazev": "Odborná praxe 1",
                     "katedra": "KI",
                 },
                 {
-                    "zkratka": "KI/ZPRO",
-                    "nazev": "Základy programování",
-                    "katedra": "KI",
+                    "zkratka": "TP",
+                    "nazev": "Terénní praxe",
+                    "katedra": "KG",
                 },
             ]
         return []

@@ -1,0 +1,22 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcyMzgyODEzLCJpYXQiOjE3NzIzODI1MTMsImp0aSI6IjM4YmE5YWY5NzA2ZjQwYmFiOTQzMWI1ZGEzNjAxYzhiIiwidXNlcl9pZCI6IjEiLCJ0eXBlIjoiYWRtaW4ifQ.I9k9i7FnFruXQxuxBHwhfJ_gI5hwJ-GYBpGeKAFjCX4"
+        },
+        {
+          "name": "user",
+          "value": "{\"id\":1,\"email\":\"admin@admin.com\",\"role\":\"admin\",\"firstName\":\"Hlavní\",\"lastName\":\"Administrátor\",\"department\":null,\"favorite_practices\":[]}"
+        },
+        {
+          "name": "refreshToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MjQ2ODkxMywiaWF0IjoxNzcyMzgyNTEzLCJqdGkiOiJhYjljMjcwNTQxM2Y0MTZkYmIyOGViNTA2MDQyYWQzZCIsInVzZXJfaWQiOiIxIiwidHlwZSI6ImFkbWluIn0.fQBMzV_Wb51aoS8wtAUBN0Pd7vgyxbOi9WfDYUASTkE"
+        }
+      ]
+    }
+  ]
+}

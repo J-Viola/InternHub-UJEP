@@ -2,13 +2,18 @@ import React, {useState, useCallback} from "react";
 import Container from "@core/Container/Container";
 import Button from "@core/Button/Button";
 import Headings from "@components/core/Text/Headings";
-import LoginSwitch from "@login/LoginSwitch";
+import LoginSwitch from "./LoginSwitch";
 import Paragraph from "@components/core/Text/Paragraph";
 import TextField from "@core/Form/TextField";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
-    const [loginAccess, setLoginAccess] = useState({});
+    const { t } = useTranslation();
+    const [loginAccess, setLoginAccess] = useState({ switch: "STAG" });
+
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [studentId, setStudentId] = useState("");
     const [teacherId, setTeacherId] = useState("");
     const navigate = useNavigate();
@@ -18,8 +23,14 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
             ...prevState,
             ...newValues
         }));
-
     }, []);
+
+    const onEmailChange = (val) => setEmail(val.email);
+    const onPasswordChange = (val) => setPassword(val.password);
+
+    const onOrgLogin = () => {
+        handleOrganizationLogin({ email, password });
+    };
 
     const handleStudentIdChange = (values) => {
         setStudentId(values.studentId);
@@ -47,7 +58,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
         <Container property="min-h-screen flex items-center justify-center p-0 mx-auto">
             <Container property="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
                 <LoginSwitch getLoginType={handleAccess}/>
-                <Headings sizeTag="h4" property="text-center">Přihlášení</Headings>
+                <Headings sizeTag="h4" property="text-center">{t('login.title')}</Headings>
 
                { loginAccess.switch !== "STAG" ? (
                 <>
@@ -56,10 +67,11 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                     onIconClick={handleButtonClick}
                     icon="user"
                     required={true}
-                    label="E-mail"
-                    placeholder="E-mail"
+                    label={t('login.email')}
+                    placeholder={t('login.email')}
                     property="m-4"
-                    onChange={handleAccess}
+                    value={email}
+                    onChange={onEmailChange}
                 />
                 <TextField
                     id="password"
@@ -67,10 +79,11 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                     onIconClick={handleButtonClick}
                     icon="lock"
                     required={true}
-                    label="Heslo"
+                    label={t('login.password')}
                     placeholder="*****"
                     property="m-4"
-                    onChange={handleAccess}
+                    value={password}
+                    onChange={onPasswordChange}
                 />
                 <Container property="flex justify-end m-4 mt-0">
                     <Paragraph
@@ -78,14 +91,14 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                         property="text-blue-600 cursor-pointer hover:underline"
                         onClick={() => navigate("/reset-password")}
                     >
-                        Zapomněli jste heslo?
+                        {t('login.forgot_password')}
                     </Paragraph>
                 </Container>
                 </>
                 ):
                 (
                     <Container property="m-4">
-                        <Paragraph property="text-center mb-16">Přihlášení pomocí systému STAG příslušné univerzity.</Paragraph>
+                        <Paragraph property="text-center mb-16">{t('login.stag_info')}</Paragraph>
                     </Container>
                 )
                 }
@@ -97,7 +110,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                             property={"w-full items-center"}
                             onClick={handleSTAGLogin}
                         >
-                            Přihlaste se
+                            {t('login.login_button')}
                         </Button>
                         {process.env.NODE_ENV === 'development' && (
                             <>
@@ -110,7 +123,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
 
                                 <TextField
                                     id="studentId"
-                                    label="Zadejte osCislo studenta (nepovinné)"
+                                    label={t('login.student_id_dev')}
                                     placeholder="S12345"
                                     property="mt-4 mb-2"
                                     value={studentId}
@@ -125,7 +138,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
 
                                 <TextField
                                     id="teacherId"
-                                    label="Zadejte ucitIdno učitele (nepovinné)"
+                                    label={t('login.teacher_id_dev')}
                                     placeholder="U98765"
                                     property="mt-4 mb-2"
                                     value={teacherId}
@@ -147,9 +160,9 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                         {/* ORGANIZACE LOGIN */}
                         <Button
                             property={"w-full items-center"}
-                            onClick={() => handleOrganizationLogin(loginAccess)}
+                            onClick={onOrgLogin}
                         >
-                            Přihlaste se
+                            {t('login.login_button')}
                         </Button>
 
                         <Button
@@ -157,7 +170,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                             variant="yellow"
                             onClick={() => navigate("/registrace")}
                         >
-                            Registrace
+                            {t('login.registration')}
                         </Button>
                     </>
                 )

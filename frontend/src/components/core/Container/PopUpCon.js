@@ -4,27 +4,32 @@ import Container from "./Container";
 import Button from "@core/Button/Button";
 import Headings from "@core/Text/Headings";
 import Paragraph from "../Text/Paragraph";
+import { useTranslation } from "react-i18next";
 
 export default function PopUpCon({
-    children, 
-    onClose, 
-    title, 
-    text, 
-    onSubmit, 
-    onReject, 
-    onSubmitText = "Ano", 
-    onRejectText = "Ne", 
+    children,
+    onClose,
+    title,
+    text,
+    onSubmit,
+    onReject,
+    onSubmitText,
+    onRejectText,
     variant = "gray",
     useCustomContainer = false,
     customContainer = null
 }) {
+    const { t } = useTranslation();
     const closePopUp = () => {
         if (onClose) {
             onClose();
         }
     };
 
-    // Custom container variant s 3 tlačítky - tam kde není definovaný proces => předělat pouze přes {children}
+    const displaySubmitText = onSubmitText || t('common.yes');
+    const displayRejectText = onRejectText || t('common.no');
+
+    // Custom container variant
     if (useCustomContainer) {
         return (
             <Container property={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
@@ -40,33 +45,14 @@ export default function PopUpCon({
                         {/* TEXT BOXU */}
                         <Container property={"mb-8 mt-8"}>
                             <Paragraph property={"text-center"}>
-                                {text || "Proces není definován"}
+                                {text || t('practice_detail.docs_check_not_defined')}
                             </Paragraph>
                         </Container>
 
-                        {/* 3 TLAČÍTKA */}
-                        <Container property={"flex flex-col gap-4 ml-4 mr-4 mb-4"}>
-                            <Button 
-                                property={"w-full"} 
-                                onClick={closePopUp}
-                                variant="primary"
-                            >
-                                Tlačítko 1
-                            </Button>
-                            <Button 
-                                property={"w-full"} 
-                                onClick={closePopUp}
-                                variant="blue"
-                            >
-                                Tlačítko 2
-                            </Button>
-                            <Button 
-                                property={"w-full"} 
-                                onClick={closePopUp}
-                                variant="red"
-                            >
-                                Tlačítko 3
-                            </Button>
+                        {/* BUTTONY */}
+                        <Container property={"flex justify-between ml-4 mr-4 gap-4"}>
+                            {onSubmit && <Button id="popup-confirm-button" property={"w-full"} onClick={onSubmit}>{displaySubmitText}</Button>}
+                            {onReject && <Button id="popup-reject-button" variant={"red"} property={"w-full"} onClick={onReject}>{displayRejectText}</Button>}
                         </Container>
                     </ContainerForEntity>
                 )}
@@ -76,7 +62,7 @@ export default function PopUpCon({
 
     // Standardní variant
     return(
-        <Container property={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
+        <Container data-testid="popup-con" property={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
             <ContainerForEntity property={"w-1/2 max-w-2xl"} variant={variant}>
                 <Container property={"flex justify-between items-center mb-4"}>
                     <Headings property={"ml-4"} sizeTag={"h5"}>{title}</Headings>
@@ -87,13 +73,13 @@ export default function PopUpCon({
 
                 {/* TEXT BOXU */}
                 <Container property={"mb-16 mt-16"}>
-                    <Paragraph property={"text-center"}>{text ? text : "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."}</Paragraph>
+                    <Paragraph property={"text-center"}>{text ? text : ""}</Paragraph>
                 </Container>
 
                 {/* BUTTONY */}
                 <Container property={"flex justify-between ml-4 mr-4 gap-4"}>
-                    <Button property={"w-full"} onClick={onSubmit}>{onSubmitText}</Button>
-                    <Button variant={"red"} property={"w-full"} onClick={onReject}>{onRejectText}</Button>
+                    <Button id="popup-confirm-button" property={"w-full"} onClick={onSubmit}>{displaySubmitText}</Button>
+                    <Button id="popup-reject-button" variant={"red"} property={"w-full"} onClick={onReject}>{displayRejectText}</Button>
                 </Container>
 
                 <Container property={"max-h-[80vh] overflow-y-auto"}>

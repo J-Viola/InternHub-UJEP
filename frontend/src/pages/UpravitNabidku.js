@@ -9,8 +9,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
+import { useTranslation } from "react-i18next";
 
 export default function UpravitNabidku() {
+    const { t } = useTranslation();
     const [ formData, setFormData ] = useState({})
     const [ subjects, setSubjects ] = useState([])
     const [ organizationUsers, setOrganizationUsers ] = useState([]);
@@ -41,18 +43,12 @@ export default function UpravitNabidku() {
 
                     if (practiceRes.contact_user_info && !contactUserId) {
                         const fullName = `${practiceRes.contact_user_info.first_name} ${practiceRes.contact_user_info.last_name}`;
-                        console.log("Hledám uživatele:", fullName);
-                        console.log("Dostupní uživatelé:", usersRes);
-
                         const contactUser = usersRes.find(user =>
                             user.label === fullName
                         );
 
-                        console.log("Nalezený uživatel:", contactUser);
-
                         if (contactUser) {
                             contactUserId = contactUser.value;
-                            console.log("Nastavuji contact_user:", contactUserId);
                         }
                     }
 
@@ -69,11 +65,10 @@ export default function UpravitNabidku() {
                         contact_user_info: practiceRes.contact_user_info,
                         image_base64: practiceRes.image_base64
                     };
-                    console.log("Transformed data:", transformedData);
                     setFormData(transformedData);
                 }
             } catch (error) {
-                console.error("Chyba při načítání dat:", error);
+                console.error(t('form.load_error'), error);
                 navigate(-1)
             } finally {
                 setLoading(false);
@@ -81,7 +76,7 @@ export default function UpravitNabidku() {
             }
         }
         initFetch();
-    },[id])
+    },[id, codeList, userAPI, nabidkaAPI, navigate, t]);
 
 
     const handleUpdate = async () => {
@@ -91,7 +86,7 @@ export default function UpravitNabidku() {
                 navigate(-1);
             }
         } catch (error) {
-            console.error("Chyba při aktualizaci nabídky:", error);
+            console.error("Error updating offer:", error);
         }
 
     }
@@ -117,44 +112,23 @@ export default function UpravitNabidku() {
 
     useEffect(() => {
         if (isInitialized && formData.coefficient && formData.start_date) {
-            console.log("Volám API na endDate")
             handleCalc(formData.start_date, formData.coefficient);
         }
     }, [formData.coefficient, formData.start_date, isInitialized]);
 
     useEffect(() => {
-        console.log("form data", formData);
-    }, [formData])
-
-    useEffect(() => {
-        console.log("useEffect triggered - organizationUsers:", organizationUsers.length, "formData:", formData);
-
         if (organizationUsers.length > 0 && formData && formData.contact_user_info && !formData.contact_user) {
             const fullName = `${formData.contact_user_info.first_name} ${formData.contact_user_info.last_name}`;
-            console.log("Hledám uživatele:", fullName);
-            console.log("Dostupní uživatelé:", organizationUsers);
-
             const contactUser = organizationUsers.find(user =>
                 user.label === fullName
             );
 
-            console.log("Nalezený uživatel:", contactUser);
-
             if (contactUser) {
-                console.log("Nastavuji contact_user na:", contactUser.value);
                 setFormData(prev => ({
                     ...prev,
                     contact_user: contactUser.value
                 }));
-            } else {
-                console.log("Uživatel nenalezen pro jméno:", fullName);
             }
-        } else {
-            console.log("Podmínky nesplněny:");
-            console.log("- organizationUsers.length > 0:", organizationUsers.length > 0);
-            console.log("- formData existuje:", !!formData);
-            console.log("- formData.contact_user_info existuje:", !!(formData && formData.contact_user_info));
-            console.log("- !formData.contact_user:", !!(formData && !formData.contact_user));
         }
     }, [organizationUsers, formData]);
 
@@ -163,7 +137,7 @@ export default function UpravitNabidku() {
             <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                 <BackButton/>
                 <Container property="text-center py-8">
-                    <Paragraph>Načítání formuláře...</Paragraph>
+                    <Paragraph>{t('form.loading_form')}</Paragraph>
                 </Container>
             </ContainerForEntity>
         );
@@ -173,7 +147,7 @@ export default function UpravitNabidku() {
         <>
             <BackButton/>
             <Container property={"bg-white mt-2 p-8 rounded-lg shadow-sm"}>
-                {user.isDepartmentMg() && ("Editace nabídky nefunguje pro Vaší roli správně..")}
+                {user.isDepartmentMg() && t('form.role_edit_warning')}
                 <NabidkaForm
                     formData={formData}
                     organizationUsers={organizationUsers}

@@ -1,29 +1,27 @@
 import { useApi } from "@hooks/useApi";
+import { buildFormData } from "@utils/formDataUtils";
 
 export const useUserAPI = () => {
     const api = useApi();
 
     const postRegister = async (data) => {
-        const formData = new FormData();
+        const mappedData = {
+            email: data.executiveEmail,
+            phone: data.executivePhone,
+            password: data.executivePassword1,
+            password2: data.executivePassword2,
+            ico: data.ico,
+            dic: data.dic,
+            companyName: data.company_name,
+            first_name: data.executiveName,
+            last_name: data.executiveSurname,
+            title_before: data.titleBefore || '',
+            title_after: data.titleAfter || '',
+            address: data.address || '',
+            logo: data.logo
+        };
 
-        // data k předání
-        formData.append('email', data.executiveEmail);
-        formData.append('phone', data.executivePhone);
-        formData.append('password', data.executivePassword1);
-        formData.append('password2', data.executivePassword2);
-        formData.append('ico', data.ico);
-        formData.append('dic', data.dic);
-        formData.append('companyName', data.company_name);
-        formData.append('first_name', data.executiveName);
-        formData.append('last_name', data.executiveSurname);
-        formData.append('title_before', data.titleBefore || '');
-        formData.append('title_after', data.titleAfter || '');
-        formData.append('address', data.address || '')
-
-
-        if (data.logo) {
-            formData.append('logo', data.logo);
-        }
+        const formData = buildFormData(mappedData);
 
         try {
             const response = await api.post('/users/register/', formData, {
@@ -41,16 +39,17 @@ export const useUserAPI = () => {
     const getOrganizationUsers = async (dropdown = true) => {
         try {
             const response = await api.get('/users/organization-users/');
+            const data = response.data.results !== undefined ? response.data.results : response.data;
+
             if (dropdown) {
-                const dropDownData = response.data.map(res => ({
+                const dropDownData = data.map(res => ({
                     label: `${res.name}`,
                     value: res.id
                 }));
                 console.log(dropDownData);
                 return dropDownData;
             } else {
-                //console.log("RESPONSE DROPDOWN FALSE", response.data)
-                return response.data;
+                return data;
             }
         } catch (error) {
             console.error('Chyba při získávání uživatelů organizace:', error);
@@ -103,14 +102,7 @@ export const useUserAPI = () => {
 
     const createUser = async (userData) => {
         try {
-            const formData = new FormData();
-
-            // Append user data to formData
-            Object.keys(userData).forEach(key => {
-                if (userData[key] !== null && userData[key] !== undefined) {
-                    formData.append(key, userData[key]);
-                }
-            });
+            const formData = buildFormData(userData);
 
             const response = await api.post('/users/organization-users/', formData, {
                 headers: {
@@ -126,14 +118,7 @@ export const useUserAPI = () => {
 
     const updateUser = async (id, userData) => {
         try {
-            const formData = new FormData();
-
-            // Append user data to formData
-            Object.keys(userData).forEach(key => {
-                if (userData[key] !== null && userData[key] !== undefined) {
-                    formData.append(key, userData[key]);
-                }
-            });
+            const formData = buildFormData(userData);
 
             const response = await api.put(`/users/organization-users/${id}/`, formData, {
                 headers: {
@@ -159,37 +144,21 @@ export const useUserAPI = () => {
 
     const updateProfile = async (userData) => {
         try {
-            const formData = new FormData();
+            const cleanData = { ...userData };
 
-            Object.keys(userData).forEach(key => {
-                const value = userData[key];
+            // Special handling logic from original updateProfile
+            if (cleanData.employer_profile) delete cleanData.employer_profile;
 
-                if (value === null || value === undefined) return;
+            if (cleanData.cv_file && !(cleanData.cv_file instanceof File)) {
+                delete cleanData.cv_file;
+            }
 
-                if (key === 'employer_profile') return; // Skip nested read-only or complex objects if not needed for update
+            if (cleanData.profile_picture && typeof cleanData.profile_picture === 'string' &&
+                (cleanData.profile_picture.startsWith('http') || cleanData.profile_picture.startsWith('/'))) {
+                delete cleanData.profile_picture;
+            }
 
-                // Skip cv_file if it is not a File object (meaning it's likely an existing URL string)
-                if (key === 'cv_file' && !(value instanceof File)) {
-                    return;
-                }
-
-                // Skip profile_picture if it is an existing URL (starts with http or /)
-                // We only want to send it if it's a new Base64 string (starts with data:)
-                if (key === 'profile_picture' && typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'))) {
-                    return;
-                }
-
-                if (key === 'skills' && Array.isArray(value)) {
-                    // Send as JSON string for JSONField in multipart
-                    formData.append(key, JSON.stringify(value));
-                } else if (value instanceof File) {
-                    formData.append(key, value);
-                } else if (typeof value === 'object' && !Array.isArray(value)) {
-                     formData.append(key, JSON.stringify(value));
-                } else {
-                    formData.append(key, value);
-                }
-            });
+            const formData = buildFormData(cleanData);
 
             const response = await api.patch('/users/profile/', formData, {
                 headers: {

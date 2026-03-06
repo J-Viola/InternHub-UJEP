@@ -40,12 +40,16 @@ class StudentThisPracticeSerializer(serializers.ModelSerializer):
             "practice",
             "approval_status",
             "progress_status",
+            "workflow_status",
+            "workflow_status_label",
         ]
         read_only_fields = [
             "student_practice_id",
             "practice",
             "approval_status",
             "progress_status",
+            "workflow_status",
+            "workflow_status_label",
         ]
 
 

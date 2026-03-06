@@ -6,7 +6,7 @@ import { RxCross1, RxCheck } from "react-icons/rx";
 import { FaAngleDown, FaAngleUp, FaRegFileAlt, FaLock, FaUser, FaArrowLeft, FaSave, FaDownload, FaUpload, FaCalendarAlt, FaHeart, FaRegHeart } from "react-icons/fa";
 import { MdOutlineManageAccounts, MdPersonOutline  } from "react-icons/md";
 
-export default function Button({id, children, text, property, onClick, textSize = "base", hover=true ,pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false }) {
+export default function Button({id, children, text, property, onClick, title, textSize = "base", hover=true ,pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false }) {
 
     const baseClassBig = "px-4 py-2 rounded-lg transition-colors duration-200";
     const baseClassSmall = "px-2 py-1 rounded-lg transition-colors duration-200";
@@ -39,9 +39,9 @@ export default function Button({id, children, text, property, onClick, textSize 
     }
 
     const baseIconLayout = "inline-flex items-center gap-1"
-    
+
     const baseText = text ? <Paragraph variant={textSize}>{text}</Paragraph> : null;
-    
+
     const variants = {
         primary: "bg-facultyCol text-white " + baseClassBig,
         secondary: "bg-facultyColLight text-black border border-black " + baseClassBig,
@@ -63,11 +63,13 @@ export default function Button({id, children, text, property, onClick, textSize 
 
         <button
             id={id}
+            title={title}
+            disabled={disabled}
             className={`
-                ${noVariant ? "" : variants[variant]} 
-                ${!noVariant && (buttonSize === "big" ? baseClassBig : baseClassSmall)} 
+                ${noVariant ? "" : variants[variant]}
+                ${!noVariant && (buttonSize === "big" ? baseClassBig : baseClassSmall)}
                 ${hover ? "hover:bg-gray-400" : ""}
-                ${property || ''} 
+                ${property || ''}
                 ${!disabled ? (pointer ? "cursor-pointer" : "cursor-default") : ("opacity-50 cursor-not-allowed")}
 
                 ${icon && baseIconLayout}

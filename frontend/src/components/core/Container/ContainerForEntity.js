@@ -14,7 +14,7 @@ export default function ContainerForEntity({id, children, property, onClick, var
     }
 
     return(
-        <div 
+        <div
             className={`${variants[variant]} ${property || ""} ${onClick ? "cursor-pointer" : ""}`}
             id={id}
             onClick={onClick}

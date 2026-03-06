@@ -53,7 +53,7 @@ describe('ProfilPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Načítání...')).toBeInTheDocument();
+        expect(screen.getByText('common.loading')).toBeInTheDocument();
     });
 
     test('renders own profile details', async () => {
@@ -68,7 +68,7 @@ describe('ProfilPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.queryByText('Načítání...')).not.toBeInTheDocument();
+            expect(screen.queryByText('common.loading')).not.toBeInTheDocument();
         });
 
         expect(screen.getByText('Jan Student')).toBeInTheDocument();

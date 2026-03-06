@@ -1,5 +1,3 @@
-
-export default function handleToDoAlert() {
-    
-    alert("Tato funkce bude implementována později");
+export default function handleToDoAlert(message) {
+    alert(message || "Tato funkce bude implementována později / This feature will be implemented later");
 };

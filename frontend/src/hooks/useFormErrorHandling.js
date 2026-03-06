@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useMessage } from './MessageContext';
+import { useTranslation } from 'react-i18next';
 
 export const useFormErrorHandling = () => {
     const { addMessage } = useMessage();
+    const { t } = useTranslation();
     const [formErrors, setFormErrors] = useState({});
 
     const handleError = useCallback((error) => {
@@ -13,17 +15,17 @@ export const useFormErrorHandling = () => {
             setFormErrors(apiErrors); // Set field-specific errors
 
             if (apiErrors.detail) {
-                addMessage("Chyba: " + apiErrors.detail, "E");
+                addMessage(`${t('common.error_label')}: ${apiErrors.detail}`, "E");
             } else if (typeof apiErrors === 'string') {
-                addMessage("Chyba: " + apiErrors, "E");
+                addMessage(`${t('common.error_label')}: ${apiErrors}`, "E");
             } else {
                 // Generické hlášení chyby, pokud nejsou specifické detaily
-                addMessage("Zkontrolujte prosím formulář. " + (error.message || ""), "E");
+                addMessage(`${t('registration.check_form')} ${error.message || ""}`, "E");
             }
         } else {
-            addMessage("Došlo k neočekávané chybě: " + (error.message || ""), "E");
+            addMessage(`${t('common.unexpected_error')}: ${error.message || ""}`, "E");
         }
-    }, [addMessage]);
+    }, [addMessage, t]);
 
     return { formErrors, handleError, setFormErrors };
 };

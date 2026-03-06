@@ -13,6 +13,8 @@ djangorestframework-simplejwt
 django-polymorphic
 django-model-utils
 drf-spectacular
+django-verify-email
 django-enumfield
+django-seed
 holidays
 Pillow

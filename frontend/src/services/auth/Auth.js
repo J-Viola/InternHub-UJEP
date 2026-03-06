@@ -18,18 +18,21 @@ function AuthProvider({ children }) {
 
     // Refresh the access token using the stored refresh token
     const refreshUX = async () => {
-        if (!apiClient || !refreshToken) {
+        const currentRefreshToken = localStorage.getItem("refreshToken");
+        if (!apiClient || !currentRefreshToken) {
             return false;
         }
 
         try {
-            const res = await apiClient.post('/users/token/refresh/', { 'refresh': refreshToken }, { withCredentials: true });
+            const res = await apiClient.post('/users/token/refresh/', { 'refresh': currentRefreshToken }, { withCredentials: true });
 
             if (res?.data?.access) {
                 setAccessToken(res.data.access);
+                localStorage.setItem("accessToken", res.data.access);
 
                 if (res.data.refresh) {
                     setRefreshToken(res.data.refresh);
+                    localStorage.setItem("refreshToken", res.data.refresh);
                 }
 
                 if (res.data.user) {
@@ -39,9 +42,19 @@ function AuthProvider({ children }) {
                 return true;
             }
         } catch (error) {
+            handleAuthFailure();
             return false;
         }
         return false;
+    };
+
+    const handleAuthFailure = () => {
+        setAccessToken(null);
+        setRefreshToken(null);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        cleanUser();
     };
 
     // On mount: attempt to restore session from stored refresh token
@@ -71,36 +84,29 @@ function AuthProvider({ children }) {
         }
     }, [refreshToken]);
 
-    // Attach Authorization header and handle 401 auto-refresh on every access token change
+    // Handle 401 auto-refresh
     useEffect(() => {
         if (!apiClient) return;
-
-        const requestInterceptor = apiClient.interceptors.request.use(
-            (config) => {
-                if (accessToken) {
-                    config.headers['Authorization'] = `Bearer ${accessToken}`;
-                }
-                return config;
-            },
-            (error) => Promise.reject(error)
-        );
 
         const responseInterceptor = apiClient.interceptors.response.use(
             (response) => response,
             async (error) => {
                 if (error.response?.status === 401) {
-                    try {
-                        const res = await apiClient.post('/users/token/refresh/', { 'refresh': refreshToken }, { withCredentials: true });
-                        if (res?.data?.access) {
-                            setAccessToken(res.data.access);
-                            error.config.headers.Authorization = `Bearer ${res.data.access}`;
-                            return apiClient(error.config);
+                    const currentRefreshToken = localStorage.getItem("refreshToken");
+                    if (currentRefreshToken) {
+                        try {
+                            const res = await apiClient.post('/users/token/refresh/', { 'refresh': currentRefreshToken }, { withCredentials: true });
+                            if (res?.data?.access) {
+                                setAccessToken(res.data.access);
+                                localStorage.setItem("accessToken", res.data.access);
+                                error.config.headers.Authorization = `Bearer ${res.data.access}`;
+                                return apiClient(error.config);
+                            }
+                        } catch {
+                            handleAuthFailure();
                         }
-                    } catch {
-                        setAccessToken(null);
-                        setRefreshToken(null);
-                        localStorage.removeItem("refreshToken");
-                        cleanUser();
+                    } else {
+                        handleAuthFailure();
                     }
                 }
                 throw error;
@@ -108,10 +114,9 @@ function AuthProvider({ children }) {
         );
 
         return () => {
-            apiClient.interceptors.request.eject(requestInterceptor);
             apiClient.interceptors.response.eject(responseInterceptor);
         };
-    }, [accessToken, apiClient]);
+    }, [apiClient]);
 
     const login = async (loginData) => {
         if (!apiClient) throw new Error('API není inicializován!');
@@ -123,6 +128,7 @@ function AuthProvider({ children }) {
 
         if (response.data) {
             setAccessToken(response.data.access);
+            localStorage.setItem("accessToken", response.data.access);
             setRefreshToken(response.data.refresh);
 
             if (response.data.user) {
@@ -152,7 +158,9 @@ function AuthProvider({ children }) {
         } finally {
             setAccessToken(null);
             setRefreshToken(null);
+            localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
+            localStorage.removeItem("user");
             cleanUser();
             navigate('/');
         }

@@ -11,9 +11,11 @@ from student_practices.models import DocumentHelper, StudentPractice
 from subject.models import Subject
 from users.models import (
     ApprovalStatus,
+    DepartmentRole,
     EmployerProfile,
     OrganizationRole,
     OrganizationUser,
+    ProfessorUser,
     StudentUser,
 )
 
@@ -48,7 +50,18 @@ class StudentPracticeLifecycleTests(TestCase):
         self.org_user.employer_profile = self.employer_profile
         self.org_user.save()
 
-        # 3. Setup Practice
+        # 3. Setup Professor
+        self.professor = ProfessorUser.objects.create_user(
+            email="prof@test.com",
+            password="password123",
+            first_name="Alice",
+            last_name="Prof",
+            is_active=True,
+            department=self.department,
+            department_role=DepartmentRole.HEAD,
+        )
+
+        # 4. Setup Practice
         self.practice = Practice.objects.create(
             title="Dev Job",
             employer=self.employer_profile,
@@ -71,14 +84,6 @@ class StudentPracticeLifecycleTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
-        # Manually assign documents because create logic
-        # in views/services might not have triggered it (depending on how apply_student_practice is implemented, let's check)
-        # Actually, if apply_student_practice uses the service that we fixed, it should work.
-        # But wait, apply_student_practice logic wasn't shown in the diffs yet.
-        # I should check if that view uses the service or creates model directly.
-        # Assuming for now we need to fix it here or in the view.
-        # Let's check apply_student_practice implementation later.
-        # For this test, since it tests lifecycle, we need documents.
         if not student_practice.contract_document:
             DocumentHelper.assign_default_documents(student_practice)
             student_practice.refresh_from_db()
@@ -97,9 +102,27 @@ class StudentPracticeLifecycleTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         student_practice.refresh_from_db()
-        self.assertEqual(student_practice.approval_status, ApprovalStatus.APPROVED)
+        # Still PENDING because dual approval (needs professor)
+        self.assertEqual(student_practice.approval_status, ApprovalStatus.PENDING)
+        self.assertTrue(student_practice.employer_approved)
+        self.assertFalse(student_practice.school_approved)
 
-        # 3. Upload Contract (by Student)
+        # 3. Professor Approves
+        self.client.force_authenticate(user=self.professor)
+        response = self.client.patch(
+            status_url,
+            {"approval_status": ApprovalStatus.APPROVED.value},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        student_practice.refresh_from_db()
+        # NOW it is APPROVED and IN_PROGRESS (auto-set when fully approved)
+        self.assertEqual(student_practice.approval_status, ApprovalStatus.APPROVED)
+        self.assertEqual(student_practice.progress_status, ProgressStatus.IN_PROGRESS)
+        self.assertTrue(student_practice.school_approved)
+
+        # 4. Upload Contract (by Student)
         self.client.force_authenticate(user=self.student)
         contract_doc = student_practice.contract_document
         upload_url = f"/api/student-practices/upload-document/{contract_doc.document_id}"
@@ -112,19 +135,8 @@ class StudentPracticeLifecycleTests(TestCase):
         response = self.client.post(upload_url, {"document": file}, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # 4. Change Progress to IN_PROGRESS (by Org)
+        # 5. Finish Practice (COMPLETED) (by Org)
         self.client.force_authenticate(user=self.org_user)
-        response = self.client.patch(
-            status_url,
-            {"progress_status": ProgressStatus.IN_PROGRESS.value},
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        student_practice.refresh_from_db()
-        self.assertEqual(student_practice.progress_status, ProgressStatus.IN_PROGRESS)
-
-        # 5. Finish Practice (COMPLETED)
         response = self.client.patch(
             status_url,
             {"progress_status": ProgressStatus.COMPLETED.value},
@@ -160,3 +172,102 @@ class StudentPracticeLifecycleTests(TestCase):
         # Expect 403 Forbidden or 404 Not Found (if queryset filters by user)
         # Assuming standard permissions, it should be 403 or 404.
         self.assertNotEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_dual_approval_org_only_is_pending(self):
+        StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice,
+            start_date=date(2050, 1, 1),
+            end_date=date(2050, 6, 1),
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            year=2050,
+        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
+
+        self.client.force_authenticate(user=self.org_user)
+        response = self.client.patch(
+            status_url,
+            {"approval_status": ApprovalStatus.APPROVED.value},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        student_practice.refresh_from_db()
+        self.assertEqual(student_practice.approval_status, ApprovalStatus.PENDING)
+        self.assertTrue(student_practice.employer_approved)
+        self.assertFalse(student_practice.school_approved)
+
+    def test_dual_approval_prof_only_is_pending(self):
+        StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice,
+            start_date=date(2050, 1, 1),
+            end_date=date(2050, 6, 1),
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            year=2050,
+        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
+
+        self.client.force_authenticate(user=self.professor)
+        response = self.client.patch(
+            status_url,
+            {"approval_status": ApprovalStatus.APPROVED.value},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        student_practice.refresh_from_db()
+        self.assertEqual(student_practice.approval_status, ApprovalStatus.PENDING)
+        self.assertFalse(student_practice.employer_approved)
+        self.assertTrue(student_practice.school_approved)
+
+    def test_dual_approval_rejected_immediately(self):
+        StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice,
+            start_date=date(2050, 1, 1),
+            end_date=date(2050, 6, 1),
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            year=2050,
+        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
+
+        # Professor rejects it
+        self.client.force_authenticate(user=self.professor)
+        response = self.client.patch(
+            status_url,
+            {"approval_status": ApprovalStatus.REJECTED.value},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        student_practice.refresh_from_db()
+        self.assertEqual(student_practice.approval_status, ApprovalStatus.REJECTED)
+
+    def test_i18n_workflow_status_label(self):
+        StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice,
+            start_date=date(2050, 1, 1),
+            end_date=date(2050, 6, 1),
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            year=2050,
+        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        url = f"/api/student-practices/{student_practice.student_practice_id}"
+
+        self.client.force_authenticate(user=self.student)
+
+        # Test with Czech header (default or explicitly cs)
+        response_cs = self.client.get(url, HTTP_ACCEPT_LANGUAGE="cs")
+        self.assertEqual(response_cs.status_code, status.HTTP_200_OK)
+        self.assertEqual(response_cs.data["workflow_status_label"], "Čeká na schválení")
+
+        # Test with English header
+        response_en = self.client.get(url, HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(response_en.status_code, status.HTTP_200_OK)
+        self.assertEqual(response_en.data["workflow_status_label"], "Pending approval")

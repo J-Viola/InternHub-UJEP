@@ -1,8 +1,10 @@
 from datetime import date
 
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
 from practices.models import Practice, ProgressStatus
+from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
     EmployerInvitation,
@@ -18,11 +20,11 @@ class StudentPracticeService:
     def create_invitations(user, practice_id: int, student_ids: list[int]) -> dict:
         practice = Practice.objects.filter(practice_id=practice_id).first()
         if not practice:
-            raise ValueError("Praxe nenalezena.")
+            raise ValueError(StudentPracticeMessages.PRACTICE_NOT_FOUND)
 
         # Optional: Check if user owns the practice if user is passed
         if hasattr(user, "employer_profile") and practice.employer != user.employer_profile:
-            raise ValueError("Nemáte oprávnění zvát studenty na tuto praxi.")
+            raise ValueError(_("Nemáte oprávnění zvát studenty na tuto praxi."))
 
         created_count = 0
         errors = []
@@ -36,7 +38,7 @@ class StudentPracticeService:
                     continue
 
                 # Use get_or_create to avoid race condition on duplicate invitations
-                _, created = EmployerInvitation.objects.get_or_create(
+                invitation, created = EmployerInvitation.objects.get_or_create(
                     practice=practice,
                     user=student,
                     defaults={
@@ -61,10 +63,10 @@ class StudentPracticeService:
         try:
             invitation = EmployerInvitation.objects.get(invitation_id=invitation_id, user=user)
         except EmployerInvitation.DoesNotExist:
-            raise ValueError("Pozvánka nebyla nalezena nebo k ní nemáte přístup.")
+            raise ValueError(_("Pozvánka nebyla nalezena nebo k ní nemáte přístup."))
 
         if invitation.status != EmployerInvitationStatus.PENDING:
-            raise ValueError("Pozvánka již byla zpracována.")
+            raise ValueError(_("Pozvánka již byla zpracována."))
 
         if action == "accept":
             invitation.status = EmployerInvitationStatus.ACCEPTED
@@ -74,25 +76,118 @@ class StudentPracticeService:
                 user=user,
                 practice=invitation.practice,
                 application_date=date.today(),
-                approval_status=ApprovalStatus.APPROVED,
-                progress_status=ProgressStatus.IN_PROGRESS,
+                approval_status=ApprovalStatus.PENDING,  # Still pending school's approval
+                progress_status=ProgressStatus.NOT_STARTED,
                 hours_completed=0,
                 start_date=invitation.practice.start_date,
                 end_date=invitation.practice.end_date,
                 year=date.today().year,
+                employer_approved=True,
+                school_approved=False,
             )
 
             # Explicitly generate default documents
             DocumentHelper.assign_default_documents(student_practice)
 
             return {
-                "detail": "Pozvánka byla přijata a praxe byla zahájena.",
+                "detail": _("Pozvánka byla přijata a praxe byla zahájena."),
                 "student_practice_id": student_practice.student_practice_id,
             }
 
         elif action == "reject":
             invitation.status = EmployerInvitationStatus.REJECTED
             invitation.save()
-            return {"detail": "Pozvánka byla zamítnuta."}
+            return {"detail": _("Pozvánka byla zamítnuta.")}
 
-        raise ValueError("Neplatná akce.")
+        raise ValueError(_("Neplatná akce."))
+
+    @staticmethod
+    @transaction.atomic
+    def update_student_practice_status(user, student_practice_id: int, data: dict):
+        """
+        Updates the status of a StudentPractice with transaction safety (select_for_update)
+        to handle dual approval correctly.
+        """
+        from users.models import (
+            DepartmentRole,
+            OrganizationUser,
+            ProfessorUser,
+            UserSubjectType,
+        )
+
+        # Use select_for_update to lock the row
+        try:
+            student_practice = StudentPractice.objects.select_for_update().get(pk=student_practice_id)
+        except StudentPractice.DoesNotExist:
+            raise ValueError(_("Přihláška na praxi nebyla nalezena."))
+
+        # Determine roles for the user relative to this specific practice
+        is_professor = isinstance(user, ProfessorUser)
+        is_org = isinstance(user, OrganizationUser)
+        is_admin = user.is_superuser
+
+        # Detailed role check for professor (must be from same dept or teacher of the subject)
+        if is_professor and not is_admin:
+            subject = student_practice.practice.subject
+            is_head = user.department_role == DepartmentRole.HEAD and user.department == subject.department
+            is_manager = subject.subject_manager == user
+            is_teacher = user.user_subjects.filter(subject=subject, role=UserSubjectType.Professor).exists()
+            if not (is_head or is_manager or is_teacher):
+                is_professor = False  # Not authorized for THIS practice
+
+        # Detailed role check for org (must be from the same organization)
+        if is_org and not is_admin:
+            if student_practice.practice.employer != getattr(user, "employer_profile", None):
+                is_org = False  # Not authorized for THIS practice
+
+        # GLOBAL AUTHORIZATION CHECK
+        if not (is_professor or is_org or is_admin):
+            raise ValueError(_("Nemáte oprávnění spravovat tuto přihlášku."))
+
+        # 1. Handle dual approval_status update
+        if "approval_status" in data:
+            try:
+                new_val = int(data["approval_status"])
+            except (ValueError, TypeError):
+                raise ValueError(_("Neplatná hodnota pro stav schválení."))
+
+            if new_val == ApprovalStatus.APPROVED:
+                # Set flags based on authorized roles
+                if is_professor or is_admin:
+                    student_practice.school_approved = True
+                if is_org or is_admin:
+                    student_practice.employer_approved = True
+
+                # Fully approve only if BOTH parties approved
+                if student_practice.school_approved and student_practice.employer_approved:
+                    student_practice.approval_status = ApprovalStatus.APPROVED
+                    # Auto-start if it was NOT_STARTED
+                    if student_practice.progress_status == ProgressStatus.NOT_STARTED:
+                        student_practice.progress_status = ProgressStatus.IN_PROGRESS
+                else:
+                    student_practice.approval_status = ApprovalStatus.PENDING
+
+            elif new_val == ApprovalStatus.REJECTED:
+                # Either party can reject immediately
+                if is_professor or is_org or is_admin:
+                    student_practice.approval_status = ApprovalStatus.REJECTED
+                    # Note: potentially reset flags? Usually REJECTED is final.
+                else:
+                    raise ValueError(_("Nemáte oprávnění zamítnout tuto přihlášku."))
+
+        # 2. Handle progress_status update (only after full approval)
+        if "progress_status" in data:
+            if student_practice.approval_status != ApprovalStatus.APPROVED and not is_admin:
+                raise ValueError(_("Nelze měnit stav průběhu u neschválené praxe."))
+
+            try:
+                student_practice.progress_status = int(data["progress_status"])
+            except (ValueError, TypeError):
+                raise ValueError(_("Neplatná hodnota pro stav průběhu."))
+
+        # 3. Handle other fields (hours_completed, notes, etc.)
+        if "hours_completed" in data:
+            student_practice.hours_completed = data["hours_completed"]
+
+        student_practice.save()
+        return student_practice

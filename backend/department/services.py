@@ -11,11 +11,11 @@ def get_department_students(user):
     if not dept_ids:
         return StudentUser.objects.none()
 
-    # Optimized query using joins instead of lists
+    # Optimized query by filtering base StagUser but returning StudentUser objects
     return (
         StudentUser.objects.filter(
-            user_subjects__subject__department_id__in=dept_ids,
-            user_subjects__role=UserSubjectType.Student.value,
+            staguser_ptr__user_subjects__subject__department_id__in=dept_ids,
+            staguser_ptr__user_subjects__role=UserSubjectType.Student,
         )
         .distinct()
         .select_related("stag_role")

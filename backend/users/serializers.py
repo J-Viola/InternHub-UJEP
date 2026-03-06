@@ -1,6 +1,9 @@
+import re
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -24,6 +27,15 @@ from users.services import (
 )
 
 User = get_user_model()
+
+
+class AresRequestSerializer(serializers.Serializer):
+    ico = serializers.CharField(required=True, help_text="8-digit IČO")
+
+    def validate_ico(self, value):
+        if not re.fullmatch(r"\d{8}", str(value)):
+            raise serializers.ValidationError("Invalid IČO format. It must be 8 digits.")
+        return value
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -89,11 +101,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         update_last_login(None, user)
 
         refresh = self.get_token(user)
-        if isinstance(user, OrganizationUser):
-            # organization_role = user.organization_role
-            refresh["type"] = UserType.ORGANIZATION.value
-        else:
-            refresh["type"] = "undefined"
+        refresh["type"] = user.role or "undefined"
 
         return {
             "refresh": str(refresh),
@@ -141,6 +149,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
+        validate_password(attrs["password"])
         return attrs
 
     def create(self, validated_data):
@@ -254,19 +263,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "user_type",
             "role",
         ]
+        extra_kwargs = {
+            "email": {"validators": []},
+        }
 
     def validate_email(self, value):
         # Pokud se email nemění, přeskočit validaci
-        if self.instance and self.instance.email == value:
-            return value
+        if self.instance and self.instance.email.lower() == value.lower():
+            return self.instance.email
 
-        # Jinak zkontrolovat unikátnost (s vyloučením sebe sama pro jistotu, i když by to mělo pokrýt if výše)
-        qs = User.objects.filter(email=value)
+        # Jinak zkontrolovat unikátnost (s vyloučením sebe sama pro jistotu)
+        qs = User.objects.filter(email__iexact=value)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Uživatel s tímto emailem již existuje.")
-        return value
+            raise serializers.ValidationError(_("Uživatel s tímto emailem již existuje."))
+        return value.lower()
 
     def get_user_type(self, obj):
         if isinstance(obj, StudentUser):

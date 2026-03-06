@@ -3,9 +3,10 @@ import Button from "@core/Button/Button";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Paragraph from "@components/core/Text/Paragraph";
-import Headings from "@core/Text/Headings";
+import { useTranslation } from "react-i18next";
 
 export default function PozvankyEntity({entity, onCancel, onView}) {
+    const { t } = useTranslation();
     return (
         <ContainerForEntity variant="gray" property={"pl-8 pt-4 pb-4 pr-4 mt-2"}>
             <Container property="flex flex-row items-center gap-8 w-full">
@@ -15,22 +16,22 @@ export default function PozvankyEntity({entity, onCancel, onView}) {
                         {entity.recipient_name || `${entity.recipient_first_name || ''} ${entity.recipient_last_name || ''}`.trim()}
                     </Paragraph>
                 </Container>
-                
+
                 {/* Atributy */}
                 <Container property="flex-1 flex flex-row items-center gap-8">
                     <Container property="min-w-[120px]">
                         <Paragraph>
-                            {entity.department || entity.recipient_department || 'Neznámá'}
+                            {entity.department || entity.recipient_department || t('invitations.unknown_dept')}
                         </Paragraph>
                     </Container>
-                    
+
                     <Container property="min-w-[120px]">
                         <Paragraph>
-                            {entity.project_title || entity.practice_title || 'Neznámá'}
+                            {entity.project_title || entity.practice_title || t('internships.unknown_practice')}
                         </Paragraph>
                     </Container>
                 </Container>
-                
+
                 {/* Tlačítka */}
                 <Container property="flex flex-row gap-4 justify-end flex-shrink-0">
                     <Button
@@ -43,12 +44,13 @@ export default function PozvankyEntity({entity, onCancel, onView}) {
                         }}
                         property="px-4 py-2"
                     >
-                        Zrušit zaslání
+                        {t('invitations.cancel_send')}
                     </Button>
-                    
+
                     <Button
                         noVariant={true}
                         icon="user"
+                        title={t('students.view_profile')}
                         iconColor="text-black"
                         iconSize="24"
                         onClick={(e) => {

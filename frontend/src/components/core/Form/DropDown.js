@@ -2,8 +2,10 @@ import React, { useState, useCallback, useEffect } from "react";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
+import { useTranslation } from "react-i18next";
 
 export default function DropDown({id, property, label, placeholder, icon = false, required = false, value, onChange, options = [], onIconClick, hover = false,  variant = "default", disableDefault = false, disabled = false, error = null}) {
+    const { t } = useTranslation();
     const [selectedValue, setSelectedValue] = useState((value && id) ? {[id]: value} : {[id]: ""});
 
     // Synchronizace default value
@@ -32,23 +34,23 @@ export default function DropDown({id, property, label, placeholder, icon = false
     };
 
     const selectClass = `${variants[variant] || variants.default} ${icon ? "pl-10 pr-2" : "px-2"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`;
-    
+
     const handleSelectChange = useCallback((event) => {
         if (disabled) return;
-        
+
         const { value } = event.target;
-        
+
         const newDict = {
             [id]: value
         };
-        
+
         setSelectedValue(newDict);
-        
+
         if (onChange) {
             onChange(newDict);
         }
     }, [id, onChange, disabled]);
-    
+
     return (
         <Container property={property}>
             <Container property="flex items-center">
@@ -64,7 +66,7 @@ export default function DropDown({id, property, label, placeholder, icon = false
                     value={selectedValue[id] || ""}
                     onChange={handleSelectChange}
                 >
-                    <option value="" disabled={disableDefault}>{placeholder || "Vyberte možnost"}</option>
+                    <option value="" disabled={disableDefault}>{placeholder || t('common.select_option')}</option>
                     {options.map((option) => (
                         <option key={option.value} value={option.value}>
                             {option.label}

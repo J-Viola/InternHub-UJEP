@@ -10,8 +10,10 @@ import { useNavigate } from "react-router-dom";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
 import { useUser } from "@hooks/UserProvider";
 import BackButton from "@components/core/Button/BackButton";
+import { useTranslation } from "react-i18next";
 
 export default function PraxePage() {
+    const { t } = useTranslation();
     const [ selectedEntity, setSelectedEntity ] = useState({});
     const nabidkaAPI  = useNabidkaAPI();
     const studentPraciceAPI = useStudentPracticeAPI();
@@ -35,7 +37,7 @@ export default function PraxePage() {
                     setData(res);
                 }
             } catch {
-                setError("Nepodařilo se načíst stáže. Zkuste to prosím znovu.");
+                setError(t('internships.error'));
             } finally {
                 setLoading(false);
             }
@@ -70,8 +72,15 @@ export default function PraxePage() {
 
     const handleInvitation = async (action) => {
         if (action) {
-            await studentPraciceAPI.manageEmployerInvitation(selectedEntity.invitation_id, action);
-            handlePopUp();
+            try {
+                await studentPraciceAPI.manageEmployerInvitation(selectedEntity.invitation_id, action);
+                handlePopUp();
+                // Refresh data to show the new state
+                const res = await nabidkaAPI.getPracticeUserRelations();
+                setData(res);
+            } catch (error) {
+                console.error("Chyba při zpracování pozvánky:", error);
+            }
         }
     };
 
@@ -79,14 +88,14 @@ export default function PraxePage() {
         <PopUpCon
             title={selectedEntity.title}
             onClose={handlePopUp}
-            text={"Opravdu si přejete zahájit tuto praxi?"}
+            text={t('internships.start_practice_confirm')}
             onSubmit={() => handleInvitation("accept")}
             onReject={() => handleInvitation("reject")}
         />
     );
 
     const renderLoading = () => (
-        <Paragraph property="text-center text-gray-500 py-8">Načítání stáží...</Paragraph>
+        <Paragraph property="text-center text-gray-500 py-8">{t('internships.loading')}</Paragraph>
     );
 
     const renderError = () => (
@@ -100,7 +109,7 @@ export default function PraxePage() {
                     <BackButton/>
                     <Container property={"flex items-center justify-between mb-6 mt-4"}>
                         <Headings sizeTag={"h3"} property={"mt-2"}>
-                            Vytvořené stáže
+                            {t('internships.created_title')}
                         </Headings>
                     </Container>
 
@@ -109,7 +118,7 @@ export default function PraxePage() {
                             onClick={() => navigate('/vytvorit-nabidku')}
                             icon={"plus"}
                         >
-                            Založit stáž
+                            {t('internships.create_new')}
                         </Button>
                     </Container>
 
@@ -118,7 +127,7 @@ export default function PraxePage() {
                         {!loading && error && renderError()}
                         {!loading && !error && (!data || data.length === 0) && (
                             <Paragraph property="text-center text-gray-500 py-8">
-                                Zatím nemáte žádné vytvořené stáže.
+                                {t('internships.no_created')}
                             </Paragraph>
                         )}
                         {!loading && !error && data && data.length > 0 && (
@@ -149,12 +158,12 @@ export default function PraxePage() {
                         {!loading && !error && data && (
                             <>
                                 <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>
-                                    Podané přihlášky
+                                    {t('internships.submitted_applications')}
                                     {data.student_practices ? ` (${data.student_practices.length})` : ""}
                                 </Headings>
                                 {data.student_practices?.length === 0 && (
                                     <Paragraph property="text-center text-gray-500 py-4">
-                                        Nemáte žádné podané přihlášky.
+                                        {t('internships.no_applications')}
                                     </Paragraph>
                                 )}
                                 {data.student_practices?.map(entity => (
@@ -168,12 +177,12 @@ export default function PraxePage() {
                                 ))}
 
                                 <Headings sizeTag={"h3"} property={"mt-2 mb-2"}>
-                                    Pozvánky od firem
+                                    {t('internships.company_invitations')}
                                     {data.employer_invitations ? ` (${data.employer_invitations.length})` : ""}
                                 </Headings>
                                 {data.employer_invitations?.length === 0 && (
                                     <Paragraph property="text-center text-gray-500 py-4">
-                                        Nemáte žádné pozvánky.
+                                        {t('internships.no_invitations')}
                                     </Paragraph>
                                 )}
                                 {data.employer_invitations?.map(entity => (
@@ -183,7 +192,7 @@ export default function PraxePage() {
                                         entity={{
                                             ...entity,
                                             application_date: entity.submission_date,
-                                            status: "Pozvánka"
+                                            status: t('internships.invitation_label')
                                         }}
                                         onClick={() => handleClick(entity, "employer_invitations")}
                                         onView={() => handleView(entity, "employer_invitations")}

@@ -5,9 +5,11 @@ import CompanyForm from "@components/Forms/CompanyForm";
 import { useUserAPI } from "@api/user/userAPI";
 import { useAuth } from "@auth/Auth";
 import { useMessage } from "@hooks/MessageContext";
+import { useTranslation } from "react-i18next";
 
 
 export default function RegistracePage() {
+    const { t } = useTranslation();
     const user = useUserAPI();
     const { addMessage } = useMessage();
     const [errors, setErrors] = useState({});
@@ -17,7 +19,7 @@ export default function RegistracePage() {
         setErrors({});
         try {
             await user.postRegister(companyData);
-            addMessage("Registrace úspěšná", "S");
+            addMessage(t('registration.success'), "S");
 
             const logData = {
                 "email": companyData.executiveEmail,
@@ -29,12 +31,12 @@ export default function RegistracePage() {
             if (error.response?.data) {
                 setErrors(error.response.data);
                 if (error.response.data.detail) {
-                    addMessage("Chyba při registraci: " + error.response.data.detail, "E");
+                    addMessage(`${t('registration.error')}: ${error.response.data.detail}`, "E");
                 } else {
-                    addMessage("Zkontrolujte prosím formulář.", "E");
+                    addMessage(t('registration.check_form'), "E");
                 }
             } else {
-                addMessage("Chyba při registraci: " + error.message, "E");
+                addMessage(`${t('registration.error')}: ${error.message}`, "E");
             }
         }
     }

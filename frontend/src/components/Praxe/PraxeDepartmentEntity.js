@@ -1,17 +1,18 @@
 import React from "react";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
-import Headings from "@core/Text/Headings";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
+import { useTranslation } from "react-i18next";
 
 export default function PraxeDepartmentEntity({ type, entity, onClick, onView }) {
+    const { t } = useTranslation();
 
     const getContactName = (info) => {
-        if (!info) return "Není uveden";
+        if (!info) return t('common.not_specified');
         if (info.username) return info.username;
         if (info.first_name && info.last_name) return `${info.first_name} ${info.last_name}`
-        return "Není uveden";
+        return t('common.not_specified');
     };
 
     const bg = type === "to_approve" ? "yellow" : "gray";
@@ -22,13 +23,13 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
     const subjectCode = entity.subject?.subject_code || "-";
 
     return (
-        <ContainerForEntity variant={bg} property={`pl-8 pt-4 pb-4 pr-4`} onClick={onView}>
+        <ContainerForEntity id={`practice-offer-${entity.practice_id}`} variant={bg} property={`pl-8 pt-4 pb-4 pr-4`} onClick={onView}>
             <Container property={"flex items-center justify-between"}>
-            
+
                 <Container property={"flex items-center gap-6 flex-1"}>
                     <Container property={"min-w-[200px]"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            Správce inzerátu
+                            {t('form.contact_user')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {getContactName(entity.contact_user_info)}
@@ -36,7 +37,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     </Container>
                     <Container property={"flex-1"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            Název stáže
+                            {t('form.title')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {entity.title || "-"}
@@ -44,7 +45,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     </Container>
                     <Container property={"min-w-[100px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            Kód předmětu
+                            {t('subjects.code')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {subjectCode}
@@ -52,7 +53,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     </Container>
                     <Container property={"min-w-[180px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            Datum vytvoření
+                            {t('internships.creation_date')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {created}
@@ -60,7 +61,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     </Container>
                     <Container property={"min-w-[180px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            Podané přihlášky
+                            {t('internships.submitted_applications')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {type === "approved" ? `${approved}/${pending}/${available}` : ("- / - / - ")}
@@ -72,7 +73,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onClick(); }}
-                                title="Zobrazit přihlášky"
+                                title={t('internships.view_applications')}
                                 icon="users"
                                 iconColor={"gray"}
                                 iconSize={"24"}
@@ -80,7 +81,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onView(); }}
-                                title="Zobrazit detail"
+                                title={t('internships.view_detail')}
                                 icon="eye"
                                 iconColor={"gray"}
                                 iconSize={"24"}
@@ -92,7 +93,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onClick(); }}
-                                title="Změnit stav nabídky"
+                                title={t('internships.change_status')}
                                 icon="gear"
                                 iconColor={"gray"}
                                 iconSize={"24"}
@@ -101,7 +102,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onView(); }}
-                                title="Zobrazit detail"
+                                title={t('internships.view_detail')}
                                 icon="eye"
                                 iconColor={"gray"}
                                 iconSize={"24"}

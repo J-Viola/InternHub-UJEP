@@ -6,39 +6,34 @@ import Headings from "@components/core/Text/Headings";
 import { Image } from "@components/core/Image";
 import Button from "@components/core/Button/Button";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function StudentApplicationCard({ entity }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
-    const handleVariant = (approval_status) => {
-        switch (approval_status) {
-            case 0: // PENDING
+    const handleVariant = (status) => {
+        switch (status) {
+            case "PENDING":
                 return "yellow";
-            case 1: // APPROVED
+            case "APPROVED":
                 return "green";
-            case 2: // REJECTED
+            case "REJECTED":
+                return "red";
+            case "IN_PROGRESS":
+                return "blue";
+            case "COMPLETED":
+                return "green";
+            case "CANCELLED":
                 return "red";
             default:
                 return "gray";
         }
     };
 
-    const approvalTag = (approval_status) => {
-        switch (approval_status) {
-            case 0: // PENDING
-                return "Čeká na schválení";
-            case 1: // APPROVED
-                return "Schváleno";
-            case 2: // REJECTED
-                return "Zamítnuto";
-            default:
-                return "Neznámý stav";
-        }
-    };
-
     return (
-        <ContainerForEntity 
-            variant={"white"} 
+        <ContainerForEntity
+            variant={"white"}
             property="hover:shadow-lg transition-shadow duration-200 border border-gray-200"
             onClick={() => navigate(`/nabidka/${entity.practice_id}`)}
         >
@@ -57,17 +52,17 @@ export default function StudentApplicationCard({ entity }) {
                 <Container property="flex flex-col gap-1">
                     <Headings sizeTag="h5-bold">{entity.practice_title}</Headings>
                     <Paragraph variant="small" property="text-gray-500">
-                        Datum podání: {entity.application_date}
+                        {t('internships.applied_on')}: {entity.application_date}
                     </Paragraph>
                 </Container>
 
                 <Container property="justify-self-end">
                      <Button
-                        variant={handleVariant(entity.status)}
+                        variant={handleVariant(entity.workflow_status)}
                         pointer={false}
                         hover={false}
                     >
-                        {approvalTag(entity.status)}
+                        {entity.workflow_status_label}
                     </Button>
                 </Container>
             </Container>

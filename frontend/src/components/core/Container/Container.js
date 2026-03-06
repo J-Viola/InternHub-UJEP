@@ -1,15 +1,19 @@
 import React from "react";
 
 
-export default function Container({id, children, property, onMouseEnter, onMouseLeave, onClick}) {
-    
+export default function Container({id, children, property, onMouseEnter, onMouseLeave, onClick, ...rest}) {
+
     return(
-        <div 
+        <div
             id={id}
-            className={`${property || ""}`} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}
+            className={`${property || ""}`}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            onClick={onClick}
+            {...rest}
         >
         {children}
-        
+
         </div>
     )
 }

@@ -1,11 +1,9 @@
-import re
-
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import filters as drf_filters
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -39,6 +37,7 @@ from .serializers import (
     AdminOrganizationSerializer,
     AllStudentsListSerializer,
     AresJusticeSerializer,
+    AresRequestSerializer,
     ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
     LogoutSerializer,
@@ -59,7 +58,7 @@ from .serializers import (
 class RegisterView(generics.CreateAPIView):
     serializer_class = OrganizationRegisterSerializer
     permission_classes = (AllowAny,)
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [AnonRateThrottle] if not settings.DEBUG else []
 
     @extend_schema(
         summary="Register a new organization user",
@@ -83,7 +82,7 @@ class RegisterView(generics.CreateAPIView):
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [PasswordResetThrottle]
+    throttle_classes = [PasswordResetThrottle] if not settings.DEBUG else []
 
     @extend_schema(
         summary="Request password reset email",
@@ -248,22 +247,14 @@ class UpdateAresSubjectView(APIView):
     @extend_schema(
         summary="Update organization info from ARES",
         description="Updates the organization details (name, address) using the provided IČO and ARES API.",
-        request=serializers.DictField(child=serializers.CharField(), help_text='{"ico": "12345678"}'),
+        request=AresRequestSerializer,
         responses={200: OrganizationUserProfileSerializer},
     )
     def post(self, request):
-        ico = request.data.get("ico")
-        if not ico:
-            return Response(
-                {"error": "IČO parameter is missing"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = AresRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not re.fullmatch(r"\d{8}", str(ico)):
-            return Response(
-                {"error": "Invalid IČO format. It must be 8 digits."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        ico = serializer.validated_data["ico"]
 
         try:
             user = update_organization_from_ares(request.user, ico)
@@ -275,7 +266,7 @@ class UpdateAresSubjectView(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-    throttle_classes = [LoginThrottle]
+    throttle_classes = [LoginThrottle] if not settings.DEBUG else []
 
     @extend_schema(
         summary="Login / Obtain JWT Token",
@@ -301,16 +292,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         )
 
 
-class OrganizationUserListView(generics.ListAPIView):
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         summary="List users in organization",
         description="Returns a list of all users associated with the same organization as the current user."
         "**Permissions: Organization User or Admin**",
         tags=["Users"],
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
+)
+class OrganizationUserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = OrganizationUserListSerializer
 
@@ -321,19 +311,10 @@ class OrganizationUserListView(generics.ListAPIView):
         else:
             employer_profile = getattr(user, "employer_profile", None)
             if not employer_profile:
-                return OrganizationUser.objects.none()
+                raise serializers.ValidationError({"detail": "Uživatel nemá přiřazenou organizaci."})
 
             org_id = employer_profile.employer_id
             return OrganizationUser.objects.filter(employer_profile_id=org_id).select_related("employer_profile")
-
-    def list(self, request, *args, **kwargs):
-        user = self.request.user
-        if not getattr(user, "is_superuser", False) and not getattr(user, "employer_profile", None):
-            return Response(
-                {"detail": "Uživatel nemá přiřazenou organizaci."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return super().list(request, *args, **kwargs)
 
 
 class StudentProfileView(APIView):
@@ -357,15 +338,14 @@ class StudentProfileView(APIView):
         return Response(serializer.data)
 
 
-class AllStudentsListView(generics.ListAPIView):
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         summary="List all students (paginated)",
         description="Returns a paginated list of all active students in the system. **Permissions: Authenticated User**",
         tags=["Users"],
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
+)
+class AllStudentsListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AllStudentsListSerializer
     pagination_class = StandardResultsSetPagination
@@ -376,7 +356,17 @@ class AllStudentsListView(generics.ListAPIView):
         return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
 
 
-@extend_schema(tags=["Organizations - Admin"])
+@extend_schema_view(
+    list=extend_schema(summary="List all organizations (Admin)"),
+    retrieve=extend_schema(summary="Get organization detail (Admin)"),
+    create=extend_schema(
+        summary="Register a new organization (Admin)",
+        request=OrganizationRegisterSerializer,
+    ),
+    update=extend_schema(summary="Update organization detail (Admin)"),
+    partial_update=extend_schema(summary="Partial update organization detail (Admin)"),
+    destroy=extend_schema(summary="Delete an organization (Admin)"),
+)
 class AdminOrganizationViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     serializer_class = AdminOrganizationSerializer
@@ -392,26 +382,6 @@ class AdminOrganizationViewSet(ModelViewSet):
             return [IsAuthenticated(), (IsOrganizationUser | IsStagTeacher)()]
         return [permissions.IsAuthenticated()]
 
-    @extend_schema(summary="List all organizations (Admin)")
-    def list(self, request, *args, **kwargs):
-        departments = self.queryset
-        page = self.paginate_queryset(departments)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(departments, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @extend_schema(summary="Get organization detail (Admin)")
-    def retrieve(self, request, pk=None, *args, **kwargs):
-        department = self.get_object()
-        serializer = self.get_serializer(department)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @extend_schema(
-        summary="Register a new organization (Admin)",
-        request=OrganizationRegisterSerializer,
-    )
     def create(self, request, *args, **kwargs):
         serializer = OrganizationRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -423,26 +393,6 @@ class AdminOrganizationViewSet(ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @extend_schema(summary="Update organization detail (Admin)")
-    def update(self, request, pk=None, *args, **kwargs):
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
-        data = request.data
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @extend_schema(summary="Partial update organization detail (Admin)")
-    def partial_update(self, request, pk=None, *args, **kwargs):
-        return self.update(request, pk, partial=True, *args, **kwargs)
-
-    @extend_schema(summary="Delete an organization (Admin)")
-    def destroy(self, request, pk=None, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CurrentUserProfileView(APIView):

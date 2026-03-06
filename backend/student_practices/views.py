@@ -1,8 +1,15 @@
+import logging
+
 from django.db import transaction
 from django.http import FileResponse
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import get_object_or_404
@@ -12,6 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from api.views import StandardResultsSetPagination
 from practices.models import Practice
 from student_practices.models import (
     DocumentHelper,
@@ -35,6 +43,8 @@ from .serializers import (
     ListStudentPracticeSerializer,
     StudentPracticeCardSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=["Employer Invitations"])
@@ -123,21 +133,70 @@ class EmployerInvitationApprovalView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class AdminPracticeListView(generics.ListAPIView):
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         summary="List pending student practices (Admin)",
         description="Returns a list of all student practices with PENDING approval status. **Permissions: Admin/Staff**",
         tags=["Student Practices - Admin"],
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
+)
+class AdminPracticeListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ListStudentPracticeSerializer
     queryset = StudentPractice.objects.all()
 
     def get_queryset(self):
         return StudentPractice.objects.filter(approval_status=ApprovalStatus.PENDING)
+
+
+class ProfessorApplicationsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ListStudentPracticeSerializer
+    pagination_class = StandardResultsSetPagination
+
+    @extend_schema(
+        summary="Get pending applications for professor",
+        description=(
+            "Returns a list of all pending student applications that the logged-in professor "
+            "is authorized to approve (as department head, subject manager, or teacher). "
+            "**Permissions: Professor User**"
+        ),
+        tags=["Student Practices"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        from django.db.models import Q
+
+        from users.models import DepartmentRole, ProfessorUser, UserSubjectType
+
+        user = self.request.user
+        if not isinstance(user, ProfessorUser):
+            return StudentPractice.objects.none()
+
+        # Build filter for applications the professor can approve
+        # 1. As department head
+        filters = Q()
+        if user.department_role == DepartmentRole.HEAD and user.department:
+            filters |= Q(practice__subject__department=user.department)
+
+        # 2. As subject manager
+        filters |= Q(practice__subject__subject_manager=user)
+
+        # 3. As subject teacher
+        subject_ids = user.user_subjects.filter(role=UserSubjectType.Professor).values_list("subject_id", flat=True)
+        filters |= Q(practice__subject_id__in=subject_ids)
+
+        return (
+            StudentPractice.objects.filter(filters, approval_status=ApprovalStatus.PENDING)
+            .select_related(
+                "user",
+                "practice__subject__department",
+                "practice__employer",
+            )
+            .distinct()
+        )
 
 
 class StudentPracticeListView(generics.ListAPIView):
@@ -151,6 +210,7 @@ class StudentPracticeListView(generics.ListAPIView):
 
     permission_classes = (IsAuthenticated,)
     serializer_class = ListStudentPracticeSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         # Tohle má být probíhajících praxí po prokliknutí na specifickou praxi
@@ -163,12 +223,22 @@ class StudentPracticeListView(generics.ListAPIView):
         if not practice:
             raise NotFound({"error": "Practice not found"})
 
-        # Filter student practices by practice_id
-        return StudentPractice.objects.filter(practice=practice).all()
+        # Filter student practices by practice_id with select_related for optimization
+        return (
+            StudentPractice.objects.filter(practice=practice)
+            .select_related(
+                "user",
+                "practice__subject__department",
+                "practice__employer",
+            )
+            .all()
+        )
 
 
-class OrganizationApplicationsView(APIView):
+class OrganizationApplicationsView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ListStudentPracticeSerializer
+    pagination_class = StandardResultsSetPagination
 
     @extend_schema(
         summary="Get pending applications for organization",
@@ -177,25 +247,26 @@ class OrganizationApplicationsView(APIView):
             "**Permissions: Organization User**"
         ),
         tags=["Student Practices"],
-        responses={200: ListStudentPracticeSerializer(many=True)},
     )
-    def get(self, request):
-        user = request.user
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        user = self.request.user
         # Zjisti employer_profile id z přihlášeného uživatele (OrganizationUser)
         employer_profile = getattr(user, "employer_profile", None)
         if not employer_profile:
-            return Response(
-                {"detail": "Uživatel není přiřazen k žádné organizaci."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return StudentPractice.objects.none()
 
-        # Najdi všechny praxe patřící této organizaci
-        practices = Practice.objects.filter(employer=employer_profile)
-        # Najdi všechny přihlášky na tyto praxe, pouze s approval_status PENDING
-        student_practices = StudentPractice.objects.filter(practice__in=practices, approval_status=ApprovalStatus.PENDING)
-
-        serializer = ListStudentPracticeSerializer(student_practices, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Najdi všechny přihlášky na praxe patřící této organizaci, pouze s approval_status PENDING
+        return StudentPractice.objects.filter(
+            practice__employer=employer_profile,
+            approval_status=ApprovalStatus.PENDING,
+        ).select_related(
+            "user",
+            "practice__subject__department",
+            "practice__employer",
+        )
 
 
 class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
@@ -225,14 +296,22 @@ class StudentPracticeStatusUpdateView(APIView):
         responses={200: StudentPracticeStatusUpdateSerializer},
     )
     def patch(self, request, student_practice_id):
-        student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
-
-        self.check_object_permissions(request, student_practice)
-
-        serializer = StudentPracticeStatusUpdateSerializer(student_practice, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            student_practice = StudentPracticeService.update_student_practice_status(
+                user=request.user,
+                student_practice_id=student_practice_id,
+                data=request.data,
+            )
+            serializer = StudentPracticeStatusUpdateSerializer(student_practice)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            logger.exception("Chyba při aktualizaci stavu přihlášky")
+            return Response(
+                {"detail": "Došlo k vnitřní chybě při schvalování."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
@@ -241,9 +320,16 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         fields = ("document",)
 
     def validate_document(self, uploaded_file):
+        from django.conf import settings
+
         ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
         if ext not in ("doc", "docx"):
             raise serializers.ValidationError("Jenom Word (.doc, .docx) dokumenty jsou povoleny.")
+
+        if uploaded_file.size > settings.MAX_UPLOAD_SIZE:
+            mb_limit = settings.MAX_UPLOAD_SIZE / (1024 * 1024)
+            raise serializers.ValidationError(f"Soubor je příliš velký. Maximální povolená velikost je {mb_limit} MB.")
+
         return uploaded_file
 
     def update(self, instance, validated_data):
@@ -351,7 +437,17 @@ class StudentPracticeCardView(APIView):
         },
     )
     def get(self, request, student_practice_id):
-        student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
+        student_practice = get_object_or_404(
+            StudentPractice.objects.select_related(
+                "user",
+                "practice__subject__department",
+                "practice__employer",
+                "contract_document",
+                "content_document",
+                "feedback_document",
+            ),
+            pk=student_practice_id,
+        )
 
-        serializer = StudentPracticeCardSerializer(student_practice)
+        serializer = StudentPracticeCardSerializer(student_practice, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)

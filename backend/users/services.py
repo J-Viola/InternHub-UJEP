@@ -120,9 +120,11 @@ def get_user_department_ids(user) -> list[int]:
     Returns a list of department IDs associated with the user.
     Checks ProfessorUser.department first, then UserSubjects.
     """
-    professor = ProfessorUser.objects.filter(user_ptr_id=user.id).first()
+    professor = ProfessorUser.objects.filter(pk=user.id).first()
     if professor and professor.department:
         return [professor.department.department_id]
+
+    from department.models import Department
 
     return list(
         Department.objects.filter(

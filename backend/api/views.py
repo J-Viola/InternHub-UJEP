@@ -47,12 +47,8 @@ def serve_user_file(request, path):
         raise Http404("File not found")
 
     # Check permissions
-    db_path = f"storage/documents/{path}"
-    try:
-        doc = UploadedDocument.objects.get(document=db_path)
-    except UploadedDocument.DoesNotExist:
-        # If not found in DB by exact path, try fallback or just 404
-        # Sometimes path might be stored differently?
+    doc = UploadedDocument.objects.filter(document__endswith=path).first()
+    if not doc:
         raise Http404("Document record not found")
 
     user = request.user

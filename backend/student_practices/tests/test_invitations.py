@@ -125,7 +125,11 @@ class EmployerInvitationTests(APITestCase):
         # Verify StudentPractice created
         self.assertTrue(StudentPractice.objects.filter(user=self.student, practice=self.practice).exists())
         sp = StudentPractice.objects.get(user=self.student, practice=self.practice)
-        self.assertEqual(sp.progress_status, ProgressStatus.IN_PROGRESS)
+        # Now it is NOT_STARTED and PENDING until school approves
+        self.assertEqual(sp.progress_status, ProgressStatus.NOT_STARTED)
+        self.assertEqual(sp.approval_status, ApprovalStatus.PENDING)
+        self.assertTrue(sp.employer_approved)
+        self.assertFalse(sp.school_approved)
         # Verify documents assigned
         self.assertIsNotNone(sp.contract_document)
 

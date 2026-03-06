@@ -8,9 +8,10 @@ import Nav from "@components/core/Nav";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 import Headings from "@core/Text/Headings";
+import { useTranslation } from "react-i18next";
 
 export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false, errors = {}}) {
-
+    const { t } = useTranslation();
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const uvazek = [
@@ -36,25 +37,25 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
             <>
                 <Container>
                     <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        Údaje nabídky
+                        {t('form.offer_data')}
                     </Headings>
                 </Container>
                 <Container property={`grid gap-2 grid-cols-2 ${isEdit ? "mt-4" : "mt-4" }`}>
                     <CustomDatePicker
                         id={"start_date"}
                         value={formData?.start_date}
-                        label={"Čas období od"}
+                        label={t('form.start_date')}
                         required={true}
                         onChange={handleChange}
                         error={errors.start_date}
                     />
 
-                    
+
                     <DropDown
                         id={"coefficient"}
                         value={formData?.coefficient}
                         required={true}
-                        label={"Úvazek"}
+                        label={t('form.coefficient')}
                         options={uvazek}
                         onChange={handleChange}
                         error={errors.coefficient}
@@ -64,7 +65,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         id={"end_date"}
                         locked={true}
                         value={formData?.end_date}
-                        label={"Čas období do"}
+                        label={t('form.end_date')}
                         required={true}
                         onChange={handleChange}
                         error={errors.end_date}
@@ -74,7 +75,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         id={"contact_user"}
                         value={formData?.contact_user}
                         required={true}
-                        label={"Správce inzerátu"}
+                        label={t('form.contact_user')}
                         icon={"user"}
                         options={organizationUsers}
                         onChange={handleChange}
@@ -85,7 +86,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         id={"subject_id"}
                         value={formData?.subject_id}
                         required={true}
-                        label={"Přiřazený předmět"}
+                        label={t('form.subject')}
                         icon={"book"}
                         options={subjects}
                         onChange={handleChange}
@@ -96,7 +97,7 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         id={"available_positions"}
                         value={formData?.available_positions}
                         required={true}
-                        label={"Počet volných míst"}
+                        label={t('form.available_positions')}
                         icon={"users"}
                         options={availablePositions}
                         onChange={handleChange}
@@ -106,12 +107,12 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
 
                 <Container property={"w-full gap-2 mt-2 flex-cols"}>
 
-                    <TextField 
+                    <TextField
                         id={"title"}
                         value={formData?.title}
                         required={true}
-                        label={"Název"} 
-                        placeholder={"Název stáže"}
+                        label={t('form.title')}
+                        placeholder={t('form.title_placeholder')}
                         onChange={handleChange}
                         error={errors.title}
                     />
@@ -120,8 +121,8 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         id={"description"}
                         value={formData?.description}
                         required={true}
-                        label={"Popis stáže"}
-                        placeholder={"Napište popis stáže"}
+                        label={t('form.description')}
+                        placeholder={t('form.description_placeholder')}
                         onChange={handleChange}
                         error={errors.description}
                     />
@@ -130,8 +131,8 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         id={"responsibilities"}
                         value={formData?.responsibilities}
                         required={true}
-                        label={"Odpovědnost stáže"}
-                        placeholder={"Popište odpovědnost stáže"}
+                        label={t('form.responsibilities')}
+                        placeholder={t('form.responsibilities_placeholder')}
                         onChange={handleChange}
                         error={errors.responsibilities}
                     />
@@ -140,11 +141,11 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
 
                 {/* PROSTOR PRO TLAČÍKO */}
                 <Container property={"flex w-full justify-end ml-auto"}>
-                    <Button 
-                        property={"mt-2 px-16"} 
+                    <Button
+                        property={"mt-2 px-16"}
                         onClick={() => handleSubmit()}
                     >
-                        {isEdit ? "Uložit změny" : "Vytvořit"}
+                        {isEdit ? t('form.save_changes') : t('form.create')}
                     </Button>
                 </Container>
             </>

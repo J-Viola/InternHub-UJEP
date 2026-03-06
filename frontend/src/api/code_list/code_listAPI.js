@@ -7,7 +7,7 @@ export const useCodeListAPI = () => {
     const getSubjects = async () => {
         try {
             const response = await api.get('/subjects/');
-            
+
             if (response?.data) {
                 return response.data;
             }
@@ -34,7 +34,7 @@ export const useCodeListAPI = () => {
     const getUniqueSubjects = async () => {
         try {
             const subjects = await getSubjects();
-            
+
             // Transformujeme data do formátu pro dropdown
             const subjectOptions = subjects.map(subject => ({
                 label: `${subject.subject_code} - ${subject.subject_name}`,

@@ -1,6 +1,6 @@
 
-const STAG_LOGIN_URL = "https://stag-demo.zcu.cz/ws/login";
-const ORIGINAL_URL = "http%3A%2F%2Fwww.localhost%3A3000%2F";
+const STAG_LOGIN_URL = process.env.REACT_APP_STAG_WS_URL || "https://stag-demo.zcu.cz/ws/login";
+const ORIGINAL_URL = encodeURIComponent(process.env.REACT_APP_FRONTEND_URL || "http://localhost:3000/");
 const LOGIN_PARAMS = "?originalURL=" + ORIGINAL_URL;
 
 const API_LOGIN_URL = STAG_LOGIN_URL + LOGIN_PARAMS;
@@ -20,13 +20,12 @@ http://www.localhost:3000/?stagUserTicket=98b837a962a2c5d95b178edf1bfbf754a47f5b
 export const getParams = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const stagUserTicket = urlParams.get('stagUserTicket');
-    
+
     if (stagUserTicket) {
         console.log("Nalezen STAG ticket:", stagUserTicket);
         return { service_ticket: stagUserTicket };
     }
-    
+
     console.log("Žádný STAG ticket v URL");
     return null;
 }
-

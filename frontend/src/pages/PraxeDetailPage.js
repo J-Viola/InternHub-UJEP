@@ -15,9 +15,11 @@ import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "src/api/documents/documentsAPI";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
+import { useTranslation } from "react-i18next";
 
 
 export default function PraxeDetailPage() {
+    const { t } = useTranslation();
     const { id } = useParams();
     const [ popUp, setPopUp ] = useState(false);
     const [ docsPopUp, setDocsPopUp ] = useState(false);
@@ -28,7 +30,6 @@ export default function PraxeDetailPage() {
     const { user } = useUser();
     const { addMessage } = useMessage();
 
-    // MOCK: Získání dat o dokumentech (nahraďte reálnými daty podle potřeby)
     const [docs, setDocs] = useState([]);
 
     const fetchData = async () => {
@@ -37,7 +38,7 @@ export default function PraxeDetailPage() {
             setEntity(result);
             setDocs(result.student_practice_documents || []);
         } catch (error) {
-            addMessage("Chyba při načítání karty praxe", "E");
+            addMessage(t('practice_detail.card_load_error'), "E");
         }
     };
 
@@ -47,23 +48,21 @@ export default function PraxeDetailPage() {
         }
     }, [id]);
 
-    // Handler pro stahování dokumentu
     const handleDownload = async (documentId) => {
         try {
             const blob = await documentAPI.downloadDocument(documentId);
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `dokument_${documentId}.docx`); // nebo použijte název z API
+            link.setAttribute('download', `dokument_${documentId}.docx`);
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
         } catch (error) {
-            addMessage("Chyba při stahování dokumentu", "E");
+            addMessage(t('practice_detail.download_error'), "E");
         }
     };
 
-    // Handler pro nahrávání dokumentu
     const handleUpload = async (documentId) => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -75,9 +74,10 @@ export default function PraxeDetailPage() {
             formData.append('document', file);
             try {
                 await documentAPI.uploadDocument(documentId, formData);
-                addMessage("Dokument úspěšně nahrán", "S");
+                addMessage(t('practice_detail.upload_success'), "S");
+                fetchData();
             } catch (error) {
-                addMessage("Chyba při nahrávání dokumentu", "E");
+                addMessage(t('practice_detail.upload_error'), "E");
             }
         };
         input.click();
@@ -97,7 +97,7 @@ export default function PraxeDetailPage() {
                 "practice" : id
             })
             if (res) {
-                addMessage("Přihláška byla úspěšně podána", "S")
+                addMessage(t('practice_detail.apply_success'), "S")
                 handlePopUp()
                 fetchData();
             }
@@ -105,7 +105,7 @@ export default function PraxeDetailPage() {
             if (error.response?.data?.detail) {
                 addMessage(error.response.data.detail, "E");
             } else {
-                addMessage("Došlo k chybě při podání přihlášky.", "E");
+                addMessage(t('practice_detail.apply_error'), "E");
             }
         }
     }
@@ -113,22 +113,22 @@ export default function PraxeDetailPage() {
     const handleApprove = async () => {
         try {
             await studentpraticeAPI.updateStudentPracticeStatus(id, "approve");
-            addMessage("Přihláška schválena", "S");
+            addMessage(t('practice_detail.approve_success'), "S");
             fetchData();
             setPopUp(false);
         } catch (error) {
-            addMessage("Chyba při schvalování", "E");
+            addMessage(t('practice_detail.approve_error'), "E");
         }
     }
 
     const handleReject = async () => {
         try {
             await studentpraticeAPI.updateStudentPracticeStatus(id, "reject");
-            addMessage("Přihláška zamítnuta", "S");
+            addMessage(t('practice_detail.reject_success'), "S");
             fetchData();
             setPopUp(false);
         } catch (error) {
-            addMessage("Chyba při zamítání", "E");
+            addMessage(t('practice_detail.reject_error'), "E");
         }
     }
 
@@ -136,24 +136,24 @@ export default function PraxeDetailPage() {
         <>
             <BackButton/>
 
-            {/* INFORMACE O STUDENTOVI, JEHOŽ KARTA JE OTEVŘENA */}
+            {/* INFORMACE O STUDENTOVI */}
             <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8 mb-2 mt-4"}>
-                <Headings sizeTag={"h3"} property={""}>Student</Headings>
+                <Headings sizeTag={"h3"} property={""}>{t('practice_detail.student_title')}</Headings>
                 <Paragraph property={"mt-2"}>
                     {entity?.student_practice_status?.student_info?.full_name}
                 </Paragraph>
                 <Paragraph>
-                    {`Osobní číslo: ${entity?.student_practice_status?.student_info?.os_cislo}`}
+                    {`${t('students.personal_number')}: ${entity?.student_practice_status?.student_info?.os_cislo}`}
                 </Paragraph>
                 <Paragraph>
-                    {`Email: ${entity?.student_practice_status?.student_info?.email}`}
+                    {`${t('profile.email')}: ${entity?.student_practice_status?.student_info?.email}`}
                 </Paragraph>
 
             </ContainerForEntity>
 
             {/* DOCS PANEL */}
-            {entity?.student_practice_status?.approval_status !== undefined &&
-                entity.student_practice_status.approval_status === 1 && (
+            {entity?.student_practice_status?.workflow_status &&
+                !["PENDING", "REJECTED"].includes(entity.student_practice_status.workflow_status) && (
                 <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload} handleManage={handleDocsPopUp}/>
             )}
 
@@ -174,7 +174,7 @@ export default function PraxeDetailPage() {
                     <Container>
                         <Headings sizeTag={"h4"} property={""}>{entity?.title}</Headings>
                         <Container property={"flex flex-row gap-2 mt-2"}>
-                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">Místo konání: {entity?.employer?.address}</Button>
+                            <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{t('offers.location')}: {entity?.employer?.address || t('common.not_specified')}</Button>
                             <Button variant="blueSmallNoHover" pointer={false} property="w-fit">{entity?.start_date} - {entity?.end_date}</Button>
                         </Container>
                     </Container>
@@ -182,64 +182,64 @@ export default function PraxeDetailPage() {
                 </Container>
                 {/* DESCRIPTION */}
                 <Container property={"editor-content mt-2"}>
-                    <Headings sizeTag="h3" property="mb-2">Popis pozice</Headings>
+                    <Headings sizeTag="h3" property="mb-2">{t('offers.responsibilities')}</Headings>
                     <Paragraph>{entity?.description}</Paragraph>
                 </Container>
 
                 {/* RESPONSIBILITY */}
                 <Container property={"editor-content mt-4"}>
-                    <Headings sizeTag="h3" property="mb-2">Náplň práce</Headings>
+                    <Headings sizeTag="h3" property="mb-2">{t('offers.requirements')}</Headings>
                     <Paragraph>{entity?.responsibilities}</Paragraph>
                 </Container>
 
                 {/* CONTACT USER INFO */}
                 {entity && entity.contact_user_info && (
                     <Container property={"editor-content mt-2"}>
-                        <Headings sizeTag="h3" property="mb-4">Kontaktní osoba</Headings>
+                        <Headings sizeTag="h3" property="mb-4">{t('offers.contact_person')}</Headings>
                         {entity.contact_user_info.username && (
                             <Paragraph property="mb-2">
-                                Uživatelské jméno: {entity.contact_user_info.username}
+                                {t('practice_detail.username_label')}: {entity.contact_user_info.username}
                             </Paragraph>
                         )}
                         {entity.contact_user_info.first_name && (
                             <Paragraph property="mb-2">
-                                Jméno: {entity.contact_user_info.first_name}
+                                {t('profile.first_name')}: {entity.contact_user_info.first_name}
                             </Paragraph>
                         )}
                         {entity.contact_user_info.last_name && (
                             <Paragraph property="mb-2">
-                                Příjmení: {entity.contact_user_info.last_name}
+                                {t('profile.last_name')}: {entity.contact_user_info.last_name}
                             </Paragraph>
                         )}
                         {entity.contact_user_info.email && (
                             <Paragraph property="mb-2">
-                                Email: {entity.contact_user_info.email}
+                                {t('profile.email')}: {entity.contact_user_info.email}
                             </Paragraph>
                         )}
                         {entity.contact_user_info.phone && (
                             <Paragraph property="mb-2">
-                                Telefon: {entity.contact_user_info.phone}
+                                {t('profile.phone')}: {entity.contact_user_info.phone}
                             </Paragraph>
                         )}
                     </Container>
                 )}
                 <Container property={"grid grid-cols-1 gap-8 mt-4"}>
                     {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
-                    {user && user.role === "ST" && (!entity?.student_practice_status || entity.student_practice_status.approval_status !== 1) && (
-                        <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>Podat přihlášku</Button>
+                    {user && user.isStudent() && (!entity?.student_practice_status) && (
+                        <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>{t('offers.apply')}</Button>
                     )}
 
-                    {/* TLAČÍTKA PRO SPRÁVU - DEPARTMENT A ORGANIZATION USERS */}
-                    {user && (user.isDepartmentUser() || user.isOrganizationUser()) && (
+                    {/* TLAČÍTKA PRO SPRÁVU */}
+                    {user && entity?.can_approve && (
                         <Container property="flex gap-4 justify-end">
-                            <Button variant={"primary"} icon={"gear"} onClick={handlePopUp}>Spravovat</Button>
+                            <Button variant={"primary"} icon={"gear"} onClick={handlePopUp}>{t('common.manage')}</Button>
                         </Container>
                     )}
                 </Container>
             </ContainerForEntity>
 
-            {entity?.student_practice_status?.approval_status !== undefined &&
-                entity.student_practice_status.approval_status === 1 && (
+            {entity?.student_practice_status?.workflow_status &&
+                !["PENDING", "REJECTED"].includes(entity.student_practice_status.workflow_status) && (
                 <Container property={"mt-2"}>
                     <ProgressPanel
                         subject={entity.subject?.subject_code}
@@ -254,12 +254,12 @@ export default function PraxeDetailPage() {
                 <PopUpCon
                     useCustomContainer={true}
                     onClose={handlePopUp}
-                    title={"Přihláška"}
-                    text={"Opravdu si přejete podat přihlášku?"}
+                    title={t('nav.applications')}
+                    text={t('internships.start_practice_confirm')}
                     onSubmit={handleApply}
-                    onSubmitText="Podat"
+                    onSubmitText={t('practice_detail.apply_button')}
                     onReject={handlePopUp}
-                    onRejectText="Zrušit"
+                    onRejectText={t('common.cancel')}
                 />
             )}
 
@@ -267,12 +267,12 @@ export default function PraxeDetailPage() {
             {popUp && user && (user.isDepartmentUser() || user.isOrganizationUser()) && (
                 <PopUpCon
                     onClose={handlePopUp}
-                    title={"Správa přihlášky"}
-                    text={`Chcete schválit nebo zamítnout přihlášku studenta ${entity?.student_practice_status?.student_info?.full_name}?`}
+                    title={t('practice_detail.manage_app')}
+                    text={t('practice_detail.confirm_app_text', { name: entity?.student_practice_status?.student_info?.full_name })}
                     onSubmit={handleApprove}
-                    onSubmitText="Schválit"
+                    onSubmitText={t('common.approve')}
                     onReject={handleReject}
-                    onRejectText="Zamítnout"
+                    onRejectText={t('common.reject')}
                 />
             )}
 
@@ -281,8 +281,8 @@ export default function PraxeDetailPage() {
                 <PopUpCon
                     useCustomContainer={true}
                     onClose={handleDocsPopUp}
-                    title={"Kontrola dokumentů"}
-                    text={"Proces není definován"}
+                    title={t('practice_detail.docs_check_title')}
+                    text={t('practice_detail.docs_check_not_defined')}
                 />
             )}
         </>

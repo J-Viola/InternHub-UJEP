@@ -14,7 +14,7 @@ export default function Paragraph({ children, variant = "base", property, onClic
     };
 
     return (
-        <p 
+        <p
             id={id}
             className={`${variants[variant] || variants.base} ${property || ''} ${className || ''} ${onClick ? 'cursor-pointer' : ''}`}
             onClick={onClick}

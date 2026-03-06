@@ -2,6 +2,7 @@ import logging
 from datetime import date
 
 from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -296,28 +297,17 @@ class PracticeViewSet(viewsets.ModelViewSet):
         GET /api/practices/search/
         Vrací praxe s filtry z query parametrů
         """
+        # Ensure we only search active practices by default in this action
         queryset = self.queryset.filter(is_active=True)
 
-        subject_id = request.query_params.get("subject")
-        if subject_id:
-            queryset = queryset.filter(subject_id=subject_id)
-
-        title = request.query_params.get("title")
-        if title:
-            queryset = queryset.filter(title__icontains=title)
-
-        address = request.query_params.get("address")
-        if address:
-            queryset = queryset.filter(employer__address__icontains=address)
-
-        if request.query_params.get("favorites") == "true" and hasattr(request.user, "favorite_practices"):
-            queryset = queryset.filter(pk__in=request.user.favorite_practices.values_list("pk", flat=True))
-
+        # Apply filters from PracticeFilter via filter_queryset
         queryset = self.filter_queryset(queryset)
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
+
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -478,11 +468,19 @@ class PracticesForApprovingListView(generics.ListAPIView):
 
     permission_classes = (IsAuthenticated,)
     serializer_class = PracticeApprovalSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         dept_ids = Department.objects.filter(professor_users=self.request.user).values_list("department_id", flat=True).distinct()
 
-        practices_to_approve = Practice.objects.filter(subject__department_id__in=dept_ids, approval_status=ApprovalStatus.PENDING)
+        practices_to_approve = (
+            Practice.objects.filter(
+                subject__department_id__in=dept_ids,
+                approval_status=ApprovalStatus.PENDING,
+            )
+            .select_related("subject__department", "employer")
+            .order_by("-created_at")
+        )
 
         logger.debug("Found %d practices for approval", practices_to_approve.count())
 
@@ -509,10 +507,8 @@ class ChangePendingView(APIView):
         Changes approval status of a practice
         """
         practice_id = kwargs.get("id")
-        try:
-            practice_obj = Practice.objects.get(pk=practice_id)
-        except Practice.DoesNotExist:
-            return Response({"detail": "Praxe nenalezena"}, status=status.HTTP_404_NOT_FOUND)
+        practice_obj = get_object_or_404(Practice, pk=practice_id)
+
         if practice_obj.approval_status != ApprovalStatus.PENDING:
             return Response(
                 {"detail": "Praxe je již schválena/zamítnuta"},

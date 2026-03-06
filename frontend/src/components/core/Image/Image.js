@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import Container from "@core/Container/Container";
+import Paragraph from "@components/core/Text/Paragraph";
+import { useTranslation } from "react-i18next";
 
-export default function Image({ 
-    src, 
-    alt = "Obrázek", 
-    property = "", 
+export default function Image({
+    src,
+    alt,
+    property = "",
     fallbackSrc = null,
     width = "auto",
     height = "auto",
@@ -13,6 +15,7 @@ export default function Image({
     onClick = null,
     loading = "lazy"
 }) {
+    const { t } = useTranslation();
     const [imageError, setImageError] = useState(false);
     const [imageLoading, setImageLoading] = useState(true);
 
@@ -33,7 +36,7 @@ export default function Image({
         return src;
     };
 
-    const isBase64 = src && src.startsWith('data:image');
+    const currentSrc = getImageSrc();
 
     const defaultStyles = {
         width: width,
@@ -47,38 +50,52 @@ export default function Image({
     return (
         <Container property={`relative ${property}`}>
             {imageLoading && (
-                <Container 
+                <Container
                     property="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center"
                     style={{ borderRadius }}
                 >
-                    <Container property="text-gray-400 text-sm">Načítání...</Container>
+                    <Container property="text-gray-400 text-sm">{t('common.loading')}</Container>
                 </Container>
             )}
-            
-            <img
-                src={getImageSrc()}
-                alt={alt}
-                className={`${imageLoading ? "opacity-0" : "opacity-100"} ${onClick ? "cursor-pointer" : ""}`}
-                style={defaultStyles}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                onClick={onClick}
-                loading={loading}
-            />
-            
+
+            {currentSrc ? (
+                <img
+                    src={currentSrc}
+                    alt={alt || t('common.image')}
+                    className={`${imageLoading ? "opacity-0" : "opacity-100"} ${onClick ? "cursor-pointer" : ""}`}
+                    style={defaultStyles}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    onClick={onClick}
+                    loading={loading}
+                />
+            ) : (
+                !imageLoading && !fallbackSrc && (
+                    <Container
+                        property="absolute inset-0 bg-gray-100 flex flex-col items-center justify-center text-center p-2"
+                        style={{ borderRadius }}
+                    >
+                        <svg className="w-8 h-8 mb-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                        </svg>
+                        <Paragraph variant="tiny" property="text-gray-400">{t('common.image_not_available')}</Paragraph>
+                    </Container>
+                )
+            )}
+
             {imageError && !fallbackSrc && (
-                <Container 
+                <Container
                     property="absolute inset-0 bg-gray-100 flex items-center justify-center"
                     style={{ borderRadius }}
                 >
-                    <Container property="text-gray-400 text-sm">
+                    <Container property="text-gray-400 text-sm flex flex-col items-center">
                         <svg className="w-8 h-8 mb-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                         </svg>
-                        Obrázek není k dispozici
+                        {t('common.image_not_available')}
                     </Container>
                 </Container>
             )}
         </Container>
     );
-} 
+}

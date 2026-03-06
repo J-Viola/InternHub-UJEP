@@ -280,6 +280,7 @@ class PracticeApprovalSerializer(serializers.ModelSerializer):
             "contact_user_id",
             "contact_user_email",
             "contact_user_full_name",
+            "approval_status",
         ]
 
 

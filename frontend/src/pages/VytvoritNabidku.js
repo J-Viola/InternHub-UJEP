@@ -7,9 +7,11 @@ import { useUserAPI } from "@api/user/userAPI";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
+import { useTranslation } from "react-i18next";
 
 
 export default function VytvoritNabidku() {
+    const { t } = useTranslation();
     const [ formData, setFormData ] = useState({})
     const [ subjects, setSubjects ] = useState([])
     const [ organizationUsers, setOrganizationUsers ] = useState([]);
@@ -44,10 +46,10 @@ export default function VytvoritNabidku() {
                 if (error.response.data.detail) {
                     addMessage(error.response.data.detail, "E");
                 } else {
-                    addMessage("Zkontrolujte prosím formulář.", "E");
+                    addMessage(t('registration.check_form'), "E");
                 }
             } else {
-                addMessage("Došlo k neznámé chybě při vytváření nabídky.", "E");
+                addMessage(t('form.create_error_unknown'), "E");
             }
         }
     }

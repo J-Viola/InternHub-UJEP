@@ -8,8 +8,10 @@ import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
 import PraxeDepartmentEntity from "@components/Praxe/PraxeDepartmentEntity";
 import { useUser } from "@hooks/UserProvider";
+import { useTranslation } from "react-i18next";
 
 export default function SpravaStaziPage() {
+    const { t } = useTranslation();
     const [approved, setApproved] = useState([]);
     const [toApprove, setToApprove] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function SpravaStaziPage() {
             setApproved(res.approved_practices || []);
             setToApprove(res.to_approve_practices || []);
         } catch {
-            setError("Nepodařilo se načíst stáže.");
+            setError(t('internships.error'));
             setApproved([]);
             setToApprove([]);
         } finally {
@@ -99,12 +101,12 @@ export default function SpravaStaziPage() {
 
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    Probíhající stáže
+                    {t('internships.ongoing_title')}
                 </Headings>
             </Container>
 
             {loading && (
-                <Paragraph property="text-center text-gray-500 py-8">Načítání stáží...</Paragraph>
+                <Paragraph property="text-center text-gray-500 py-8">{t('internships.loading')}</Paragraph>
             )}
 
             {!loading && error && (
@@ -116,7 +118,7 @@ export default function SpravaStaziPage() {
                     <Container property={"mb-8 space-y-4"}>
                         {approved.length === 0 ? (
                             <Paragraph property="text-center text-gray-500 py-8">
-                                Žádné schválené stáže.
+                                {t('internships.no_approved')}
                             </Paragraph>
                         ) : (
                             approved.map((entity) => (
@@ -133,14 +135,14 @@ export default function SpravaStaziPage() {
 
                     <Container property={"flex items-center justify-between mb-6 mt-4"}>
                         <Headings sizeTag={"h3"} property={"mt-2"}>
-                            Schvalovací kolečko
+                            {t('internships.approval_wheel')}
                         </Headings>
                     </Container>
 
                     <Container property={"mt-4 mb-8 space-y-4"}>
                         {toApprove.length === 0 ? (
                             <Paragraph property="text-center text-gray-500 py-8">
-                                Žádné stáže čekající na schválení.
+                                {t('internships.no_to_approve')}
                             </Paragraph>
                         ) : (
                             toApprove.map((entity) => (
@@ -160,11 +162,11 @@ export default function SpravaStaziPage() {
                 <PopUpCon
                     onClose={handleClosePop}
                     onSubmit={handleApprove}
-                    onSubmitText={"Schválit"}
+                    onSubmitText={t('common.approve')}
                     onReject={handleReject}
-                    onRejectText={"Zamítnout"}
-                    title="Opravdu chcete změnit stav nabídky?"
-                    text={`Chcete změnit stav nabídky: ${selectedEntity?.title || ""}?`}
+                    onRejectText={t('common.reject')}
+                    title={t('internships.change_status_confirm')}
+                    text={t('internships.change_status_text', { title: selectedEntity?.title || "" })}
                 />
             }
         </>

@@ -8,8 +8,10 @@ import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import { useUserAPI } from "@api/user/userAPI";
 import { useMessage } from "@hooks/MessageContext";
+import { useTranslation } from "react-i18next";
 
 export default function PasswordResetRequestPage() {
+    const { t } = useTranslation();
     const { requestPasswordReset } = useUserAPI();
     const { addMessage } = useMessage();
     const [email, setEmail] = useState("");
@@ -18,7 +20,7 @@ export default function PasswordResetRequestPage() {
 
     const handleSubmit = async () => {
         if (!email) {
-            addMessage("Zadejte prosím email", "E");
+            addMessage(t('password_reset.enter_email'), "E");
             return;
         }
 
@@ -26,16 +28,15 @@ export default function PasswordResetRequestPage() {
         try {
             await requestPasswordReset(email);
             setSubmitted(true);
-            addMessage("Pokud účet existuje, email s instrukcemi byl odeslán.", "S");
+            addMessage(t('password_reset.email_sent_success'), "S");
         } catch (error) {
-            // Z bezpečnostních důvodů neříkáme, jestli email existuje nebo ne,
-            // ale backend může vrátit specifickou chybu pro STAG uživatele.
             if (error.response && error.response.data && error.response.data.detail) {
                 addMessage(error.response.data.detail, "E");
             } else {
-                addMessage("Chyba při odesílání žádosti.", "E");
+                addMessage(t('password_reset.request_error'), "E");
             }
         } finally {
+            setLoading(true); // Keep loading state until navigation if needed or just false
             setLoading(false);
         }
     };
@@ -44,41 +45,41 @@ export default function PasswordResetRequestPage() {
         <Container property="flex items-center justify-center">
             <ContainerForEntity property="w-full max-w-md p-8">
                 <BackButton />
-                <Headings sizeTag="h2" property="mb-4 mt-4 text-center">Zapomenuté heslo</Headings>
-                
+                <Headings sizeTag="h2" property="mb-4 mt-4 text-center">{t('password_reset.request_title')}</Headings>
+
                 {!submitted ? (
                     <>
                         <Paragraph property="mb-6 text-center text-gray-600">
-                            Zadejte svůj email a my vám pošleme odkaz pro obnovu hesla.
+                            {t('password_reset.request_instruction')}
                         </Paragraph>
-                        
-                        <TextField 
+
+                        <TextField
                             id="email"
                             type="email"
-                            label="Email"
-                            placeholder="vas@email.cz"
+                            label={t('login.email')}
+                            placeholder={t('profile.email_placeholder')}
                             value={email}
                             onChange={(value) => setEmail(value.email)}
                             required
                         />
 
                         <Container property="flex justify-center mt-6">
-                            <Button 
-                                onClick={handleSubmit} 
+                            <Button
+                                onClick={handleSubmit}
                                 property="w-full"
                                 disabled={loading}
                             >
-                                {loading ? "Odesílám..." : "Odeslat odkaz"}
+                                {loading ? t('common.sending') : t('password_reset.send_link')}
                             </Button>
                         </Container>
                     </>
                 ) : (
                     <Container property="text-center">
                         <Paragraph property="mb-6 text-green-600 font-medium">
-                            Zkontrolujte svou emailovou schránku. Odkaz pro obnovu hesla byl odeslán.
+                            {t('password_reset.check_mailbox')}
                         </Paragraph>
                         <Button onClick={() => window.location.href = "/"} variant="secondary">
-                            Zpět na přihlášení
+                            {t('password_reset.back_to_login')}
                         </Button>
                     </Container>
                 )}

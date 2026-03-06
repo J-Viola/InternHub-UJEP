@@ -16,14 +16,14 @@ class User {
             console.warn("setUser: No data provided");
             return;
         }
-        
+
         this.role = data.role || "";
         this.id = data.id || data.user_id || "";
         this.username = data.username || "";
         this.email = data.email || "";
         this.isAuthenticated = true;
         this.department = data.department;
-        
+
         if (data.first_name) this.firstName = data.first_name;
         if (data.last_name) this.lastName = data.last_name;
         if (data.department) this.department = data.department;
@@ -57,7 +57,7 @@ class User {
     }
 
     isOrganizationUser() {
-        return this.hasRole("OWNER") || this.hasRole("INSERTER") 
+        return this.hasRole("OWNER") || this.hasRole("INSERTER")
     }
 
     isDepartmentUser() {

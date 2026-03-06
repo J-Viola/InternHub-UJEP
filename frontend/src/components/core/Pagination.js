@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from "react-i18next";
 
 /**
  * Simple previous / next page controls.
@@ -9,6 +10,7 @@ import React from 'react';
  *   onPageChange – callback(newPage: number)
  */
 export default function Pagination({ currentPage, totalPages, onPageChange }) {
+    const { t } = useTranslation();
     if (!totalPages || totalPages <= 1) return null;
 
     return (
@@ -20,11 +22,11 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
                            disabled:opacity-40 disabled:cursor-not-allowed
                            hover:bg-gray-100 transition-colors"
             >
-                ← Předchozí
+                ← {t('pagination.previous')}
             </button>
 
             <span className="text-sm text-gray-600">
-                Strana {currentPage} / {totalPages}
+                {t('pagination.page')} {currentPage} / {totalPages}
             </span>
 
             <button
@@ -34,7 +36,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
                            disabled:opacity-40 disabled:cursor-not-allowed
                            hover:bg-gray-100 transition-colors"
             >
-                Další →
+                {t('pagination.next')} →
             </button>
         </div>
     );

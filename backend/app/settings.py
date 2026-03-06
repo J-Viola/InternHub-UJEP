@@ -59,6 +59,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -131,7 +132,16 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "cs"
+
+LANGUAGES = [
+    ("cs", "Czech"),
+    ("en", "English"),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
 
 TIME_ZONE = "UTC"
 
@@ -178,6 +188,18 @@ if not DEBUG:
         )  # noqa: T201
         sys.exit(1)
 
+    if "*" in ALLOWED_HOSTS:
+        print(
+            "SECURITY ERROR: '*' v ALLOWED_HOSTS je v produkci zakázáno. Nastav konkrétní domény v proměnné ALLOWED_HOSTS.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+# File upload settings
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
+FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
+
 ARES_API_URL = os.environ.get(
     "ARES_API_URL",
     "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty",
@@ -198,12 +220,14 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
-    ],
+    ]
+    if not DEBUG
+    else [],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "200/hour",
-        "user": "2000/hour",
-        "login": "10/min",
-        "password_reset": "5/hour",
+        "anon": "1000/hour",
+        "user": "10000/hour",
+        "login": "100/min",
+        "password_reset": "100/hour",
     },
 }
 

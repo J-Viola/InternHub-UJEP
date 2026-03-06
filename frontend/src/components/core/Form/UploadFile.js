@@ -5,14 +5,14 @@ import { useState, useRef } from "react";
 import { Image } from "@core/Image";
 
 export default function UploadFile({
-    id, 
-    previewOn = false, 
-    property = "", 
-    label, 
-    onChange, 
-    onIconClick, 
-    icon = "upload", 
-    accept, 
+    id,
+    previewOn = false,
+    property = "",
+    label,
+    onChange,
+    onIconClick,
+    icon = "upload",
+    accept,
     iconPointer = false,
     iconColor = "text-gray-900"
 }) {
@@ -49,21 +49,21 @@ export default function UploadFile({
                 <Button property={"cursor-pointer"} noVariant={true} icon={icon} iconColor={iconColor} pointer={iconPointer}></Button>
                 <Paragraph property={"text-gray-900"}>{label}</Paragraph>
             </label>
-            <input 
+            <input
                 ref={fileInputRef}
-                type="file" 
-                id={id} 
-                className="hidden" 
-                onChange={handleFileChange} 
-                accept={accept} 
+                type="file"
+                id={id}
+                className="hidden"
+                onChange={handleFileChange}
+                accept={accept}
             />
             {previewOn && preview && (
                 <Container property={"mt-2 justify-center ml-auto"}>
-                    <Image 
-                        src={preview} 
-                        alt={"Preview"} 
-                        width={"200"} 
-                        height={"200"} 
+                    <Image
+                        src={preview}
+                        alt={"Preview"}
+                        width={"200"}
+                        height={"200"}
                         objectFit={"contain"}
                         property={"max-w-[200px] max-h-[200px]"}
                     />

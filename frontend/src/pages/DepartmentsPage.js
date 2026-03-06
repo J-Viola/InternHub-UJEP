@@ -9,8 +9,10 @@ import { useDepartmentAPI } from "@api/department/departmentAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 import DepartmentEntity from "@components/Department/DepartmentEntity";
+import { useTranslation } from "react-i18next";
 
 export default function DepartmentsPage() {
+    const { t } = useTranslation();
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showDeletePop, setShowDeletePop] = useState(false);
@@ -18,7 +20,7 @@ export default function DepartmentsPage() {
 
     const departmentAPI = useDepartmentAPI();
     const navigate = useNavigate();
-    const { showMessage } = useMessage();
+    const { addMessage } = useMessage();
 
     const fetchDepartments = async () => {
         try {
@@ -26,8 +28,8 @@ export default function DepartmentsPage() {
             const data = await departmentAPI.getAllDepartments();
             setDepartments(data || []);
         } catch (error) {
-            console.error("Chyba při načítání kateder:", error);
-            showMessage('Chyba při načítání kateder', 'error');
+            console.error(t('departments.load_error'), error);
+            addMessage(t('departments.load_error'), 'error');
             setDepartments([]);
         } finally {
             setLoading(false);
@@ -55,12 +57,12 @@ export default function DepartmentsPage() {
 
         try {
             await departmentAPI.deleteDepartment(selectedDepartment.department_id);
-            showMessage('Katedra byla úspěšně smazána', 'success');
+            addMessage(t('departments.delete_success'), 'success');
             setShowDeletePop(false);
             setSelectedDepartment(null);
             fetchDepartments();
         } catch (error) {
-            showMessage('Chyba při mazání katedry', 'error');
+            addMessage(t('departments.delete_error'), 'error');
         }
     };
 
@@ -75,7 +77,7 @@ export default function DepartmentsPage() {
 
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    Správa kateder
+                    {t('departments.title')}
                 </Headings>
             </Container>
 
@@ -84,16 +86,16 @@ export default function DepartmentsPage() {
                     onClick={handleCreateDepartment}
                     icon={"plus"}
                 >
-                    Založit katedru
+                    {t('departments.create_new')}
                 </Button>
             </Container>
 
             <Container property={"mt-4 rounded-lg"}>
                 {loading ? (
-                    <Paragraph>Načítání...</Paragraph>
+                    <Paragraph>{t('common.loading')}</Paragraph>
                 ) : departments.length === 0 ? (
                     <Paragraph property="text-center text-gray-500 py-8">
-                        Zatím nejsou žádné katedry k zobrazení.
+                        {t('departments.no_departments')}
                     </Paragraph>
                 ) : (
                     <Container property={"grid grid-cols-1 gap-4"}>
@@ -121,12 +123,12 @@ export default function DepartmentsPage() {
             {showDeletePop && (
                 <PopUpCon
                     onClose={handleDeleteCancel}
-                    title="Potvrdit smazání"
-                    text={`Opravdu chcete smazat katedru "${selectedDepartment?.department_name}"? Tato akce je nevratná.`}
+                    title={t('departments.delete_confirm_title')}
+                    text={t('departments.delete_confirm_text', { name: selectedDepartment?.department_name })}
                     onSubmit={handleDeleteConfirm}
                     onReject={handleDeleteCancel}
-                    onSubmitText="Smazat"
-                    onRejectText="Zrušit"
+                    onSubmitText={t('common.delete')}
+                    onRejectText={t('common.cancel')}
                 />
             )}
         </>

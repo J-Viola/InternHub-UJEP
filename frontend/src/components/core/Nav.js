@@ -8,7 +8,8 @@ import { useNavigate } from "react-router-dom";
 import Paragraph from "./Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
 import { FaUser } from "react-icons/fa";
-
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 // submenu render
 function SubMenu({ items, title }) {
@@ -27,12 +28,12 @@ function SubMenu({ items, title }) {
             {isOpen && (
                 <Container property="absolute bg-facultyCol px-2 py-2 shadow-lg rounded-md min-w-[300px] max-w-[350px] z-50">
                     {Object.entries(items).map(([key, value]) => (
-                        <Link 
-                            key={key} 
-                            to={value} 
+                        <Link
+                            key={key}
+                            to={value}
                             className={`block mt-2 transition-colors ${
-                                location.pathname === value 
-                                    ? "text-gray-200 font-semibold" 
+                                location.pathname === value
+                                    ? "text-gray-200 font-semibold"
                                     : "text-white hover:text-gray-200"
                             }`}
                         >
@@ -48,7 +49,7 @@ function SubMenu({ items, title }) {
 // linknav render
 function LinkNav({navigationDict, isMobile = false}) {
     const location = useLocation();
-    
+
     return (
         <Container property={`${isMobile ? "flex flex-col items-start gap-4" : "flex items-center gap-6"}`}>
             {Object.entries(navigationDict).map(([key, value]) => {
@@ -56,12 +57,12 @@ function LinkNav({navigationDict, isMobile = false}) {
                     return <SubMenu key={key} title={key} items={value} />;
                 } else {
                     return (
-                        <Link 
-                            key={key} 
-                            to={value} 
+                        <Link
+                            key={key}
+                            to={value}
                             className={`transition-colors ${
-                                location.pathname === value 
-                                    ? "text-gray-200 border-b-2 border-gray-200" 
+                                location.pathname === value
+                                    ? "text-gray-200 border-b-2 border-gray-200"
                                     : "text-white hover:text-gray-200"
                             }`}
                         >
@@ -79,80 +80,74 @@ function Nav({}) {
     const { user } = useUser();
     const [ navigationDict, setNaviagation ] = useState({});
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const studentDict = {
-        "Nabídka praxí": "/nabidka",
-        //"Účet": "/",
-        "Praxe": "/praxe",
-        "Profil": "/profil",
-        "Odhlásit se": "/logout",
+        [t('nav.internship_offers')]: "/nabidka",
+        [t('nav.my_internships')]: "/praxe",
+        [t('nav.profile')]: "/profil",
+        [t('nav.logout')]: "/logout",
     };
 
     const ownerDict = {
-        "Správa organizace" : {
-            "Uživatelské účty organizace" : "/users/org_users",
-            "Účet organizace" : "/formular?type=org_form&action=edit",
-            "Stáže" : "/praxe",
-            "Přihlášky" : "/prihlasky",
-            "Odeslané pozvánky" : "/pozvanky-list",
+        [t('nav.org_management')] : {
+            [t('nav.org_accounts')] : "/users/org_users",
+            [t('nav.org_account')] : "/formular?type=org_form&action=edit",
+            [t('nav.internships')] : "/praxe",
+            [t('nav.applications')] : "/prihlasky",
+            [t('nav.sent_invitations')] : "/pozvanky-list",
         },
-        "Nabídka praxí": "/nabidka",
-        "Studenti": "/students",
-        //"Praxe": "/praxe",
-        "Odhlásit se": "/logout",
-        //"Profil": "/profil",
+        [t('nav.internship_offers')]: "/nabidka",
+        [t('nav.students')]: "/students",
+        [t('nav.logout')]: "/logout",
     };
 
     const inserterDict = {
-        "Správa organizace" : {
-            "Uživatelské účty organizace" : "/users/org_users",
-            "Účet organizace" : "/formular?type=org_form&action=edit",
-            "Stáže" : "/praxe",
-            "Přihlášky" : "/prihlasky",
-            "Odeslané pozvánky" : "/pozvanky-list",
+        [t('nav.org_management')] : {
+            [t('nav.org_accounts')] : "/users/org_users",
+            [t('nav.org_account')] : "/formular?type=org_form&action=edit",
+            [t('nav.internships')] : "/praxe",
+            [t('nav.applications')] : "/prihlasky",
+            [t('nav.sent_invitations')] : "/pozvanky-list",
         },
-        "Nabídka praxí": "/nabidka",
-        "Studenti": "/students",
-        //"Praxe": "/praxe",
-        "Odhlásit se": "/logout",
-        //"Profil": "/profil",
+        [t('nav.internship_offers')]: "/nabidka",
+        [t('nav.students')]: "/students",
+        [t('nav.logout')]: "/logout",
     };
 
     const departmentDict = {
-        "Studentské účty" : "/students",
-        "Předměty" : "/subjects",
-        "Správa stáží" : "/sprava-stazi",
-        "Nabídka praxí" : "/nabidka",
-        //"Profil" : "#",
-        "Odhlásit se" : "/logout",
+        [t('nav.students')] : "/students",
+        [t('nav.subjects')] : "/subjects",
+        [t('nav.internship_management')] : "/sprava-stazi",
+        [t('nav.internship_offers')] : "/nabidka",
+        [t('nav.logout')] : "/logout",
     }
 
     const professorDict = {
-        "Studentské účty" : "/students",
-        "Předměty" : "/subjects",
-        "Nabídka praxí" : "/nabidka",
-        "Správa stáží" : "/sprava-stazi",
-        //"Profil" : "#",
-        "Odhlásit se" : "/logout",
+        [t('nav.students')] : "/students",
+        [t('nav.subjects')] : "/subjects",
+        [t('nav.internship_offers')] : "/nabidka",
+        [t('nav.internship_management')] : "/sprava-stazi",
+        [t('nav.logout')] : "/logout",
     }
 
     const adminDict = {
-        "Správa systému" : {
-            "Katedry" : "/departments",
-            "Společnosti" : "/companies",
+        [t('nav.system_management')] : {
+            [t('nav.departments')] : "/departments",
+            [t('nav.companies')] : "/companies",
         },
-        "Správa stáží" : {
-            "Přihlášky" : "/prihlasky",
-            "Nabídka praxí": "/nabidka",
-            "Schvalovací kolečko" : "/sprava-stazi",
-            "Pozvánky od firem" : "/pozvanky-list",
+        [t('nav.internship_management')] : {
+            [t('nav.applications')] : "/prihlasky",
+            [t('nav.internship_offers')]: "/nabidka",
+            [t('nav.approval_process')] : "/sprava-stazi",
+            [t('nav.company_invitations')] : "/pozvanky-list",
         },
-        "Uživatelé" : {
-            "Firemní uživatelé": "/users/org_users",
-            "Školní uživatelé": "/users/department_users",
-            "Studenti": "/students",
+        [t('nav.users')] : {
+            [t('nav.company_users')]: "/users/org_users",
+            [t('nav.school_users')]: "/users/department_users",
+            [t('nav.students')]: "/students",
         },
-        "Odhlásit se": "/logout",
+        [t('nav.logout')]: "/logout",
     };
 
     useEffect(() => {
@@ -178,7 +173,7 @@ function Nav({}) {
             // Fallback pro neznámou roli – žádná navigace
             setNaviagation({});
         }
-    }, [user]);
+    }, [user, t]); // dependency na 't' pro aktualizaci při změně jazyka
 
     const handleLogoClick = () => {
         navigate("/nabidka");
@@ -190,8 +185,8 @@ function Nav({}) {
             <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"}>
                 <Container property={"flex items-center justify-between h-16"}>
                     {/* Logo */}
-                    <Container 
-                        property={"flex items-center cursor-pointer"} 
+                    <Container
+                        property={"flex items-center cursor-pointer"}
                         onClick={handleLogoClick}
                     >
                         <Headings sizeTag="h4" property={"text-white"}>InternHub</Headings>
@@ -202,32 +197,36 @@ function Nav({}) {
                         <LinkNav navigationDict={navigationDict} />
                     </Container>
 
-                    {/* User Info */}
-                    {user.hasData() && <Container property={"hidden md:flex bg-white bg-opacity-20 px-1 rounded text-xs"}>
-                        {user.hasData() && (
-                            <Container property={"flex flex-col items-end gap-1 text-white text-sm"}>
-                                <Container property={"flex items-center gap-2"}>
-                                    <FaUser/>
-                                    <Paragraph property={"text-white text-sm"}>
-                                        {user.email}
-                                    </Paragraph>
-                                    <Paragraph property={"text-white text-sm"}>
-                                        {user.role}
-                                    </Paragraph>
+                    {/* Language Switcher & User Info */}
+                    <Container property={"hidden md:flex items-center gap-4"}>
+                        <LanguageSwitcher />
+                        {user.hasData() && <Container property={"bg-white bg-opacity-20 px-1 rounded text-xs"}>
+                            {user.hasData() && (
+                                <Container property={"flex flex-col items-end gap-1 text-white text-sm"}>
+                                    <Container property={"flex items-center gap-2"}>
+                                        <FaUser/>
+                                        <Paragraph property={"text-white text-sm"}>
+                                            {user.email}
+                                        </Paragraph>
+                                        <Paragraph property={"text-white text-sm"}>
+                                            {t(`profile.roles.${user.role}`, { defaultValue: user.role })}
+                                        </Paragraph>
+                                    </Container>
+                                    {/* INFO o katedře uživatele */}
+                                    {user.isDepartmentMg() && user.department && (
+                                        <Paragraph property={"text-white text-xs opacity-75"}>
+                                            {typeof user.department === 'string' ? user.department : user.department?.name || t('invitations.unknown_dept')}
+                                        </Paragraph>
+                                    )}
                                 </Container>
-                                {/* INFO o katedře uživatele */}
-                                {user.isDepartmentMg() && user.department && (
-                                    <Paragraph property={"text-white text-xs opacity-75"}>
-                                        {typeof user.department === 'string' ? user.department : user.department?.name || 'Neznámá katedra'}
-                                    </Paragraph>
-                                )}
-                            </Container>
-                        )}
-                    </Container>}
+                            )}
+                        </Container>}
+                    </Container>
 
                     {/* Mobile menu button */}
-                    <Container property={"md:hidden"}>
-                        <Button 
+                    <Container property={"md:hidden flex items-center gap-4"}>
+                        <LanguageSwitcher />
+                        <Button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             property="text-white hover:text-gray-200"
                             noVariant={true}

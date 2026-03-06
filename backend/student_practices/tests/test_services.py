@@ -54,8 +54,11 @@ class StudentPracticeServiceTests(TestCase):
         self.assertEqual(self.invitation.status, EmployerInvitationStatus.ACCEPTED)
 
         sp = StudentPractice.objects.get(user=self.user, practice=self.practice)
-        self.assertEqual(sp.approval_status, ApprovalStatus.APPROVED)
-        self.assertEqual(sp.progress_status, ProgressStatus.IN_PROGRESS)
+        # Now it's PENDING until school approves
+        self.assertEqual(sp.approval_status, ApprovalStatus.PENDING)
+        self.assertEqual(sp.progress_status, ProgressStatus.NOT_STARTED)
+        self.assertTrue(sp.employer_approved)
+        self.assertFalse(sp.school_approved)
         self.assertIn("student_practice_id", result)
 
     def test_process_invitation_approval_reject(self):

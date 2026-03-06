@@ -109,7 +109,7 @@ class Command(BaseCommand):
                 last_name="Administrátor",
                 is_active=True,
             )
-            self.stdout.write(f"   + Vytvořen Superuser: {email} (heslo: password123)")
+            self.stdout.write(f"   + Vytvořen Superuser: {email} (heslo: demodemo)")
 
     def seed_companies_and_practices(self, subjects):
         companies = [

@@ -1,5 +1,3 @@
-import datetime
-import hashlib
 import logging
 import random
 
@@ -8,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
 from django.db.models import OneToOneRel
+from django.utils.translation import gettext_lazy as _
 from django_enumfield import enum
 
 from practices.models import ProgressStatus
@@ -102,26 +101,43 @@ class DocumentHelper:
         if not file_name:
             raise ValueError(f"Unsupported document type: {document_type}")
         file_path = settings.MEDIA_ROOT / "default_documents" / file_name
-        try:
-            document_file = File(open(file_path, "rb"))
-            document_file.name = f"default_{DocumentHelper.create_name_for_document(document_type, user_id, document_file.name)}"
-            document = UploadedDocument(
-                document_type=document_type,
-                document=document_file,
-                uploaded_at=datetime.datetime.now(datetime.UTC),
-            )
-            document.save()
-            return document
-        except FileNotFoundError:
+
+        if not file_path.exists():
             logger.warning("Default document %s not found.", file_path)
+            return None
+
+        try:
+            from django.utils import timezone
+
+            with open(file_path, "rb") as f:
+                document_file = File(f)
+                document_file.name = f"default_{DocumentHelper.create_name_for_document(document_type, user_id, file_name)}"
+                document = UploadedDocument(
+                    document_type=document_type,
+                    document=document_file,
+                    uploaded_at=timezone.now(),
+                )
+                document.save()
+                return document
+        except Exception as e:
+            logger.error("Error creating default document: %s", str(e))
             return None
 
     @staticmethod
     def create_name_for_document(document_type: DocumentType, user_id: int, file_name: str):
-        timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d%H%M%S")
-        ext = file_name.rsplit(".", 1)[-1].lower()
-        user_id_hash = hashlib.md5(str(user_id).encode()).hexdigest()[:8]
-        return f"{document_type.name.lower()}_{user_id_hash}_{timestamp}.{ext}"
+        import os
+        import uuid
+
+        from django.utils import timezone
+
+        timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
+
+        # Sanitize original file name to prevent path traversal
+        safe_file_name = os.path.basename(file_name)
+        ext = safe_file_name.rsplit(".", 1)[-1].lower() if "." in safe_file_name else "docx"
+
+        unique_suffix = uuid.uuid4().hex[:6]
+        return f"{document_type.name.lower()}_{user_id}_{timestamp}_{unique_suffix}.{ext}"
 
     @staticmethod
     def assign_default_documents(student_practice):
@@ -213,6 +229,8 @@ class StudentPractice(models.Model):
     )
     start_date = models.DateField()
     end_date = models.DateField()
+    school_approved = models.BooleanField(default=False)
+    employer_approved = models.BooleanField(default=False)
 
     class Meta:
         db_table = "student_practices"
@@ -220,3 +238,32 @@ class StudentPractice(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"
+
+    @property
+    def workflow_status(self):
+        if self.approval_status == ApprovalStatus.REJECTED:
+            return "REJECTED"
+        if self.approval_status == ApprovalStatus.PENDING:
+            return "PENDING"
+
+        # Approved, so look at progress_status
+        if self.progress_status == ProgressStatus.IN_PROGRESS:
+            return "IN_PROGRESS"
+        if self.progress_status == ProgressStatus.COMPLETED:
+            return "COMPLETED"
+        if self.progress_status == ProgressStatus.CANCELLED:
+            return "CANCELLED"
+
+        return "APPROVED"  # Approved but not started
+
+    @property
+    def workflow_status_label(self):
+        labels = {
+            "REJECTED": _("Zamítnuto"),
+            "PENDING": _("Čeká na schválení"),
+            "APPROVED": _("Schváleno"),
+            "IN_PROGRESS": _("Probíhá"),
+            "COMPLETED": _("Dokončeno"),
+            "CANCELLED": _("Zrušeno"),
+        }
+        return labels.get(self.workflow_status, _("Neznámý stav"))

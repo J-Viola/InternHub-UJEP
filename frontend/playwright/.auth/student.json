@@ -1,0 +1,22 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcyMzgyODE2LCJpYXQiOjE3NzIzODI1MTYsImp0aSI6ImJjY2RhNzY2Nzk3NTRjNGJiNjEwNGRkMzkzYzI4MTE2IiwidXNlcl9pZCI6IjYiLCJ0eXBlIjoiU1QifQ.gZN6cZRsK8AhX4JlelLaCKCxyoIVg-l4sxLmc3aPFno"
+        },
+        {
+          "name": "user",
+          "value": "{\"id\":6,\"email\":\"tsedlacek@example.org\",\"role\":\"ST\",\"firstName\":\"Ignác\",\"lastName\":\"Čech\",\"department\":null,\"favorite_practices\":[]}"
+        },
+        {
+          "name": "refreshToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MjQ2ODkxNiwiaWF0IjoxNzcyMzgyNTE2LCJqdGkiOiJlNGJkNzlkZjAzMzY0MmVkYjE5MjRkYWUxNzNhMTAxYSIsInVzZXJfaWQiOiI2IiwidHlwZSI6IlNUIn0.5ja-b-kzcG9hr02ao5im-lj0xM4a7emLJ-b6uO8hymw"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-01 21:19+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: student_practices/models.py:247
+msgid "Zamítnuto"
+msgstr "Rejected"
+
+#: student_practices/models.py:248
+msgid "Čeká na schválení"
+msgstr "Pending approval"
+
+#: student_practices/models.py:249
+msgid "Schváleno"
+msgstr "Approved"
+
+#: student_practices/models.py:250
+msgid "Probíhá"
+msgstr "In progress"
+
+#: student_practices/models.py:251
+msgid "Dokončeno"
+msgstr "Completed"
+
+#: student_practices/models.py:252
+msgid "Zrušeno"
+msgstr "Cancelled"
+
+#: student_practices/models.py:254
+msgid "Neznámý stav"
+msgstr "Unknown status"
+
+#: users/serializers.py:278
+msgid "Uživatel s tímto emailem již existuje."
+msgstr "User with this email already exists."

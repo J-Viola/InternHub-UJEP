@@ -8,7 +8,7 @@ export default function TextEditor({contentValue, handleText}) {
     const handleTextChange = (e) => {
         handleText(e);
     }
-    
+
     return(
         <Container property={"editor-content"}>
             <JoditEditor ref={editor} value={contentValue} toolbarAdaptive={false} onChange={(e) => handleTextChange(e)}/>

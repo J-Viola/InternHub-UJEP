@@ -6,6 +6,7 @@ import Button from "@components/core/Button/Button";
 import UploadFile from "@core/Form/UploadFile";
 import Image from "@core/Image/Image";
 import Headings from "@core/Text/Headings";
+import { useTranslation } from "react-i18next";
 
 const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -21,6 +22,7 @@ const convertToBase64 = (file) => {
 };
 
 export default function ProfileForm({ formData, handleInputChange, handleSubmit }) {
+    const { t } = useTranslation();
     const handleProfilePicChange = async (file) => {
         if (file) {
             try {
@@ -55,124 +57,124 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
         <>
             <Container>
                 <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                    Údaje profilu
+                    {t('profile.profile_data')}
                 </Headings>
             </Container>
-            {/* ... inputs ... */}
+
             <Container property={"grid gap-2 grid-cols-3"}>
-                <TextField 
+                <TextField
                     id={"first_name"}
                     required={true}
-                    label={"Jméno"} 
-                    placeholder={"Zadejte jméno"}
+                    label={t('profile.first_name')}
+                    placeholder={t('profile.first_name_placeholder')}
                     value={formData?.first_name || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"last_name"}
                     required={true}
-                    label={"Příjmení"} 
-                    placeholder={"Zadejte příjmení"}
+                    label={t('profile.last_name')}
+                    placeholder={t('profile.last_name_placeholder')}
                     value={formData?.last_name || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"email"}
                     required={true}
-                    label={"E-mailová adresa"} 
-                    placeholder={"Zadejte e-mailovou adresu"}
+                    label={t('profile.email')}
+                    placeholder={t('profile.email_placeholder')}
                     value={formData?.email || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"phone"}
                     required={false}
-                    label={"Telefonní číslo"} 
-                    placeholder={"Zadejte telefonní číslo"}
+                    label={t('profile.phone')}
+                    placeholder={t('profile.phone_placeholder')}
                     value={formData?.phone || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"title_before"}
                     required={false}
-                    label={"Titul před jménem"} 
-                    placeholder={"např. Ing., Mgr."}
+                    label={t('profile.title_before')}
+                    placeholder={t('profile.title_before_placeholder')}
                     value={formData?.title_before || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"title_after"}
                     required={false}
-                    label={"Titul za jménem"} 
-                    placeholder={"např. Ph.D."}
+                    label={t('profile.title_after')}
+                    placeholder={t('profile.title_after_placeholder')}
                     value={formData?.title_after || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"street"}
                     required={false}
-                    label={"Trvalé bydliště (Ulice)"} 
-                    placeholder={"Zadejte ulici"}
+                    label={`${t('profile.residence')} (${t('profile.street')})`}
+                    placeholder={t('profile.street_placeholder')}
                     value={formData?.street || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"street_number"}
                     required={false}
-                    label={"Číslo popisné"} 
-                    placeholder={"Zadejte číslo popisné"}
+                    label={t('profile.street_number')}
+                    placeholder={t('profile.street_number_placeholder')}
                     value={formData?.street_number || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"city"}
                     required={false}
-                    label={"Město"} 
-                    placeholder={"Zadejte město"}
+                    label={t('profile.city')}
+                    placeholder={t('profile.city_placeholder')}
                     value={formData?.city || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"zip_code"}
                     required={false}
-                    label={"PSČ"} 
-                    placeholder={"Zadejte PSČ"}
+                    label={t('profile.zip_code')}
+                    placeholder={t('profile.zip_code_placeholder')}
                     value={formData?.zip_code || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"field_of_study"}
                     required={false}
-                    label={"Obor"} 
-                    placeholder={"Zadejte obor studia"}
+                    label={t('profile.field_of_study')}
+                    placeholder={t('profile.field_of_study_placeholder')}
                     value={formData?.field_of_study || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"specialization"}
                     required={false}
-                    label={"Specializace"} 
-                    placeholder={"Zadejte specializaci"}
+                    label={t('profile.specialization')}
+                    placeholder={t('profile.specialization_placeholder')}
                     value={formData?.specialization || ''}
                     onChange={handleInputChange}
                 />
-                
-                <TextField 
+
+                <TextField
                     id={"year_of_study"}
                     required={false}
-                    label={"Ročník"} 
-                    placeholder={"Zadejte ročník"}
+                    label={t('profile.year_of_study')}
+                    placeholder={t('profile.year_of_study_placeholder')}
                     value={formData?.year_of_study || ''}
                     onChange={handleInputChange}
                 />
@@ -182,29 +184,28 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextBox
                     id={"additional_info"}
                     required={false}
-                    label={"O mě"}
-                    placeholder={"Napište něco o sobě"}
+                    label={t('profile.about_me')}
+                    placeholder={t('profile.about_me_placeholder')}
                     value={formData?.additional_info || ''}
                     onChange={handleInputChange}
                 />
-                
-                {/* Skills Section - Dynamic Inputs */}
+
                 <Container property="mt-4">
-                    <Headings sizeTag="h5" property="mb-2 font-bold">Skills (maximálně 5)</Headings>
+                    <Headings sizeTag="h5" property="mb-2 font-bold">{t('profile.skills_limit')}</Headings>
                     <div className="flex flex-col gap-2 mb-2">
                         {formData?.skills?.map((skill, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <input
                                     type="text"
                                     className="px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 border-gray-300 w-full max-w-md"
-                                    placeholder={`Dovednost ${index + 1}`}
+                                    placeholder={t('profile.skill_placeholder', { index: index + 1 })}
                                     value={skill}
                                     onChange={(e) => handleSkillChange(index, e.target.value)}
                                 />
-                                <Button 
-                                    onClick={() => handleRemoveSkill(index)} 
-                                    icon="cross" 
-                                    noVariant={true} 
+                                <Button
+                                    onClick={() => handleRemoveSkill(index)}
+                                    icon="cross"
+                                    noVariant={true}
                                     iconColor="text-red-600"
                                     property="hover:bg-red-100 p-1 rounded"
                                 />
@@ -212,29 +213,28 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                         ))}
                     </div>
                     {(!formData?.skills || formData.skills.length < 5) && (
-                        <Button 
-                            onClick={handleAddSkillRow} 
-                            icon="plus" 
+                        <Button
+                            onClick={handleAddSkillRow}
+                            icon="plus"
                             variant="blueSmall"
                             property="w-fit"
                         >
-                            Přidat dovednost
+                            {t('profile.add_skill')}
                         </Button>
                     )}
                 </Container>
             </Container>
 
             <Container property={"w-full gap-2 mt-2 flex-cols"}>
-                {/* Aktuální profilový obrázek */}
                 {formData?.profile_picture && (
                     <Container property="mb-4">
                         <Container property="text-sm font-medium text-gray-700 mb-2">
-                            Aktuální profilový obrázek:
+                            {t('profile.current_photo')}:
                         </Container>
                         <Container property="w-32 h-32 bg-blue-600 rounded-lg p-4 flex items-center justify-center">
                             <Image
                                 src={formData.profile_picture}
-                                alt="Profilový obrázek"
+                                alt={t('profile.current_photo')}
                                 width="100%"
                                 height="100%"
                                 objectFit="cover"
@@ -244,20 +244,18 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                         </Container>
                     </Container>
                 )}
-                
-                {/* Upload nového obrázku */}
+
                 <UploadFile
                     id={"profile_picture"}
-                    label={"Nahrát nový profilový obrázek"}
+                    label={t('profile.upload_photo')}
                     accept={"image/*"}
                     onChange={handleProfilePicChange}
                 />
-                
-                {/* Upload CV */}
+
                 <Container property="mt-4">
                      <UploadFile
                         id={"cv_file"}
-                        label={"Nahrát CV/Životopis (PDF)"}
+                        label={t('profile.upload_cv_pdf')}
                         accept={".pdf"}
                         onChange={(file) => handleInputChange({ cv_file: file })}
                     />
@@ -265,13 +263,12 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
             </Container>
 
             <Container property={"flex justify-end mt-4"}>
-                <Button 
+                <Button
                     onClick={handleSubmit}
                 >
-                    Uložit
+                    {t('common.save')}
                 </Button>
             </Container>
         </>
     );
 }
- 

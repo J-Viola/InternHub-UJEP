@@ -7,10 +7,12 @@ import { Image } from "@components/core/Image"
 import { useNavigate } from "react-router-dom"
 import Button from "@components/core/Button/Button"
 import { useUser } from "@hooks/UserProvider"
+import { useTranslation } from "react-i18next"
 
 export default function NabidkaEntityInline({ entity, onClick, onView, isSelected = false }) {
     const navigate = useNavigate();
     const { user } = useUser();
+    const { t } = useTranslation();
 
     const handleVariant = (approval_status, buttonType=false) => {
 
@@ -20,18 +22,18 @@ export default function NabidkaEntityInline({ entity, onClick, onView, isSelecte
         else {
             return "gray";
         }
-        
-    
+
+
     }
 
     const approvalTag = (approval_status) => {
         switch (approval_status) {
             case 0: // PENDING
-                return "Čeká ke schválení";
+                return t('status.PENDING');
             case 1: // APPROVED
-                return "Probíhající stáž";
+                return t('status.APPROVED');
             case 2: // REJECTED
-                return "Zrušená stáž";
+                return t('status.REJECTED');
             default:
                 return;
         }
@@ -46,10 +48,10 @@ export default function NabidkaEntityInline({ entity, onClick, onView, isSelecte
     }
 
     return(
-        <ContainerForEntity 
-            id={entity.practice_id} 
-            variant={handleVariant(isSelected)} 
-            onClick={handleClick} 
+        <ContainerForEntity
+            id={`nabidka-inline-${entity.practice_id}`}
+            variant={handleVariant(isSelected)}
+            onClick={handleClick}
             property="hover:shadow-lg transition-shadow duration-200"
         >
             <Container property="flex items-center justify-between p-4">
@@ -72,7 +74,7 @@ export default function NabidkaEntityInline({ entity, onClick, onView, isSelecte
                             {entity.title}
                         </Headings>
                         <Paragraph variant="small" property="text-gray-600">
-                            {entity.employer.address}
+                            {entity.employer?.address || t('common.not_specified')}
                         </Paragraph>
                     </Container>
                 </Container>
@@ -81,11 +83,11 @@ export default function NabidkaEntityInline({ entity, onClick, onView, isSelecte
                 <Container property="flex items-center space-x-3">
                                          {/* TLAČÍTKA */}
                      <Container property="flex flex-row gap-4 justify-end flex-shrink-0">
-                         <Button 
-                             noVariant={true} 
-                             icon={"eye"} 
-                             iconColor={"text-black"} 
-                             iconSize={"24"} 
+                         <Button
+                             noVariant={true}
+                             icon={"eye"}
+                             iconColor={"text-black"}
+                             iconSize={"24"}
                              onClick={(e) => {
                                  e.stopPropagation();
                                  onView();
@@ -95,7 +97,7 @@ export default function NabidkaEntityInline({ entity, onClick, onView, isSelecte
                              icon={isSelected ? "check" : "plus"}
                              noVariant={true}
                              iconSize={"24"}
-                             iconColor={"text-black"} 
+                             iconColor={"text-black"}
                              onClick={(e) => {
                                  e.stopPropagation();
                                  if (onClick) {

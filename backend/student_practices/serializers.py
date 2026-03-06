@@ -69,11 +69,18 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "application_date",
             "approval_status",
             "progress_status",
+            "workflow_status",
+            "workflow_status_label",
             "hours_completed",
             "cancellation_reason",
             "year",
             "start_date",
             "end_date",
+        ]
+        read_only_fields = [
+            "student_practice_id",
+            "workflow_status",
+            "workflow_status_label",
         ]
 
     def get_user_info(self, obj):
@@ -191,6 +198,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     # pro admin list view
     employer_id = serializers.IntegerField(source="practice.employer.employer_id", read_only=True)
     employer_name = serializers.CharField(source="practice.employer.company_name", read_only=True)
+    can_approve = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice
@@ -204,15 +212,26 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "application_date",
             "approval_status",
             "progress_status",
+            "workflow_status",
+            "workflow_status_label",
             "hours_completed",
             "employer_id",
             "employer_name",
+            "can_approve",
         ]
         read_only_fields = [
             "student_practice_id",
             "practice_title",
             "application_date",
+            "workflow_status",
+            "workflow_status_label",
+            "can_approve",
         ]
+
+    def get_can_approve(self, obj):
+        from .utils import can_approve_practice
+
+        return can_approve_practice(self.context.get("request").user, obj) if "request" in self.context else False
 
 
 class StudentPracticeStatusSerializer(serializers.ModelSerializer):
@@ -225,6 +244,8 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
             "application_date",
             "approval_status",
             "progress_status",
+            "workflow_status",
+            "workflow_status_label",
             "hours_completed",
             "student_info",
         ]
@@ -266,6 +287,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(source="practice.is_active", read_only=True)
     image_base64 = serializers.CharField(source="practice.image_base64", read_only=True)
     student_practice_documents = serializers.SerializerMethodField()
+    can_approve = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice
@@ -280,12 +302,20 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "end_date",
             "progress_status",
             "approval_status",
+            "workflow_status",
+            "workflow_status_label",
             "contact_user_info",
             "is_active",
             "image_base64",
             "student_practice_status",
             "student_practice_documents",
+            "can_approve",
         ]
+
+    def get_can_approve(self, obj):
+        from .utils import can_approve_practice
+
+        return can_approve_practice(self.context.get("request").user, obj) if "request" in self.context else False
 
     def get_contact_user_info(self, obj):
         if obj.practice.contact_user:
@@ -310,7 +340,10 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
 
     def get_student_practice_documents(self, obj):
         student_practice_documents = []
-        student_practice_documents.append({"id": obj.contract_document.document_id, "type": "contract"})
-        student_practice_documents.append({"id": obj.content_document.document_id, "type": "content"})
-        student_practice_documents.append({"id": obj.feedback_document.document_id, "type": "feedback"})
+        if obj.contract_document:
+            student_practice_documents.append({"id": obj.contract_document.document_id, "type": "contract"})
+        if obj.content_document:
+            student_practice_documents.append({"id": obj.content_document.document_id, "type": "content"})
+        if obj.feedback_document:
+            student_practice_documents.append({"id": obj.feedback_document.document_id, "type": "feedback"})
         return student_practice_documents

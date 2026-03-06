@@ -7,11 +7,11 @@ export const useSubjectAPI = () => {
     const getMySubjects = async (params = {}) => {
         try {
             const response = await api.get('/subjects/my-subjects/', { params })
-            
+
             if (response && response.data) {
                 return response.data
             }
-            
+
             return []
 
         } catch (error) {
@@ -23,11 +23,11 @@ export const useSubjectAPI = () => {
     const getDepartmentSubjects = async (params = {}) => {
         try {
             const response = await api.get('/subjects/department-subjects/', { params })
-            
+
             if (response && response.data) {
                 return response.data
             }
-            
+
             return []
 
         } catch (error) {
@@ -39,11 +39,11 @@ export const useSubjectAPI = () => {
     const getAllSubjects = async (params = {}) => {
         try {
             const response = await api.get('/subjects/', { params })
-            
+
             if (response && response.data) {
                 return response.data.results || response.data
             }
-            
+
             return []
 
         } catch (error) {

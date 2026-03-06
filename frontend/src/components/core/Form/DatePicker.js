@@ -22,7 +22,7 @@ export default function CustomDatePicker({ id, property, value, required=false, 
     useEffect(() => {
         if (value) {
             let newDate = null;
-            
+
             // český formát dd.MM.yyyy na Date objekt
             if (typeof value === 'string' && value.includes('.')) {
                 const parts = value.split('.');
@@ -30,13 +30,13 @@ export default function CustomDatePicker({ id, property, value, required=false, 
                     const day = parseInt(parts[0], 10);
                     const month = parseInt(parts[1], 10) - 1; // měsíce jsou 0-11
                     const year = parseInt(parts[2], 10);
-                    
+
                     newDate = new Date(year, month, day);
-                    
+
                     // Ověření, že datum je validní
-                    if (!isNaN(newDate.getTime()) && 
-                        newDate.getDate() === day && 
-                        newDate.getMonth() === month && 
+                    if (!isNaN(newDate.getTime()) &&
+                        newDate.getDate() === day &&
+                        newDate.getMonth() === month &&
                         newDate.getFullYear() === year) {
                         setDate(newDate);
                         return;
@@ -58,7 +58,7 @@ export default function CustomDatePicker({ id, property, value, required=false, 
 
     const handleDateChange = useCallback((newDate) => {
         setDate(newDate);
-        
+
         if (onChange) {
             const formattedDate = newDate && !isNaN(newDate.getTime()) ? format(newDate, 'dd.MM.yyyy') : null;
             onChange({ [id]: formattedDate });
@@ -74,6 +74,7 @@ export default function CustomDatePicker({ id, property, value, required=false, 
                 </Container>
                 <Container property="relative">
                     <input
+                        id={id}
                         type="text"
                         value={date && !isNaN(date.getTime()) ? format(date, 'dd.MM.yyyy') : ''}
                         readOnly

@@ -6,8 +6,10 @@ import Paragraph from "@core/Text/Paragraph";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import StudentApplicationCard from "@components/Student/StudentApplicationCard";
 import StudentInvitationCard from "@components/Student/StudentInvitationCard";
+import { useTranslation } from "react-i18next";
 
 export default function StudentApplicationsPage() {
+    const { t } = useTranslation();
     const { getPracticeUserRelations } = useNabidkaAPI();
     const [data, setData] = useState({ student_practices: [], employer_invitations: [] });
     const [loading, setLoading] = useState(true);
@@ -20,7 +22,7 @@ export default function StudentApplicationsPage() {
             const res = await getPracticeUserRelations();
             if (res) setData(res);
         } catch {
-            setError("Nepodařilo se načíst přihlášky. Zkuste to prosím znovu.");
+            setError(t('internships.error'));
         } finally {
             setLoading(false);
         }
@@ -33,10 +35,10 @@ export default function StudentApplicationsPage() {
     return (
         <Container property="p-4 max-w-7xl mx-auto">
             <BackButton />
-            <Headings sizeTag="h2" property="mb-6 mt-4">Moje praxe a přihlášky</Headings>
+            <Headings sizeTag="h2" property="mb-6 mt-4">{t('internships.my_practices_and_apps')}</Headings>
 
             {loading ? (
-                <Paragraph>Načítání...</Paragraph>
+                <Paragraph>{t('common.loading')}</Paragraph>
             ) : error ? (
                 <Paragraph property="text-red-600">{error}</Paragraph>
             ) : (
@@ -44,7 +46,7 @@ export default function StudentApplicationsPage() {
                     {/* INVITATIONS SECTION */}
                     <Container>
                         <Headings sizeTag="h3" property="mb-4 text-blue-600">
-                            Pozvánky od firem
+                            {t('internships.company_invitations')}
                         </Headings>
                         {data.employer_invitations && data.employer_invitations.length > 0 ? (
                             <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,7 +60,7 @@ export default function StudentApplicationsPage() {
                             </Container>
                         ) : (
                             <Paragraph property="text-gray-500 italic">
-                                Nemáte žádné čekající pozvánky od firem.
+                                {t('internships.no_invitations_pending')}
                             </Paragraph>
                         )}
                     </Container>
@@ -66,7 +68,7 @@ export default function StudentApplicationsPage() {
                     {/* APPLICATIONS SECTION */}
                     <Container>
                         <Headings sizeTag="h3" property="mb-4">
-                            Moje přihlášky
+                            {t('nav.my_applications')}
                         </Headings>
                         {data.student_practices && data.student_practices.length > 0 ? (
                             <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -79,7 +81,7 @@ export default function StudentApplicationsPage() {
                             </Container>
                         ) : (
                             <Paragraph property="text-gray-500 italic">
-                                Zatím nemáte žádné podané přihlášky.
+                                {t('internships.no_applications')}
                             </Paragraph>
                         )}
                     </Container>

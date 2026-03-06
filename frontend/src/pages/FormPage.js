@@ -15,8 +15,10 @@ import DepartmentForm from "@components/Forms/DepartmentForm";
 import CompanyForm from "@components/Forms/CompanyForm";
 import EmployerForm from "@components/Forms/EmployerForm";
 import ProfessorForm from "@components/Forms/ProfessorForm";
+import { useTranslation } from "react-i18next";
 
 export default function FormPage() {
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
@@ -32,7 +34,7 @@ export default function FormPage() {
             await createApi(data);
             navigate(-1); // Go back to previous page
         } catch (error) {
-            console.error('Chyba při ukládání:', error);
+            console.error('Error saving:', error);
         }
     };
 
@@ -41,7 +43,7 @@ export default function FormPage() {
             await updateApi(id, data);
             navigate(-1); // Go back to previous page
         } catch (error) {
-            console.error('Chyba při aktualizaci:', error);
+            console.error('Error updating:', error);
         }
     };
 
@@ -107,7 +109,7 @@ export default function FormPage() {
                     />
                 );
             default:
-                return <Paragraph>Neznámý typ formuláře: {type}</Paragraph>;
+                return <Paragraph>{t('form.unknown_type')}: {type}</Paragraph>;
         }
     };
 

@@ -8,8 +8,10 @@ import Button from "@components/core/Button/Button";
 import { useNavigate } from "react-router-dom";
 import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useMessage } from "@hooks/MessageContext";
+import { useTranslation } from "react-i18next";
 
 export default function StudentInvitationCard({ entity, onResponse }) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { manageEmployerInvitation } = useStudentPracticeAPI();
     const { addMessage } = useMessage();
@@ -20,18 +22,18 @@ export default function StudentInvitationCard({ entity, onResponse }) {
         setLoading(true);
         try {
             await manageEmployerInvitation(entity.invitation_id, action);
-            addMessage(action === "ACCEPT" ? "Pozvánka přijata" : "Pozvánka odmítnuta", "S");
+            addMessage(action === "ACCEPT" ? t('internships.invitation_accepted') : t('internships.invitation_rejected'), "S");
             if (onResponse) onResponse();
         } catch (error) {
-            addMessage("Chyba při zpracování pozvánky", "E");
+            addMessage(t('internships.invitation_error'), "E");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <ContainerForEntity 
-            variant={"white"} 
+        <ContainerForEntity
+            variant={"white"}
             property="hover:shadow-lg transition-shadow duration-200 border border-gray-200"
             onClick={() => entity.practice_id && navigate(`/nabidka/${entity.practice_id}`)}
         >
@@ -48,9 +50,9 @@ export default function StudentInvitationCard({ entity, onResponse }) {
                 </Container>
 
                 <Container property="flex flex-col gap-1">
-                    <Headings sizeTag="h5-bold">{entity.practice_title || "Neznámá praxe"}</Headings>
+                    <Headings sizeTag="h5-bold">{entity.practice_title || t('internships.unknown_practice')}</Headings>
                     <Paragraph variant="small" property="text-gray-500">
-                        Obdrženo: {entity.submission_date}
+                        {t('internships.received')}: {entity.submission_date}
                     </Paragraph>
                 </Container>
 
@@ -60,14 +62,14 @@ export default function StudentInvitationCard({ entity, onResponse }) {
                         onClick={(e) => handleResponse("ACCEPT", e)}
                         loading={loading}
                     >
-                        Přijmout
+                        {t('internships.accept')}
                     </Button>
                     <Button
                         variant="red"
                         onClick={(e) => handleResponse("REJECT", e)}
                         loading={loading}
                     >
-                        Odmítnout
+                        {t('internships.decline')}
                     </Button>
                 </Container>
             </Container>

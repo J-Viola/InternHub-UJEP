@@ -1,5 +1,6 @@
 import { useApi } from "@hooks/useApi";
 import { useMessage } from "@hooks/MessageContext";
+import { buildFormData } from "@utils/formDataUtils";
 
 export const useCompanyAPI = () => {
     const api = useApi();
@@ -33,12 +34,7 @@ export const useCompanyAPI = () => {
 
     const createCompany = async (companyData) => {
         try {
-            const formData = new FormData();
-            Object.keys(companyData).forEach(key => {
-                if (companyData[key] !== null && companyData[key] !== undefined) {
-                    formData.append(key, companyData[key]);
-                }
-            });
+            const formData = buildFormData(companyData);
 
             const response = await api.post('/users/companies/', formData, {
                 headers: {
@@ -57,12 +53,7 @@ export const useCompanyAPI = () => {
 
     const updateCompany = async (id, companyData) => {
         try {
-            const formData = new FormData();
-            Object.keys(companyData).forEach(key => {
-                if (companyData[key] !== null && companyData[key] !== undefined) {
-                    formData.append(key, companyData[key]);
-                }
-            });
+            const formData = buildFormData(companyData);
 
             const response = await api.put(`/users/companies/${id}/`, formData, {
                 headers: {
@@ -96,4 +87,4 @@ export const useCompanyAPI = () => {
         updateCompany,
         deleteCompany,
     };
-}; 
+};

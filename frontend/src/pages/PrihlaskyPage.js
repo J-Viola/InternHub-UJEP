@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from "react";
-import Container from "@core/Container/Container";
-import Headings from "@core/Text/Headings";
-import Button from "@core/Button/Button";
-import BackButton from "@core/Button/BackButton";
-import Paragraph from "@core/Text/Paragraph";
-import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
+import Container from "@components/core/Container/Container";
+import Headings from "@components/core/Text/Headings";
+import Paragraph from "@components/core/Text/Paragraph";
+import ContainerForEntity from "@components/core/Container/ContainerForEntity";
+import BackButton from "@components/core/Button/BackButton";
+import PopUpCon from "@components/core/Container/PopUpCon";
 import PrihlaskaEntity from "@components/Prihlasky/PrihlaskaEntity";
-import PopUpCon from "@core/Container/PopUpCon";
+import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
 import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@components/core/Form/DropDown";
+import { useTranslation } from "react-i18next";
+import { useMessage } from "@hooks/MessageContext";
 
 export default function PrihlaskyPage() {
+	const { t } = useTranslation();
+	const { addMessage } = useMessage();
 	const [data, setData] = useState([])
 	const [showPopup, setShowPopup] = useState(false);
 	const [selectedEntity, setSelectedEntity] = useState(null);
@@ -20,17 +24,13 @@ export default function PrihlaskyPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [companySelectValue, setCompanySelectValue] = useState("");
 	const studentpracticeAPI = useStudentPracticeAPI();
+
 	const navigate = useNavigate();
 	const { user } = useUser();
 
-	const onSettings = (en) => {
+	const handleOpenPopup = (en) => {
 		setSelectedEntity(en);
 		setShowPopup(true);
-	}
-
-	const onProfile = (en) => {
-		console.log("Profil", en)
-		navigate(`/profil/${en.user_id}`)
 	}
 
 	const handleClosePopup = () => {
@@ -38,194 +38,210 @@ export default function PrihlaskyPage() {
 		setSelectedEntity(null);
 	}
 
-	const handleSubmit = async () => {
-		if (!selectedEntity) return;
-		try {
-			await studentpracticeAPI.updateStudentPracticeStatus(selectedEntity.student_practice_id, "approve");
-			setShowPopup(false);
-			setSelectedEntity(null);
-			// Refresh data
-			const res = await studentpracticeAPI.getOrganizationApplications();
-			setData(res);
-		} catch (error) {
-			// případně zobrazit error toast
-		}
+	const onProfile = (en) => {
+		navigate(`/profil/${en.user_id}`)
 	}
 
+	const handleSubmit = async () => {
+		try {
+			const res = await studentpracticeAPI.updateStudentPracticeStatus(selectedEntity.student_practice_id, "approve");
+
+			// Show detailed message based on backend response
+			if (res.school_approved && res.employer_approved) {
+				addMessage(t('applications.approve_success_full'), "S");
+			} else {
+				addMessage(t('applications.approve_success_partial'), "S");
+			}
+
+			setShowPopup(false);
+			setSelectedEntity(null);
+			await fetchData();
+		} catch (error) {
+			console.error(error);
+			addMessage(error.response?.data?.detail || t('applications.approve_error'), "E");
+		}
+	}
 
 	const handleReject = async () => {
-		if (!selectedEntity) return;
 		try {
 			await studentpracticeAPI.updateStudentPracticeStatus(selectedEntity.student_practice_id, "reject");
+			addMessage(t('applications.reject_success'), "S");
 			setShowPopup(false);
 			setSelectedEntity(null);
-			// Refresh data
-			const res = await studentpracticeAPI.getOrganizationApplications();
-			setData(res);
+			await fetchData();
 		} catch (error) {
-			// případně zobrazit error toast
+			console.error(error);
+			addMessage(error.response?.data?.detail || t('applications.reject_error'), "E");
 		}
 	}
 
-	// TO:DO - admin nemá vázanou organizaci na účtu, proto je nutné vytvořit separátní endpoint pro admina!
-	useEffect(() => {
-		const fetchData = async () => {
+	const fetchData = async () => {
+		try {
+			let res = [];
 			if (user.isAdmin()) {
-				const res = await studentpracticeAPI.getAdminPendingApplications();
-				setData(res);
-				console.log("Admin pending applications", res);
+				res = await studentpracticeAPI.getAdminPendingApplications();
+			} else if (user.isDepartmentUser()) {
+				res = await studentpracticeAPI.getProfessorApplications();
+			} else if (user.isOrganizationUser()) {
+				res = await studentpracticeAPI.getOrganizationApplications();
 			}
-			else {
-				try {
-					const res = await studentpracticeAPI.getOrganizationApplications();
-					setData(res);
-				} catch (error) {
-					setData([]);
-				}
-			}
+			setData(res || []);
+		} catch (error) {
+			console.error(t('applications.load_error'), error);
+			setData([]);
+		}
+	};
 
-		};
+	useEffect(() => {
 		fetchData();
-	}, []);
+	}, [user]);
 
 
 	const toId = (name) => `firma-${(name || 'neznamy').toLowerCase()}`;
 
-	// vyhledávání
 	const searchFiltered = searchQuery
 		? (data || []).filter((n) => {
 			const q = searchQuery.toLowerCase();
 			return (
-				(n.practice_title || "").toLowerCase().includes(q) ||
-				(n.student_full_name || "").toLowerCase().includes(q) ||
-				(n.employer_name || "").toLowerCase().includes(q) ||
-				(n.department_name || "").toLowerCase().includes(q)
+				n.student_full_name?.toLowerCase().includes(q) ||
+				n.practice_title?.toLowerCase().includes(q) ||
+				n.employer_name?.toLowerCase().includes(q) ||
+				n.department_name?.toLowerCase().includes(q)
 			);
 		})
 		: (data || []);
 
-	// seskupení podle firmy (po vyhledávání)
 	const groupedByEmployer = (searchFiltered || []).reduce((acc, item) => {
-		const name = item.employer_name || "Neznámá firma";
+		const name = item.employer_name || t('users.unknown_company');
 		(acc[name] = acc[name] || []).push(item);
 		return acc;
 	}, {});
 
-	// unikátní názvy firem
 	const allCompanyNames = Object.keys(groupedByEmployer);
-	// zobrazené firmy: pokud nejsou vybrané, zobrazíme všechny
-	const displayCompanyNames = user.isAdmin()
+	const displayCompanyNames = (user.isAdmin() || user.isDepartmentUser())
 		? (selectedCompanies.length ? selectedCompanies.filter((n) => allCompanyNames.includes(n)) : allCompanyNames)
 		: [];
 
-	// přidání/odebrání filtrů
 	const onCompanySelect = (dict) => {
 		const name = dict?.company;
 		if (!name) return;
-		if (!selectedCompanies.includes(name)) setSelectedCompanies([...selectedCompanies, name]);
+		if (!selectedCompanies.includes(name)) {
+			setSelectedCompanies([...selectedCompanies, name]);
+		}
 		setCompanySelectValue("");
 	};
-	const onRemoveCompany = (name) => setSelectedCompanies(selectedCompanies.filter((n) => n !== name));
-	const availableOptions = allCompanyNames.filter((n) => !selectedCompanies.includes(n));
 
-	    return(
-	        <>
-	            <BackButton/>
-	            <Container property={"flex items-center justify-between mb-6 mt-4"}>
-	                <Headings sizeTag={"h3"} property={"mt-2"}>
-	                    Nevyřízené přihlášky
-	                </Headings>
-	            </Container>
+	const removeCompanyFilter = (name) => {
+		setSelectedCompanies(selectedCompanies.filter((c) => c !== name));
+	};
 
-	            {user.isAdmin() && (
-	                <Container property={"flex flex-col gap-3 mb-6 mt-4"}>
-	                    <SearchBar
-	                        id="search"
-	                        value={searchQuery}
-	                        placeholder="Hledat podle studenta, katedry, firmy nebo názvu praxe..."
-	                        onChange={(e) => setSearchQuery(e.target.value)}
-	                        onClear={() => setSearchQuery("")}
-	                    />
-	                    <Container property={"flex items-center gap-3"}>
-	                        <DropDown
-	                            id="company"
-	                            variant="facultyGreen"
-	                            placeholder="Vyberte organizaci pro filtrování"
-	                            value={companySelectValue}
-	                            onChange={onCompanySelect}
-	                            options={availableOptions.map((name) => ({ label: name, value: name }))}
-	                        />
-	                        <Container property={"flex items-center flex-wrap gap-2"}>
-	                            {selectedCompanies.map((name) => (
-	                                <Button key={name} icon={"cross"} iconColor="text-black" variant="secondary" onClick={() => onRemoveCompany(name)}>
-	                                    {name}
-	                                </Button>
-	                            ))}
-	                        </Container>
-	                    </Container>
-	                </Container>
-	            )}
+	const availableOptions = allCompanyNames.filter((name) => !selectedCompanies.includes(name));
 
-	            <Container property={"mt-4 rounded-lg"}>
-	                {!data ? (
-	                    <Paragraph>Načítání...</Paragraph>
-	                ) : user.isAdmin() ? (
-	                    displayCompanyNames.length === 0 ? (
-	                        <Paragraph property="text-center text-gray-500 py-8">
-	                            Žádné výsledky.
-	                        </Paragraph>
-	                    ) : (
-	                        <Container property={"space-y-6"}>
-	                            {displayCompanyNames.map((name) => (
-	                                <Container id={toId(name)} key={name}>
-	                                    <Headings sizeTag={"h4"}>{name}</Headings>
-	                                    <Container property={"flex flex-wrap gap-4 mt-2"}>
-	                                        {groupedByEmployer[name].map((entity) => (
-	                                            <PrihlaskaEntity
-	                                                onClick={onProfile}
-	                                                key={entity.student_practice_id}
-	                                                entity={entity}
-	                                                onSettings={onSettings}
-	                                                onProfile={onProfile}
-	                                            />
-	                                        ))}
-	                                    </Container>
-	                                </Container>
-	                            ))}
-	                        </Container>
-	                    )
-	                ) : data.length === 0 ? (
-	                    <Paragraph property="text-center text-gray-500 py-8">
-	                        Zatím nemáte žádné data k zobrazení.
-	                    </Paragraph>
-	                ) : (
-	                    <Container property={"grid grid-cols-1 gap-4"}>
-	                        {searchFiltered.length === 0 ? (
-	                            <Paragraph property="text-center text-gray-500 py-8">Žádné výsledky.</Paragraph>
-	                        ) : (
-	                            searchFiltered.map((entity) => (
-	                                <PrihlaskaEntity
-	                                    onClick={onProfile}
-	                                    key={entity.student_practice_id}
-	                                    entity={entity}
-	                                    onSettings={onSettings}
-	                                    onProfile={onProfile}
-	                                />
-	                            ))
-	                        )}
-	                    </Container>
-	                )}
-	            </Container>
-	            {showPopup && selectedEntity && (
-	                <PopUpCon
-	                    onClose={handleClosePopup}
-	                    title={"Změnit stav přihlášky"}
-	                    text={`Opravdu si přejete změnit stav přihlášky studenta ${selectedEntity.student_full_name}?`}
-	                    onSubmit={handleSubmit}
-	                    onReject={handleReject}
-	                    variant="gray"
-	                />
-	            )}
-	        </>
-	    )
-	}
+	return (
+		<>
+			<BackButton/>
+			<Container property={"flex items-center justify-between mb-6 mt-4"}>
+				<Headings sizeTag={"h3"} property={"mt-2"}>
+					{t('applications.title')}
+				</Headings>
+			</Container>
+
+			{(user.isAdmin() || user.isDepartmentUser()) && (
+				<Container property={"flex flex-col gap-3 mb-6 mt-4"}>
+					<SearchBar
+						id="search"
+						value={searchQuery}
+						placeholder={t('applications.search_placeholder')}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						onClear={() => setSearchQuery("")}
+					/>
+					<Container property="flex flex-wrap gap-2">
+						<DropDown
+							id="company"
+							variant="facultyGreen"
+							placeholder={t('users.select_company')}
+							value={companySelectValue}
+							onChange={onCompanySelect}
+							options={availableOptions.map((name) => ({ label: name, value: name }))}
+						/>
+					</Container>
+					<Container property="flex flex-wrap gap-2">
+						{selectedCompanies.map((name) => (
+							<span
+								key={name}
+								className="bg-faculty-green text-white px-3 py-1 rounded-full text-sm flex items-center gap-2 cursor-pointer hover:bg-opacity-80 transition"
+								onClick={() => removeCompanyFilter(name)}
+							>
+								{name} ×
+							</span>
+						))}
+					</Container>
+				</Container>
+			)}
+
+			<Container property={"mt-4 rounded-lg"}>
+				{!data ? (
+					<Paragraph>{t('common.loading')}</Paragraph>
+				) : (user.isAdmin() || user.isDepartmentUser()) ? (
+					displayCompanyNames.length === 0 ? (
+						<Paragraph property="text-center text-gray-500 py-8">
+							{t('users.no_results')}
+						</Paragraph>
+					) : (
+						<Container property={"space-y-6"}>
+							{displayCompanyNames.map((companyName) => (
+								<Container key={companyName} id={toId(companyName)}>
+									<Headings sizeTag="h4" property="mb-3 border-b pb-2 text-faculty-green">
+										{companyName}
+									</Headings>
+									<Container property="grid grid-cols-1 gap-4">
+										{groupedByEmployer[companyName].map((entity) => (
+											<PrihlaskaEntity
+												key={entity.student_practice_id}
+												entity={entity}
+												onProfile={() => onProfile(entity)}
+												onPopup={() => handleOpenPopup(entity)}
+											/>
+										))}
+									</Container>
+								</Container>
+							))}
+						</Container>
+					)
+				) : data.length === 0 ? (
+					<Paragraph property="text-center text-gray-500 py-8">
+						{t('applications.no_data')}
+					</Paragraph>
+				) : (
+					<Container property={"grid grid-cols-1 gap-4"}>
+						{searchFiltered.length === 0 ? (
+							<Paragraph property="text-center text-gray-500 py-8">{t('users.no_results')}</Paragraph>
+						) : (
+							searchFiltered.map((entity) => (
+								<PrihlaskaEntity
+									key={entity.student_practice_id}
+									entity={entity}
+									onProfile={() => onProfile(entity)}
+									onPopup={() => handleOpenPopup(entity)}
+								/>
+							))
+						)}
+					</Container>
+				)}
+			</Container>
+
+			{showPopup && selectedEntity && (
+				<PopUpCon
+					onClose={handleClosePopup}
+					title={t('applications.change_status_title')}
+					text={t('applications.change_status_text', { name: selectedEntity.student_full_name })}
+					onSubmit={handleSubmit}
+					onReject={handleReject}
+					variant="gray"
+					submitText={t('common.approve')}
+					rejectText={t('common.reject')}
+				/>
+			)}
+		</>
+	);
+}

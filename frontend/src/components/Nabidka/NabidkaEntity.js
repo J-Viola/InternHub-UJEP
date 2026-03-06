@@ -8,12 +8,14 @@ import { useNavigate } from "react-router-dom"
 import Button from "@components/core/Button/Button"
 import { useUser } from "@hooks/UserProvider"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
+import { useTranslation } from "react-i18next"
 
 export default function NabidkaEntity({ entity }) {
     const navigate = useNavigate();
     const { user, setUser } = useUser();
     const { toggleFavorite } = useNabidkaAPI();
     const [isFavorite, setIsFavorite] = useState(false);
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (user && user.favorite_practices && user.favorite_practices.includes(entity.practice_id)) {
@@ -71,11 +73,11 @@ export default function NabidkaEntity({ entity }) {
     const approvalTag = (approval_status) => {
         switch (approval_status) {
             case 0: // PENDING
-                return "Čeká ke schválení";
+                return t('status.PENDING');
             case 1: // APPROVED
-                return "Probíhající stáž";
+                return t('status.APPROVED');
             case 2: // REJECTED
-                return "Zrušená stáž";
+                return t('status.REJECTED');
             default:
                 return;
         }

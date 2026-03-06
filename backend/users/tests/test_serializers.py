@@ -218,7 +218,7 @@ class UserInfoSerializerTests(TestCase):
         data = UserInfoSerializer(admin).data
         self.assertEqual(data["role"], "admin")
 
-    def test_student_role_is_empty_without_stag_role(self):
+    def test_student_role_always_gets_st_role(self):
         student = StudentUser.objects.create(
             email="student@example.com",
             first_name="Jan",
@@ -226,8 +226,8 @@ class UserInfoSerializerTests(TestCase):
             is_active=True,
         )
         data = UserInfoSerializer(student).data
-        # Without a StagRole record the role defaults to ""
-        self.assertIn(data["role"], ("", None))
+        # StudentUser now always returns "ST" as role
+        self.assertEqual(data["role"], "ST")
 
     def test_favorite_practices_empty_list_for_new_student(self):
         student = StudentUser.objects.create(

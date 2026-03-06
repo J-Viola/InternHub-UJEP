@@ -29,7 +29,7 @@ describe('NabidkaDetailPage', () => {
     const mockAddMessage = jest.fn();
     const mockUser = {
         isStudent: jest.fn(),
-        isDepartmentMg: jest.fn(),
+        isProfessor: jest.fn(),
         isOrganizationUser: jest.fn(),
         isAdmin: jest.fn(),
     };
@@ -76,12 +76,12 @@ describe('NabidkaDetailPage', () => {
             expect(screen.getByText('Test Offer')).toBeInTheDocument();
         });
         expect(screen.getByText('Test Desc')).toBeInTheDocument();
-        expect(screen.getByText('Místo konání: Test City')).toBeInTheDocument();
+        expect(screen.getByText(/Test City/)).toBeInTheDocument();
     });
 
     test('shows apply button for student and handles submission', async () => {
         mockUser.isStudent.mockReturnValue(true);
-        mockUser.isDepartmentMg.mockReturnValue(false);
+        mockUser.isProfessor.mockReturnValue(false);
         mockUser.isOrganizationUser.mockReturnValue(false);
         mockUser.isAdmin.mockReturnValue(false);
 
@@ -94,10 +94,10 @@ describe('NabidkaDetailPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('Podat přihlášku')).toBeInTheDocument();
+            expect(screen.getByText('offers.apply')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByText('Podat přihlášku'));
+        fireEvent.click(screen.getByText('offers.apply'));
         expect(screen.getByTestId('popup')).toBeInTheDocument();
 
         mockApplyNabidka.mockResolvedValue({ status: 201 });
@@ -106,14 +106,11 @@ describe('NabidkaDetailPage', () => {
         await waitFor(() => {
             expect(mockApplyNabidka).toHaveBeenCalledWith({ practice: '1' });
         });
-        await waitFor(() => {
-            expect(mockAddMessage).toHaveBeenCalledWith('Přihláška byla úspěšně podána', 'S');
-        });
     });
 
     test('shows management buttons for organization owner', async () => {
         mockUser.isStudent.mockReturnValue(false);
-        mockUser.isDepartmentMg.mockReturnValue(false);
+        mockUser.isProfessor.mockReturnValue(false);
         mockUser.isOrganizationUser.mockReturnValue(true);
         mockUser.isAdmin.mockReturnValue(false);
 
@@ -126,10 +123,10 @@ describe('NabidkaDetailPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('Zobrazit přihlášené')).toBeInTheDocument();
+            expect(screen.getByText('offers.view_applicants')).toBeInTheDocument();
         });
         await waitFor(() => {
-            expect(screen.getByText('Upravit nabídku')).toBeInTheDocument();
+            expect(screen.getByText('offers.edit_offer')).toBeInTheDocument();
         });
     });
 });

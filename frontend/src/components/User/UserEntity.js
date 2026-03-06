@@ -11,30 +11,22 @@ import Headings from "@core/Text/Headings";
 
 export default function UserEntity({entity, attributes, buttons, status="gray", onClick, statusView = true}) {
 
-    const renderProgressStatus = (progress_status) => {
-        if (progress_status == 0) {
-            return { text: "Neproběhla", color: "text-red-600" }
-        }
-        if (progress_status == 1) {
-            return { text: "Proběhla", color: "text-green-600" }
-        }
-        else {
-            return { text: "------", color: "text-gray-500" }
-        }
-    }
-
-    const renderApprovalStatus = (approval_status) => {
-        if (approval_status == 0) {
-            return { text: "Čeká na schválení", color: "text-yellow-600" }
-        }
-        if (approval_status == 1) {
-            return { text: "Schváleno", color: "text-green-600" }
-        }
-        if (approval_status == 2) {
-            return { text: "Zamítnuto", color: "text-red-600" }
-        }
-        else {
-            return { text: "------", color: "text-gray-500" }
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "PENDING":
+                return "text-yellow-600";
+            case "APPROVED":
+                return "text-green-600";
+            case "REJECTED":
+                return "text-red-600";
+            case "IN_PROGRESS":
+                return "text-blue-600";
+            case "COMPLETED":
+                return "text-green-600";
+            case "CANCELLED":
+                return "text-red-600";
+            default:
+                return "text-gray-500";
         }
     }
 
@@ -56,7 +48,7 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
     };
 
     return (
-        <ContainerForEntity variant={status} property={"pl-8 pt-4 pb-4 pr-4 mt-2"} onClick={onClick}>
+        <ContainerForEntity id={`user-entity-${entity.user_id}`} variant={status} property={"pl-8 pt-4 pb-4 pr-4 mt-2"} onClick={onClick}>
             <Container property="flex flex-row items-center gap-8 w-full">
                 {/* Jméno */}
                 <Container property="flex-shrink-0 min-w-[200px]">
@@ -74,57 +66,47 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
                 {/* Atributy */}
                 <Container property="flex-1 flex flex-row flex-wrap gap-x-12 gap-y-2 items-center">
                     {Object.entries(attributes).map(([key, value]) => {
-                        // Speciální zpracování pro approval_status
-                        if (statusView && value === "approval_status") {
-                            const approvalStatus = renderApprovalStatus(entity[value]);
+                        // Speciální zpracování pro workflow_status
+                        if (statusView && value === "workflow_status") {
+                            const workflowStatus = entity.workflow_status || (entity.student_practice && entity.student_practice.workflow_status);
+                            const workflowLabel = entity.workflow_status_label || (entity.student_practice && entity.student_practice.workflow_status_label);
+
                             return (
                                 <Container key={key} property="min-w-[120px]">
                                     <Paragraph>
                                         <span>{key}: </span>
-                                        <span className={approvalStatus.color}>{approvalStatus.text}</span>
+                                        <span className={getStatusColor(workflowStatus)}>{workflowLabel || "------"}</span>
                                     </Paragraph>
                                 </Container>
                             );
                         }
-                        
+
                         const renderedValue = getNestedValue(entity, value);
                         return (
                             <Container key={key} property="min-w-[120px]">
-                                {key !=="" ? <Paragraph>{key}: {renderedValue ?? ""}</Paragraph> : <Paragraph>{renderedValue ?? ""}</Paragraph>}                            
+                                {key !=="" ? <Paragraph>{key}: {renderedValue ?? ""}</Paragraph> : <Paragraph>{renderedValue ?? ""}</Paragraph>}
                             </Container>
                         );
                     })}
 
-                    {statusView && (
-                        <Container property="min-w-[120px]">
-                            {(() => {
-                                const status = renderProgressStatus(entity?.student_practice?.progress_status ?? entity?.progress_status);
-                                return (
-                                    <Paragraph>
-                                        <span>Kontrola: </span>
-                                        <span className={status.color}>{status.text}</span>
-                                    </Paragraph>
-                                );
-                            })()}                      
-                        </Container>
-                    )}
-
                 </Container>
                 {/* Tlačítka */}
                 <Container property="flex flex-row gap-4 justify-end flex-shrink-0">
-                    {buttons.map(btn => (
-                        <Button 
-                            key={btn.icon}
-                            noVariant={true} 
-                            icon={btn.icon} 
-                            iconColor={"text-black"} 
-                            iconSize={"24"} 
+                    {buttons.map((btn, index) => (
+                        <Button
+                            key={index}
+                            icon={btn.icon}
+                            title={btn.title}
+                            noVariant={true}
+                            iconColor={btn.iconColor || "text-black"}
+                            iconSize={btn.iconSize || "28"}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 btn.btnfunction();
                             }}
                         />
                     ))}
+
                 </Container>
             </Container>
         </ContainerForEntity>

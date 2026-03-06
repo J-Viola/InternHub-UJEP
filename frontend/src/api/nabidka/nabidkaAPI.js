@@ -1,5 +1,5 @@
 import { useApi } from "@hooks/useApi";
-//import { createParams } from "@api/createParams";
+import { buildFormData } from "@utils/formDataUtils";
 
 export const useNabidkaAPI = () => {
     const api = useApi();
@@ -31,7 +31,10 @@ export const useNabidkaAPI = () => {
     const getAdminPractices = async () => {
         try {
             const response = await api.get('/practices/admin-practices/');
-            return response.data;
+            if (response && response.data) {
+                return response.data.results !== undefined ? response.data.results : response.data;
+            }
+            return [];
         } catch (error) {
             console.error("Chyba při získávání praxí admina:", error);
             throw error;
@@ -56,11 +59,7 @@ export const useNabidkaAPI = () => {
 
     const createNabidka = async (data) => {
         try {
-            const formData = new FormData();
-
-            Object.keys(data).forEach(key => {
-                formData.append(key, data[key]);
-            });
+            const formData = buildFormData(data);
 
             const response = await api.post('/practices/', formData, {
                 headers: {
@@ -84,11 +83,7 @@ export const useNabidkaAPI = () => {
 
     const applyNabidka = async (data) => {
         try {
-            const formData = new FormData();
-
-            Object.keys(data).forEach(key => {
-                formData.append(key, data[key]);
-            });
+            const formData = buildFormData(data);
 
             const response = await api.post('/practices/apply_student_practice/', formData, {
                 headers: {
@@ -180,11 +175,7 @@ export const useNabidkaAPI = () => {
 
     const updateNabidka = async (id, data, isPartial = false) => {
         try {
-            const formData = new FormData();
-
-            Object.keys(data).forEach(key => {
-                formData.append(key, data[key]);
-            });
+            const formData = buildFormData(data);
 
             const method = isPartial ? 'patch' : 'put';
             const response = await api[method](`/practices/${id}/`, formData, {

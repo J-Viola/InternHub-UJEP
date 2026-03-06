@@ -37,7 +37,7 @@ export const useStudentPracticeAPI = () => {
         let approval_status = null;
         if (action === "approve") approval_status = 1; // APPROVED
         if (action === "reject") approval_status = 2; // REJECTED
-        if (approval_status === null) throw new Error("Neplatná akce");
+        if (approval_status === null) throw new Error("Invalid action");
         try {
             const response = await api.patch(`/student-practices/${studentPracticeId}/status/`, {
                 approval_status
@@ -49,11 +49,28 @@ export const useStudentPracticeAPI = () => {
         }
     };
 
+    // GET /api/student-practices/professor-applications/ - Získání přihlášek pro profesora
+    const getProfessorApplications = async () => {
+        try {
+            const response = await api.get('/student-practices/professor-applications/');
+            if (response && response.data) {
+                return response.data.results !== undefined ? response.data.results : response.data;
+            }
+            return [];
+        } catch (error) {
+            console.error('Chyba při získávání přihlášek pro profesora:', error);
+            throw error;
+        }
+    };
+
     // GET /api/student-practices/organization-applications/ - Získání všech přihlášek na nabídky organizace
     const getOrganizationApplications = async () => {
         try {
             const response = await api.get('/student-practices/organization-applications/');
-            return response.data;
+            if (response && response.data) {
+                return response.data.results !== undefined ? response.data.results : response.data;
+            }
+            return [];
         } catch (error) {
             console.error('Chyba při získávání přihlášek organizace:', error);
             throw error;
@@ -64,7 +81,10 @@ export const useStudentPracticeAPI = () => {
     const getAdminPendingApplications = async () => {
         try {
             const response = await api.get('/student-practices/admin-view/pending-practices/');
-            return response.data;
+            if (response && response.data) {
+                return response.data.results !== undefined ? response.data.results : response.data;
+            }
+            return [];
         } catch (error) {
             console.error('Chyba při získávání pending přihlášek z pohledu admina:', error);
             throw error;
@@ -75,7 +95,10 @@ export const useStudentPracticeAPI = () => {
     const getStudentsByPracticeId = async (practiceId) => {
         try {
             const response = await api.get(`/student-practices/by-practice/${practiceId}`);
-            return response.data;
+            if (response && response.data) {
+                return response.data.results !== undefined ? response.data.results : response.data;
+            }
+            return [];
         } catch (error) {
             console.error('Chyba při získávání studentů pro praxi:', error);
             throw error;
@@ -95,6 +118,7 @@ export const useStudentPracticeAPI = () => {
     return {
         manageEmployerInvitation,
         getOrganizationApplications,
+        getProfessorApplications,
         updateStudentPracticeStatus,
         getStudentsByPracticeId,
         getStudentPracticeCard,

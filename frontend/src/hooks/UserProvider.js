@@ -31,7 +31,7 @@ function UserProvider({children}) {
             newUser.setUser(data);
             setUserState(newUser);
             localStorage.setItem("user", JSON.stringify(data));
-            
+
             console.log("Data uživatele nastavena a uložena do localStorage:", newUser);
         } catch(err) {
             console.error("Chyba při nastavování dat uživatele:", err);

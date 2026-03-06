@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import './i18n';
 import './index.css';
 import LoginPage from "@pages/LoginPage";
 import NabidkaPage from '@pages/NabidkaPage';
@@ -34,14 +35,16 @@ import MainLayout from '@components/Layout/MainLayout';
 import StudentApplicationsPage from '@pages/StudentApplicationsPage';
 import ProtectedRoute from '@components/ProtectedRoute';
 import ErrorBoundary from '@components/ErrorBoundary';
+import { useTranslation } from 'react-i18next';
 
 const AppRoutes = () => {
   const { isInitializing } = useAuth();
+  const { t } = useTranslation();
 
   if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-xl text-gray-600">Načítání aplikace...</div>
+        <div className="text-xl text-gray-600">{t('common.loading_app')}</div>
       </div>
     );
   }
@@ -58,24 +61,24 @@ const AppRoutes = () => {
         {/* Protected routes — require a valid access token */}
         <Route path="/nabidka" element={<ProtectedRoute><NabidkaPage /></ProtectedRoute>} />
         <Route path="/nabidka/:id" element={<ProtectedRoute><NabidkaDetailPage /></ProtectedRoute>} />
-        <Route path="/subjects" element={<ProtectedRoute><SubjectPage /></ProtectedRoute>} />
+        <Route path="/subjects" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'admin']}><SubjectPage /></ProtectedRoute>} />
         <Route path="/profil/:id?" element={<ProtectedRoute><ProfilPage /></ProtectedRoute>} />
         <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
-        <Route path="/praxe" element={<ProtectedRoute><PraxePage /></ProtectedRoute>} />
-        <Route path="/karta-praxe/:id" element={<ProtectedRoute><PraxeDetailPage /></ProtectedRoute>} />
-        <Route path="/students/:id?" element={<ProtectedRoute><StudentPage /></ProtectedRoute>} />
-        <Route path="/vytvorit-nabidku" element={<ProtectedRoute><VytvoritNabidku /></ProtectedRoute>} />
-        <Route path="/upravit-nabidku/:id" element={<ProtectedRoute><UpravitNabidku /></ProtectedRoute>} />
+        <Route path="/praxe" element={<ProtectedRoute allowedRoles={['ST', 'OWNER', 'INSERTER', 'admin']}><PraxePage /></ProtectedRoute>} />
+        <Route path="/karta-praxe/:id" element={<ProtectedRoute allowedRoles={['ST', 'VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><PraxeDetailPage /></ProtectedRoute>} />
+        <Route path="/students/:id?" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><StudentPage /></ProtectedRoute>} />
+        <Route path="/vytvorit-nabidku" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><VytvoritNabidku /></ProtectedRoute>} />
+        <Route path="/upravit-nabidku/:id" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><UpravitNabidku /></ProtectedRoute>} />
         <Route path="/logout" element={<ProtectedRoute><LogoutUser /></ProtectedRoute>} />
-        <Route path="/users/:type" element={<ProtectedRoute><UserCRUDPage /></ProtectedRoute>} />
-        <Route path="/prihlasky" element={<ProtectedRoute><PrihlaskyPage /></ProtectedRoute>} />
-        <Route path="/sprava-stazi" element={<ProtectedRoute><SpravaStaziPage /></ProtectedRoute>} />
+        <Route path="/users/:type" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><UserCRUDPage /></ProtectedRoute>} />
+        <Route path="/prihlasky" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PrihlaskyPage /></ProtectedRoute>} />
+        <Route path="/sprava-stazi" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'admin']}><SpravaStaziPage /></ProtectedRoute>} />
         <Route path="/formular" element={<ProtectedRoute><FormPage /></ProtectedRoute>} />
-        <Route path="/pozvanka" element={<ProtectedRoute><InvitationPage /></ProtectedRoute>} />
-        <Route path="/pozvanky-list" element={<ProtectedRoute><PozvankyListPage /></ProtectedRoute>} />
-        <Route path="/departments" element={<ProtectedRoute><DepartmentsPage /></ProtectedRoute>} />
-        <Route path="/companies" element={<ProtectedRoute><CompaniesPage /></ProtectedRoute>} />
-        <Route path="/moje-prihlasky" element={<ProtectedRoute><StudentApplicationsPage /></ProtectedRoute>} />
+        <Route path="/pozvanka" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><InvitationPage /></ProtectedRoute>} />
+        <Route path="/pozvanky-list" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PozvankyListPage /></ProtectedRoute>} />
+        <Route path="/departments" element={<ProtectedRoute allowedRoles={['admin']}><DepartmentsPage /></ProtectedRoute>} />
+        <Route path="/companies" element={<ProtectedRoute allowedRoles={['admin']}><CompaniesPage /></ProtectedRoute>} />
+        <Route path="/moje-prihlasky" element={<ProtectedRoute allowedRoles={['ST']}><StudentApplicationsPage /></ProtectedRoute>} />
       </Route>
     </Routes>
   );

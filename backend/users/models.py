@@ -80,8 +80,8 @@ class StagRole(models.Model):
 
 class EmployerProfile(models.Model):
     employer_id = models.AutoField(primary_key=True)
-    company_name = models.CharField(max_length=100, blank=True, default="")
-    ico = models.CharField(unique=True, max_length=15, blank=True, null=True)
+    company_name = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    ico = models.CharField(unique=True, max_length=15, blank=True, null=True, db_index=True)
     dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
     city = models.TextField(blank=True, default="")
     address = models.TextField(blank=True, default="")
@@ -130,6 +130,8 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
 
     @property
     def role(self):
+        if self.is_superuser:
+            return "admin"
         return None
 
     @property
@@ -209,6 +211,10 @@ class StudentUser(StagUser):
     class Meta:
         db_table = "student_users"
 
+    @property
+    def role(self):
+        return "ST"
+
 
 class DepartmentRole(enum.Enum):
     TEACHER = 0
@@ -228,6 +234,12 @@ class ProfessorUser(StagUser):
 
     class Meta:
         db_table = "professor_users"
+
+    @property
+    def role(self):
+        if self.department_role == DepartmentRole.HEAD:
+            return "VK"
+        return "VY"
 
 
 class ActionLog(models.Model):

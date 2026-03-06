@@ -5,16 +5,19 @@ import Button from "@core/Button/Button";
 
 import TextField from "@core/Form/TextField";
 import DropDown from "@core/Form/DropDown";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
+import { useUserAPI } from "@api/user/userAPI";
 import { useMessage } from "@hooks/MessageContext";
+import { useTranslation } from "react-i18next";
 
 export default function DepartmentForm({ handleCreate, handleUpdate, action, id }) {
+    const { t } = useTranslation();
     const isEditing = action === 'edit';
-    
+
     const navigate = useNavigate();
     const departmentAPI = useDepartmentAPI();
-    const { showMessage } = useMessage();
+    const { addMessage } = useMessage();
 
     const [formData, setFormData] = useState({
         department_name: '',
@@ -22,12 +25,28 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
     });
 
     const [loading, setLoading] = useState(false);
+    const [professors, setProfessors] = useState([]);
+    const userAPI = useUserAPI();
 
     useEffect(() => {
+        loadProfessors();
         if (action === 'edit' && id) {
             loadDepartment();
         }
     }, [action, id]);
+
+    const loadProfessors = async () => {
+        try {
+            const data = await userAPI.getAllDepartmentProfessors();
+            const options = data.map(prof => ({
+                value: prof.user_id,
+                label: `${prof.first_name} ${prof.last_name}`
+            }));
+            setProfessors(options);
+        } catch (error) {
+            console.error('Error loading professors:', error);
+        }
+    };
 
     const loadDepartment = async () => {
         try {
@@ -40,7 +59,7 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
                 });
             }
         } catch (error) {
-            showMessage('Chyba při načítání katedry', 'error');
+            addMessage(t('departments.load_error'), 'E');
         } finally {
             setLoading(false);
         }
@@ -55,9 +74,9 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         if (!formData.department_name.trim()) {
-            showMessage('Název katedry je povinný', 'error');
+            addMessage(t('departments.name_required'), 'E');
             return;
         }
 
@@ -69,11 +88,11 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
     };
 
     const getSubmitButtonText = () => {
-        return isEditing ? 'Uložit změny' : 'Vytvořit';
+        return isEditing ? t('form.save_changes') : t('form.create');
     };
 
     if (loading) {
-        return <Container property={"text-center py-4"}>Načítání...</Container>;
+        return <Container property={"text-center py-4"}>{t('common.loading')}</Container>;
     }
 
     return (
@@ -81,38 +100,34 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
             <form onSubmit={handleSubmit}>
                 <Container property={"space-y-6"}>
                     <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        {isEditing ? 'Upravit katedru' : 'Údaje katedry'}
+                        {isEditing ? t('departments.edit_title') : t('departments.data_title')}
                     </Headings>
 
                     <Container property={"grid gap-4 grid-cols-1 md:grid-cols-2"}>
                         <TextField
                             id="department_name"
-                            label="Název katedry"
+                            label={t('departments.name_label')}
                             value={formData.department_name}
                             onChange={(value) => handleInputChange('department_name', value.department_name)}
-                            placeholder="Zadejte název katedry"
+                            placeholder={t('departments.name_placeholder')}
                             required = {true}
                         />
 
                         <DropDown
                             id="head_of_department"
-                            label="Vedoucí katedry"
+                            label={t('departments.head_label')}
                             value={formData.head_of_department}
                             onChange={(value) => handleInputChange('head_of_department', value.head_of_department)}
-                            placeholder="Vyberte vedoucího katedry"
+                            placeholder={t('departments.head_placeholder')}
                             required={true}
-                            options={[
-                                { value: "jan_novak", label: "Doc. Jan Novák" },
-                                { value: "petr_svoboda", label: "Prof. Petr Svoboda" },
-                                { value: "eva_hruba", label: "Mgr. Eva Hrubá" }
-                            ]}
+                            options={professors}
                         />
                     </Container>
 
                     <Container property={"flex justify-end"}>
                         <Button
                             type="submit"
-                            property={"px-16 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"}
+                            property={"px-16 py-2"}
                         >
                             {getSubmitButtonText()}
                         </Button>
