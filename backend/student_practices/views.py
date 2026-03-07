@@ -21,6 +21,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from api.views import StandardResultsSetPagination
 from practices.models import Practice
+from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
     EmployerInvitation,
@@ -309,7 +310,7 @@ class StudentPracticeStatusUpdateView(APIView):
         except Exception:
             logger.exception("Chyba při aktualizaci stavu přihlášky")
             return Response(
-                {"detail": "Došlo k vnitřní chybě při schvalování."},
+                {"detail": StudentPracticeMessages.INTERNAL_ERROR},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -324,11 +325,11 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
 
         ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
         if ext not in ("doc", "docx"):
-            raise serializers.ValidationError("Jenom Word (.doc, .docx) dokumenty jsou povoleny.")
+            raise serializers.ValidationError(StudentPracticeMessages.INVALID_EXTENSION)
 
         if uploaded_file.size > settings.MAX_UPLOAD_SIZE:
             mb_limit = settings.MAX_UPLOAD_SIZE / (1024 * 1024)
-            raise serializers.ValidationError(f"Soubor je příliš velký. Maximální povolená velikost je {mb_limit} MB.")
+            raise serializers.ValidationError(StudentPracticeMessages.FILE_TOO_LARGE.format(size=mb_limit))
 
         return uploaded_file
 
@@ -380,7 +381,10 @@ class StudentPracticeUploadDocumentView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response({"detail": "Dokument byl úspěšně nahrán."}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"detail": StudentPracticeMessages.DOCUMENT_UPLOAD_SUCCESS},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class StudentPracticeDownloadDocumentView(APIView):

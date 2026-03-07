@@ -75,7 +75,7 @@ class StudentPracticeServiceTests(TestCase):
     def test_process_invitation_not_found(self):
         with self.assertRaises(ValueError) as cm:
             StudentPracticeService.process_invitation_approval(self.user, 999, "accept")
-        self.assertIn("Pozvánka nebyla nalezena", str(cm.exception))
+        self.assertIn("INVITATION_NOT_FOUND", str(cm.exception))
 
     def test_process_invitation_already_processed(self):
         self.invitation.status = EmployerInvitationStatus.ACCEPTED
@@ -83,10 +83,10 @@ class StudentPracticeServiceTests(TestCase):
 
         with self.assertRaises(ValueError) as cm:
             StudentPracticeService.process_invitation_approval(self.user, self.invitation.invitation_id, "accept")
-        self.assertIn("již byla zpracována", str(cm.exception))
+        self.assertIn("INVITATION_PROCESSED", str(cm.exception))
 
     def test_process_invitation_wrong_user(self):
-        """Test that a user cannot approve an invitation belonging to someone else"""
+        other_user = StudentUser.objects.create(email="other@student.cz", is_active=True)
         with self.assertRaises(ValueError) as cm:
-            StudentPracticeService.process_invitation_approval(self.other_user, self.invitation.invitation_id, "accept")
-        self.assertIn("nebo k ní nemáte přístup", str(cm.exception))
+            StudentPracticeService.process_invitation_approval(other_user, self.invitation.invitation_id, "accept")
+        self.assertIn("INVITATION_NOT_FOUND", str(cm.exception))

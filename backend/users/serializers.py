@@ -3,12 +3,12 @@ import re
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from api.helpers import Base64ImageField
+from users.messages import UserMessages
 from users.models import (
     ApprovalStatus,
     EmployerProfile,
@@ -277,7 +277,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError(_("Uživatel s tímto emailem již existuje."))
+            raise serializers.ValidationError(UserMessages.EMAIL_ALREADY_EXISTS)
         return value.lower()
 
     def get_user_type(self, obj):
@@ -308,6 +308,7 @@ class StudentProfileSerializer(UserProfileSerializer):
             "zip_code",
             "city",
             "specialization",
+            "os_cislo",
             "skills",
             "cv_file",
         ]
@@ -335,7 +336,7 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Společnost s tímto IČO již existuje.")
+            raise serializers.ValidationError(UserMessages.ICO_ALREADY_EXISTS)
         return value
 
     def create(self, validated_data):

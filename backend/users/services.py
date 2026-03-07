@@ -7,6 +7,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from department.models import Department
 from subject.models import Subject
 from users.dtos.dtos import EkonomickySubjektDTO
+from users.messages import UserMessages
 from users.models import (
     ApprovalStatus,
     DepartmentRole,
@@ -40,7 +41,7 @@ def register_organization(validated_data):
 
     ares_data = fetch_ares_data(ico)
     if not ares_data:
-        raise ValueError("Failed to fetch data from ARES")
+        raise ValueError(UserMessages.ARES_FETCH_FAILED)
 
     with transaction.atomic():
         user = OrganizationUser.objects.create(
@@ -87,7 +88,7 @@ def update_organization_from_ares(user, ico: str):
     """
     ares_data = fetch_ares_data(ico)
     if not ares_data:
-        raise ValueError("Failed to fetch data from ARES")
+        raise ValueError(UserMessages.ARES_FETCH_FAILED)
 
     try:
         EmployerProfile.objects.get(employer_id=user.id)
@@ -372,8 +373,12 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
 
 def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StudentUser):
     """
-    Synchronizes STAG roles with the database for student.
+    Synchronizes STAG subjects with the database for student.
+    SKIPPED if STAG_MOCK is True to preserve seeded development data.
     """
+    if getattr(settings, "STAG_MOCK", False):
+        return
+
     client = get_stag_client()
     items = client.get_student_subjects(stag_ticket, osCislo)
 
@@ -419,7 +424,11 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
     """
     Synchronizes STAG roles with the database.
+    SKIPPED if STAG_MOCK is True to preserve seeded development data.
     """
+    if getattr(settings, "STAG_MOCK", False):
+        return
+
     client = get_stag_client()
     items = client.get_teacher_subjects(stag_ticket, ucitIdno)
 

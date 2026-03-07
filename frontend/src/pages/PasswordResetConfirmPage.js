@@ -50,14 +50,12 @@ export default function PasswordResetConfirmPage() {
             addMessage(t('password_reset.reset_success'), "S");
             navigate("/");
         } catch (error) {
-            if (error.response && error.response.data) {
-                setErrors(error.response.data);
-                if (error.response.data.detail) {
-                    addMessage(error.response.data.detail, "E");
-                }
-            } else {
-                addMessage(t('password_reset.reset_error'), "E");
+            console.error(error);
+            if (error.details) {
+                setErrors(error.details);
             }
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('password_reset.reset_error') }), "E");
         }
     };
 

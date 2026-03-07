@@ -60,11 +60,8 @@ export default function LoginPage() {
 
             } catch (error) {
                 console.error("Error during STAG login:", error);
-                if (error.response) {
-                    addMessage(`${t('login.error_stag')}: ${error.response.data?.detail || error.message}`, "E");
-                } else {
-                    addMessage(`${t('login.error_stag')}: ${error.message}`, "E");
-                }
+                const errorCode = error.code || "UNKNOWN_ERROR";
+                addMessage(`${t('login.error_stag')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
             }
         };
 
@@ -73,16 +70,13 @@ export default function LoginPage() {
 
     const handleOrganizationLogin = async (loginData) => {
         try{
-            const response = await login({email: loginData.email, password: loginData.password});
+            await login({email: loginData.email, password: loginData.password});
 
             // Po úspěšném loginu se přesměruje na /nabidka (handled in useAuth or useEffect above)
         } catch (error) {
             console.error("Error during organization login:", error);
-            if (error.response) {
-                addMessage(`${t('login.error_login')}: ${error.response.data?.detail || error.message}`, "E");
-            } else {
-                addMessage(`${t('login.error_login')}: ${error.message}`, "E");
-            }
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(`${t('login.error_login')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
         }
     }
 

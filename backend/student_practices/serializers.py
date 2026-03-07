@@ -3,7 +3,9 @@ from datetime import date
 from rest_framework import serializers
 
 from api.helpers import FormattedDateField
+from practices.messages import PracticeMessages
 from practices.models import Practice
+from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     EmployerInvitation,
     StudentPractice,
@@ -154,10 +156,10 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
         practice = data.get("practice")
         user = self.context["request"].user if "request" in self.context else None
         if user and StudentPractice.objects.filter(practice=practice, user=user).exists():
-            raise serializers.ValidationError("Již jste přihlášen(a) na tuto praxi.")
+            raise serializers.ValidationError(PracticeMessages.ALREADY_APPLIED)
         hours = data.get("hours_completed", 0)
         if hours < 0:
-            raise serializers.ValidationError("Počet dokončených hodin nesmí být záporný.")
+            raise serializers.ValidationError(StudentPracticeMessages.NEGATIVE_HOURS)
         return data
 
     def create(self, validated_data):
@@ -191,6 +193,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
 
     practice_id = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), required=True)
     practice_title = serializers.CharField(source="practice.title", read_only=True)
+    title = serializers.CharField(source="practice.title", read_only=True)
     department_name = serializers.CharField(source="practice.subject.department.department_name", read_only=True)
     application_date = FormattedDateField(read_only=True)
     student_full_name = serializers.CharField(source="user.full_name", read_only=True)
@@ -209,6 +212,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "student_full_name",
             "user_id",
             "practice_title",
+            "title",
             "application_date",
             "approval_status",
             "progress_status",
@@ -248,6 +252,8 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
             "workflow_status_label",
             "hours_completed",
             "student_info",
+            "school_approved",
+            "employer_approved",
         ]
 
     def get_student_info(self, obj):
@@ -319,9 +325,14 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
 
     def get_contact_user_info(self, obj):
         if obj.practice.contact_user:
+            user = obj.practice.contact_user
             return {
-                "user_id": obj.practice.contact_user.user_id,
-                "username": obj.practice.contact_user.username,
+                "user_id": user.user_id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "phone": user.phone,
             }
         return None
 

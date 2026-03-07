@@ -58,7 +58,8 @@ export default function PrihlaskyPage() {
 			await fetchData();
 		} catch (error) {
 			console.error(error);
-			addMessage(error.response?.data?.detail || t('applications.approve_error'), "E");
+			const errorCode = error.code || "UNKNOWN_ERROR";
+			addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('applications.approve_error') }), "E");
 		}
 	}
 
@@ -71,7 +72,8 @@ export default function PrihlaskyPage() {
 			await fetchData();
 		} catch (error) {
 			console.error(error);
-			addMessage(error.response?.data?.detail || t('applications.reject_error'), "E");
+			const errorCode = error.code || "UNKNOWN_ERROR";
+			addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('applications.reject_error') }), "E");
 		}
 	}
 

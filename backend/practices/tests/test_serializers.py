@@ -46,12 +46,12 @@ class PracticeSerializerValidationTests(TestCase):
     def test_start_date_in_past_raises_error(self):
         s = self._run(start_delta=-1, end_delta=10)
         errors = str(s.errors)
-        self.assertIn("minulosti", errors)
+        self.assertIn("DATE_IN_PAST", errors)
 
     def test_end_date_before_start_raises_error(self):
         s = self._run(start_delta=10, end_delta=5)
         errors = str(s.errors)
-        self.assertIn("ukončení", errors)
+        self.assertIn("END_DATE_BEFORE_START", errors)
 
     def test_end_date_equal_to_start_is_valid(self):
         s = self._run(start_delta=5, end_delta=5)

@@ -41,16 +41,11 @@ export default function VytvoritNabidku() {
             }
         } catch (error) {
             console.error("Chyba při vytváření nabídky:", error);
-            if (error.response?.data) {
-                setErrors(error.response.data);
-                if (error.response.data.detail) {
-                    addMessage(error.response.data.detail, "E");
-                } else {
-                    addMessage(t('registration.check_form'), "E");
-                }
-            } else {
-                addMessage(t('form.create_error_unknown'), "E");
+            if (error.details) {
+                setErrors(error.details);
             }
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('form.create_error_unknown') }), "E");
         }
     }
 

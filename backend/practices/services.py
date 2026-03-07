@@ -5,6 +5,7 @@ from datetime import date
 from django.db import transaction
 from django.db.models import Count, Q
 
+from practices.messages import PracticeMessages
 from practices.models import Practice, ProgressStatus
 from student_practices.models import (
     EmployerInvitation,
@@ -76,14 +77,14 @@ class PracticeService:
         Raises ValueError if validation fails.
         """
         if StudentPractice.objects.filter(practice_id=practice_id, user=user).exists():
-            raise ValueError("Již jste přihlášen(a) na tuto praxi.")
+            raise ValueError(PracticeMessages.ALREADY_APPLIED)
 
         practice = Practice.objects.filter(practice_id=practice_id, is_active=True).first()
         if not practice:
-            raise ValueError("Praxe nenalezena nebo není aktivní.")
+            raise ValueError(PracticeMessages.NOT_FOUND)
 
         if not practice.start_date or not practice.end_date:
-            raise ValueError("Praxe nemá nastavené datum zahájení nebo ukončení.")
+            raise ValueError("MISSING_DATES")
 
         data = {
             "user": user.pk,
@@ -112,14 +113,19 @@ class PracticeService:
         if not dept_ids:
             return None
 
-        practices = Practice.objects.filter(subject__department_id__in=dept_ids, is_active=True)
+        # Ongoing/Approved student practices (actual internships)
+        approved_student_practices = StudentPractice.objects.filter(
+            practice__subject__department_id__in=dept_ids, approval_status=ApprovalStatus.APPROVED
+        ).select_related("user", "practice", "practice__subject", "practice__contact_user")
 
-        approved = practices.filter(approval_status=ApprovalStatus.APPROVED)
-        to_approve = practices.filter(approval_status=ApprovalStatus.PENDING)
+        # Practice offers waiting for VK approval (the original wheel)
+        to_approve_offers = Practice.objects.filter(
+            subject__department_id__in=dept_ids, approval_status=ApprovalStatus.PENDING, is_active=True
+        ).select_related("subject", "contact_user")
 
         return {
-            "approved": approved,
-            "to_approve": to_approve,
+            "approved": approved_student_practices,
+            "to_approve": to_approve_offers,
         }
 
     @staticmethod

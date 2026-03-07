@@ -6,10 +6,10 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
 from django.db.models import OneToOneRel
-from django.utils.translation import gettext_lazy as _
 from django_enumfield import enum
 
 from practices.models import ProgressStatus
+from student_practices.messages import StudentPracticeMessages
 from users.models import ApprovalStatus
 
 logger = logging.getLogger(__name__)
@@ -161,17 +161,17 @@ class DocumentHelper:
 
 def validate_contract_document_type(value):
     if value and value.document_type != DocumentType.CONTRACT:
-        raise ValidationError("Document must be of type CONTRACT")
+        raise ValidationError(StudentPracticeMessages.CONTRACT_DOC_REQUIRED)
 
 
 def validate_feedback_document_type(value):
     if value and value.document_type != DocumentType.FEEDBACK:
-        raise ValidationError("Document must be of type FEEDBACK")
+        raise ValidationError(StudentPracticeMessages.FEEDBACK_DOC_REQUIRED)
 
 
 def validate_content_document_type(value):
     if value and value.document_type != DocumentType.CONTENT:
-        raise ValidationError("Document must be of type CONTENT")
+        raise ValidationError(StudentPracticeMessages.CONTENT_DOC_REQUIRED)
 
 
 class StudentPractice(models.Model):
@@ -259,11 +259,11 @@ class StudentPractice(models.Model):
     @property
     def workflow_status_label(self):
         labels = {
-            "REJECTED": _("Zamítnuto"),
-            "PENDING": _("Čeká na schválení"),
-            "APPROVED": _("Schváleno"),
-            "IN_PROGRESS": _("Probíhá"),
-            "COMPLETED": _("Dokončeno"),
-            "CANCELLED": _("Zrušeno"),
+            "REJECTED": "REJECTED",
+            "PENDING": "PENDING",
+            "APPROVED": "APPROVED",
+            "IN_PROGRESS": "IN_PROGRESS",
+            "COMPLETED": "COMPLETED",
+            "CANCELLED": "CANCELLED",
         }
-        return labels.get(self.workflow_status, _("Neznámý stav"))
+        return labels.get(self.workflow_status, "UNKNOWN_STATUS")

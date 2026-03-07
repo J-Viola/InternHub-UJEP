@@ -5,6 +5,8 @@ from datetime import datetime
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
+from practices.messages import PracticeMessages
+
 
 class FormattedDateField(serializers.DateField):
     """Custom date field that formats dates as DD.MM.YYYY"""
@@ -24,7 +26,7 @@ class FormattedDateField(serializers.DateField):
         try:
             return datetime.strptime(value, "%d.%m.%Y").date()
         except ValueError:
-            raise serializers.ValidationError("Invalid date format. Use DD.MM.YYYY")
+            raise serializers.ValidationError(PracticeMessages.INVALID_DATE_FORMAT)
 
 
 class Base64ImageField(serializers.ImageField):
@@ -44,6 +46,6 @@ class Base64ImageField(serializers.ImageField):
                 file_name = f"{uuid.uuid4()}.{ext}"
                 data = ContentFile(base64.b64decode(imgstr), name=file_name)
             except (ValueError, IndexError):
-                raise serializers.ValidationError("Invalid Base64 image data.")
+                raise serializers.ValidationError(PracticeMessages.INVALID_IMAGE_DATA)
 
         return super().to_internal_value(data)

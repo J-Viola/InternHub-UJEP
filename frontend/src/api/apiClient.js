@@ -77,7 +77,25 @@ export const createApiClient = (navigate) => {
             if (error.response?.status === 401) {
                 navigate('/');
             }
-            return Promise.reject(error);
+
+            // Standardize the error for the frontend translations
+            let standardError = new Error(error.message);
+            standardError.code = "UNKNOWN_ERROR";
+            standardError.details = null;
+            standardError.status = error.response?.status;
+
+            if (error.response && error.response.data) {
+                const data = error.response.data;
+                if (data.error_code) {
+                    standardError.code = data.error_code;
+                    standardError.details = data.details;
+                } else if (data.detail) {
+                    standardError.code = "DRF_ERROR";
+                    standardError.details = data.detail;
+                }
+            }
+
+            return Promise.reject(standardError);
         }
     );
 

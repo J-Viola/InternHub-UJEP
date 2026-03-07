@@ -118,11 +118,9 @@ export default function NabidkaDetailPage() {
                 navigate(`/praxe`)
             }
         } catch (error) {
-            if (error.response?.data?.detail) {
-                addMessage(error.response.data.detail, "E");
-            } else {
-                addMessage(t('common.error'), "E");
-            }
+            console.error(error);
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('common.error') }), "E");
         }
     }
 
@@ -149,19 +147,14 @@ export default function NabidkaDetailPage() {
                         </Button>
                     )}
                 </Container>
-                {entity.contact_user_info.username && (
+                {(entity.contact_user_info.first_name || entity.contact_user_info.last_name) && (
                     <Paragraph property="mb-2">
-                        {t('login.email')}: {entity.contact_user_info.email}
+                        {t('form.contact_user')}: {`${entity.contact_user_info.first_name || ''} ${entity.contact_user_info.last_name || ''}`.trim()}
                     </Paragraph>
                 )}
-                {entity.contact_user_info.first_name && (
+                {entity.contact_user_info.email && (
                     <Paragraph property="mb-2">
-                        {t('profile.first_name')}: {entity.contact_user_info.first_name}
-                    </Paragraph>
-                )}
-                {entity.contact_user_info.last_name && (
-                    <Paragraph property="mb-2">
-                        {t('profile.last_name')}: {entity.contact_user_info.last_name}
+                        {t('profile.email')}: {entity.contact_user_info.email}
                     </Paragraph>
                 )}
                 {entity.contact_user_info.phone && (

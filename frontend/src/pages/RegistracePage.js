@@ -28,16 +28,12 @@ export default function RegistracePage() {
             await login(logData);
 
         } catch (error) {
-            if (error.response?.data) {
-                setErrors(error.response.data);
-                if (error.response.data.detail) {
-                    addMessage(`${t('registration.error')}: ${error.response.data.detail}`, "E");
-                } else {
-                    addMessage(t('registration.check_form'), "E");
-                }
-            } else {
-                addMessage(`${t('registration.error')}: ${error.message}`, "E");
+            console.error(error);
+            if (error.details) {
+                setErrors(error.details);
             }
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('registration.check_form') }), "E");
         }
     }
 

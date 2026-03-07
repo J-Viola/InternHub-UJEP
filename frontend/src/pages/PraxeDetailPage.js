@@ -102,11 +102,9 @@ export default function PraxeDetailPage() {
                 fetchData();
             }
         } catch (error) {
-            if (error.response?.data?.detail) {
-                addMessage(error.response.data.detail, "E");
-            } else {
-                addMessage(t('practice_detail.apply_error'), "E");
-            }
+            console.error(error);
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('practice_detail.apply_error') }), "E");
         }
     }
 
@@ -138,22 +136,51 @@ export default function PraxeDetailPage() {
 
             {/* INFORMACE O STUDENTOVI */}
             <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8 mb-2 mt-4"}>
-                <Headings sizeTag={"h3"} property={""}>{t('practice_detail.student_title')}</Headings>
-                <Paragraph property={"mt-2"}>
-                    {entity?.student_practice_status?.student_info?.full_name}
-                </Paragraph>
-                <Paragraph>
-                    {`${t('students.personal_number')}: ${entity?.student_practice_status?.student_info?.os_cislo}`}
-                </Paragraph>
-                <Paragraph>
-                    {`${t('profile.email')}: ${entity?.student_practice_status?.student_info?.email}`}
-                </Paragraph>
+                <Container property="flex justify-between items-start">
+                    <Container>
+                        <Headings sizeTag={"h3"} property={""}>{t('practice_detail.student_title')}</Headings>
+                        <Paragraph property={"mt-2"}>
+                            {entity?.student_practice_status?.student_info?.full_name}
+                        </Paragraph>
+                        <Paragraph>
+                            {`${t('students.personal_number')}: ${entity?.student_practice_status?.student_info?.os_cislo}`}
+                        </Paragraph>
+                        <Paragraph>
+                            {`${t('profile.email')}: ${entity?.student_practice_status?.student_info?.email}`}
+                        </Paragraph>
+                    </Container>
 
+                    {/* DUAL APPROVAL STATUS FOR PROFESSORS */}
+                    {user && user.isProfessor() && entity?.student_practice_status && (
+                        <Container property="flex flex-col gap-2 items-end">
+                            <Container property="flex items-center gap-2">
+                                <Paragraph property="text-sm font-medium">{t('practice_detail.school_approval')}:</Paragraph>
+                                <Button
+                                    variant={entity.student_practice_status.school_approved ? "greenSmall" : "yellowSmall"}
+                                    pointer={false}
+                                >
+                                    {entity.student_practice_status.school_approved ? t('practice_detail.approved') : t('practice_detail.pending')}
+                                </Button>
+                            </Container>
+                            <Container property="flex items-center gap-2">
+                                <Paragraph property="text-sm font-medium">{t('practice_detail.employer_approval')}:</Paragraph>
+                                <Button
+                                    variant={entity.student_practice_status.employer_approved ? "greenSmall" : "yellowSmall"}
+                                    pointer={false}
+                                >
+                                    {entity.student_practice_status.employer_approved ? t('practice_detail.approved') : t('practice_detail.pending')}
+                                </Button>
+                            </Container>
+                        </Container>
+                    )}
+                </Container>
             </ContainerForEntity>
 
-            {/* DOCS PANEL */}
-            {entity?.student_practice_status?.workflow_status &&
-                !["PENDING", "REJECTED"].includes(entity.student_practice_status.workflow_status) && (
+            {/* DOCS PANEL - show for anyone except REJECTED, or show always for professors */}
+            {entity?.student_practice_status?.workflow_status && (
+                (user.isProfessor() && entity.student_practice_status.workflow_status !== "REJECTED") ||
+                !["PENDING", "REJECTED"].includes(entity.student_practice_status.workflow_status)
+            ) && (
                 <DocsPanel entity={entity} docData={docs} handleDownload={handleDownload} handleUpload={handleUpload} handleManage={handleDocsPopUp}/>
             )}
 
@@ -201,14 +228,9 @@ export default function PraxeDetailPage() {
                                 {t('practice_detail.username_label')}: {entity.contact_user_info.username}
                             </Paragraph>
                         )}
-                        {entity.contact_user_info.first_name && (
+                        {(entity.contact_user_info.first_name || entity.contact_user_info.last_name) && (
                             <Paragraph property="mb-2">
-                                {t('profile.first_name')}: {entity.contact_user_info.first_name}
-                            </Paragraph>
-                        )}
-                        {entity.contact_user_info.last_name && (
-                            <Paragraph property="mb-2">
-                                {t('profile.last_name')}: {entity.contact_user_info.last_name}
+                                {t('form.contact_user')}: {`${entity.contact_user_info.first_name || ''} ${entity.contact_user_info.last_name || ''}`.trim()}
                             </Paragraph>
                         )}
                         {entity.contact_user_info.email && (

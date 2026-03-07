@@ -77,12 +77,13 @@ export default function SpravaStaziPage() {
 
     const handleView = (type, entity) => {
         if (type === "approved_practices") {
-            navigate(`/nabidka/${entity.practice_id}`)
+            // For ongoing internships, go to the Practice Card (detail of student's internship)
+            navigate(`/karta-praxe/${entity.student_practice_id}`)
         }
         if (type === "to_approve_practices") {
+            // For practices waiting for approval, go to the offer detail
             navigate(`/nabidka/${entity.practice_id}`)
         }
-
     }
 
     const handleClick = (type, entity = null) => {
@@ -91,6 +92,7 @@ export default function SpravaStaziPage() {
             setPop(true);
         }
         if (type === "approved_practices") {
+            // "Users" icon leads to all students applied to the same offer
             navigate(`/students/${entity?.practice_id}`);
         }
     };

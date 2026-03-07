@@ -79,7 +79,8 @@ export default function InvitationPage() {
             }
         } catch (error) {
             console.error(t('invitations.create_error'), error);
-            addMessage(`${t('invitations.create_error')}: ${error.response?.data?.detail || error.message}`, "E");
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(`${t('invitations.create_error')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
             setShowConfirmPopup(false);
         }
     };

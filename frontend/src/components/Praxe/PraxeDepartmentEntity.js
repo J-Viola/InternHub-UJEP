@@ -19,30 +19,35 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
     const approved = entity.approved_applications ?? 0;
     const pending = entity.pending_applications ?? 0;
     const available = entity.available_positions ?? 0;
-    const created = entity.created_at || entity.start_date || "-";
-    const subjectCode = entity.subject?.subject_code || "-";
+    const created = entity.created_at || entity.application_date || "-";
+    const subjectCode = entity.subject?.subject_code || entity.subject_code || "-";
 
     return (
-        <ContainerForEntity id={`practice-offer-${entity.practice_id}`} variant={bg} property={`pl-8 pt-4 pb-4 pr-4`} onClick={onView}>
+        <ContainerForEntity id={`practice-offer-${entity.practice_id}`} variant={bg} property={`pl-8 pt-4 pb-4 pr-4 cursor-default`}>
             <Container property={"flex items-center justify-between"}>
 
                 <Container property={"flex items-center gap-6 flex-1"}>
+                    {/* STUDENT / CONTACT PERSON */}
                     <Container property={"min-w-[200px]"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {t('form.contact_user')}
+                            {type === "approved" ? t('practice_detail.student_title') : t('form.contact_user')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
-                            {getContactName(entity.contact_user_info)}
+                            {type === "approved" ? (entity.student_full_name || "-") : getContactName(entity.contact_user_info)}
                         </Paragraph>
                     </Container>
+
+                    {/* TITLE */}
                     <Container property={"flex-1"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
                             {t('form.title')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
-                            {entity.title || "-"}
+                            {entity.title || entity.practice_title || "-"}
                         </Paragraph>
                     </Container>
+
+                    {/* SUBJECT */}
                     <Container property={"min-w-[100px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
                             {t('subjects.code')}
@@ -51,25 +56,32 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             {subjectCode}
                         </Paragraph>
                     </Container>
+
+                    {/* DATE */}
                     <Container property={"min-w-[180px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {t('internships.creation_date')}
+                            {type === "approved" ? t('students.applied_on') : t('internships.creation_date')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {created}
                         </Paragraph>
                     </Container>
+
+                    {/* STATUS / STATS */}
                     <Container property={"min-w-[180px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {t('internships.submitted_applications')}
+                            {type === "approved" ? t('common.status') : t('internships.submitted_applications')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
-                            {type === "approved" ? `${approved}/${pending}/${available}` : ("- / - / - ")}
+                            {type === "approved" ? (entity.workflow_status_label || "-") : (`${approved}/${pending}/${available}`)}
                         </Paragraph>
                     </Container>
                 </Container>
+
+                {/* ACTIONS */}
+                <Container property={"flex items-center gap-4 ml-4"}>
                     {type === "approved" && (
-                        <Container property={"flex items-center gap-4 ml-4"}>
+                        <>
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onClick(); }}
@@ -81,15 +93,15 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onView(); }}
-                                title={t('internships.view_detail')}
+                                title={t('practice_detail.view_card')}
                                 icon="eye"
                                 iconColor={"gray"}
                                 iconSize={"24"}
                             />
-                        </Container>
+                        </>
                     )}
                     {type === "to_approve" && (
-                        <Container property={"flex items-center gap-4 ml-4"}>
+                        <>
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onClick(); }}
@@ -98,7 +110,6 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                                 iconColor={"gray"}
                                 iconSize={"24"}
                             />
-
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onView(); }}
@@ -107,8 +118,9 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                                 iconColor={"gray"}
                                 iconSize={"24"}
                             />
-                        </Container>
+                        </>
                     )}
+                </Container>
             </Container>
         </ContainerForEntity>
     );

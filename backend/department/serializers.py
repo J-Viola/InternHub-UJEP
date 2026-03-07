@@ -2,6 +2,7 @@ from django.core.handlers.base import logger
 from rest_framework import serializers
 
 from department.models import Department
+from practices.messages import PracticeMessages
 from practices.models import Practice
 from student_practices.models import StudentPractice
 from users.models import ProfessorUser, StudentUser, UserSubjectType
@@ -22,7 +23,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
     def validate_department_name(self, value):
         if Department.objects.filter(department_name=value).exists():
-            raise serializers.ValidationError("Oddělení s tímto názvem již existuje.")
+            raise serializers.ValidationError(PracticeMessages.DEPARTMENT_ALREADY_EXISTS)
         return value
 
 

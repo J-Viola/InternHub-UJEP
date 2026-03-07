@@ -262,12 +262,12 @@ class StudentPracticeLifecycleTests(TestCase):
 
         self.client.force_authenticate(user=self.student)
 
-        # Test with Czech header (default or explicitly cs)
+        # Test with Czech header (should now return code PENDING)
         response_cs = self.client.get(url, HTTP_ACCEPT_LANGUAGE="cs")
         self.assertEqual(response_cs.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_cs.data["workflow_status_label"], "Čeká na schválení")
+        self.assertEqual(response_cs.data["workflow_status_label"], "PENDING")
 
-        # Test with English header
+        # Test with English header (should also return code PENDING)
         response_en = self.client.get(url, HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(response_en.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_en.data["workflow_status_label"], "Pending approval")
+        self.assertEqual(response_en.data["workflow_status_label"], "PENDING")

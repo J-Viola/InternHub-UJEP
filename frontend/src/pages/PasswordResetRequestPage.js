@@ -30,11 +30,9 @@ export default function PasswordResetRequestPage() {
             setSubmitted(true);
             addMessage(t('password_reset.email_sent_success'), "S");
         } catch (error) {
-            if (error.response && error.response.data && error.response.data.detail) {
-                addMessage(error.response.data.detail, "E");
-            } else {
-                addMessage(t('password_reset.request_error'), "E");
-            }
+            console.error(error);
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('password_reset.request_error') }), "E");
         } finally {
             setLoading(true); // Keep loading state until navigation if needed or just false
             setLoading(false);

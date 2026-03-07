@@ -6,6 +6,7 @@ from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from practices.messages import PracticeMessages
 from subject.models import Subject
 from users.services import get_user_department_ids
 
@@ -80,7 +81,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
         dept_ids = get_user_department_ids(request.user)
 
         if not dept_ids:
-            return Response({"error": "Uživatel nemá přiřazenou katedru"}, status=400)
+            return Response({"error": PracticeMessages.NO_DEPARTMENT}, status=400)
 
         # Get all subjects from the user's departments
         subjects = Subject.objects.filter(department_id__in=dept_ids).select_related("department")

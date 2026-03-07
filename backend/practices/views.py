@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from api.views import StandardResultsSetPagination
 from department.models import Department
 from practices.filters import PracticeFilter
+from practices.messages import PracticeMessages
 from practices.models import Practice, ProgressStatus
 from practices.serializers import (
     EndDateRequestSerializer,
@@ -81,10 +82,10 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
         if user.favorite_practices.filter(pk=practice.pk).exists():
             user.favorite_practices.remove(practice)
-            return Response({"detail": "Removed from favorites", "is_favorite": False})
+            return Response({"detail": "REMOVED_FROM_FAVORITES", "is_favorite": False})
         else:
             user.favorite_practices.add(practice)
-            return Response({"detail": "Added to favorites", "is_favorite": True})
+            return Response({"detail": "ADDED_TO_FAVORITES", "is_favorite": True})
 
     @extend_schema(summary="List all active practices")
     def list(self, request, *args, **kwargs):
@@ -160,7 +161,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if not user.pk:
-            return Response({"detail": "Uživatel nebyl nalezen"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": PracticeMessages.USER_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
 
         result = PracticeService.get_user_practices_and_invitations(user)
 
@@ -186,7 +187,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
 
         if not practice_id:
             return Response(
-                {"detail": "Chybí practice (id praxe)"},
+                {"detail": PracticeMessages.MISSING_PRACTICE_ID},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -228,7 +229,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         """
         subj_id = request.query_params.get("subject_id")
         if not subj_id:
-            return Response({"detail": "Chybí subject_id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": PracticeMessages.MISSING_SUBJECT_ID}, status=status.HTTP_400_BAD_REQUEST)
         practices = Practice.objects.filter(subject_id=subj_id, is_active=True).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
@@ -269,7 +270,7 @@ class PracticeViewSet(viewsets.ModelViewSet):
         # Kontrola, zda je uživatel organizace
         if not hasattr(user, "employer_profile") or not user.employer_profile:
             return Response(
-                {"detail": "Přístup odepřen. Pouze uživatelé organizací mohou přistupovat k tomuto endpointu."},
+                {"detail": PracticeMessages.ORGANIZATION_ONLY},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -327,24 +328,28 @@ class PracticeViewSet(viewsets.ModelViewSet):
         """
         user = request.user
         if not user.pk:
-            return Response({"detail": "Chybí user_id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": PracticeMessages.MISSING_USER_ID}, status=status.HTTP_400_BAD_REQUEST)
 
         result = PracticeService.get_practices_by_department(user)
 
         if result is None:
             return Response(
-                {"detail": "Uživatel nemá přiřazenou žádnou katedru."},
+                {"detail": PracticeMessages.NO_DEPARTMENT},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        from student_practices.serializers import ListStudentPracticeSerializer
 
         approved = result["approved"]
         to_approve = result["to_approve"]
 
-        serializer = PracticeSerializer
-        approved_data = serializer(approved, many=True, context={"request": request}).data
-        to_approve_data = serializer(to_approve, many=True, context={"request": request}).data
+        # 1. Ongoing/Approved practices are StudentPractice objects
+        approved_data = ListStudentPracticeSerializer(approved, many=True, context={"request": request}).data
 
-        approved_data = PracticeService.enrich_contact_user_info(approved_data, approved)
+        # 2. Practices to approve are Practice objects
+        to_approve_data = PracticeSerializer(to_approve, many=True, context={"request": request}).data
+
+        # Enrich contact info for offers (for student practices it's already there or nested)
         to_approve_data = PracticeService.enrich_contact_user_info(to_approve_data, to_approve)
 
         return Response(
@@ -511,7 +516,7 @@ class ChangePendingView(APIView):
 
         if practice_obj.approval_status != ApprovalStatus.PENDING:
             return Response(
-                {"detail": "Praxe je již schválena/zamítnuta"},
+                {"detail": PracticeMessages.ALREADY_APPROVED},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

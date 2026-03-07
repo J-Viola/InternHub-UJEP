@@ -111,7 +111,7 @@ export default function StudentPage() {
 
 
     const getDepartmentButtons = (entity) => {
-        const canApprove = entity?.student_practice?.can_approve || false;
+        const hasPractice = !!entity?.student_practice?.student_practice_id;
 
         const buttons = [
             {
@@ -121,7 +121,7 @@ export default function StudentPage() {
             }
         ];
 
-        if (canApprove) {
+        if (hasPractice) {
             buttons.unshift({
                 icon: "doc",
                 title: t('students.view_practice_card'),
@@ -134,7 +134,7 @@ export default function StudentPage() {
 
     const getOrganizationButtons = (entity) => {
         const isSelected = selectedStudents.has(entity.user_id);
-        const canApprove = entity?.student_practice?.can_approve || false;
+        const hasPractice = !!(entity?.student_practice_id || entity?.student_practice?.student_practice_id);
 
         const buttons = [
             {
@@ -150,7 +150,7 @@ export default function StudentPage() {
         ];
 
         // If it's an organization user viewing a specific practice's applications
-        if (id && canApprove) {
+        if (id && hasPractice) {
              buttons.unshift({
                 icon: "doc",
                 title: t('students.view_practice_card'),
@@ -162,7 +162,7 @@ export default function StudentPage() {
     };
 
     const getStudentPracticeButtons = (entity) => {
-        const canApprove = entity?.can_approve || false;
+        const hasPractice = !!entity?.student_practice_id;
         const buttons = [
             {
                 icon: "user",
@@ -171,7 +171,7 @@ export default function StudentPage() {
             }
         ];
 
-        if (canApprove) {
+        if (hasPractice) {
             buttons.unshift({
                 icon: "doc",
                 title: t('students.view_practice_card'),

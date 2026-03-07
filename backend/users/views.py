@@ -16,6 +16,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from api.views import StandardResultsSetPagination
+from users.messages import UserMessages
 from users.models import (
     EmployerProfile,
     OrganizationUser,
@@ -100,7 +101,7 @@ class PasswordResetRequestView(APIView):
             # STAG users cannot reset password here
             if isinstance(user, StagUser):
                 return Response(
-                    {"detail": "Uživatelé školy si mění heslo v systému STAG."},
+                    {"detail": UserMessages.STAG_PASSWORD_CHANGE_DISABLED},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -145,11 +146,11 @@ class PasswordResetConfirmView(APIView):
             uid = force_str(urlsafe_base64_decode(serializer.validated_data["uidb64"]))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({"detail": "Neplatný odkaz."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": UserMessages.INVALID_LINK}, status=status.HTTP_400_BAD_REQUEST)
 
         if not default_token_generator.check_token(user, serializer.validated_data["token"]):
             return Response(
-                {"detail": "Neplatný nebo expirovaný token."},
+                {"detail": UserMessages.INVALID_TOKEN},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -175,7 +176,7 @@ class ChangePasswordView(APIView):
         user = request.user
         if isinstance(user, StagUser):
             return Response(
-                {"detail": "Uživatelé STAG nemohou měnit heslo v této aplikaci. Použijte systém STAG."},
+                {"detail": UserMessages.STAG_PASSWORD_CHANGE_DISABLED},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -183,11 +184,11 @@ class ChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
 
         if not user.check_password(serializer.validated_data["old_password"]):
-            return Response({"old_password": ["Chybné heslo."]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"old_password": ["INVALID_PASSWORD"]}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
-        return Response({"message": "Heslo bylo úspěšně změněno"}, status=status.HTTP_200_OK)
+        return Response({"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK)
 
 
 class LogoutView(generics.GenericAPIView):
@@ -311,7 +312,7 @@ class OrganizationUserListView(generics.ListAPIView):
         else:
             employer_profile = getattr(user, "employer_profile", None)
             if not employer_profile:
-                raise serializers.ValidationError({"detail": "Uživatel nemá přiřazenou organizaci."})
+                raise serializers.ValidationError({"detail": UserMessages.ORGANIZATION_MISSING})
 
             org_id = employer_profile.employer_id
             return OrganizationUser.objects.filter(employer_profile_id=org_id).select_related("employer_profile")
@@ -331,7 +332,7 @@ class StudentProfileView(APIView):
         try:
             student = StudentUser.objects.get(pk=student_id)
         except StudentUser.DoesNotExist:
-            return Response({"detail": "Student nenalezen."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": UserMessages.STUDENT_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
 
         self.check_object_permissions(request, student)
         serializer = StudentProfileSerializer(student, context={"request": request})

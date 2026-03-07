@@ -111,6 +111,11 @@ class CanViewStudentProfile(permissions.BasePermission):
     - Professors from the same department (via subjects)
     """
 
+    def has_permission(self, request, view):
+        # Allow any authenticated user to try to access a student profile.
+        # The specific object-level logic in has_object_permission will filter them.
+        return bool(request.user and request.user.is_authenticated)
+
     def has_object_permission(self, request, view, obj):
         # obj is StudentUser instance
         user = request.user
@@ -134,10 +139,18 @@ class CanViewStudentProfile(permissions.BasePermission):
                 return True
 
         # 4. Professor
-        if isinstance(user, ProfessorUser) and user.department:
-            # Check if student has any subject from this department (as a Student)
-            # We check UserSubject where user is the student (obj) and subject belongs to professor's department
-            has_subject = obj.user_subjects.filter(subject__department=user.department, role=UserSubjectType.Student).exists()
+        if isinstance(user, ProfessorUser):
+            from django.db.models import Q
+
+            from users.services import get_user_department_ids
+
+            dept_ids = get_user_department_ids(user)
+
+            # Check if student is in any department the professor belongs to
+            # OR if professor manages a subject the student is in
+            has_subject = obj.user_subjects.filter(
+                Q(subject__department_id__in=dept_ids) | Q(subject__subject_manager=user), role=UserSubjectType.Student
+            ).exists()
 
             if has_subject:
                 return True

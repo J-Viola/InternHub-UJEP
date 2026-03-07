@@ -47,7 +47,7 @@ class PracticeServiceTests(TestCase):
         with self.assertRaises(ValueError) as cm:
             PracticeService.apply_student_practice(self.user, 1)
 
-        self.assertIn("Již jste přihlášen", str(cm.exception))
+        self.assertIn("ALREADY_APPLIED", str(cm.exception))
 
     @patch("practices.services.StudentPractice.objects.filter")
     @patch("practices.services.Practice.objects.filter")
@@ -58,4 +58,4 @@ class PracticeServiceTests(TestCase):
         with self.assertRaises(ValueError) as cm:
             PracticeService.apply_student_practice(self.user, 1)
 
-        self.assertIn("Praxe nenalezena", str(cm.exception))
+        self.assertIn("PRACTICE_NOT_FOUND", str(cm.exception))

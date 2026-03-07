@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from department.serializers import DepartmentSerializer
+from practices.messages import PracticeMessages
 from subject.models import Subject
 from users.models import ProfessorUser, UserSubject, UserSubjectType
 
@@ -52,7 +53,7 @@ class SubjectSerializer(serializers.ModelSerializer):
             # If updating, exclude self
             if self.instance and self.instance.subject_code == value:
                 return value
-            raise serializers.ValidationError("Předmět s tímto kódem již existuje.")
+            raise serializers.ValidationError(PracticeMessages.SUBJECT_ALREADY_EXISTS)
         return value
 
     def create(self, validated_data):

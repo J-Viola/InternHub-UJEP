@@ -3,6 +3,7 @@ from datetime import date
 from rest_framework import serializers
 
 from api.helpers import FormattedDateField
+from practices.messages import PracticeMessages
 from practices.models import Practice, ProgressStatus
 from practices.utils import calculate_end_date
 from student_practices.models import StudentPractice
@@ -157,10 +158,10 @@ class PracticeSerializer(serializers.ModelSerializer):
         end = data.get("end_date")
 
         if start and start < date.today():
-            raise serializers.ValidationError("Datum zahájení nemůže být v minulosti.")
+            raise serializers.ValidationError(PracticeMessages.DATE_IN_PAST)
 
         if start and end and end < start:
-            raise serializers.ValidationError("Datum ukončení nemůže být před datem zahájení.")
+            raise serializers.ValidationError(PracticeMessages.END_DATE_BEFORE_START)
 
         return data
 
@@ -242,9 +243,9 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
         start = data.get("start_date")
         end = data.get("end_date")
         if start and end and end < start:
-            raise serializers.ValidationError("Datum ukončení nemůže být před datem zahájení.")
+            raise serializers.ValidationError(PracticeMessages.END_DATE_BEFORE_START)
         if start and start < date.today():
-            raise serializers.ValidationError("Datum zahájení nemůže být v minulosti.")
+            raise serializers.ValidationError(PracticeMessages.DATE_IN_PAST)
         return data
 
     def create(self, validated_data):

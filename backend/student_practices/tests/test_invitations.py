@@ -172,4 +172,4 @@ class EmployerInvitationTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("detail", response.data)
+        self.assertIn("error_code", response.data)

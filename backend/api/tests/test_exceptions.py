@@ -27,10 +27,10 @@ class ExceptionHandlerTests(TestCase):
         context = {}  # DRF context usually has view, args, kwargs
 
         response = custom_exception_handler(exception, context)
-
         self.assertIsNotNone(response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["detail"], "Test Error")
+        self.assertEqual(response.data["error_code"], "Test Error")
+        self.assertEqual(response.data["details"], "Test Error")
 
     def test_standard_exception_handler_passthrough(self):
         # Test that standard DRF exceptions (like validation error) are still handled

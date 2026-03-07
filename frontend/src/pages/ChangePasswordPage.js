@@ -47,11 +47,12 @@ export default function ChangePasswordPage() {
             addMessage(t('password_change.success'), "S");
             navigate("/profil");
         } catch (error) {
-            if (error.response && error.response.data) {
-                setErrors(error.response.data);
-            } else {
-                addMessage(t('password_change.error'), "E");
+            console.error(error);
+            if (error.details) {
+                setErrors(error.details);
             }
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('password_change.error') }), "E");
         }
     };
 

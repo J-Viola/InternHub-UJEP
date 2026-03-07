@@ -62,7 +62,8 @@ export default function ProfilPage() {
             navigate(-1);
         } catch (error) {
             console.error('Error profile update:', error);
-            addMessage(t('profile.update_error'), "E");
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('profile.update_error') }), "E");
         }
     }
 
@@ -151,6 +152,12 @@ export default function ProfilPage() {
                                     <Paragraph property="font-medium">{t('profile.email')}:</Paragraph>
                                     <Paragraph>{userData.email}</Paragraph>
                                 </Container>
+                                {userData.os_cislo && (
+                                    <Container>
+                                        <Paragraph property="font-medium">{t('profile.os_cislo')}:</Paragraph>
+                                        <Paragraph>{userData.os_cislo}</Paragraph>
+                                    </Container>
+                                )}
                                 {userData.phone && (
                                     <Container>
                                         <Paragraph property="font-medium">{t('profile.phone')}:</Paragraph>
@@ -193,33 +200,6 @@ export default function ProfilPage() {
                                         <Container>
                                             <Paragraph property="font-medium">{t('profile.zip_code')}:</Paragraph>
                                             <Paragraph>{userData.zip_code}</Paragraph>
-                                        </Container>
-                                    )}
-                                </Container>
-                            </Container>
-                        )}
-
-                        {/* STUDIJNÍ INFORMACE - pouze pro studenty */}
-                        {userData.user_type === 'student' && (userData.field_of_study || userData.specialization) && (
-                            <Container property="p-1 space-y-1">
-                                <Headings sizeTag={"h4"}>{t('profile.study_info')}</Headings>
-                                <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {userData.field_of_study && (
-                                        <Container>
-                                            <Paragraph property="font-medium">{t('profile.field_of_study')}:</Paragraph>
-                                            <Paragraph>{userData.field_of_study}</Paragraph>
-                                        </Container>
-                                    )}
-                                    {userData.specialization && (
-                                        <Container>
-                                            <Paragraph property="font-medium">{t('profile.specialization')}:</Paragraph>
-                                            <Paragraph>{userData.specialization}</Paragraph>
-                                        </Container>
-                                    )}
-                                    {userData.year_of_study && (
-                                        <Container>
-                                            <Paragraph property="font-medium">{t('profile.year_of_study')}:</Paragraph>
-                                            <Paragraph>{userData.year_of_study}</Paragraph>
                                         </Container>
                                     )}
                                 </Container>

@@ -1,22 +1,24 @@
-from django.utils.translation import gettext_lazy as _
-
-
 class StudentPracticeMessages:
     # Errors
-    NOT_FOUND = _("Přihláška na praxi nebyla nalezena.")
-    UNAUTHORIZED = _("Nemáte oprávnění spravovat tuto přihlášku.")
-    PRACTICE_NOT_FOUND = _("Praxe nenalezena.")
-    INVITATION_NOT_FOUND = _("Pozvánka nebyla nalezena nebo k ní nemáte přístup.")
-    INVITATION_PROCESSED = _("Pozvánka již byla zpracována.")
-    INVALID_ACTION = _("Neplatná akce.")
-    INVALID_APPROVAL_VALUE = _("Neplatná hodnota pro stav schválení.")
-    INVALID_PROGRESS_VALUE = _("Neplatná hodnota pro stav průběhu.")
-    CANNOT_REJECT = _("Nemáte oprávnění zamítnout tuto přihlášku.")
-    PROGRESS_UPDATE_FORBIDDEN = _("Nelze měnit stav průběhu u neschválené praxe.")
-    FILE_TOO_LARGE = _("Soubor je příliš velký. Maximální povolená velikost je {size} MB.")
-    INVALID_EXTENSION = _("Jenom Word (.doc, .docx) dokumenty jsou povoleny.")
-    INTERNAL_ERROR = _("Došlo k vnitřní chybě při schvalování.")
+    NOT_FOUND = "NOT_FOUND"
+    UNAUTHORIZED = "UNAUTHORIZED"
+    PRACTICE_NOT_FOUND = "PRACTICE_NOT_FOUND"
+    INVITATION_NOT_FOUND = "INVITATION_NOT_FOUND"
+    INVITATION_PROCESSED = "INVITATION_PROCESSED"
+    INVALID_ACTION = "INVALID_ACTION"
+    INVALID_APPROVAL_VALUE = "INVALID_APPROVAL_VALUE"
+    INVALID_PROGRESS_VALUE = "INVALID_PROGRESS_VALUE"
+    CANNOT_REJECT = "CANNOT_REJECT"
+    PROGRESS_UPDATE_FORBIDDEN = "PROGRESS_UPDATE_FORBIDDEN"
+    FILE_TOO_LARGE = "FILE_TOO_LARGE"
+    INVALID_EXTENSION = "INVALID_EXTENSION"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+    NEGATIVE_HOURS = "NEGATIVE_HOURS"
+    CONTRACT_DOC_REQUIRED = "CONTRACT_DOC_REQUIRED"
+    FEEDBACK_DOC_REQUIRED = "FEEDBACK_DOC_REQUIRED"
+    CONTENT_DOC_REQUIRED = "CONTENT_DOC_REQUIRED"
 
     # Success
-    INVITATION_ACCEPTED = _("Pozvánka byla přijata a praxe byla zahájena.")
-    INVITATION_REJECTED = _("Pozvánka byla zamítnuta.")
+    INVITATION_ACCEPTED = "INVITATION_ACCEPTED"
+    INVITATION_REJECTED = "INVITATION_REJECTED"
+    DOCUMENT_UPLOAD_SUCCESS = "DOCUMENT_UPLOAD_SUCCESS"

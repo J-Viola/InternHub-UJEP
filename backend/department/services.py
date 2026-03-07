@@ -6,16 +6,16 @@ from users.services import get_user_department_ids
 
 
 def get_department_students(user):
+    from django.db.models import Q
+
     dept_ids = get_user_department_ids(user)
 
-    if not dept_ids:
-        return StudentUser.objects.none()
-
-    # Optimized query by filtering base StagUser but returning StudentUser objects
+    # VK see everyone in their department
+    # Teachers see everyone in their subjects
     return (
         StudentUser.objects.filter(
-            staguser_ptr__user_subjects__subject__department_id__in=dept_ids,
-            staguser_ptr__user_subjects__role=UserSubjectType.Student,
+            Q(user_subjects__subject__department_id__in=dept_ids) | Q(user_subjects__subject__subject_manager=user),
+            user_subjects__role=UserSubjectType.Student,
         )
         .distinct()
         .select_related("stag_role")

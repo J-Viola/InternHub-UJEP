@@ -58,7 +58,7 @@ class ChangePasswordViewTests(APITestCase):
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("new_password_confirm", response.data)
+        self.assertIn("new_password_confirm", response.data.get("details", {}))
 
     def test_stag_user_cannot_change_password(self):
         stag_user = StagUser.objects.create(email="stag@ujep.cz", is_active=True)
