@@ -26,9 +26,9 @@ from practices.serializers import (
     PracticeSerializer,
     RunningPracticeSerializer,
 )
-from student_practices.serializers import ListStudentPracticeSerializer
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
+from student_practices.serializers import ListStudentPracticeSerializer
 from users.models import ApprovalStatus, ProfessorUser, StagRoleEnum, StudentUser
 from users.permissions import IsOrganizationOwner, IsOrganizationUser, IsStagTeacher
 
@@ -59,13 +59,11 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return (
             Practice.objects.filter(is_active=True)
-            .select_related("employer")
+            .select_related("employer", "subject", "subject__department")
             .annotate(
                 approved_count=Count(
                     "student_practices",
-                    filter=Q(
-                        student_practices__approval_status=ApprovalStatus.APPROVED
-                    ),
+                    filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED),
                 ),
                 pending_count=Count(
                     "student_practices",
@@ -74,9 +72,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
             )
         )
 
-    @extend_schema(
-        summary="Get user's practices and invitations", tags=["Practices - Student"]
-    )
+    @extend_schema(summary="Get user's practices and invitations", tags=["Practices - Student"])
     @action(detail=False, methods=["get"])
     def get_practice_user_relations(self, request):
         user = request.user
@@ -88,9 +84,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
         result = PracticeService.get_user_practices_and_invitations(user)
         return Response(result)
 
-    @extend_schema(
-        summary="Apply for a practice (student)", tags=["Practices - Student"]
-    )
+    @extend_schema(summary="Apply for a practice (student)", tags=["Practices - Student"])
     @action(detail=False, methods=["post"])
     def apply(self, request):
         user = request.user
@@ -124,9 +118,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["get"])
     def upcoming(self, request):
         today = date.today()
-        upcoming_practices = (
-            self.get_queryset().filter(start_date__gte=today).order_by("start_date")
-        )
+        upcoming_practices = self.get_queryset().filter(start_date__gte=today).order_by("start_date")
         page = self.paginate_queryset(upcoming_practices)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -143,9 +135,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
                 {"detail": PracticeMessages.MISSING_SUBJECT_ID},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        practices = (
-            self.get_queryset().filter(subject_id=subj_id).order_by("start_date")
-        )
+        practices = self.get_queryset().filter(subject_id=subj_id).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
         return Response(serializer.data)
 
@@ -179,14 +169,10 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
 
         # For list action, filter by employer
         if self.action == "list":
-            return PracticeService.get_organization_practices_queryset(
-                user.employer_profile
-            ).annotate(
+            return PracticeService.get_organization_practices_queryset(user.employer_profile).annotate(
                 approved_count=Count(
                     "student_practices",
-                    filter=Q(
-                        student_practices__approval_status=ApprovalStatus.APPROVED
-                    ),
+                    filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED),
                 ),
                 pending_count=Count(
                     "student_practices",
@@ -197,6 +183,14 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
         # For other actions (retrieve, update, delete), return all to allow 403 instead of 404
         return Practice.objects.all()
 
+    @extend_schema(summary="List organization practices")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Get organization practice detail")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
     @extend_schema(summary="Create a new practice")
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -204,9 +198,7 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
 
         data["employer_id"] = user.employer_profile.employer_id
         if user.employer_profile.logo:
-            data["image_base64"] = PracticeService.encode_logo_to_base64(
-                user.employer_profile.logo
-            )
+            data["image_base64"] = PracticeService.encode_logo_to_base64(user.employer_profile.logo)
 
         # Set critical defaults to avoid IntegrityErrors
         data.setdefault("approval_status", ApprovalStatus.PENDING.value)
@@ -219,6 +211,18 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(summary="Update an organization practice")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Partially update an organization practice")
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete an organization practice")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 # -------------------------------------------------------------
@@ -236,11 +240,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
     @extend_schema(summary="List practices waiting for approval")
     @action(detail=False, methods=["get"], serializer_class=PracticeApprovalSerializer)
     def pending(self, request):
-        dept_ids = (
-            Department.objects.filter(professor_users=request.user)
-            .values_list("department_id", flat=True)
-            .distinct()
-        )
+        dept_ids = Department.objects.filter(professor_users=request.user).values_list("department_id", flat=True).distinct()
         practices = (
             Practice.objects.filter(
                 subject__department_id__in=dept_ids,
@@ -257,9 +257,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @extend_schema(summary="Change approval status of a practice")
-    @action(
-        detail=True, methods=["post"], serializer_class=PracticeApprovalStatusSerializer
-    )
+    @action(detail=True, methods=["post"], serializer_class=PracticeApprovalStatusSerializer)
     def approve(self, request, pk=None):
         practice_obj = get_object_or_404(Practice, pk=pk)
         if practice_obj.approval_status != ApprovalStatus.PENDING:
@@ -271,9 +269,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        approval_status = ApprovalStatus.get(
-            name_or_numeric=serializer.validated_data.get("approval_status")
-        )
+        approval_status = ApprovalStatus.get(name_or_numeric=serializer.validated_data.get("approval_status"))
         practice_obj.approval_status = approval_status
         practice_obj.save()
         return Response(PracticeSerializer(practice_obj).data)
@@ -292,15 +288,9 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         approved = result["approved"]
         to_approve = result["to_approve"]
 
-        approved_data = ListStudentPracticeSerializer(
-            approved, many=True, context={"request": request}
-        ).data
-        to_approve_data = PracticeSerializer(
-            to_approve, many=True, context={"request": request}
-        ).data
-        to_approve_data = PracticeService.enrich_contact_user_info(
-            to_approve_data, to_approve
-        )
+        approved_data = ListStudentPracticeSerializer(approved, many=True, context={"request": request}).data
+        to_approve_data = PracticeSerializer(to_approve, many=True, context={"request": request}).data
+        to_approve_data = PracticeService.enrich_contact_user_info(to_approve_data, to_approve)
 
         return Response(
             {
@@ -321,33 +311,19 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         )
 
         if is_head_of_department:
-            dept_ids = (
-                Department.objects.all()
-                .values_list("department_id", flat=True)
-                .distinct()
-            )
+            dept_ids = Department.objects.all().values_list("department_id", flat=True).distinct()
         else:
-            dept_ids = (
-                Department.objects.filter(subjects__user_subjects__user=user)
-                .values_list("department_id", flat=True)
-                .distinct()
-            )
+            dept_ids = Department.objects.filter(subjects__user_subjects__user=user).values_list("department_id", flat=True).distinct()
 
-        students = StudentUser.objects.filter(
-            user_subjects__subject__department_id__in=dept_ids
-        ).distinct()
+        students = StudentUser.objects.filter(user_subjects__subject__department_id__in=dept_ids).distinct()
         practices = (
-            Practice.objects.filter(
-                student_practices__user__in=students, is_active=True
-            )
+            Practice.objects.filter(student_practices__user__in=students, is_active=True)
             .distinct()
             .annotate(
                 total_student_count=Count("student_practices"),
                 approved_count=Count(
                     "student_practices",
-                    filter=Q(
-                        student_practices__approval_status=ApprovalStatus.APPROVED
-                    ),
+                    filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED),
                 ),
                 pending_count=Count(
                     "student_practices",
@@ -386,6 +362,10 @@ class AdminPracticesListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = OrganizationPracticeSerializer
 
+    @extend_schema(summary="List all practices grouped by status (Admin)", tags=["Practices - Admin"])
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
     def get_queryset(self):
         return (
             Practice.objects.all()
@@ -394,9 +374,7 @@ class AdminPracticesListView(generics.ListAPIView):
             .annotate(
                 approved_count=Count(
                     "student_practices",
-                    filter=Q(
-                        student_practices__approval_status=ApprovalStatus.APPROVED
-                    ),
+                    filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED),
                 ),
                 pending_count=Count(
                     "student_practices",
@@ -410,11 +388,7 @@ class AdminPracticesListView(generics.ListAPIView):
         queryset = self.get_queryset()
         return Response(
             {
-                "approved_practices": self.get_serializer(
-                    queryset.filter(approval_status=ApprovalStatus.APPROVED), many=True
-                ).data,
-                "to_approve_practices": self.get_serializer(
-                    queryset.filter(approval_status=ApprovalStatus.PENDING), many=True
-                ).data,
+                "approved_practices": self.get_serializer(queryset.filter(approval_status=ApprovalStatus.APPROVED), many=True).data,
+                "to_approve_practices": self.get_serializer(queryset.filter(approval_status=ApprovalStatus.PENDING), many=True).data,
             }
         )

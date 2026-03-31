@@ -13,7 +13,7 @@ jest.mock('@hooks/MessageContext');
 jest.mock('@api/documents/documentsAPI', () => ({
     useDocumentsAPI: () => ({})
 }));
-jest.mock('@utils/ToDoAlert', () => jest.fn());
+
 
 // Mock child components
 jest.mock('@core/Container/PopUpCon', () => ({ onSubmit, onClose }) => (

@@ -10,6 +10,7 @@ import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import { useMessage } from "@hooks/MessageContext";
 import { useCompanyAPI } from "src/api/company/companyAPI";
 import { useTranslation } from "react-i18next";
+import { validateEmail, validateICO, validateRequired, validatePassword } from "@utils/validationUtils";
 
 export default function CompanyForm({ handleCreate, handleUpdate, action, id, errors = {} }) {
     const { t } = useTranslation();
@@ -84,9 +85,15 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
     const handleARESCall = async (icoValue) => {
         setLocalErrors({}); // Clear previous local errors
         setSearchResults([]); // Clear previous results
-        if (!icoValue) {
+        if (!validateRequired(icoValue)) {
             setLocalErrors(prev => ({ ...prev, ico: t('employer.ares_fill') }));
             addMessage(t('employer.ares_fill'), "E");
+            return;
+        }
+
+        if (!validateICO(icoValue)) {
+            setLocalErrors(prev => ({ ...prev, ico: t('company.invalid_ico') }));
+            addMessage(t('company.invalid_ico'), "E");
             return;
         }
 
@@ -130,7 +137,9 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
             'executiveName': t('employer.executive_name'),
             'executiveSurname': t('employer.executive_surname'),
             'executiveEmail': t('employer.executive_email'),
-            'executivePhone': t('employer.executive_phone')
+            'executivePhone': t('employer.executive_phone'),
+            'companyName': t('company.name_label'),
+            'address': t('profile.address')
         };
 
         if (!isEditing) {
@@ -144,10 +153,20 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
         }
 
         for (const [fieldId, fieldName] of Object.entries(requiredFields)) {
-            if (!formData[fieldId] || formData[fieldId].trim() === '') {
+            if (!validateRequired(formData[fieldId])) {
                 newLocalErrors[fieldId] = t('company.is_required', { field: fieldName });
                 isValid = false;
             }
+        }
+
+        if (formData.executiveEmail && !validateEmail(formData.executiveEmail)) {
+            newLocalErrors.executiveEmail = t('login.invalid_email');
+            isValid = false;
+        }
+
+        if (!isEditing && formData.executivePassword1 && !validatePassword(formData.executivePassword1)) {
+            newLocalErrors.executivePassword1 = t('login.password_min_length', { length: 8 });
+            isValid = false;
         }
 
         if (!isEditing && formData.executivePassword1 && formData.executivePassword2 &&
@@ -220,20 +239,20 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     </Headings>
                 </Container>
                 {!isEditing && (
-                    <Container property={"mb-6"}>
-                        <Container property={"grid gap-2 grid-cols-2 mb-2"}>
+                    <Container property={"mb-8"}>
+                        <Container property={"grid gap-4 grid-cols-[1fr,auto] items-end mb-4"}>
                             <TextField
                                 id={"ico"}
                                 required={true}
-                                label={t('employer.ares_fill')}
-                                placeholder={t('company.ico_placeholder')}
+                                label={t('company.ico_placeholder')}
+                                placeholder={"12345678"}
                                 value={icoValue}
                                 onChange={(value) => setICOValue(value.ico)}
                                 property={"w-full"}
                                 error={localErrors.ico || errors.ico}
                             />
                             <Button
-                                property={"w-1/3 mt-6 px-4 justify-self-end"}
+                                property={"px-8 h-[45px] mb-[1px]"}
                                 onClick={() => handleARESCall(icoValue)}
                                 variant={"blueSmall"}
                             >
@@ -243,20 +262,25 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
 
                         {/* Search Results Section */}
                         {searchResults.length > 0 && (
-                            <Container property="bg-white border border-gray-200 rounded-lg p-4 mt-2 shadow-sm">
-                                <Headings sizeTag="h5" property="mb-2 font-bold text-gray-700">{t('company.search_results')}</Headings>
+                            <Container property="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-4 shadow-sm animate-fadeIn">
+                                <Headings sizeTag="h5" property="mb-4 font-black uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-2">
+                                    {t('company.search_results')}
+                                </Headings>
                                 {searchResults.map((result, index) => (
-                                    <div key={index} className="flex flex-col md:flex-row justify-between items-center p-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                                        <div className="flex flex-col mb-2 md:mb-0">
-                                            <span className="font-bold text-lg">{result.obchodniJmeno}</span>
-                                            <span className="text-sm text-gray-600">{t('profile.ico')}: {result.ico}</span>
-                                            <span className="text-sm text-gray-600">{result.sidlo?.textovaAdresa}</span>
+                                    <div key={index} className="flex flex-col md:flex-row justify-between items-center p-4 bg-white rounded-lg border border-blue-100 hover:border-blue-300 transition-all shadow-sm">
+                                        <div className="flex flex-col mb-4 md:mb-0">
+                                            <span className="font-black text-xl text-gray-900">{result.obchodniJmeno}</span>
+                                            <div className="flex gap-4 mt-1">
+                                                <span className="text-sm font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">{t('profile.ico')}: {result.ico}</span>
+                                                {result.dic && <span className="text-sm font-bold text-gray-600">DIČ: {result.dic}</span>}
+                                            </div>
+                                            <span className="text-sm text-gray-500 mt-1 italic">{result.sidlo?.textovaAdresa}</span>
                                         </div>
                                         <Button
-                                            variant="secondary"
+                                            variant="greenSmall"
                                             onClick={() => selectCompany(result)}
                                             icon="check"
-                                            property="whitespace-nowrap"
+                                            property="whitespace-nowrap px-6"
                                         >
                                             {t('company.select')}
                                         </Button>

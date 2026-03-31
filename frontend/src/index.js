@@ -32,7 +32,6 @@ import ChangePasswordPage from '@pages/ChangePasswordPage';
 import PasswordResetRequestPage from '@pages/PasswordResetRequestPage';
 import PasswordResetConfirmPage from '@pages/PasswordResetConfirmPage';
 import MainLayout from '@components/Layout/MainLayout';
-import StudentApplicationsPage from '@pages/StudentApplicationsPage';
 import ProtectedRoute from '@components/ProtectedRoute';
 import ErrorBoundary from '@components/ErrorBoundary';
 import { useTranslation } from 'react-i18next';
@@ -78,7 +77,6 @@ const AppRoutes = () => {
         <Route path="/pozvanky-list" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PozvankyListPage /></ProtectedRoute>} />
         <Route path="/departments" element={<ProtectedRoute allowedRoles={['admin']}><DepartmentsPage /></ProtectedRoute>} />
         <Route path="/companies" element={<ProtectedRoute allowedRoles={['admin']}><CompaniesPage /></ProtectedRoute>} />
-        <Route path="/moje-prihlasky" element={<ProtectedRoute allowedRoles={['ST']}><StudentApplicationsPage /></ProtectedRoute>} />
       </Route>
     </Routes>
   );

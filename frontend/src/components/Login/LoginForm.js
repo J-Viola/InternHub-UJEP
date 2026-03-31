@@ -7,6 +7,7 @@ import Paragraph from "@components/core/Text/Paragraph";
 import TextField from "@core/Form/TextField";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { validateEmail, validateRequired } from "@utils/validationUtils";
 
 export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
     const { t } = useTranslation();
@@ -16,6 +17,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
     const [password, setPassword] = useState("");
     const [studentId, setStudentId] = useState("");
     const [teacherId, setTeacherId] = useState("");
+    const [errors, setErrors] = useState({});
     const navigate = useNavigate();
 
     const handleAccess = useCallback((newValues) => {
@@ -23,12 +25,36 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
             ...prevState,
             ...newValues
         }));
+        setErrors({});
     }, []);
 
-    const onEmailChange = (val) => setEmail(val.email);
-    const onPasswordChange = (val) => setPassword(val.password);
+    const onEmailChange = (val) => {
+        setEmail(val.email);
+        if (errors.email) setErrors(prev => ({ ...prev, email: null }));
+    };
+
+    const onPasswordChange = (val) => {
+        setPassword(val.password);
+        if (errors.password) setErrors(prev => ({ ...prev, password: null }));
+    };
 
     const onOrgLogin = () => {
+        const newErrors = {};
+        if (!validateRequired(email)) {
+            newErrors.email = t('login.email_required');
+        } else if (!validateEmail(email)) {
+            newErrors.email = t('login.invalid_email');
+        }
+
+        if (!validateRequired(password)) {
+            newErrors.password = t('login.password_required');
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
         handleOrganizationLogin({ email, password });
     };
 
@@ -72,6 +98,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                     property="m-4"
                     value={email}
                     onChange={onEmailChange}
+                    error={errors.email}
                 />
                 <TextField
                     id="password"
@@ -84,6 +111,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                     property="m-4"
                     value={password}
                     onChange={onPasswordChange}
+                    error={errors.password}
                 />
                 <Container property="flex justify-end m-4 mt-0">
                     <Paragraph

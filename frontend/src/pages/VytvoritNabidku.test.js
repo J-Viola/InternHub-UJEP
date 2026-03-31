@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import VytvoritNabidku from './VytvoritNabidku';
 import { useNabidkaAPI } from '@api/nabidka/nabidkaAPI';
@@ -23,8 +23,17 @@ jest.mock('react-router-dom', () => ({
 // Mock child components
 jest.mock('@components/Forms/NabidkaForm', () => ({ handleSubmit, handleChange, formData }) => (
     <div data-testid="nabidka-form">
-        <button onClick={() => handleChange({ start_date: '01.01.2025', coefficient: '1.0' })}>
-            Set Dates
+        <button onClick={() => handleChange({
+            start_date: '01.01.2025',
+            coefficient: '1.0',
+            contact_user: 10,
+            subject_id: 1,
+            available_positions: 5,
+            title: 'Test Title',
+            description: 'Test Desc',
+            responsibilities: 'Test Resp'
+        })}>
+            Set All Data
         </button>
         <button onClick={() => handleSubmit()}>Create</button>
         <span data-testid="end-date">{formData.end_date}</span>
@@ -85,8 +94,7 @@ describe('VytvoritNabidku', () => {
             </MemoryRouter>
         );
 
-        const setDatesBtn = screen.getByText('Set Dates');
-        setDatesBtn.click();
+        fireEvent.click(screen.getByText('Set All Data'));
 
         await waitFor(() => {
             expect(mockCalculateEndDate).toHaveBeenCalledWith('01.01.2025', '1.0');
@@ -105,8 +113,14 @@ describe('VytvoritNabidku', () => {
             </MemoryRouter>
         );
 
-        const createBtn = screen.getByText('Create');
-        createBtn.click();
+        fireEvent.click(screen.getByText('Set All Data'));
+
+        // Wait for state to settle
+        await waitFor(() => {
+            expect(mockCalculateEndDate).toHaveBeenCalled();
+        });
+
+        fireEvent.click(screen.getByText('Create'));
 
         await waitFor(() => {
             expect(mockCreateNabidka).toHaveBeenCalled();
@@ -127,8 +141,13 @@ describe('VytvoritNabidku', () => {
             </MemoryRouter>
         );
 
-        const createBtn = screen.getByText('Create');
-        createBtn.click();
+        fireEvent.click(screen.getByText('Set All Data'));
+
+        await waitFor(() => {
+            expect(mockCalculateEndDate).toHaveBeenCalled();
+        });
+
+        fireEvent.click(screen.getByText('Create'));
 
         await waitFor(() => {
             expect(mockAddMessage).toHaveBeenCalledWith('Title required', 'E');

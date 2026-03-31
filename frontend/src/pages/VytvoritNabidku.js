@@ -8,6 +8,7 @@ import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 import { useTranslation } from "react-i18next";
+import { validateRequired } from "@utils/validationUtils";
 
 
 export default function VytvoritNabidku() {
@@ -31,7 +32,26 @@ export default function VytvoritNabidku() {
     },[])
 
 
+    const validateForm = () => {
+        const newErrors = {};
+        const required = ['start_date', 'coefficient', 'contact_user', 'subject_id', 'available_positions', 'title', 'description', 'responsibilities'];
+
+        required.forEach(field => {
+            if (!validateRequired(formData[field])) {
+                newErrors[field] = t('form.field_required');
+            }
+        });
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleCreation = async () => {
+        if (!validateForm()) {
+            addMessage(t('form.validation_error'), "W");
+            return;
+        }
+
         setErrors({});
         try {
             const res = await nabidkaAPI.createNabidka(formData);
@@ -74,13 +94,7 @@ export default function VytvoritNabidku() {
     }
 
     useEffect(() => {
-        console.log("Form", formData);
-    },[formData])
-
-
-    useEffect(() => {
         if (formData.coefficient && formData.start_date) {
-            console.log("Volám API na endDate")
             handleCalc(formData.start_date, formData.coefficient);
         }
     }, [formData.coefficient, formData.start_date]);

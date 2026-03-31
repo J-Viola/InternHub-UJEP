@@ -13,6 +13,7 @@ import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@components/core/Form/DropDown";
 import { useTranslation } from "react-i18next";
 import { useMessage } from "@hooks/MessageContext";
+import EmptyState from "@core/Feedback/EmptyState";
 
 export default function PrihlaskyPage() {
 	const { t } = useTranslation();
@@ -186,9 +187,11 @@ export default function PrihlaskyPage() {
 					<Paragraph>{t('common.loading')}</Paragraph>
 				) : (user.isAdmin() || user.isDepartmentUser()) ? (
 					displayCompanyNames.length === 0 ? (
-						<Paragraph property="text-center text-gray-500 py-8">
-							{t('users.no_results')}
-						</Paragraph>
+						<EmptyState
+							title={t('users.no_results')}
+							description={t('applications.no_results_desc', { defaultValue: "" })}
+							icon="search"
+						/>
 					) : (
 						<Container property={"space-y-6"}>
 							{displayCompanyNames.map((companyName) => (
@@ -211,13 +214,19 @@ export default function PrihlaskyPage() {
 						</Container>
 					)
 				) : data.length === 0 ? (
-					<Paragraph property="text-center text-gray-500 py-8">
-						{t('applications.no_data')}
-					</Paragraph>
+					<EmptyState
+						title={t('applications.no_data')}
+						description={t('applications.no_data_desc', { defaultValue: "" })}
+						icon="file-circle-check"
+					/>
 				) : (
 					<Container property={"grid grid-cols-1 gap-4"}>
 						{searchFiltered.length === 0 ? (
-							<Paragraph property="text-center text-gray-500 py-8">{t('users.no_results')}</Paragraph>
+							<EmptyState
+								title={t('users.no_results')}
+								description={t('applications.no_results_desc', { defaultValue: "" })}
+								icon="search"
+							/>
 						) : (
 							searchFiltered.map((entity) => (
 								<PrihlaskaEntity

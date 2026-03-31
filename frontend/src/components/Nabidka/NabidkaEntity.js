@@ -6,6 +6,7 @@ import Headings from "@components/core/Text/Headings"
 import { Image } from "@components/core/Image"
 import { useNavigate } from "react-router-dom"
 import Button from "@components/core/Button/Button"
+import Icon from "@components/core/Icon/Icon"
 import { useUser } from "@hooks/UserProvider"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useTranslation } from "react-i18next"
@@ -95,7 +96,7 @@ export default function NabidkaEntity({ entity }) {
             property="p-6 mt-4 border border-black rounded-[10px] shadow-md hover:shadow-lg transition-all duration-200 relative"
         >
             <Container property="flex flex-row gap-8 items-start w-full">
-                
+
                 {/* LOGO */}
                 <Container property="w-32 h-32 shrink-0 flex items-center justify-center">
                     <Image
@@ -108,13 +109,13 @@ export default function NabidkaEntity({ entity }) {
 
                 {/* CONTENT BLOCK */}
                 <Container property="flex flex-col gap-2 flex-grow min-w-0">
-                    
+
                     {/* TITLE */}
                     <Container property="flex justify-between items-start">
                         <Headings sizeTag="h4" property="text-black font-bold leading-tight">
                             {entity.title}
                         </Headings>
-                        
+
                         {/* ACTIONS (Heart / Status) */}
                         <Container property="flex gap-4 items-center shrink-0 ml-4">
                              {(user.isDepartmentMg() || user.isAdmin() || user.isOrganizationUser()) &&
@@ -149,23 +150,34 @@ export default function NabidkaEntity({ entity }) {
                     {/* TAGS ROW */}
                     <Container property="flex flex-wrap gap-3 mt-auto items-center">
                         {/* MÍSTO */}
-                        <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap">
+                        <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
+                            <Icon name="location-dot" size={14} color="text-white" />
                             {t('offers.location')}: {entity.employer.address}
                         </Container>
-                        
+
                         {/* SKILLS */}
                         {entity.skills && Array.isArray(entity.skills) && entity.skills.map((skill, index) => (
-                            <Container 
-                                key={index} 
+                            <Container
+                                key={index}
                                 property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap"
                             >
-                                {skill}
+                                #{skill}
                             </Container>
                         ))}
 
                         {/* TERMÍN (Datum - Datum) */}
-                        <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap ml-auto">
-                            {entity.start_date} - {entity.end_date}
+                        <Container property="flex items-center gap-4 ml-auto">
+                            <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
+                                <Icon name="calendar" size={14} color="text-white" />
+                                {entity.start_date} - {entity.end_date}
+                            </Container>
+                            <Button
+                                variant="primary"
+                                property="px-6 py-2 text-sm font-bold uppercase"
+                                onClick={handleClick}
+                            >
+                                {t('common.view_detail')}
+                            </Button>
                         </Container>
                     </Container>
 

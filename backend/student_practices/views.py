@@ -94,9 +94,7 @@ class CreateInvitationView(APIView):
         description="Creates pending invitations for specified students to a specific practice. **Permissions: Organization Owner**",
         tags=["Student Practices"],
         request=CreateInvitationSerializer,
-        responses={
-            201: OpenApiResponse(description="Invitations created successfully")
-        },
+        responses={201: OpenApiResponse(description="Invitations created successfully")},
     )
     def post(self, request):
         serializer = CreateInvitationSerializer(data=request.data)
@@ -106,9 +104,7 @@ class CreateInvitationView(APIView):
         student_ids = serializer.validated_data["student_ids"]
 
         try:
-            result = StudentPracticeService.create_invitations(
-                request.user, practice_id, student_ids
-            )
+            result = StudentPracticeService.create_invitations(request.user, practice_id, student_ids)
             return Response(result, status=status.HTTP_201_CREATED)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -134,9 +130,7 @@ class EmployerInvitationApprovalView(APIView):
         invitation_id = serializer.validated_data["invitation_id"]
         action = serializer.validated_data["action"]
 
-        result = StudentPracticeService.process_invitation_approval(
-            request.user, invitation_id, action
-        )
+        result = StudentPracticeService.process_invitation_approval(request.user, invitation_id, action)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -153,7 +147,11 @@ class AdminPracticeListView(generics.ListAPIView):
     queryset = StudentPractice.objects.all()
 
     def get_queryset(self):
-        return StudentPractice.objects.filter(approval_status=ApprovalStatus.PENDING)
+        return StudentPractice.objects.filter(approval_status=ApprovalStatus.PENDING).select_related(
+            "user",
+            "practice__subject__department",
+            "practice__employer",
+        )
 
 
 class ProfessorApplicationsView(generics.ListAPIView):
@@ -192,15 +190,11 @@ class ProfessorApplicationsView(generics.ListAPIView):
         filters |= Q(practice__subject__subject_manager=user)
 
         # 3. As subject teacher
-        subject_ids = user.user_subjects.filter(
-            role=UserSubjectType.Professor
-        ).values_list("subject_id", flat=True)
+        subject_ids = user.user_subjects.filter(role=UserSubjectType.Professor).values_list("subject_id", flat=True)
         filters |= Q(practice__subject_id__in=subject_ids)
 
         return (
-            StudentPractice.objects.filter(
-                filters, approval_status=ApprovalStatus.PENDING
-            )
+            StudentPractice.objects.filter(filters, approval_status=ApprovalStatus.PENDING)
             .select_related(
                 "user",
                 "practice__subject__department",
@@ -293,9 +287,7 @@ class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
 class StudentPracticeStatusUpdateView(APIView):
     permission_classes = [
         IsAuthenticated,
-        IsPracticeOrganizationOwner
-        | IsSubjectTeacherOrHeadForPractice
-        | permissions.IsAdminUser,
+        IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | permissions.IsAdminUser,
     ]
 
     @extend_schema(
@@ -341,9 +333,7 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
 
         if uploaded_file.size > settings.MAX_UPLOAD_SIZE:
             mb_limit = settings.MAX_UPLOAD_SIZE / (1024 * 1024)
-            raise serializers.ValidationError(
-                StudentPracticeMessages.FILE_TOO_LARGE.format(size=mb_limit)
-            )
+            raise serializers.ValidationError(StudentPracticeMessages.FILE_TOO_LARGE.format(size=mb_limit))
 
         return uploaded_file
 
@@ -354,9 +344,7 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
             instance.document.delete(save=False)
 
         file = validated_data["document"]
-        file.name = DocumentHelper.create_name_for_document(
-            instance.document_type, instance.student_practice.user.user_id, file.name
-        )
+        file.name = DocumentHelper.create_name_for_document(instance.document_type, instance.student_practice.user.user_id, file.name)
         instance.document = file
         instance.uploaded_at = timezone.now()  # Use timezone.now()
         instance.status = DocumentStatus.PENDING  # Reset status on re-upload
@@ -378,7 +366,8 @@ class DocumentReviewView(APIView):
 
     @extend_schema(
         summary="Review a document",
-        description="Allows a professor or admin to approve or reject a document with a note. **Permissions: Subject Teacher, Head, or Admin**",
+        description="Allows a professor or admin to approve or reject a document with a note. "
+        "**Permissions: Subject Teacher, Head, or Admin**",
         tags=["Documents"],
         request=DocumentReviewSerializer,
         responses={200: DocumentReviewSerializer},
@@ -441,9 +430,7 @@ class StudentPracticeUploadDocumentView(APIView):
         document = get_object_or_404(UploadedDocument, pk=document_id)
         self.check_object_permissions(request, document)
 
-        serializer = StudentPracticeUploadDocumentSerializer(
-            document, data=request.data, partial=True
-        )
+        serializer = StudentPracticeUploadDocumentSerializer(document, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -482,9 +469,7 @@ class StudentPracticeDownloadDocumentView(APIView):
         self.check_object_permissions(request, document)
 
         file_handle = document.document.open("rb")
-        return FileResponse(
-            file_handle, as_attachment=True, filename=document.document.name
-        )
+        return FileResponse(file_handle, as_attachment=True, filename=document.document.name)
 
 
 class StudentPracticeCardView(APIView):
@@ -521,7 +506,5 @@ class StudentPracticeCardView(APIView):
             pk=student_practice_id,
         )
 
-        serializer = StudentPracticeCardSerializer(
-            student_practice, context={"request": request}
-        )
+        serializer = StudentPracticeCardSerializer(student_practice, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)

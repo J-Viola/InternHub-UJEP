@@ -1,5 +1,6 @@
 import { useApi } from "@hooks/useApi";
 import { useMessage } from "@hooks/MessageContext";
+import { buildFormData } from "@utils/formDataUtils";
 
 export const useSubjectAPI = () => {
     const api = useApi();
@@ -54,12 +55,7 @@ export const useSubjectAPI = () => {
 
     const createSubject = async (data) => {
         try{
-            const formData = new FormData();
-
-            Object.keys(data).forEach(key => {
-                formData.append(key, data[key]);
-            }
-            );
+            const formData = buildFormData(data);
 
             const response = await api.post('/subjects/', formData, {
                 headers: {
@@ -81,13 +77,7 @@ export const useSubjectAPI = () => {
 
     const updateSubject = async (id, data) => {
         try {
-            const formData = new FormData();
-
-            Object.keys(data).forEach(key => {
-                if (data[key] !== null && data[key] !== undefined) {
-                    formData.append(key, data[key]);
-                }
-            });
+            const formData = buildFormData(data);
 
             const response = await api.put(`/subjects/${id}/`, formData, {
                 headers: {

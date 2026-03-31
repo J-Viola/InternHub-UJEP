@@ -12,6 +12,8 @@ import Pagination from "@components/core/Pagination";
 import useDebounce from "@hooks/useDebounce";
 import { useUser } from "@hooks/UserProvider";
 import { useTranslation } from "react-i18next";
+import EmptyState from "@core/Feedback/EmptyState";
+
 
 const PAGE_SIZE = 10;
 
@@ -182,9 +184,11 @@ export default function NabidkaPage() {
             )}
 
             {!loading && !error && data.length === 0 && (
-                <Container property="flex justify-center py-12">
-                    <Paragraph property="text-gray-500">{t('offers.no_results')}</Paragraph>
-                </Container>
+                <EmptyState
+                    title={t('offers.no_results')}
+                    description={t('offers.no_results_desc', { defaultValue: "" })}
+                    icon="search"
+                />
             )}
 
             {!loading && !error && data.length > 0 && (

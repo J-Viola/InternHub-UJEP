@@ -16,6 +16,8 @@ import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "@api/documents/documentsAPI";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { buildFormData } from "@utils/formDataUtils";
+import Icon from "@components/core/Icon/Icon";
 
 export default function NabidkaDetailPage() {
     const { t } = useTranslation();
@@ -68,8 +70,7 @@ export default function NabidkaDetailPage() {
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            const formData = new FormData();
-            formData.append('document', file);
+            const formData = buildFormData({ document: file });
             try {
                 await documentAPI.uploadDocument(documentId, formData);
                 addMessage(t('common.save'), "S");
@@ -193,14 +194,16 @@ export default function NabidkaDetailPage() {
                             {entity?.title}
                         </Headings>
                         <Container property="flex flex-wrap gap-3 mt-2">
-                            <Container property="bg-[#cffafe] text-cyan-800 px-4 py-1.5 rounded-full font-bold text-sm border border-cyan-200 shadow-sm">
+                            <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
+                                <Icon name="location-dot" size={14} color="text-white" />
                                 {t('offers.location')}: {entity?.employer?.address || t('common.not_specified')}
                             </Container>
-                            <Container property="bg-[#fef3c7] text-amber-800 px-4 py-1.5 rounded-full font-bold text-sm border border-amber-200 shadow-sm">
+                            <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
+                                <Icon name="calendar" size={14} color="text-white" />
                                 {entity?.start_date} - {entity?.end_date}
                             </Container>
                             {entity?.skills?.map((skill, index) => (
-                                <Container key={index} property="bg-green-100 text-green-700 px-4 py-1.5 rounded-full font-bold text-sm border border-green-200 shadow-sm">
+                                <Container key={index} property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap">
                                     #{skill}
                                 </Container>
                             ))}

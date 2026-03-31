@@ -65,7 +65,7 @@ module.exports = defineConfig({
     // Cross-Role Flows (e.g. Dual Approval)
     {
       name: 'Cross-Role Flows',
-      testMatch: /.*_flow\.spec\.js|search_filter\.spec\.js/,
+      testMatch: /.*_flow\.spec\.js|search_filter\.spec\.js|scenario_.*\.spec\.js/,
       use: {
         ...devices['Desktop Chrome'],
       },

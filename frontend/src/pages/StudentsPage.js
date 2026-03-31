@@ -15,6 +15,7 @@ import {useNabidkaAPI} from "../api/nabidka/nabidkaAPI";
 import Pagination from "@core/Pagination";
 import useDebounce from "@hooks/useDebounce";
 import { useTranslation } from "react-i18next";
+import EmptyState from "@core/Feedback/EmptyState";
 
 const PAGE_SIZE = 10;
 
@@ -289,7 +290,7 @@ export default function StudentPage() {
                 student.student_full_name ||
                 `${student.first_name || ''} ${student.last_name || ''}`.trim() ||
                 student.name ||
-                'Neznámý student'
+                t('students.unknown_student')
             );
 
             const queryParams = new URLSearchParams({
@@ -373,7 +374,11 @@ export default function StudentPage() {
                     <Paragraph property="text-center text-red-500 py-8">{error}</Paragraph>
                 )}
                 {!loading && !error && filteredEntities.length === 0 && (
-                    <Paragraph property="text-center text-gray-500 py-8">{t('students.no_results')}</Paragraph>
+                    <EmptyState
+                        title={t('students.no_results')}
+                        description={t('students.no_results_desc', { defaultValue: "" })}
+                        icon="user-slash"
+                    />
                 )}
                 {!loading && !error && filteredEntities.map(entity => (
                     <UserEntity

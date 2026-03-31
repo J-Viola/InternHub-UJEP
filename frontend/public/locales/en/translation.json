@@ -27,7 +27,9 @@
     "approve": "Approve",
     "reject": "Reject",
     "download": "Download",
-    "upload": "Upload"
+    "upload": "Upload",
+    "view_detail": "View Detail",
+    "coming_soon": "This feature will be implemented soon"
   },
   "nav": {
     "students": "Student Accounts",
@@ -54,6 +56,10 @@
     "login": "Login",
     "profile": "Profile"
   },
+  "footer": {
+    "all_rights_reserved": "All rights reserved.",
+    "support": "Support"
+  },
   "login": {
     "title": "Login",
     "email": "E-mail",
@@ -66,6 +72,10 @@
     "registration": "Registration",
     "student_id_dev": "Enter student number (optional)",
     "teacher_id_dev": "Enter teacher ID (optional)",
+    "email_required": "Email is required",
+    "password_required": "Password is required",
+    "invalid_email": "Invalid email format",
+    "password_min_length": "Password must be at least {{length}} characters",
     "error_stag": "Error during STAG login",
     "error_login": "Login error",
     "error_init_stag": "Error initiating STAG login",
@@ -76,6 +86,7 @@
   "offers": {
     "title": "Internship Offers",
     "no_results": "No offers found.",
+    "no_results_desc": "Try adjusting your filters or search query.",
     "loading": "Loading offers...",
     "favorites_only": "Favorites only",
     "showing_favorites": "Showing favorites",
@@ -117,7 +128,9 @@
     "load_error": "Error loading form data",
     "loading_form": "Loading form...",
     "role_edit_warning": "Offer editing does not work correctly for your role..",
-    "unknown_type": "Unknown form type"
+    "unknown_type": "Unknown form type",
+    "field_required": "This field is required.",
+    "validation_error": "Please check the errors in the form."
   },
   "status": {
     "PENDING": "Pending approval",
@@ -194,10 +207,13 @@
     "created_title": "Created Internships",
     "create_new": "Create Internship",
     "no_created": "You have no created internships yet.",
+    "no_created_desc": "Create your first offer and start collaborating with students.",
     "submitted_applications": "Submitted Applications",
     "no_applications": "You have no submitted applications.",
+    "no_applications_desc": "Browse the offer list and submit your first application.",
     "company_invitations": "Company Invitations",
     "no_invitations": "You have no invitations.",
+    "no_invitations_desc": "No company has sent you an internship invitation yet.",
     "invitation_label": "Invitation",
     "start_practice_confirm": "Do you really want to start this internship?",
     "loading": "Loading internships...",
@@ -270,6 +286,8 @@
     "dept_students_title": "Department Students",
     "search_placeholder": "Search by name...",
     "no_results": "No students found.",
+    "no_results_desc": "Try changing your search query.",
+    "unknown_student": "Unknown student",
     "loading": "Loading students...",
     "load_error": "Failed to load students.",
     "view_profile": "View profile",
@@ -315,6 +333,8 @@
     "title": "Pending Applications",
     "search_placeholder": "Search by student, department, company, or title...",
     "no_data": "No data to display yet.",
+    "no_data_desc": "All applications have been processed.",
+    "no_results_desc": "Try changing your search query.",
     "change_status_title": "Change Application Status",
     "change_status_text": "Do you really want to change the status of {{name}}'s application?",
     "load_error": "Error loading applications",

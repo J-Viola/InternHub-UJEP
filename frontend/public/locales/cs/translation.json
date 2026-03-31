@@ -27,7 +27,9 @@
     "approve": "Schválit",
     "reject": "Zamítnout",
     "download": "Stáhnout",
-    "upload": "Nahrát"
+    "upload": "Nahrát",
+    "view_detail": "Zobrazit detail",
+    "coming_soon": "Tato funkce bude implementována již brzy"
   },
   "nav": {
     "students": "Studentské účty",
@@ -54,6 +56,10 @@
     "login": "Přihlášení",
     "profile": "Profil"
   },
+  "footer": {
+    "all_rights_reserved": "Všechna práva vyhrazena.",
+    "support": "Podpora"
+  },
   "login": {
     "title": "Přihlášení",
     "email": "E-mail",
@@ -66,6 +72,10 @@
     "registration": "Registrace",
     "student_id_dev": "Zadejte osCislo studenta (nepovinné)",
     "teacher_id_dev": "Zadejte ucitIdno učitele (nepovinné)",
+    "email_required": "E-mail je povinný",
+    "password_required": "Heslo je povinné",
+    "invalid_email": "Neplatný formát e-mailu",
+    "password_min_length": "Heslo musí mít alespoň {{length}} znaků",
     "error_stag": "Chyba při STAG přihlášení",
     "error_login": "Chyba při přihlášení",
     "error_init_stag": "Chyba při iniciaci STAG přihlášení",
@@ -76,6 +86,7 @@
   "offers": {
     "title": "Nabídka praxí",
     "no_results": "Žádné nabídky nebyly nalezeny.",
+    "no_results_desc": "Zkuste upravit filtry nebo vyhledávací dotaz.",
     "loading": "Načítání nabídek...",
     "favorites_only": "Pouze oblíbené",
     "showing_favorites": "Zobrazuji oblíbené",
@@ -117,7 +128,9 @@
     "load_error": "Chyba při načítání dat pro formulář",
     "loading_form": "Načítání formuláře...",
     "role_edit_warning": "Editace nabídky nefunguje pro Vaší roli správně..",
-    "unknown_type": "Neznámý typ formuláře"
+    "unknown_type": "Neznámý typ formuláře",
+    "field_required": "Toto pole je povinné.",
+    "validation_error": "Zkontrolujte prosím chyby ve formuláři."
   },
   "status": {
     "PENDING": "Čeká na schválení",
@@ -145,6 +158,7 @@
     "street": "Ulice",
     "city": "Město",
     "zip_code": "PSČ",
+    "study_info": "Studijní údaje",
     "field_of_study": "Obor",
     "specialization": "Specializace",
     "os_cislo": "Osobní číslo",
@@ -194,10 +208,13 @@
     "created_title": "Vytvořené stáže",
     "create_new": "Založit stáž",
     "no_created": "Zatím nemáte žádné vytvořené stáže.",
+    "no_created_desc": "Vytvořte svou první nabídku a začněte spolupracovat se studenty.",
     "submitted_applications": "Podané přihlášky",
     "no_applications": "Nemáte žádné podané přihlášky.",
+    "no_applications_desc": "Prohlédněte si nabídku praxí a podejte svou první přihlášku.",
     "company_invitations": "Pozvánky od firem",
     "no_invitations": "Nemáte žádné pozvánky.",
+    "no_invitations_desc": "Zatím vám žádná firma neposlala pozvánku k praxi.",
     "invitation_label": "Pozvánka",
     "start_practice_confirm": "Opravdu si přejete zahájit tuto praxi?",
     "loading": "Načítání stáží...",
@@ -270,6 +287,8 @@
     "dept_students_title": "Studenti katedry",
     "search_placeholder": "Hledat podle jména...",
     "no_results": "Žádní studenti nebyli nalezeni.",
+    "no_results_desc": "Zkuste změnit vyhledávací dotaz.",
+    "unknown_student": "Neznámý student",
     "loading": "Načítání studentů...",
     "load_error": "Nepodařilo se načíst studenty.",
     "view_profile": "Zobrazit profil",
@@ -315,6 +334,8 @@
     "title": "Nevyřízené přihlášky",
     "search_placeholder": "Hledat podle studenta, katedry, firmy nebo názvu praxe...",
     "no_data": "Zatím nemáte žádné data k zobrazení.",
+    "no_data_desc": "Všechny přihlášky byly vyřízeny.",
+    "no_results_desc": "Zkuste změnit vyhledávací dotaz.",
     "change_status_title": "Změnit stav přihlášky",
     "change_status_text": "Opravdu si přejete změnit stav přihlášky studenta {{name}}?",
     "load_error": "Chyba při načítání přihlášek",

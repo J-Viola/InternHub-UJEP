@@ -10,12 +10,16 @@ import Paragraph from "@components/core/Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import { useTranslation } from "react-i18next";
+import { validateRequired } from "@utils/validationUtils";
+import { useMessage } from "@hooks/MessageContext";
+
 
 export default function UpravitNabidku() {
     const { t } = useTranslation();
     const [ formData, setFormData ] = useState({})
     const [ subjects, setSubjects ] = useState([])
     const [ organizationUsers, setOrganizationUsers ] = useState([]);
+    const [ errors, setErrors ] = useState({});
     const [ loading, setLoading ] = useState(true);
     const [ isInitialized, setIsInitialized ] = useState(false);
     const codeList = useCodeListAPI();
@@ -24,6 +28,7 @@ export default function UpravitNabidku() {
     const navigate = useNavigate();
     const { id } = useParams();
     const { user } = useUser();
+    const { addMessage } = useMessage();
 
     useEffect(()=> {
         const initFetch = async() => {
@@ -79,7 +84,26 @@ export default function UpravitNabidku() {
     },[id, codeList, userAPI, nabidkaAPI, navigate, t]);
 
 
+    const validateForm = () => {
+        const newErrors = {};
+        const required = ['start_date', 'coefficient', 'contact_user', 'subject_id', 'available_positions', 'title', 'description', 'responsibilities'];
+
+        required.forEach(field => {
+            if (!validateRequired(formData[field])) {
+                newErrors[field] = t('form.field_required');
+            }
+        });
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleUpdate = async () => {
+        if (!validateForm()) {
+            addMessage(t('form.validation_error'), "W");
+            return;
+        }
+
         try {
             const res = await nabidkaAPI.updateNabidka(id, formData, false);
             if (res) {
@@ -87,6 +111,11 @@ export default function UpravitNabidku() {
             }
         } catch (error) {
             console.error("Error updating offer:", error);
+            if (error.details) {
+                setErrors(error.details);
+            } else if (error.response?.data) {
+                setErrors(error.response.data);
+            }
         }
 
     }
@@ -155,6 +184,7 @@ export default function UpravitNabidku() {
                     handleChange={handleChange}
                     handleSubmit={handleUpdate}
                     isEdit={true}
+                    errors={errors}
                 />
             </Container>
         </>

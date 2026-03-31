@@ -14,9 +14,9 @@ import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "src/api/documents/documentsAPI";
-import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
+import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useTranslation } from "react-i18next";
-
+import { buildFormData } from "@utils/formDataUtils";
 
 export default function PraxeDetailPage() {
     const { t } = useTranslation();
@@ -70,8 +70,7 @@ export default function PraxeDetailPage() {
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            const formData = new FormData();
-            formData.append('document', file);
+            const formData = buildFormData({ document: file });
             try {
                 await documentAPI.uploadDocument(documentId, formData);
                 addMessage(t('practice_detail.upload_success'), "S");
@@ -89,7 +88,7 @@ export default function PraxeDetailPage() {
         if (status === 2) { // REJECTED
             note = prompt(t('docs.reject_note_prompt')) || "";
         }
-        
+
         try {
             await documentAPI.reviewDocument(documentId, status, note);
             addMessage(t('docs.review_success'), "S");

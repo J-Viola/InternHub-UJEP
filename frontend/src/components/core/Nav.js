@@ -85,7 +85,6 @@ function Nav({}) {
     const studentDict = {
         [t('nav.internship_offers')]: "/nabidka",
         [t('nav.my_internships')]: "/praxe",
-        [t('nav.my_applications')]: "/moje-prihlasky",
         [t('nav.profile')]: "/profil",
         [t('nav.logout')]: "/logout",
     };

@@ -134,46 +134,40 @@ export default function ProfilPage() {
 
                     </Container>
 
-                    <Container property={"w-full mt-2 grid-cols-1 space-y-6"}>
+                    <Container property={"w-full mt-2 grid-cols-1 space-y-10"}>
 
                         {/* OSOBNÍ ÚDAJE */}
-                        <Container property="p-1 space-y-1">
-                            <Headings sizeTag={"h4"}>{t('profile.personal_info')}</Headings>
-                            <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Container property="p-1 space-y-4">
+                            <Headings sizeTag={"h4"} property="border-b border-gray-200 pb-2">{t('profile.personal_info')}</Headings>
+                            <Container property="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                                 <Container>
-                                    <Paragraph property="font-medium">{t('profile.first_name')}:</Paragraph>
-                                    <Paragraph>{userData.first_name}</Paragraph>
+                                    <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.first_name')}</Paragraph>
+                                    <Paragraph property="font-medium text-lg">{userData.first_name}</Paragraph>
                                 </Container>
                                 <Container>
-                                    <Paragraph property="font-medium">{t('profile.last_name')}:</Paragraph>
-                                    <Paragraph>{userData.last_name}</Paragraph>
+                                    <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.last_name')}</Paragraph>
+                                    <Paragraph property="font-medium text-lg">{userData.last_name}</Paragraph>
                                 </Container>
                                 <Container>
-                                    <Paragraph property="font-medium">{t('profile.email')}:</Paragraph>
-                                    <Paragraph>{userData.email}</Paragraph>
+                                    <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.email')}</Paragraph>
+                                    <Paragraph property="font-medium text-lg">{userData.email}</Paragraph>
                                 </Container>
-                                {userData.os_cislo && (
-                                    <Container>
-                                        <Paragraph property="font-medium">{t('profile.os_cislo')}:</Paragraph>
-                                        <Paragraph>{userData.os_cislo}</Paragraph>
-                                    </Container>
-                                )}
                                 {userData.phone && (
                                     <Container>
-                                        <Paragraph property="font-medium">{t('profile.phone')}:</Paragraph>
-                                        <Paragraph>{userData.phone}</Paragraph>
+                                        <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.phone')}</Paragraph>
+                                        <Paragraph property="font-medium text-lg">{userData.phone}</Paragraph>
                                     </Container>
                                 )}
                                 {userData.title_before && (
                                     <Container>
-                                        <Paragraph property="font-medium">{t('profile.title_before')}:</Paragraph>
-                                        <Paragraph>{userData.title_before}</Paragraph>
+                                        <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.title_before')}</Paragraph>
+                                        <Paragraph property="font-medium text-lg">{userData.title_before}</Paragraph>
                                     </Container>
                                 )}
                                 {userData.title_after && (
                                     <Container>
-                                        <Paragraph property="font-medium">{t('profile.title_after')}:</Paragraph>
-                                        <Paragraph>{userData.title_after}</Paragraph>
+                                        <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.title_after')}</Paragraph>
+                                        <Paragraph property="font-medium text-lg">{userData.title_after}</Paragraph>
                                     </Container>
                                 )}
                             </Container>
@@ -181,25 +175,25 @@ export default function ProfilPage() {
 
                         {/* TRVALÉ BYDLIŠTĚ - pouze pro studenty */}
                         {userData.user_type === 'student' && (userData.street || userData.city) && (
-                            <Container property="p-1 space-y-1">
-                                <Headings sizeTag={"h4"}>{t('profile.residence')}</Headings>
-                                <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Container property="p-1 space-y-4">
+                                <Headings sizeTag={"h4"} property="border-b border-gray-200 pb-2">{t('profile.residence')}</Headings>
+                                <Container property="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                                     {userData.street && (
                                         <Container>
-                                            <Paragraph property="font-medium">{t('profile.street')}:</Paragraph>
-                                            <Paragraph>{userData.street} {userData.street_number}</Paragraph>
+                                            <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.street')}</Paragraph>
+                                            <Paragraph property="font-medium text-lg">{userData.street} {userData.street_number}</Paragraph>
                                         </Container>
                                     )}
                                     {userData.city && (
                                         <Container>
-                                            <Paragraph property="font-medium">{t('profile.city')}:</Paragraph>
-                                            <Paragraph>{userData.city}</Paragraph>
+                                            <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.city')}</Paragraph>
+                                            <Paragraph property="font-medium text-lg">{userData.city}</Paragraph>
                                         </Container>
                                     )}
                                     {userData.zip_code && (
                                         <Container>
-                                            <Paragraph property="font-medium">{t('profile.zip_code')}:</Paragraph>
-                                            <Paragraph>{userData.zip_code}</Paragraph>
+                                            <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.zip_code')}</Paragraph>
+                                            <Paragraph property="font-medium text-lg">{userData.zip_code}</Paragraph>
                                         </Container>
                                     )}
                                 </Container>
@@ -208,9 +202,9 @@ export default function ProfilPage() {
 
                         {/* O MĚ */}
                         {userData.additional_info && (
-                            <Container property="p-1 space-y-1 mb-4">
-                                <Headings sizeTag={"h4"}>{t('profile.about_me')}</Headings>
-                                <Paragraph>
+                            <Container property="p-1 space-y-4">
+                                <Headings sizeTag={"h4"} property="border-b border-gray-200 pb-2">{t('profile.about_me')}</Headings>
+                                <Paragraph property="text-lg leading-relaxed text-gray-800">
                                     {userData.additional_info}
                                 </Paragraph>
                             </Container>
@@ -218,13 +212,13 @@ export default function ProfilPage() {
 
                         {/* SKILLS - pouze pro studenty */}
                         {userData.user_type === 'student' && userData.skills && userData.skills.length > 0 && (
-                            <Container property="p-1 space-y-1">
-                                <Headings sizeTag={"h4"}>{t('profile.skills')}</Headings>
-                                <div className="flex flex-wrap gap-2">
+                            <Container property="p-1 space-y-4">
+                                <Headings sizeTag={"h4"} property="border-b border-gray-200 pb-2">{t('profile.skills')}</Headings>
+                                <div className="flex flex-wrap gap-3 pt-2">
                                     {userData.skills.map((skill, index) => (
                                         <span
                                             key={index}
-                                            className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full"
+                                            className="bg-blue-50 text-blue-700 text-sm font-bold px-5 py-2 rounded-full border border-blue-100 shadow-sm"
                                         >
                                             {skill}
                                         </span>
@@ -233,19 +227,48 @@ export default function ProfilPage() {
                             </Container>
                         )}
 
-                        {/* CV - pouze pro studenty, pokud backend vrací URL */}
+                        {/* STUDIJNÍ INFORMACE - pouze pro studenty */}
+                        {userData.user_type === 'student' && (userData.os_cislo || userData.faculty || userData.department) && (
+                            <Container property="p-1 space-y-4">
+                                <Headings sizeTag={"h4"} property="border-b border-gray-200 pb-2">{t('profile.study_info')}</Headings>
+                                <Container property="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                                    {userData.os_cislo && (
+                                        <Container>
+                                            <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.os_cislo')}</Paragraph>
+                                            <Paragraph property="font-medium text-lg">{userData.os_cislo}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.faculty && (
+                                        <Container>
+                                            <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.faculty')}</Paragraph>
+                                            <Paragraph property="font-medium text-lg">{userData.faculty}</Paragraph>
+                                        </Container>
+                                    )}
+                                    {userData.department && (
+                                        <Container>
+                                            <Paragraph property="text-gray-500 text-sm mb-0.5">{t('profile.department')}</Paragraph>
+                                            <Paragraph property="font-medium text-lg">{userData.department}</Paragraph>
+                                        </Container>
+                                    )}
+                                </Container>
+                            </Container>
+                        )}
+
+                        {/* CV - pouze pro studenty */}
                         {userData.user_type === 'student' && userData.cv_file && (
-                            <Container property="p-1 space-y-1">
-                                <Headings sizeTag={"h4"}>{t('profile.cv')}</Headings>
-                                <a
-                                    href={userData.cv_file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline flex items-center gap-2"
-                                >
-                                    <Button icon="download" noVariant={true} iconColor="text-blue-600" />
-                                    {t('profile.download_cv')}
-                                </a>
+                            <Container property="p-1 space-y-4">
+                                <Headings sizeTag={"h4"} property="border-b border-gray-200 pb-2">{t('profile.cv')}</Headings>
+                                <Container property="pt-2">
+                                    <a
+                                        href={userData.cv_file}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-3 bg-gray-50 hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg border border-gray-200 transition-colors shadow-sm"
+                                    >
+                                        <Button icon="download" noVariant={true} iconColor="text-blue-600" />
+                                        {t('profile.download_cv')}
+                                    </a>
+                                </Container>
                             </Container>
                         )}
 
