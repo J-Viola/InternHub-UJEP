@@ -29,6 +29,8 @@ from practices.serializers import (
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
 from student_practices.serializers import ListStudentPracticeSerializer
+from users.action_log import ActionLogService
+from users.constants import ActionLogType
 from users.models import ApprovalStatus, ProfessorUser, StagRoleEnum, StudentUser
 from users.permissions import IsOrganizationOwner, IsOrganizationUser, IsStagTeacher
 
@@ -82,6 +84,14 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         result = PracticeService.get_user_practices_and_invitations(user)
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.VIEW,
+            object_type="StudentPractice",
+            description=f"Student {user.email} zobrazení vlastních praxí a pozvánek",
+        )
+
         return Response(result)
 
     @extend_schema(summary="Apply for a practice (student)", tags=["Practices - Student"])
@@ -109,9 +119,27 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
         practice = self.get_object()
         if user.favorite_practices.filter(pk=practice.pk).exists():
             user.favorite_practices.remove(practice)
+
+            ActionLogService.log(
+                user=user,
+                action_type=ActionLogType.TOGGLE_FAVORITE,
+                object_type="Practice",
+                object_id=practice.pk,
+                description=f"Student {user.email} odebral praxi '{practice.title}' z oblíbených",
+            )
+
             return Response({"detail": "REMOVED_FROM_FAVORITES", "is_favorite": False})
         else:
             user.favorite_practices.add(practice)
+
+            ActionLogService.log(
+                user=user,
+                action_type=ActionLogType.TOGGLE_FAVORITE,
+                object_type="Practice",
+                object_id=practice.pk,
+                description=f"Student {user.email} přidal praxi '{practice.title}' do oblíbených",
+            )
+
             return Response({"detail": "ADDED_TO_FAVORITES", "is_favorite": True})
 
     @extend_schema(summary="Get upcoming practices", tags=["Practices - Student"])
@@ -119,6 +147,14 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
     def upcoming(self, request):
         today = date.today()
         upcoming_practices = self.get_queryset().filter(start_date__gte=today).order_by("start_date")
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="Practice",
+            description=f"Student {request.user.email} zobrazení nadcházejících praxí",
+        )
+
         page = self.paginate_queryset(upcoming_practices)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -137,6 +173,20 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
             )
         practices = self.get_queryset().filter(subject_id=subj_id).order_by("start_date")
         serializer = self.get_serializer(practices, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="Practice",
+            object_id=instance.pk,
+            description=f"Zobrazení detailu praxe '{instance.title}' (ID: {instance.pk})",
+        )
+
         return Response(serializer.data)
 
 
@@ -189,7 +239,18 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
 
     @extend_schema(summary="Get organization practice detail")
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="Practice",
+            object_id=instance.pk,
+            description=f"Zaměstnavatel zobrazení detailu nabídky '{instance.title}' (ID: {instance.pk})",
+        )
+
+        return Response(serializer.data)
 
     @extend_schema(summary="Create a new practice")
     def create(self, request, *args, **kwargs):
@@ -210,18 +271,56 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.CREATE,
+            object_type="Practice",
+            object_id=serializer.data.get("practice_id"),
+            description=f"Zaměstnavatel vytvořil nabídku praxe: {serializer.data.get('title', '')}",
+        )
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(summary="Update an organization practice")
     def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+        instance = self.get_object()
+        response = super().update(request, *args, **kwargs)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.UPDATE,
+            object_type="Practice",
+            object_id=instance.pk,
+            description=f"Zaměstnavatel upravil nabídku praxe '{instance.title}' (ID: {instance.pk})",
+        )
+        return response
 
     @extend_schema(summary="Partially update an organization practice")
     def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
+        instance = self.get_object()
+        response = super().partial_update(request, *args, **kwargs)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.UPDATE,
+            object_type="Practice",
+            object_id=instance.pk,
+            description=f"Částečná úprava nabídky praxe '{instance.title}' (ID: {instance.pk})",
+        )
+        return response
 
     @extend_schema(summary="Delete an organization practice")
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.DELETE,
+            object_type="Practice",
+            object_id=instance.pk,
+            description=f"Smazání nabídky praxe '{instance.title}' (ID: {instance.pk})",
+        )
         return super().destroy(request, *args, **kwargs)
 
 
@@ -249,6 +348,13 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
             .select_related("subject__department", "employer")
             .order_by("-created_at")
         )
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="Practice",
+            description=f"Profesor {request.user.email} zobrazení čekajících praxí na schválení",
+        )
         page = self.paginate_queryset(practices)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -272,6 +378,18 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         approval_status = ApprovalStatus.get(name_or_numeric=serializer.validated_data.get("approval_status"))
         practice_obj.approval_status = approval_status
         practice_obj.save()
+
+        status_name = "schválena" if approval_status == ApprovalStatus.APPROVED else "zamítnuta"
+        action_type = ActionLogType.APPROVE if approval_status == ApprovalStatus.APPROVED else ActionLogType.REJECT
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=action_type,
+            object_type="Practice",
+            object_id=practice_obj.pk,
+            description=f"Praxe '{practice_obj.title}' (ID: {practice_obj.pk}) {status_name} uživatelem {request.user.email}",
+        )
+
         return Response(PracticeSerializer(practice_obj).data)
 
     @extend_schema(summary="Get practices by user department (Approved vs Pending)")
@@ -291,6 +409,13 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         approved_data = ListStudentPracticeSerializer(approved, many=True, context={"request": request}).data
         to_approve_data = PracticeSerializer(to_approve, many=True, context={"request": request}).data
         to_approve_data = PracticeService.enrich_contact_user_info(to_approve_data, to_approve)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="Practice",
+            description=f"Profesor {request.user.email} zobrazení přehledu katedry",
+        )
 
         return Response(
             {
@@ -331,6 +456,14 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
                 ),
             )
         )
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="Practice",
+            description=f"Profesor {request.user.email} zobrazení běžících praxí",
+        )
+
         page = self.paginate_queryset(practices)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

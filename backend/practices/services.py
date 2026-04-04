@@ -13,6 +13,8 @@ from student_practices.models import (
     StudentPractice,
 )
 from student_practices.serializers import StudentPracticeSerializer
+from users.action_log import ActionLogService
+from users.constants import ActionLogType
 from users.models import ApprovalStatus
 from users.services import get_user_department_ids
 
@@ -34,9 +36,7 @@ class PracticeService:
 
     @staticmethod
     def get_user_practices_and_invitations(user):
-        student_practices = StudentPractice.objects.filter(user=user).select_related(
-            "practice", "practice__employer"
-        )
+        student_practices = StudentPractice.objects.filter(user=user).select_related("practice", "practice__employer")
 
         sp_data = [
             {
@@ -50,9 +50,9 @@ class PracticeService:
             for sp in student_practices
         ]
 
-        invitations = EmployerInvitation.objects.filter(
-            user=user, status=EmployerInvitationStatus.PENDING
-        ).select_related("practice", "practice__employer")
+        invitations = EmployerInvitation.objects.filter(user=user, status=EmployerInvitationStatus.PENDING).select_related(
+            "practice", "practice__employer"
+        )
 
         inv_data = [
             {
@@ -81,9 +81,7 @@ class PracticeService:
         if StudentPractice.objects.filter(practice_id=practice_id, user=user).exists():
             raise ValueError(PracticeMessages.ALREADY_APPLIED)
 
-        practice = Practice.objects.filter(
-            practice_id=practice_id, is_active=True
-        ).first()
+        practice = Practice.objects.filter(practice_id=practice_id, is_active=True).first()
         if not practice:
             raise ValueError(PracticeMessages.NOT_FOUND)
 
@@ -105,6 +103,15 @@ class PracticeService:
         serializer = StudentPracticeSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
+
+            ActionLogService.log(
+                user=user,
+                action_type=ActionLogType.APPLY,
+                object_type="StudentPractice",
+                object_id=serializer.data.get("student_practice_id"),
+                description=f"Student {user.email} se přihlásil na praxi ID {practice_id}",
+            )
+
             return serializer.data
         else:
             error_msg = "; ".join([f"{k}: {v}" for k, v in serializer.errors.items()])
@@ -121,9 +128,7 @@ class PracticeService:
         approved_student_practices = StudentPractice.objects.filter(
             practice__subject__department_id__in=dept_ids,
             approval_status=ApprovalStatus.APPROVED,
-        ).select_related(
-            "user", "practice", "practice__subject", "practice__contact_user"
-        )
+        ).select_related("user", "practice", "practice__subject", "practice__contact_user")
 
         # Practice offers waiting for VK approval (the original wheel)
         to_approve_offers = Practice.objects.filter(
@@ -168,9 +173,7 @@ class PracticeService:
             .annotate(
                 approved_count=Count(
                     "student_practices",
-                    filter=Q(
-                        student_practices__approval_status=ApprovalStatus.APPROVED
-                    ),
+                    filter=Q(student_practices__approval_status=ApprovalStatus.APPROVED),
                 ),
                 pending_count=Count(
                     "student_practices",

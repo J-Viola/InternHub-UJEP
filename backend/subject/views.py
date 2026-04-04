@@ -8,6 +8,8 @@ from rest_framework.response import Response
 
 from practices.messages import PracticeMessages
 from subject.models import Subject
+from users.action_log import ActionLogService
+from users.constants import ActionLogType
 from users.services import get_user_department_ids
 
 from .serializers import SubjectSerializer
@@ -56,10 +58,36 @@ class SubjectViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save()
+        instance = serializer.save()
+
+        ActionLogService.log(
+            user=self.request.user,
+            action_type=ActionLogType.CREATE,
+            object_type="Subject",
+            object_id=instance.pk,
+            description=f"Vytvoření předmětu {instance.subject_name} ({instance.subject_code})",
+        )
 
     def perform_update(self, serializer):
-        serializer.save()
+        instance = serializer.save()
+
+        ActionLogService.log(
+            user=self.request.user,
+            action_type=ActionLogType.UPDATE,
+            object_type="Subject",
+            object_id=instance.pk,
+            description=f"Úprava předmětu {instance.subject_name} ({instance.subject_code})",
+        )
+
+    def perform_destroy(self, instance):
+        ActionLogService.log(
+            user=self.request.user,
+            action_type=ActionLogType.DELETE,
+            object_type="Subject",
+            object_id=instance.pk,
+            description=f"Smazání předmětu {instance.subject_name} ({instance.subject_code})",
+        )
+        instance.delete()
 
     @extend_schema(
         summary="Get department-specific subjects",
@@ -84,9 +112,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
             return Response({"error": PracticeMessages.NO_DEPARTMENT}, status=400)
 
         # Get all subjects from the user's departments
-        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related(
-            "department"
-        )
+        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related("department")
 
         # Serialize the subjects
         serializer = self.get_serializer(subjects, many=True)

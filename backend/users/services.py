@@ -6,6 +6,8 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
 from department.models import Department
 from subject.models import Subject
+from users.action_log import ActionLogService
+from users.constants import ActionLogType
 from users.dtos.dtos import EkonomickySubjektDTO
 from users.messages import UserMessages
 from users.models import (
@@ -67,9 +69,7 @@ def register_organization(validated_data):
             employer_id=user.id,
             ico=ico,
             dic=dic if dic else (ares_data.dic or ""),
-            company_name=(
-                company_name if company_name else (ares_data.obchodniJmeno or "")
-            ),
+            company_name=(company_name if company_name else (ares_data.obchodniJmeno or "")),
             address=address if address else address_ares,
             zip_code=zip_code_ares,
             approval_status=ApprovalStatus.PENDING,
@@ -79,6 +79,14 @@ def register_organization(validated_data):
         user.employer_profile = employer_profile
         user.set_password(password)
         user.save()
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.REGISTER,
+            object_type="OrganizationUser",
+            object_id=user.id,
+            description=f"Registrace organizace {employer_profile.company_name} (IČO: {ico}), email: {user.email}",
+        )
 
         return user
 
@@ -115,6 +123,15 @@ def update_organization_from_ares(user, ico: str):
         )
 
     user.save()
+
+    ActionLogService.log(
+        user=user,
+        action_type=ActionLogType.ARES_UPDATE,
+        object_type="EmployerProfile",
+        object_id=user.id,
+        description=f"Aktualizace organizace z ARES (IČO: {ico})",
+    )
+
     return user
 
 
@@ -225,9 +242,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
     ucitIdno = info.get("ucitIdno")
 
     try:
-        stagRole, created = StagRole.objects.get_or_create(
-            role=role, defaults={"role_name": roleName}
-        )
+        stagRole, created = StagRole.objects.get_or_create(role=role, defaults={"role_name": roleName})
         if not created and stagRole.role_name != roleName:
             # If role existed, but its role_name is different from what STAG provided, update it.
             stagRole.role_name = roleName
@@ -247,9 +262,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 f"violation and no fallback by role_name found. Error: {e}"
             )
         except Exception as e_inner:
-            raise AuthenticationFailed(
-                f"An unexpected error occurred during STAG role handling: {e_inner}"
-            )
+            raise AuthenticationFailed(f"An unexpected error occurred during STAG role handling: {e_inner}")
 
     user = None
 
@@ -275,15 +288,20 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                             raise AuthenticationFailed(
                                 f"Uživatel s emailem {email} existuje jako ADMIN/STAFF. Nelze automaticky převést na Studenta."
                             )
-                        # Archive existing user instead of deleting
                         import time
 
                         timestamp = int(time.time())
-                        existing_user.email = (
-                            f"archived_{timestamp}_{existing_user.email}"
-                        )
+                        existing_user.email = f"archived_{timestamp}_{existing_user.email}"
                         existing_user.is_active = False
                         existing_user.save()
+
+                        ActionLogService.log(
+                            user=None,
+                            action_type=ActionLogType.UPDATE,
+                            object_type="User",
+                            object_id=existing_user.id,
+                            description=f"Archivace uživatele {email} při STAG konfliktu (student)",
+                        )
                     else:
                         raise AuthenticationFailed(
                             f"Uživatel s emailem {email} již existuje, ale není veden jako student.Kontaktujte administrátora"
@@ -295,7 +313,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
             # Update basic info
             user.first_name = first_name
             user.last_name = last_name
-            user.os_cislo = osCislo  # Ensure os_cislo is updated
+            user.os_cislo = osCislo
             user.save()
         else:
             user = StudentUser.objects.create(
@@ -306,6 +324,14 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 os_cislo=osCislo,
                 is_active=True,
             )
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.LOGIN,
+            object_type="StudentUser",
+            object_id=user.id,
+            description=f"STAG login student: {first_name} {last_name} ({email})",
+        )
 
         # Simple caching for sync: Only sync if created or (last_login is None or old)
         # Or simply: Always sync but with timeout handled in sync function
@@ -336,11 +362,17 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                         import time
 
                         timestamp = int(time.time())
-                        existing_user.email = (
-                            f"archived_{timestamp}_{existing_user.email}"
-                        )
+                        existing_user.email = f"archived_{timestamp}_{existing_user.email}"
                         existing_user.is_active = False
                         existing_user.save()
+
+                        ActionLogService.log(
+                            user=None,
+                            action_type=ActionLogType.UPDATE,
+                            object_type="User",
+                            object_id=existing_user.id,
+                            description=f"Archivace uživatele {email} při STAG konfliktu (profesor)",
+                        )
                     else:
                         raise AuthenticationFailed(
                             f"Uživatel s emailem {email} již existuje, ale není veden jako vyučující.Kontaktujte administrátora"
@@ -359,19 +391,11 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 department = Department.objects.get(department_code=katedra)
             except Department.DoesNotExist:
                 if settings.DEMO_LOGIN:
-                    department, _ = Department.objects.get_or_create(
-                        department_code=settings.DEMO_DEPARTMENT_CODE
-                    )
+                    department, _ = Department.objects.get_or_create(department_code=settings.DEMO_DEPARTMENT_CODE)
                 else:
-                    raise AuthenticationFailed(
-                        f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému"
-                    )
+                    raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
 
-            department_role = (
-                DepartmentRole.HEAD
-                if stagRole.role == StagRoleEnum.VK
-                else DepartmentRole.TEACHER
-            )
+            department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
 
             user = ProfessorUser.objects.create(
                 email=email,
@@ -383,6 +407,14 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 department=department,
                 department_role=department_role,
             )
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.LOGIN,
+            object_type="ProfessorUser",
+            object_id=user.id,
+            description=f"STAG login profesor: {first_name} {last_name} ({email})",
+        )
 
         sync_stag_roles_for_teacher(ticket, ucitIdno, user)
 
@@ -404,9 +436,7 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
     valid_subject_codes = set()
 
     if settings.DEMO_LOGIN:
-        subject, _ = Subject.objects.get_or_create(
-            subject_code=settings.DEMO_SUBJECT_CODE
-        )
+        subject, _ = Subject.objects.get_or_create(subject_code=settings.DEMO_SUBJECT_CODE)
         UserSubject.objects.update_or_create(
             subject=subject,
             user=user,
@@ -424,9 +454,7 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
 
         department = None
         if katedra_kod:
-            department, _ = Department.objects.get_or_create(
-                department_code=katedra_kod, defaults={"department_name": katedra_kod}
-            )
+            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
 
         if zkratka:
             valid_subject_codes.add(zkratka)
@@ -451,9 +479,17 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
             )
 
     # Soft-delete subjects the user is no longer enrolled in
-    UserSubject.objects.filter(
-        user=user, role=UserSubjectType.Student, is_active=True
-    ).exclude(subject__subject_code__in=valid_subject_codes).update(is_active=False)
+    UserSubject.objects.filter(user=user, role=UserSubjectType.Student, is_active=True).exclude(
+        subject__subject_code__in=valid_subject_codes
+    ).update(is_active=False)
+
+    ActionLogService.log(
+        user=user,
+        action_type=ActionLogType.VIEW,
+        object_type="STAG",
+        object_id=user.id,
+        description=f"STAG synchronizace předmětů studenta {user.email} ({len(valid_subject_codes)} předmětů)",
+    )
 
 
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
@@ -477,9 +513,7 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
 
         department = None
         if katedra_kod:
-            department, _ = Department.objects.get_or_create(
-                department_code=katedra_kod, defaults={"department_name": katedra_kod}
-            )
+            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
 
         if zkratka:
             valid_subject_codes.add(zkratka)
@@ -502,6 +536,14 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
             )
 
     # Soft-delete subjects the teacher is no longer assigned to
-    UserSubject.objects.filter(
-        user=user, role=UserSubjectType.Professor, is_active=True
-    ).exclude(subject__subject_code__in=valid_subject_codes).update(is_active=False)
+    UserSubject.objects.filter(user=user, role=UserSubjectType.Professor, is_active=True).exclude(
+        subject__subject_code__in=valid_subject_codes
+    ).update(is_active=False)
+
+    ActionLogService.log(
+        user=user,
+        action_type=ActionLogType.VIEW,
+        object_type="STAG",
+        object_id=user.id,
+        description=f"STAG synchronizace předmětů učitele {user.email} ({len(valid_subject_codes)} předmětů)",
+    )

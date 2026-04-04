@@ -34,6 +34,8 @@ from student_practices.permissions import (
     IsSubjectTeacherOrHeadForPractice,
 )
 from student_practices.services import StudentPracticeService
+from users.action_log import ActionLogService
+from users.constants import ActionLogType
 from users.models import ApprovalStatus
 from users.permissions import IsOrganizationOwner
 
@@ -67,7 +69,15 @@ class EmployerInvitationViewSet(ModelViewSet):
 
     @extend_schema(summary="Create an employer invitation")
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.CREATE,
+            object_type="EmployerInvitation",
+            description=f"Vytvoření pozvánky zaměstnavatelem {request.user.email}",
+        )
+        return response
 
     @extend_schema(summary="Get employer invitation detail")
     def retrieve(self, request, *args, **kwargs):
@@ -75,7 +85,17 @@ class EmployerInvitationViewSet(ModelViewSet):
 
     @extend_schema(summary="Update an employer invitation")
     def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+        instance = self.get_object()
+        response = super().update(request, *args, **kwargs)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.UPDATE,
+            object_type="EmployerInvitation",
+            object_id=instance.invitation_id,
+            description=f"Úprava pozvánky ID {instance.invitation_id}",
+        )
+        return response
 
     @extend_schema(summary="Partial update an employer invitation")
     def partial_update(self, request, *args, **kwargs):
@@ -83,6 +103,15 @@ class EmployerInvitationViewSet(ModelViewSet):
 
     @extend_schema(summary="Delete an employer invitation")
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.DELETE,
+            object_type="EmployerInvitation",
+            object_id=instance.invitation_id,
+            description=f"Smazání pozvánky ID {instance.invitation_id}",
+        )
         return super().destroy(request, *args, **kwargs)
 
 
@@ -434,6 +463,14 @@ class StudentPracticeUploadDocumentView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.DOCUMENT_UPLOAD,
+            object_type="UploadedDocument",
+            object_id=document.pk,
+            description=f"Nahrání dokumentu {document.document_type} (ID: {document.pk}) uživatelem {request.user.email}",
+        )
+
         return Response(
             {"detail": StudentPracticeMessages.DOCUMENT_UPLOAD_SUCCESS},
             status=status.HTTP_201_CREATED,
@@ -467,6 +504,14 @@ class StudentPracticeDownloadDocumentView(APIView):
     def get(self, request, document_id):
         document = get_object_or_404(UploadedDocument, pk=document_id)
         self.check_object_permissions(request, document)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="UploadedDocument",
+            object_id=document.pk,
+            description=f"Stažení dokumentu {document.document_type} (ID: {document.pk})",
+        )
 
         file_handle = document.document.open("rb")
         return FileResponse(file_handle, as_attachment=True, filename=document.document.name)
@@ -507,4 +552,13 @@ class StudentPracticeCardView(APIView):
         )
 
         serializer = StudentPracticeCardSerializer(student_practice, context={"request": request})
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="StudentPractice",
+            object_id=student_practice.student_practice_id,
+            description=f"Zobrazení karty přihlášky ID {student_practice.student_practice_id}",
+        )
+
         return Response(serializer.data, status=status.HTTP_200_OK)

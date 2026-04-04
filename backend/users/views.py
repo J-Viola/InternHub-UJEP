@@ -16,6 +16,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from api.views import StandardResultsSetPagination
+from users.action_log import ActionLogService
+from users.constants import ActionLogType
 from users.messages import UserMessages
 from users.models import (
     EmployerProfile,
@@ -89,9 +91,7 @@ class PasswordResetRequestView(APIView):
         summary="Request password reset email",
         tags=["Auth"],
         request=PasswordResetRequestSerializer,
-        responses={
-            200: OpenApiResponse(description="If email exists, reset link was sent")
-        },
+        responses={200: OpenApiResponse(description="If email exists, reset link was sent")},
     )
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
@@ -100,7 +100,6 @@ class PasswordResetRequestView(APIView):
 
         try:
             user = User.objects.get(email=email)
-            # STAG users cannot reset password here
             if isinstance(user, StagUser):
                 return Response(
                     {"detail": UserMessages.STAG_PASSWORD_CHANGE_DISABLED},
@@ -110,7 +109,6 @@ class PasswordResetRequestView(APIView):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
 
-            # URL na frontend (např. http://localhost:3000/reset-password/UID/TOKEN)
             frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
             reset_url = f"{frontend_url}/reset-password/{uid}/{token}"
 
@@ -121,14 +119,19 @@ class PasswordResetRequestView(APIView):
                 [email],
                 fail_silently=False,
             )
+
+            ActionLogService.log(
+                user=user,
+                action_type=ActionLogType.PASSWORD_RESET,
+                object_type="User",
+                object_id=user.id,
+                description=f"Žádost o reset hesla pro {email}",
+            )
         except User.DoesNotExist:
-            # Pro bezpečnost neříkáme, že email neexistuje
             pass
 
         return Response(
-            {
-                "message": "Pokud email v systému existuje, byl na něj odeslán odkaz pro obnovu hesla."
-            },
+            {"message": "Pokud email v systému existuje, byl na něj odeslán odkaz pro obnovu hesla."},
             status=status.HTTP_200_OK,
         )
 
@@ -155,9 +158,7 @@ class PasswordResetConfirmView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not default_token_generator.check_token(
-            user, serializer.validated_data["token"]
-        ):
+        if not default_token_generator.check_token(user, serializer.validated_data["token"]):
             return Response(
                 {"detail": UserMessages.INVALID_TOKEN},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -165,6 +166,15 @@ class PasswordResetConfirmView(APIView):
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.PASSWORD_RESET,
+            object_type="User",
+            object_id=user.id,
+            description=f"Reset hesla pro uživatele {user.email}",
+        )
+
         return Response(
             {"message": "Heslo bylo úspěšně změněno. Nyní se můžete přihlásit."},
             status=status.HTTP_200_OK,
@@ -200,9 +210,16 @@ class ChangePasswordView(APIView):
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
-        return Response(
-            {"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.PASSWORD_CHANGE,
+            object_type="User",
+            object_id=user.id,
+            description=f"Změna hesla pro uživatele {user.email}",
         )
+
+        return Response({"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK)
 
 
 class LogoutView(generics.GenericAPIView):
@@ -223,6 +240,15 @@ class LogoutView(generics.GenericAPIView):
             refresh_token = serializer.validated_data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
+
+            ActionLogService.log(
+                user=request.user,
+                action_type=ActionLogType.LOGOUT,
+                object_type="User",
+                object_id=request.user.id,
+                description=f"Odhlášení uživatele {request.user.email}",
+            )
+
             return Response(
                 {"success": "Successfully logged out"},
                 status=status.HTTP_200_OK,
@@ -246,6 +272,13 @@ class AresJusticeView(generics.GenericAPIView):
         ico = serializer.validated_data.get("ico")
 
         ares_data = fetch_ares_data(ico)
+
+        ActionLogService.log(
+            user=request.user if request.user.is_authenticated else None,
+            action_type=ActionLogType.VIEW,
+            object_type="ARES",
+            description=f"ARES lookup pro IČO: {ico}",
+        )
 
         if ares_data:
             return Response(ares_data.model_dump(), status=status.HTTP_200_OK)
@@ -296,6 +329,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         tokens = serializer.validated_data
         user = tokens["user"]
 
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.LOGIN,
+            object_type=type(user).__name__,
+            object_id=user.id,
+            description=f"Přihlášení uživatele {user.email}",
+        )
+
         user_info_serializer = UserInfoSerializer(user)
 
         return Response(
@@ -326,14 +367,10 @@ class OrganizationUserListView(generics.ListAPIView):
         else:
             employer_profile = getattr(user, "employer_profile", None)
             if not employer_profile:
-                raise serializers.ValidationError(
-                    {"detail": UserMessages.ORGANIZATION_MISSING}
-                )
+                raise serializers.ValidationError({"detail": UserMessages.ORGANIZATION_MISSING})
 
             org_id = employer_profile.employer_id
-            return OrganizationUser.objects.filter(
-                employer_profile_id=org_id
-            ).select_related("employer_profile")
+            return OrganizationUser.objects.filter(employer_profile_id=org_id).select_related("employer_profile")
 
 
 class StudentProfileView(APIView):
@@ -357,6 +394,15 @@ class StudentProfileView(APIView):
 
         self.check_object_permissions(request, student)
         serializer = StudentProfileSerializer(student, context={"request": request})
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="StudentUser",
+            object_id=student.id,
+            description=f"Zobrazení profilu studenta {student.email}",
+        )
+
         return Response(serializer.data)
 
 
@@ -375,11 +421,7 @@ class AllStudentsListView(generics.ListAPIView):
     search_fields = ["first_name", "last_name", "email", "os_cislo"]
 
     def get_queryset(self):
-        return (
-            StudentUser.objects.filter(is_active=True)
-            .select_related("stag_role")
-            .prefetch_related("user_subjects__subject__department")
-        )
+        return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
 
 
 @extend_schema_view(
@@ -413,12 +455,44 @@ class AdminOrganizationViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.CREATE,
+            object_type="EmployerProfile",
+            description=f"Admin vytvořil organizaci pro {user.email}",
+        )
+
         if hasattr(user, "employer_profile"):
             return Response(
                 self.get_serializer(user.employer_profile).data,
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        response = super().update(request, *args, **kwargs)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.UPDATE,
+            object_type="EmployerProfile",
+            object_id=instance.employer_id,
+            description=f"Admin upravil organizaci {instance.company_name} (ID: {instance.employer_id})",
+        )
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.DELETE,
+            object_type="EmployerProfile",
+            object_id=instance.employer_id,
+            description=f"Admin smazal organizaci {instance.company_name} (ID: {instance.employer_id})",
+        )
+        return super().destroy(request, *args, **kwargs)
 
 
 class CurrentUserProfileView(APIView):
@@ -457,21 +531,24 @@ class CurrentUserProfileView(APIView):
         user = request.user
 
         if isinstance(user, StudentUser):
-            serializer = StudentUserProfileSerializer(
-                user, data=request.data, partial=True
-            )
+            serializer = StudentUserProfileSerializer(user, data=request.data, partial=True)
         elif isinstance(user, ProfessorUser):
-            serializer = ProfessorUserProfileSerializer(
-                user, data=request.data, partial=True
-            )
+            serializer = ProfessorUserProfileSerializer(user, data=request.data, partial=True)
         elif isinstance(user, OrganizationUser):
-            serializer = OrganizationUserProfileSerializer(
-                user, data=request.data, partial=True
-            )
+            serializer = OrganizationUserProfileSerializer(user, data=request.data, partial=True)
         else:
             serializer = UserProfileSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
+
+            ActionLogService.log(
+                user=user,
+                action_type=ActionLogType.PROFILE_UPDATE,
+                object_type=type(user).__name__,
+                object_id=user.id,
+                description=f"Úprava profilu uživatele {user.email}",
+            )
+
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
