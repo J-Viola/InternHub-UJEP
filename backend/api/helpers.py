@@ -2,10 +2,23 @@ import base64
 import uuid
 from datetime import datetime
 
+import bleach
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
 from practices.messages import PracticeMessages
+
+
+def sanitize_html(text):
+    if not text or not isinstance(text, str):
+        return text
+    return bleach.clean(text, tags=[], attributes={}, strip=True)
+
+
+class SanitizedCharField(serializers.CharField):
+    def to_internal_value(self, data):
+        data = super().to_internal_value(data)
+        return sanitize_html(data)
 
 
 class FormattedDateField(serializers.DateField):

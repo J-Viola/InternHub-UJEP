@@ -173,6 +173,10 @@ class AdminDepartmentViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
 
     def get_permissions(self):
+        if self.action == "create":
+            from rest_framework import permissions
+
+            return [permissions.IsAdminUser()]
         if self.action in ["update", "partial_update", "destroy"]:
             return [IsAuthenticated(), (IsOrganizationUser | IsStagTeacher)()]
         return [IsAuthenticated()]

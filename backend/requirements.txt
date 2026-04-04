@@ -18,3 +18,4 @@ django-enumfield
 django-seed
 holidays
 Pillow
+bleach

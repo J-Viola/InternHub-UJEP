@@ -331,10 +331,16 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
 class StaffPracticeViewSet(viewsets.GenericViewSet):
     """
     ViewSet for teachers and department heads to manage and approve practices.
+    Admins (OrganizationUser with is_superuser) can also approve practices.
     """
 
-    permission_classes = [IsAuthenticated, IsStagTeacher]
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
+
+    def get_permissions(self):
+        if self.action == "approve":
+            return [IsAuthenticated(), (IsStagTeacher | permissions.IsAdminUser)()]
+        return [IsAuthenticated(), IsStagTeacher()]
 
     @extend_schema(summary="List practices waiting for approval")
     @action(detail=False, methods=["get"], serializer_class=PracticeApprovalSerializer)
@@ -366,6 +372,15 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=["post"], serializer_class=PracticeApprovalStatusSerializer)
     def approve(self, request, pk=None):
         practice_obj = get_object_or_404(Practice, pk=pk)
+
+        if not request.user.is_superuser:
+            dept_ids = Department.objects.filter(professor_users=request.user).values_list("department_id", flat=True).distinct()
+            if practice_obj.subject and practice_obj.subject.department_id not in dept_ids:
+                return Response(
+                    {"detail": "You are not authorized to approve practices from this department."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
         if practice_obj.approval_status != ApprovalStatus.PENDING:
             return Response(
                 {"detail": PracticeMessages.ALREADY_APPROVED},

@@ -9,6 +9,9 @@ export const useCodeListAPI = () => {
             const response = await api.get('/subjects/');
 
             if (response?.data) {
+                if (response.data.results !== undefined) {
+                    return response.data.results;
+                }
                 return response.data;
             }
             return [];

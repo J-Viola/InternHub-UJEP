@@ -27,9 +27,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
-    ","
-)
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 
 AUTH_USER_MODEL = "users.User"
 
@@ -98,7 +96,7 @@ DB_USER = os.environ.get("PG_USER")
 DB_PASSWORD = os.environ.get("PG_PASSWORD")
 DB_HOST = os.environ.get("PG_HOST")
 DB_PORT = os.environ.get("PG_PORT")
-FRONTEND_URL = os.environ.get("REACT_APP_API_URL")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", os.environ.get("REACT_APP_API_URL", "http://localhost:3000"))
 
 DATABASES = {
     "default": {
@@ -196,6 +194,16 @@ if not DEBUG:
         )
         sys.exit(1)
 
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # File upload settings
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
@@ -207,9 +215,7 @@ ARES_API_URL = os.environ.get(
 )
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
@@ -347,9 +353,7 @@ LOGGING = {
     "loggers": {
         "django": {
             # V produkci (DEBUG=False) logujeme jen na stdout — file logy se ztrácejí při restartu kontejneru
-            "handlers": ["file_info", "file_error", "console"]
-            if DEBUG
-            else ["console"],
+            "handlers": ["file_info", "file_error", "console"] if DEBUG else ["console"],
             "level": "INFO",
             "propagate": True,
         },

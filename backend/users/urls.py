@@ -10,7 +10,7 @@ from .views import (
     CurrentUserProfileView,
     CustomTokenObtainPairView,
     LogoutView,
-    OrganizationUserListView,
+    OrganizationUserViewSet,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RegisterView,
@@ -25,6 +25,11 @@ router.register(
     r"companies",
     AdminOrganizationViewSet,
     basename="companies",
+)
+router.register(
+    r"organization-users",
+    OrganizationUserViewSet,
+    basename="organization-users",
 )
 
 urlpatterns = [
@@ -46,11 +51,6 @@ urlpatterns = [
     path("ares-justice/", AresJusticeView.as_view()),
     path("ares/update/", UpdateAresSubjectView.as_view(), name="update-ares"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path(
-        "organization-users/",
-        OrganizationUserListView.as_view(),
-        name="organization_users",
-    ),
     path("profile/", CurrentUserProfileView.as_view(), name="current_user_profile"),
     path(
         "student-profile/<int:student_id>/",

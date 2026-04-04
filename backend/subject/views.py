@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from practices.messages import PracticeMessages
 from subject.models import Subject
+from subject.permissions import IsTeacherOrAdmin
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
 from users.services import get_user_department_ids
@@ -23,7 +24,6 @@ class SubjectViewSet(viewsets.ModelViewSet):
 
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -32,6 +32,11 @@ class SubjectViewSet(viewsets.ModelViewSet):
     filterset_fields = ["department", "subject_code"]
     search_fields = ["subject_name", "subject_code"]
     ordering_fields = ["subject_name", "subject_code", "department__department_name"]
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAuthenticated(), IsTeacherOrAdmin()]
+        return [permissions.IsAuthenticated()]
 
     @extend_schema(summary="List all subjects")
     def list(self, request, *args, **kwargs):

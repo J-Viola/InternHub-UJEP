@@ -121,9 +121,15 @@ export const useNabidkaAPI = () => {
             const response = await api.get('/practices/employer/');
 
             if (response && response.data) {
+                if (response.data.results !== undefined) {
+                    return {
+                        results: response.data.results,
+                        count: response.data.count ?? 0,
+                    };
+                }
                 return response.data;
             }
-            return []
+            return { results: [], count: 0 };
 
         } catch (error) {
             console.error('Chyba při získávání praxí organizace:', error);

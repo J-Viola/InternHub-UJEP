@@ -17,11 +17,7 @@ class IsOrganizationUser(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and isinstance(request.user, OrganizationUser)
-        )
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, OrganizationUser))
 
     def has_object_permission(self, request, view, obj):
         # obj can be Practice or other models related to EmployerProfile
@@ -59,11 +55,7 @@ class IsStagUser(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and isinstance(request.user, StagUser)
-        )
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, StagUser))
 
 
 class IsStagStudent(permissions.BasePermission):
@@ -72,11 +64,7 @@ class IsStagStudent(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and isinstance(request.user, StudentUser)
-        )
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, StudentUser))
 
 
 class IsStagTeacher(permissions.BasePermission):
@@ -85,11 +73,10 @@ class IsStagTeacher(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and isinstance(request.user, ProfessorUser)
-        )
+        return bool(request.user and request.user.is_authenticated and isinstance(request.user, ProfessorUser))
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
 
 
 class IsStagAdmin(permissions.BasePermission):
@@ -162,13 +149,9 @@ class CanViewStudentProfile(permissions.BasePermission):
         # 3. Organization
         if isinstance(user, OrganizationUser) and user.employer_profile:
             # Check if student applied to any practice of this employer
-            has_application = obj.student_practices.filter(
-                practice__employer=user.employer_profile
-            ).exists()
+            has_application = obj.student_practices.filter(practice__employer=user.employer_profile).exists()
             # Check if student was invited by this employer
-            has_invitation = obj.employer_invitations.filter(
-                employer=user.employer_profile
-            ).exists()
+            has_invitation = obj.employer_invitations.filter(employer=user.employer_profile).exists()
 
             if has_application or has_invitation:
                 return True
@@ -184,8 +167,7 @@ class CanViewStudentProfile(permissions.BasePermission):
             # Check if student is in any department the professor belongs to
             # OR if professor manages a subject the student is in
             has_subject = obj.user_subjects.filter(
-                Q(subject__department_id__in=dept_ids)
-                | Q(subject__subject_manager=user),
+                Q(subject__department_id__in=dept_ids) | Q(subject__subject_manager=user),
                 role=UserSubjectType.Student,
             ).exists()
 

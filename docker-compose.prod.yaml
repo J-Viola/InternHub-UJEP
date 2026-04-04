@@ -1,6 +1,7 @@
 services:
-  db:
+  postgres:
     image: postgres:17
+    container_name: internhub-postgres
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -11,60 +12,58 @@ services:
     expose:
       - "5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $PG_USER -d $PG_DB"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 30
+    networks:
+      - internhub
 
-  backend:
+  django:
     build:
       context: .
-      dockerfile: .docker/Backend/Dockerfile.prod
-    restart: always
-    command: sh -c "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 3"
-    volumes:
-      - static_volume:/app/backend/static
-      - storage_volume:/app/backend/storage
-    expose:
-      - "8000"
+      dockerfile: .docker/Backend/Dockerfile
+      args:
+        - PY_VERSION=${PY_VERSION}
+    container_name: internhub-backend
+    restart: unless-stopped
+    command: gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 4
     env_file:
       - .env
+    volumes:
+      - storage_data:/app/backend/storage
+      - ./backend:/app/backend
+    expose:
+      - "8000"
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/schema/')\""]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    networks:
+      - internhub
 
   frontend:
     build:
       context: .
       dockerfile: .docker/Frontend/Dockerfile.prod
+      args:
+        - NODE_VERSION=${NODE_VERSION}
+    container_name: internhub-frontend
     restart: always
     ports:
       - "80:80"
-      # HTTPS (443): Pro produkci přidat SSL termination přes reverse proxy (Traefik/Caddy/Certbot).
-      # Příklad s Caddy: nahradit tento service Caddy kontejnerem s automatickým Let's Encrypt.
+      - "443:443"
     volumes:
-      - static_volume:/usr/share/nginx/html/static/django
-      - storage_volume:/usr/share/nginx/html/storage
+      - storage_data:/usr/share/nginx/html/storage:ro
     depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - django
+    networks:
+      - internhub
+
+networks:
+  internhub:
+    name: internhub
+    driver: bridge
 
 volumes:
   postgres_data:
-    # ZÁLOHY: Pro produkci zvážit pravidelné pg_dump zálohy (cron + S3/NFS).
-    # Příklad: docker exec internhub-db pg_dump -U $PG_USER $PG_DB | gzip > backup.sql.gz
-  static_volume:
-  storage_volume:
-    # ZÁLOHY: Dokumenty (.docx) v storage_volume by měly být zálohovány na S3 nebo NFS.
-    # Docker volume není záloha — při odstranění hostu se data ztratí.
+  storage_data:

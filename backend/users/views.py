@@ -5,7 +5,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import filters as drf_filters
-from rest_framework import generics, permissions, serializers, status
+from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -30,7 +30,6 @@ from users.models import (
 from users.permissions import (
     CanViewStudentProfile,
     IsOrganizationOwner,
-    IsOrganizationUser,
     IsStagTeacher,
 )
 from users.services import fetch_ares_data, update_organization_from_ares
@@ -349,28 +348,34 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 @extend_schema_view(
-    get=extend_schema(
+    list=extend_schema(
         summary="List users in organization",
         description="Returns a list of all users associated with the same organization as the current user."
         "**Permissions: Organization User or Admin**",
         tags=["Users"],
-    )
+    ),
+    retrieve=extend_schema(summary="Get organization user detail", tags=["Users"]),
+    create=extend_schema(summary="Create organization user", tags=["Users"]),
+    update=extend_schema(summary="Update organization user", tags=["Users"]),
+    partial_update=extend_schema(summary="Partial update organization user", tags=["Users"]),
+    destroy=extend_schema(summary="Delete organization user", tags=["Users"]),
 )
-class OrganizationUserListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+class OrganizationUserViewSet(ModelViewSet):
     serializer_class = OrganizationUserListSerializer
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user
         if getattr(user, "is_superuser", False):
             return OrganizationUser.objects.all().select_related("employer_profile")
-        else:
-            employer_profile = getattr(user, "employer_profile", None)
-            if not employer_profile:
-                raise serializers.ValidationError({"detail": UserMessages.ORGANIZATION_MISSING})
-
-            org_id = employer_profile.employer_id
-            return OrganizationUser.objects.filter(employer_profile_id=org_id).select_related("employer_profile")
+        employer_profile = getattr(user, "employer_profile", None)
+        if not employer_profile:
+            return OrganizationUser.objects.none()
+        return OrganizationUser.objects.filter(employer_profile_id=employer_profile.employer_id).select_related("employer_profile")
 
 
 class StudentProfileView(APIView):
@@ -414,11 +419,11 @@ class StudentProfileView(APIView):
     )
 )
 class AllStudentsListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsStagTeacher | permissions.IsAdminUser]
     serializer_class = AllStudentsListSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [drf_filters.SearchFilter]
-    search_fields = ["first_name", "last_name", "email", "os_cislo"]
+    search_fields = ["first_name", "last_name", "email"]
 
     def get_queryset(self):
         return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
@@ -447,7 +452,7 @@ class AdminOrganizationViewSet(ModelViewSet):
         if self.action == "create":
             return [permissions.IsAdminUser()]
         if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), (IsOrganizationUser | IsStagTeacher)()]
+            return [permissions.IsAdminUser()]
         return [permissions.IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):

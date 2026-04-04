@@ -34,9 +34,7 @@ class AresRequestSerializer(serializers.Serializer):
 
     def validate_ico(self, value):
         if not re.fullmatch(r"\d{8}", str(value)):
-            raise serializers.ValidationError(
-                "Invalid IČO format. It must be 8 digits."
-            )
+            raise serializers.ValidationError("Invalid IČO format. It must be 8 digits.")
         return value
 
 
@@ -65,9 +63,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 stag_data = validate_stag_ticket(ticket, stag_user_info=stag_user_info)
                 user = get_or_create_stag_user(stag_data, ticket)
                 if not user:
-                    raise AuthenticationFailed(
-                        "Could not create or retrieve STAG user."
-                    )
+                    raise AuthenticationFailed("Could not create or retrieve STAG user.")
 
                 # Update last login manually since we bypassed authenticate()
                 update_last_login(None, user)
@@ -115,9 +111,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class OrganizationRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password]
-    )
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
     ico = serializers.RegexField(regex=r"^\d{8}$", write_only=True, required=True)
     email = serializers.CharField(write_only=True, required=True)
@@ -154,9 +148,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
-            raise serializers.ValidationError(
-                {"password": "Password fields didn't match."}
-            )
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
         validate_password(attrs["password"])
         return attrs
 
@@ -174,9 +166,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["new_password"] != attrs["new_password_confirm"]:
-            raise serializers.ValidationError(
-                {"new_password_confirm": "Nová hesla se neshodují."}
-            )
+            raise serializers.ValidationError({"new_password_confirm": "Nová hesla se neshodují."})
         return attrs
 
 
@@ -192,9 +182,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["new_password"] != attrs["new_password_confirm"]:
-            raise serializers.ValidationError(
-                {"new_password_confirm": "Nová hesla se neshodují."}
-            )
+            raise serializers.ValidationError({"new_password_confirm": "Nová hesla se neshodují."})
         return attrs
 
 
@@ -234,14 +222,8 @@ class UserInfoSerializer(serializers.ModelSerializer):
         if not hasattr(obj, "stag_role") or not obj.stag_role:
             return None
 
-        stag_role_name = (
-            obj.stag_role.role if hasattr(obj.stag_role, "role") else str(obj.stag_role)
-        )
-        if (
-            stag_role_name.lower() in ["vk", "vy"]
-            and hasattr(obj, "department")
-            and obj.department
-        ):
+        stag_role_name = obj.stag_role.role if hasattr(obj.stag_role, "role") else str(obj.stag_role)
+        if stag_role_name.lower() in ["vk", "vy"] and hasattr(obj, "department") and obj.department:
             return {
                 "id": obj.department.department_id,
                 "name": obj.department.department_name,
@@ -426,9 +408,7 @@ class OrganizationUserProfileSerializer(UserProfileSerializer):
                 "city": obj.employer_profile.city,
                 "address": obj.employer_profile.address,
                 "zip_code": obj.employer_profile.zip_code,
-                "logo": (
-                    obj.employer_profile.logo.url if obj.employer_profile.logo else None
-                ),
+                "logo": (obj.employer_profile.logo.url if obj.employer_profile.logo else None),
             }
         return None
 
@@ -451,9 +431,7 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
         ]
 
     def get_owner(self, obj):
-        owner = OrganizationUser.objects.filter(
-            employer_profile=obj, organization_role=OrganizationRole.OWNER
-        ).first()
+        owner = OrganizationUser.objects.filter(employer_profile=obj, organization_role=OrganizationRole.OWNER).first()
         if owner:
             return {
                 "id": owner.id,
@@ -475,7 +453,6 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "full_name",
-            "os_cislo",
             "department",
             "is_active",
             "date_joined",
@@ -483,9 +460,7 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
 
     def get_department(self, obj):
         # Získáme katedru studenta přes jeho předměty
-        user_subjects = UserSubject.objects.filter(
-            user=obj, role=UserSubjectType.Student.value
-        ).select_related("subject__department")
+        user_subjects = UserSubject.objects.filter(user=obj, role=UserSubjectType.Student.value).select_related("subject__department")
 
         departments = set()
         for user_subject in user_subjects:
@@ -498,9 +473,7 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
 class OrganizationUserListSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="full_name", read_only=True)
     role = serializers.SerializerMethodField()
-    employer_name = serializers.CharField(
-        source="employer_profile.company_name", read_only=True, allow_null=True
-    )
+    employer_name = serializers.CharField(source="employer_profile.company_name", read_only=True, allow_null=True)
 
     class Meta:
         model = OrganizationUser
@@ -518,10 +491,7 @@ class OrganizationUserListSerializer(serializers.ModelSerializer):
             elif hasattr(obj.organization_role, "name"):
                 return obj.organization_role.name
             # If it's a ForeignKey or object with role_name
-            elif (
-                hasattr(obj.organization_role, "role_name")
-                and obj.organization_role.role_name
-            ):
+            elif hasattr(obj.organization_role, "role_name") and obj.organization_role.role_name:
                 return obj.organization_role.role_name
             elif hasattr(obj.organization_role, "role") and obj.organization_role.role:
                 return obj.organization_role.role
