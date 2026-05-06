@@ -17,6 +17,8 @@ import { useDocumentsAPI } from "src/api/documents/documentsAPI";
 import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useTranslation } from "react-i18next";
 import { buildFormData } from "@utils/formDataUtils";
+import LoadingState from "@components/core/Feedback/LoadingState";
+import ErrorState from "@components/core/Feedback/ErrorState";
 
 export default function PraxeDetailPage() {
     const { t } = useTranslation();
@@ -24,6 +26,8 @@ export default function PraxeDetailPage() {
     const [ popUp, setPopUp ] = useState(false);
     const [ docsPopUp, setDocsPopUp ] = useState(false);
     const [ entity, setEntity ] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const nabidkaAPI = useNabidkaAPI();
     const studentpraticeAPI = useStudentPracticeAPI();
     const documentAPI = useDocumentsAPI();
@@ -33,12 +37,17 @@ export default function PraxeDetailPage() {
     const [docs, setDocs] = useState([]);
 
     const fetchData = async () => {
+        setLoading(true);
+        setLoadError(false);
         try {
             const result = await studentpraticeAPI.getStudentPracticeCard(id);
             setEntity(result);
             setDocs(result.student_practice_documents || []);
         } catch (error) {
             addMessage(t('practice_detail.card_load_error'), "E");
+            setLoadError(true);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -149,6 +158,19 @@ export default function PraxeDetailPage() {
         <>
             <BackButton/>
 
+            {loading && (
+                <LoadingState message={t('common.loading')} />
+            )}
+
+            {!loading && loadError && (
+                <ErrorState
+                    description={t('practice_detail.card_load_error')}
+                    onRetry={fetchData}
+                />
+            )}
+
+            {!loading && !loadError && entity && (
+            <>
             {/* INFORMACE O STUDENTOVI */}
             <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8 mb-2 mt-4"}>
                 <Container property="flex justify-between items-start">
@@ -321,6 +343,8 @@ export default function PraxeDetailPage() {
                     title={t('practice_detail.docs_check_title')}
                     text={t('practice_detail.docs_check_not_defined')}
                 />
+            )}
+            </>
             )}
         </>
     )

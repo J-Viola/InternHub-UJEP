@@ -1,3 +1,5 @@
+import io
+import zipfile
 from datetime import date
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -25,12 +27,8 @@ class StudentPracticeLifecycleTests(TestCase):
         self.client = APIClient()
 
         # 1. Setup Environment
-        self.department = Department.objects.create(
-            department_name="IT", department_code="IT"
-        )
-        self.subject = Subject.objects.create(
-            subject_name="Praxe", subject_code="PRX", department=self.department
-        )
+        self.department = Department.objects.create(department_name="IT", department_code="IT")
+        self.subject = Subject.objects.create(subject_name="Praxe", subject_code="PRX", department=self.department)
 
         # 2. Setup Users
         self.student = StudentUser.objects.create(
@@ -39,9 +37,7 @@ class StudentPracticeLifecycleTests(TestCase):
             last_name="Student",
             is_active=True,
         )
-        self.other_student = StudentUser.objects.create(
-            email="other@test.com", first_name="Petr", last_name="Cizi", is_active=True
-        )
+        self.other_student = StudentUser.objects.create(email="other@test.com", first_name="Petr", last_name="Cizi", is_active=True)
 
         self.org_user = OrganizationUser.objects.create(
             email="org@test.com",
@@ -86,14 +82,10 @@ class StudentPracticeLifecycleTests(TestCase):
         # 1. Student Applies
         self.client.force_authenticate(user=self.student)
         apply_url = "/api/practices/student/apply/"
-        response = self.client.post(
-            apply_url, {"practice": self.practice.practice_id}, format="json"
-        )
+        response = self.client.post(apply_url, {"practice": self.practice.practice_id}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        student_practice = StudentPractice.objects.get(
-            user=self.student, practice=self.practice
-        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
         if not student_practice.contract_document:
             DocumentHelper.assign_default_documents(student_practice)
             student_practice.refresh_from_db()
@@ -102,9 +94,7 @@ class StudentPracticeLifecycleTests(TestCase):
 
         # 2. Organization Approves
         self.client.force_authenticate(user=self.org_user)
-        status_url = (
-            f"/api/student-practices/{student_practice.student_practice_id}/status/"
-        )
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
 
         response = self.client.patch(
             status_url,
@@ -154,13 +144,15 @@ class StudentPracticeLifecycleTests(TestCase):
         # 4. Upload Contract (by Student)
         self.client.force_authenticate(user=self.student)
         contract_doc = student_practice.contract_document
-        upload_url = (
-            f"/api/student-practices/upload-document/{contract_doc.document_id}"
-        )
+        upload_url = f"/api/student-practices/upload-document/{contract_doc.document_id}"
 
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("[Content_Types].xml", "<Types/>")
+        buf.seek(0)
         file = SimpleUploadedFile(
             "contract.docx",
-            b"content",
+            buf.read(),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         response = self.client.post(upload_url, {"document": file}, format="multipart")
@@ -189,12 +181,8 @@ class StudentPracticeLifecycleTests(TestCase):
             progress_status=ProgressStatus.NOT_STARTED,
             year=2050,
         )
-        student_practice = StudentPractice.objects.get(
-            user=self.student, practice=self.practice
-        )
-        status_url = (
-            f"/api/student-practices/{student_practice.student_practice_id}/status/"
-        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
 
         # Other student tries to approve
         self.client.force_authenticate(user=self.other_student)
@@ -218,12 +206,8 @@ class StudentPracticeLifecycleTests(TestCase):
             progress_status=ProgressStatus.NOT_STARTED,
             year=2050,
         )
-        student_practice = StudentPractice.objects.get(
-            user=self.student, practice=self.practice
-        )
-        status_url = (
-            f"/api/student-practices/{student_practice.student_practice_id}/status/"
-        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
 
         self.client.force_authenticate(user=self.org_user)
         response = self.client.patch(
@@ -247,12 +231,8 @@ class StudentPracticeLifecycleTests(TestCase):
             progress_status=ProgressStatus.NOT_STARTED,
             year=2050,
         )
-        student_practice = StudentPractice.objects.get(
-            user=self.student, practice=self.practice
-        )
-        status_url = (
-            f"/api/student-practices/{student_practice.student_practice_id}/status/"
-        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
 
         self.client.force_authenticate(user=self.professor)
         response = self.client.patch(
@@ -276,12 +256,8 @@ class StudentPracticeLifecycleTests(TestCase):
             progress_status=ProgressStatus.NOT_STARTED,
             year=2050,
         )
-        student_practice = StudentPractice.objects.get(
-            user=self.student, practice=self.practice
-        )
-        status_url = (
-            f"/api/student-practices/{student_practice.student_practice_id}/status/"
-        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
+        status_url = f"/api/student-practices/{student_practice.student_practice_id}/status/"
 
         # Professor rejects it
         self.client.force_authenticate(user=self.professor)
@@ -304,9 +280,7 @@ class StudentPracticeLifecycleTests(TestCase):
             progress_status=ProgressStatus.NOT_STARTED,
             year=2050,
         )
-        student_practice = StudentPractice.objects.get(
-            user=self.student, practice=self.practice
-        )
+        student_practice = StudentPractice.objects.get(user=self.student, practice=self.practice)
         url = f"/api/student-practices/{student_practice.student_practice_id}"
 
         self.client.force_authenticate(user=self.student)

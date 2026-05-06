@@ -10,6 +10,7 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
+from notifications.services import EmailService
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import get_object_or_404
@@ -57,10 +58,11 @@ class EmployerInvitationViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        qs = EmployerInvitation.objects.select_related("user", "employer", "practice", "practice__subject__department")
         if user.is_superuser:
-            return EmployerInvitation.objects.all()
+            return qs
         if hasattr(user, "employer_profile") and user.employer_profile:
-            return EmployerInvitation.objects.filter(employer=user.employer_profile)
+            return qs.filter(employer=user.employer_profile)
         return EmployerInvitation.objects.none()
 
     @extend_schema(summary="List all employer invitations")
@@ -364,6 +366,28 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
             mb_limit = settings.MAX_UPLOAD_SIZE / (1024 * 1024)
             raise serializers.ValidationError(StudentPracticeMessages.FILE_TOO_LARGE.format(size=mb_limit))
 
+        if ext == "docx":
+            import zipfile
+
+            try:
+                uploaded_file.seek(0)
+                with zipfile.ZipFile(uploaded_file) as zf:
+                    names = zf.namelist()
+                    if "[Content_Types].xml" not in names:
+                        raise serializers.ValidationError("Invalid .docx file structure.")
+                uploaded_file.seek(0)
+            except zipfile.BadZipFile:
+                raise serializers.ValidationError("File is not a valid .docx archive.")
+
+        allowed_mimes = {
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/octet-stream",
+        }
+        content_type = getattr(uploaded_file, "content_type", "")
+        if content_type and content_type not in allowed_mimes:
+            raise serializers.ValidationError(f"Invalid MIME type: {content_type}")
+
         return uploaded_file
 
     def update(self, instance, validated_data):
@@ -463,6 +487,8 @@ class StudentPracticeUploadDocumentView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        EmailService.notify_professors_document_upload(document)
+
         ActionLogService.log(
             user=request.user,
             action_type=ActionLogType.DOCUMENT_UPLOAD,
@@ -544,6 +570,7 @@ class StudentPracticeCardView(APIView):
                 "user",
                 "practice__subject__department",
                 "practice__employer",
+                "practice__contact_user",
                 "contract_document",
                 "content_document",
                 "feedback_document",

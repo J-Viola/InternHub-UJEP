@@ -40,6 +40,8 @@ export default function ProfilPage() {
                 if (data) setUserData(data);
             } catch (error) {
                 console.error(error);
+                const errorCode = error.code || "UNKNOWN_ERROR";
+                addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('profile.update_error') }), "E");
             } finally {
                 setLoading(false);
             }

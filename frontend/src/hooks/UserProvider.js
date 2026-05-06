@@ -8,20 +8,16 @@ function UserProvider({children}) {
     const [user, setUserState] = useState(() => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
-            console.log("Načítám uživatele z localStorage:", storedUser);
             try {
                 const userData = JSON.parse(storedUser);
                 const newUser = new User();
                 newUser.setUser(userData);
-                console.log("Uživatel úspěšně načten:", newUser);
                 return newUser;
             } catch (error) {
                 console.error("Chyba při parsování dat uživatele z localStorage:", error);
-                localStorage.removeItem("user"); // Odstraníme poškozená data
-                return new User();
+                localStorage.removeItem("user");
             }
         }
-        console.log("Žádný uživatel v localStorage");
         return new User();
     });
 

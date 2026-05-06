@@ -32,7 +32,7 @@ services:
       - .env
     volumes:
       - storage_data:/app/backend/storage
-      - ./backend:/app/backend
+      - logs_data:/app/backend/logs
     expose:
       - "8000"
     depends_on:
@@ -67,3 +67,4 @@ networks:
 volumes:
   postgres_data:
   storage_data:
+  logs_data:

@@ -8,6 +8,7 @@ import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
 import PraxeDepartmentEntity from "@components/Praxe/PraxeDepartmentEntity";
 import { useUser } from "@hooks/UserProvider";
+import { useMessage } from "@hooks/MessageContext";
 import { useTranslation } from "react-i18next";
 
 export default function SpravaStaziPage() {
@@ -21,6 +22,7 @@ export default function SpravaStaziPage() {
     const [showPop, setPop] = useState(false);
     const [selectedEntity, setSelectedEntity] = useState(null);
     const { user } = useUser();
+    const { addMessage } = useMessage();
 
     const fetchData = async () => {
         setLoading(true);
@@ -42,27 +44,32 @@ export default function SpravaStaziPage() {
 
     const handleApprove = async () => {
         if (!selectedEntity) return;
-
-        const newStatus = {
-            "approval_status": 1
+        try {
+            await nabidkaAPI.changeStatus(selectedEntity.practice_id, { "approval_status": 1 });
+            setPop(false);
+            setSelectedEntity(null);
+            fetchData();
+        } catch (error) {
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('common.error') }), "E");
+            setPop(false);
+            setSelectedEntity(null);
         }
-
-        await nabidkaAPI.changeStatus(selectedEntity.practice_id, newStatus);
-        setPop(false);
-        setSelectedEntity(null);
-        fetchData();
     };
-
 
     const handleReject = async () => {
         if (!selectedEntity) return;
-        const newStatus = {
-            "approval_status": 2
+        try {
+            await nabidkaAPI.changeStatus(selectedEntity.practice_id, { "approval_status": 2 });
+            setPop(false);
+            setSelectedEntity(null);
+            fetchData();
+        } catch (error) {
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('common.error') }), "E");
+            setPop(false);
+            setSelectedEntity(null);
         }
-        await nabidkaAPI.changeStatus(selectedEntity.practice_id, newStatus);
-        setPop(false);
-        setSelectedEntity(null);
-        fetchData();
     };
 
 

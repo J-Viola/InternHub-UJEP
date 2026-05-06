@@ -6,6 +6,8 @@ import Headings from "@core/Text/Headings"
 import Button from "@core/Button/Button";
 import { useUser } from "@hooks/UserProvider";
 import { useTranslation } from "react-i18next";
+import Icon from "@components/core/Icon/Icon";
+import EmptyState from "@core/Feedback/EmptyState";
 
 
 function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isProfessor}) {
@@ -53,20 +55,20 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
 
                 <Container property="flex flex-col gap-3 mt-auto">
                     {/*STÁHNOUT SOUBOR*/}
-                    <Button 
-                        onClick={() => handleDownload(doc_info.id)} 
-                        property="w-full shadow-sm" 
+                    <Button
+                        onClick={() => handleDownload(doc_info.id)}
+                        property="w-full shadow-sm"
                         disabled={!doc_info.id}
                         variant={doc_info.id ? "primary" : "secondary"}
                     >
                         {t('docs.download_file')}
                     </Button>
-                    
+
                     {/*NAHRÁT SOUBOR - Student or not approved */}
                     {!isProfessor && (
-                        <Button 
-                            onClick={() => handleUpload(doc_info.id)} 
-                            property="w-full shadow-sm" 
+                        <Button
+                            onClick={() => handleUpload(doc_info.id)}
+                            property="w-full shadow-sm"
                             disabled={!doc_info.id}
                             variant="secondary"
                         >
@@ -77,17 +79,17 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
                     {/*PROFESSOR REVIEW ACTIONS*/}
                     {isProfessor && doc_info.id && (doc_info.type === 'contract' || doc_info.type === 'content') && (
                         <Container property="flex gap-2 pt-2 border-t border-gray-100">
-                            <Button 
-                                variant="greenSmall" 
-                                onClick={() => handleReview(doc_info.id, 1)} 
+                            <Button
+                                variant="greenSmall"
+                                onClick={() => handleReview(doc_info.id, 1)}
                                 property="flex-1 shadow-sm"
                                 disabled={doc_info.status === 1}
                             >
                                 {t('common.approve')}
                             </Button>
-                            <Button 
-                                variant="redSmall" 
-                                onClick={() => handleReview(doc_info.id, 2)} 
+                            <Button
+                                variant="redSmall"
+                                onClick={() => handleReview(doc_info.id, 2)}
                                 property="flex-1 shadow-sm"
                                 disabled={doc_info.status === 2}
                             >
@@ -113,6 +115,16 @@ export default function DocsPanel({ entity, docData, handleDownload, handleUploa
 
     return(
         <ContainerForEntity property={"pl-8 pr-8 mb-2"}>
+            {/* INFORMATIONAL BANNER FOR STUDENTS */}
+            {user.isStudent() && entity?.student_practice_status?.workflow_status === "APPROVED" && STATUS === 0 && (
+                <Container property="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-r-lg shadow-sm flex items-start gap-3">
+                    <Icon name="info-circle" size={20} color="text-blue-500" property="mt-0.5" />
+                    <Paragraph property="text-blue-800 font-medium">
+                        {t('docs.waiting_for_approval_banner')}
+                    </Paragraph>
+                </Container>
+            )}
+
             <Container property={"flex items-center gap-3 mb-4"}>
                 <Paragraph>{t('docs.check_status')}:</Paragraph>
                 {STATUS ?
@@ -128,23 +140,33 @@ export default function DocsPanel({ entity, docData, handleDownload, handleUploa
             </Container>
             <Headings sizeTag="h3">{t('docs.title')}</Headings>
 
-            {/* CONTAINERY DOKUMENTŮ */}
-            <Container property={"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4"}>
-                {docData.map((doc_info, index) => (
-                    <DocContainer 
-                        key={index} 
-                        doc_info={doc_info} 
-                        handleDownload={handleDownload} 
-                        handleUpload={handleUpload}
-                        handleReview={handleReview}
-                        isProfessor={isAuthorizedForReview}
+            {/* CONTAINERY DOKUMENTŮ / EMPTY STATE */}
+            {docData.length === 0 ? (
+                <Container property="py-8">
+                    <EmptyState
+                        title={t('docs.no_documents_title')}
+                        description={t('docs.no_documents_desc')}
+                        icon="file-circle-xmark"
                     />
-                ))}
-            </Container>
+                </Container>
+            ) : (
+                <Container property={"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4"}>
+                    {docData.map((doc_info, index) => (
+                        <DocContainer
+                            key={index}
+                            doc_info={doc_info}
+                            handleDownload={handleDownload}
+                            handleUpload={handleUpload}
+                            handleReview={handleReview}
+                            isProfessor={isAuthorizedForReview}
+                        />
+                    ))}
+                </Container>
+            )}
 
             <Container property={"w-full mt-2 mb-2 flex justify-end"}>
                 {/* KONTROLA DOKUMENTŮ . debug -> pro studenta */}
-                {user.isDepartmentMg() && (
+                {(user.isDepartmentUser() || user.isAdmin()) && (
                     <Button variant={"yellow"}
                         onClick={() => {
                         handleManage();

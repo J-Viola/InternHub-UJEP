@@ -18,6 +18,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { buildFormData } from "@utils/formDataUtils";
 import Icon from "@components/core/Icon/Icon";
+import LoadingState from "@components/core/Feedback/LoadingState";
+import ErrorState from "@components/core/Feedback/ErrorState";
 
 export default function NabidkaDetailPage() {
     const { t } = useTranslation();
@@ -29,16 +31,23 @@ export default function NabidkaDetailPage() {
     const { user } = useUser();
     const { addMessage } = useMessage();
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     const [docs, setDocs] = useState([]);
 
     const fetchData = async () => {
+        setLoading(true);
+        setLoadError(false);
         try {
             const result = await nabidkaAPI.getNabidkaById(id);
             setEntity(result);
             setDocs(result.student_practice_documents || []);
         } catch (error) {
             addMessage(t('common.error'), "E");
+            setLoadError(true);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -170,6 +179,20 @@ export default function NabidkaDetailPage() {
     return(
         <>
             <BackButton/>
+
+            {loading && (
+                <LoadingState message={t('common.loading')} />
+            )}
+
+            {!loading && loadError && (
+                <ErrorState
+                    description={t('common.error')}
+                    onRetry={fetchData}
+                />
+            )}
+
+            {!loading && !loadError && entity && (
+            <>
             {/* DOCS PANEL */}
             {entity?.student_practice_status?.workflow_status &&
                 !["PENDING", "REJECTED"].includes(entity.student_practice_status.workflow_status) && (
@@ -341,6 +364,8 @@ export default function NabidkaDetailPage() {
                     submitText={t('common.approve')}
                     rejectText={t('common.reject')}
                 />
+            )}
+            </>
             )}
         </>
     )

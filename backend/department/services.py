@@ -14,17 +14,17 @@ def get_department_students(user):
     # Teachers see everyone in their subjects
     return (
         StudentUser.objects.filter(
-            Q(user_subjects__subject__department_id__in=dept_ids)
-            | Q(user_subjects__subject__subject_manager=user),
+            Q(user_subjects__subject__department_id__in=dept_ids) | Q(user_subjects__subject__subject_manager=user),
             user_subjects__role=UserSubjectType.Student,
         )
         .distinct()
         .select_related("stag_role")
         .prefetch_related(
+            "user_subjects__subject__department",
             Prefetch(
                 "student_practices",
-                queryset=StudentPractice.objects.select_related("practice"),
-            )
+                queryset=StudentPractice.objects.select_related("practice", "practice__subject__department", "practice__employer"),
+            ),
         )
     )
 
@@ -35,16 +35,12 @@ def get_department_professors(user):
     if not dept_ids:
         return ProfessorUser.objects.none()
 
-    professors = ProfessorUser.objects.filter(
-        department_id__in=dept_ids, department_role=UserSubjectType.Professor.value
-    ).distinct()
+    professors = ProfessorUser.objects.filter(department_id__in=dept_ids, department_role=UserSubjectType.Professor.value).distinct()
 
     return professors.prefetch_related(
         Prefetch(
             "user_subjects",
-            queryset=UserSubject.objects.filter(
-                role=UserSubjectType.Professor.value
-            ).select_related("subject"),
+            queryset=UserSubject.objects.filter(role=UserSubjectType.Professor.value).select_related("subject"),
         )
     )
 
@@ -55,8 +51,6 @@ def get_all_professors():
     return qs.prefetch_related(
         Prefetch(
             "user_subjects",
-            queryset=UserSubject.objects.filter(
-                role=UserSubjectType.Professor.value
-            ).select_related("subject"),
+            queryset=UserSubject.objects.filter(role=UserSubjectType.Professor.value).select_related("subject"),
         )
     )

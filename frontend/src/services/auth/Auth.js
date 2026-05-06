@@ -1,39 +1,35 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { createApiClient } from "@api/apiClient";
+import { createApiClient, setAccessToken as setApiClientToken } from "@api/apiClient";
 import { useUser } from "@hooks/UserProvider";
 import { useNavigate } from "react-router-dom";
+import { useMessage } from "@hooks/MessageContext";
 
 const AuthContext = createContext(null);
 
-// Routes that should stay on the current page after a successful token refresh
 const PUBLIC_PATHS = ['/', '/login', '/registrace', '/reset-password'];
 
 function AuthProvider({ children }) {
-    const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || null);
-    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
+    const [accessToken, setAccessToken] = useState(null);
     const [isInitializing, setIsInitializing] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const { setUser, cleanUser } = useUser();
     const navigate = useNavigate();
+    const { addMessage } = useMessage();
     const [apiClient] = useState(() => createApiClient(navigate));
 
-    // Refresh the access token using the stored refresh token
+    const _updateToken = (token) => {
+        setAccessToken(token);
+        setApiClientToken(token);
+    };
+
     const refreshUX = async () => {
-        const currentRefreshToken = localStorage.getItem("refreshToken");
-        if (!apiClient || !currentRefreshToken) {
-            return false;
-        }
+        if (!apiClient) return false;
 
         try {
-            const res = await apiClient.post('/users/token/refresh/', { 'refresh': currentRefreshToken }, { withCredentials: true });
+            const res = await apiClient.post('/users/token/refresh/', {}, { withCredentials: true });
 
             if (res?.data?.access) {
-                setAccessToken(res.data.access);
-                localStorage.setItem("accessToken", res.data.access);
-
-                if (res.data.refresh) {
-                    setRefreshToken(res.data.refresh);
-                    localStorage.setItem("refreshToken", res.data.refresh);
-                }
+                _updateToken(res.data.access);
 
                 if (res.data.user) {
                     setUser(res.data.user);
@@ -41,7 +37,7 @@ function AuthProvider({ children }) {
                 }
                 return true;
             }
-        } catch (error) {
+        } catch {
             handleAuthFailure();
             return false;
         }
@@ -49,40 +45,38 @@ function AuthProvider({ children }) {
     };
 
     const handleAuthFailure = () => {
-        setAccessToken(null);
-        setRefreshToken(null);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        const wasLoggedIn = !!accessToken;
+        _updateToken(null);
         localStorage.removeItem("user");
         cleanUser();
+        if (wasLoggedIn) {
+            sessionStorage.setItem("pendingMessage", JSON.stringify({
+                text: "Vaše relace vypršela. Přihlaste se prosím znovu.",
+                type: "W"
+            }));
+        }
     };
 
-    // On mount: attempt to restore session from stored refresh token
+    // On mount: try to restore session via cookie-based refresh
     useEffect(() => {
-        const storedRefreshToken = localStorage.getItem("refreshToken");
         const currentPath = window.location.pathname;
 
-        if (storedRefreshToken) {
-            refreshUX().then((success) => {
-                if (success && PUBLIC_PATHS.some(p => currentPath === p || currentPath.startsWith('/reset-password'))) {
-                    // Only redirect to /nabidka when the user is currently on a public/login page
-                    navigate('/nabidka');
-                }
-            }).finally(() => {
-                setIsInitializing(false);
-            });
-        } else {
+        refreshUX().then((success) => {
+            if (success && PUBLIC_PATHS.some(p => currentPath === p || currentPath.startsWith('/reset-password'))) {
+                navigate('/nabidka');
+            }
+        }).finally(() => {
             setIsInitializing(false);
-        }
+        });
     }, []);
 
     // Periodic token refresh every 4.5 minutes
     useEffect(() => {
-        if (refreshToken) {
+        if (accessToken) {
             const intervalId = setInterval(refreshUX, 1000 * 60 * 4.5);
             return () => clearInterval(intervalId);
         }
-    }, [refreshToken]);
+    }, [accessToken]);
 
     // Handle 401 auto-refresh
     useEffect(() => {
@@ -91,22 +85,19 @@ function AuthProvider({ children }) {
         const responseInterceptor = apiClient.interceptors.response.use(
             (response) => response,
             async (error) => {
-                if (error.response?.status === 401) {
-                    const currentRefreshToken = localStorage.getItem("refreshToken");
-                    if (currentRefreshToken) {
-                        try {
-                            const res = await apiClient.post('/users/token/refresh/', { 'refresh': currentRefreshToken }, { withCredentials: true });
-                            if (res?.data?.access) {
-                                setAccessToken(res.data.access);
-                                localStorage.setItem("accessToken", res.data.access);
-                                error.config.headers.Authorization = `Bearer ${res.data.access}`;
-                                return apiClient(error.config);
-                            }
-                        } catch {
-                            handleAuthFailure();
+                if (error.response?.status === 401 && !isRefreshing) {
+                    setIsRefreshing(true);
+                    try {
+                        const res = await apiClient.post('/users/token/refresh/', {}, { withCredentials: true });
+                        if (res?.data?.access) {
+                            _updateToken(res.data.access);
+                            error.config.headers.Authorization = `Bearer ${res.data.access}`;
+                            return apiClient(error.config);
                         }
-                    } else {
+                    } catch {
                         handleAuthFailure();
+                    } finally {
+                        setIsRefreshing(false);
                     }
                 }
                 throw error;
@@ -127,9 +118,7 @@ function AuthProvider({ children }) {
         });
 
         if (response.data) {
-            setAccessToken(response.data.access);
-            localStorage.setItem("accessToken", response.data.access);
-            setRefreshToken(response.data.refresh);
+            _updateToken(response.data.access);
 
             if (response.data.user) {
                 setUser(response.data.user);
@@ -138,10 +127,6 @@ function AuthProvider({ children }) {
                     type: "S"
                 }));
                 localStorage.setItem("user", JSON.stringify(response.data.user));
-            }
-
-            if (response.data.refresh) {
-                localStorage.setItem("refreshToken", response.data.refresh);
             }
 
             setTimeout(() => navigate('/nabidka'), 100);
@@ -154,12 +139,9 @@ function AuthProvider({ children }) {
         if (!apiClient) throw new Error('API není inicializován!');
 
         try {
-            await apiClient.post('/users/logout/', { 'refresh': refreshToken });
+            await apiClient.post('/users/logout/', {}, { withCredentials: true });
         } finally {
-            setAccessToken(null);
-            setRefreshToken(null);
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
+            _updateToken(null);
             localStorage.removeItem("user");
             cleanUser();
             navigate('/');
@@ -169,7 +151,6 @@ function AuthProvider({ children }) {
     return (
         <AuthContext.Provider value={{
             accessToken,
-            refreshToken,
             login,
             logout,
             apiClient,

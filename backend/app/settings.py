@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "department",
     "subject",
     "student_practices",
+    "notifications.apps.NotificationsConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -65,6 +66,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "api.middleware.DocumentPermissionMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -229,14 +231,13 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
-    ]
-    if not DEBUG
-    else [],
+    ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "1000/hour",
-        "user": "10000/hour",
-        "login": "100/min",
-        "password_reset": "100/hour",
+        "anon": "100/hour",
+        "user": "1000/hour",
+        "login": "10/min",
+        "password_reset": "5/hour",
+        "ares": "20/hour",
     },
 }
 
@@ -245,13 +246,19 @@ ACCESS_TOKEN_REFRESH_TIME = int(os.environ.get("JWT_ACCESS_TOKEN_REFRESH_TIME"))
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=ACCESS_TOKEN_REFRESH_TIME),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
+    "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": JWT_SECRET_KEY,
     "USER_ID_FIELD": "user_id",
     "USER_ID_CLAIM": "user_id",
+    "AUTH_COOKIE": "refresh_token",
+    "AUTH_COOKIE_MAX_AGE": 86400,
+    "AUTH_COOKIE_SECURE": not DEBUG,
+    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_SAME_SITE": "Lax",
+    "AUTH_COOKIE_PATH": "/api",
 }
 
 

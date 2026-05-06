@@ -33,7 +33,7 @@ class EmployerInvitation(models.Model):
     )
     user = models.ForeignKey(
         "users.StudentUser",
-        models.CASCADE,
+        models.SET_NULL,
         blank=True,
         null=True,
         related_name="employer_invitations",
@@ -54,6 +54,12 @@ class EmployerInvitation(models.Model):
 
     class Meta:
         db_table = "employer_invitations"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["practice", "user"],
+                name="unique_invitation_per_student_practice",
+            ),
+        ]
 
     def __str__(self):
         return f"Invitation {self.invitation_id} for {self.user} to {self.practice}"
@@ -73,9 +79,7 @@ class DocumentStatus(enum.Enum):
 
 class UploadedDocument(models.Model):
     document_id = models.AutoField(primary_key=True)
-    document = models.FileField(
-        upload_to="documents", blank=True, null=True, db_index=True
-    )
+    document = models.FileField(upload_to="documents", blank=True, null=True, db_index=True)
     uploaded_at = models.DateTimeField(blank=True, null=True)
     document_type = enum.EnumField(DocumentType)
     status = enum.EnumField(DocumentStatus, default=DocumentStatus.PENDING)
@@ -91,10 +95,7 @@ class UploadedDocument(models.Model):
     def student_practice(self):
         for rel in self._meta.get_fields():
             # Check by name to avoid reference issues before class definition
-            if (
-                isinstance(rel, OneToOneRel)
-                and rel.related_model.__name__ == "StudentPractice"
-            ):
+            if isinstance(rel, OneToOneRel) and rel.related_model.__name__ == "StudentPractice":
                 related_object = getattr(self, rel.get_accessor_name(), None)
                 if related_object is not None:
                     return related_object
@@ -133,15 +134,10 @@ class UploadedDocument(models.Model):
         if isinstance(user, ProfessorUser):
             subject = sp.practice.subject
             # Check if professor is assigned to the subject
-            if subject.user_subjects.filter(
-                user=user, role=UserSubjectType.Professor
-            ).exists():
+            if subject.user_subjects.filter(user=user, role=UserSubjectType.Professor).exists():
                 return True
             # Check if professor is head of department
-            if (
-                user.department_role == DepartmentRole.HEAD
-                and user.department_id == subject.department_id
-            ):
+            if user.department_role == DepartmentRole.HEAD and user.department_id == subject.department_id:
                 return True
 
         # 3. Organization access
@@ -188,9 +184,7 @@ class DocumentHelper:
             return None
 
     @staticmethod
-    def create_name_for_document(
-        document_type: DocumentType, user_id: int, file_name: str
-    ):
+    def create_name_for_document(document_type: DocumentType, user_id: int, file_name: str):
         import os
         import uuid
 
@@ -200,16 +194,10 @@ class DocumentHelper:
 
         # Sanitize original file name to prevent path traversal
         safe_file_name = os.path.basename(file_name)
-        ext = (
-            safe_file_name.rsplit(".", 1)[-1].lower()
-            if "." in safe_file_name
-            else "docx"
-        )
+        ext = safe_file_name.rsplit(".", 1)[-1].lower() if "." in safe_file_name else "docx"
 
         unique_suffix = uuid.uuid4().hex[:6]
-        return (
-            f"{document_type.name.lower()}_{user_id}_{timestamp}_{unique_suffix}.{ext}"
-        )
+        return f"{document_type.name.lower()}_{user_id}_{timestamp}_{unique_suffix}.{ext}"
 
     @staticmethod
     def assign_default_documents(student_practice):
@@ -222,17 +210,11 @@ class DocumentHelper:
             user_id = random.randint(0, 99999999)
 
         if not student_practice.contract_document:
-            student_practice.contract_document = DocumentHelper.create_default_document(
-                DocumentType.CONTRACT, user_id
-            )
+            student_practice.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT, user_id)
         if not student_practice.content_document:
-            student_practice.content_document = DocumentHelper.create_default_document(
-                DocumentType.CONTENT, user_id
-            )
+            student_practice.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
         if not student_practice.feedback_document:
-            student_practice.feedback_document = DocumentHelper.create_default_document(
-                DocumentType.FEEDBACK, user_id
-            )
+            student_practice.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
 
         student_practice.save()
 
@@ -256,7 +238,7 @@ class StudentPractice(models.Model):
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         "users.StudentUser",
-        models.CASCADE,
+        models.SET_NULL,
         blank=True,
         null=True,
         related_name="student_practices",
@@ -312,7 +294,13 @@ class StudentPractice(models.Model):
 
     class Meta:
         db_table = "student_practices"
-        unique_together = (("user", "practice"),)
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "practice"],
+                name="unique_user_practice",
+                condition=models.Q(user__isnull=False),
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user} - {self.practice} (status: {self.approval_status})"

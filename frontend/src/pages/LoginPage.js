@@ -3,7 +3,7 @@ import Container from "@core/Container/Container";
 //import Headings from "@core/Text/Headings";
 //import Button from "@core/Button/Button";
 import LoginForm from "@login/LoginForm";
-import { STAGLogin } from "@auth/STAGLogin";
+import { getParams, STAGLogin } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
 import { useUser } from "@hooks/UserProvider";
 import { useMessage } from "@hooks/MessageContext";
@@ -30,19 +30,20 @@ export default function LoginPage() {
 
     // Zpracování parametrů z URL při načtení stránky
     useEffect(() => {
-        const stagUserTicket = searchParams.get("stagUserTicket");
-        const  stagUserInfoRaw = searchParams.get("stagUserInfo");
+        const params = getParams();
 
-        if (stagUserTicket) {
-            if (stagUserInfoRaw) {
-                try {
-                    const decoded = JSON.parse(atob(stagUserInfoRaw));
-                    setStagUserInfo(decoded);
-                } catch (e) {
-                    console.warn("Error decoding stagUserInfo:", e);
-                }
+        if (params) {
+            if (params.stag_user_info) {
+                setStagUserInfo(params.stag_user_info);
             }
-            setTicket(stagUserTicket);
+            if (params.service_ticket) {
+                setTicket(params.service_ticket);
+            }
+        } else {
+            const stagUserTicket = searchParams.get("stagUserTicket");
+            if (stagUserTicket) {
+                addMessage(t('login.error_stag') + ": Invalid state", "E");
+            }
         }
     }, [searchParams]);
 

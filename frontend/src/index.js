@@ -31,6 +31,8 @@ import CompaniesPage from '@pages/CompaniesPage';
 import ChangePasswordPage from '@pages/ChangePasswordPage';
 import PasswordResetRequestPage from '@pages/PasswordResetRequestPage';
 import PasswordResetConfirmPage from '@pages/PasswordResetConfirmPage';
+import NotFoundPage from '@pages/NotFoundPage';
+import ForbiddenPage from '@pages/ForbiddenPage';
 import MainLayout from '@components/Layout/MainLayout';
 import ProtectedRoute from '@components/ProtectedRoute';
 import ErrorBoundary from '@components/ErrorBoundary';
@@ -77,6 +79,8 @@ const AppRoutes = () => {
         <Route path="/pozvanky-list" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PozvankyListPage /></ProtectedRoute>} />
         <Route path="/departments" element={<ProtectedRoute allowedRoles={['admin']}><DepartmentsPage /></ProtectedRoute>} />
         <Route path="/companies" element={<ProtectedRoute allowedRoles={['admin']}><CompaniesPage /></ProtectedRoute>} />
+        <Route path="/forbidden" element={<ForbiddenPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

@@ -11,3 +11,7 @@ class PasswordResetThrottle(AnonRateThrottle):
     """Prevents automated password-reset email flooding."""
 
     scope = "password_reset"
+
+
+class AresThrottle(AnonRateThrottle):
+    scope = "ares"

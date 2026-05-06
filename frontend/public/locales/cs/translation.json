@@ -8,6 +8,7 @@
     "error": "Něco se pokazilo",
     "error_label": "Chyba",
     "unexpected_error": "Došlo k neočekávané chybě",
+    "retry": "Zkusit znovu",
     "image": "Obrázek",
     "image_not_available": "Obrázek není k dispozici",
     "save": "Uložit",
@@ -173,6 +174,13 @@
     "update_error": "Chyba při aktualizaci profilu",
     "not_found": "Profil nenalezen",
     "profile_data": "Údaje profilu",
+    "gdpr_section": "Ochrana soukromí (GDPR)",
+    "export_data": "Exportovat moje data",
+    "anonymize_account": "Smazat a anonymizovat účet",
+    "anonymize_confirm_title": "Smazat a anonymizovat účet",
+    "anonymize_confirm_text": "Opravdu si přejete smazat svůj účet a anonymizovat své údaje? Tato akce je nevratná.",
+    "export_success": "Žádost o export dat byla odeslána. Odkaz ke stažení obdržíte e-mailem.",
+    "anonymize_success": "Váš účet byl úspěšně anonymizován. Budete odhlášeni.",
     "first_name_placeholder": "Zadejte jméno",
     "last_name_placeholder": "Zadejte příjmení",
     "email_placeholder": "Zadejte e-mailovou adresu",
@@ -328,7 +336,10 @@
     "note": "Poznámka",
     "reject_note_prompt": "Zadejte důvod vrácení dokumentu:",
     "review_success": "Dokument byl úspěšně zkontrolován",
-    "review_error": "Chyba při kontrole dokumentu"
+    "review_error": "Chyba při kontrole dokumentu",
+    "waiting_for_approval_banner": "Vaše praxe byla schválena, ale může začít až po nahrání a schválení smlouvy a náplně praxe.",
+    "no_documents_title": "Žádné dokumenty k dispozici",
+    "no_documents_desc": "Pro tuto praxi zatím nebyly vygenerovány nebo nahrány žádné dokumenty."
   },
   "applications": {
     "title": "Nevyřízené přihlášky",
@@ -359,6 +370,10 @@
     "confirm_create_text": "Opravdu chcete vytvořit pozvánku pro {{count}} studentů na stáž {{title}}?",
     "create_success": "Pozvánka pro {{count}} studentů vytvořena.",
     "create_error": "Chyba při vytváření pozvánky",
+    "invite_modal_title": "Pozvat studenty na stáž",
+    "invite_modal_text": "Chystáte se pozvat {{count}} vybraných studentů na stáž.",
+    "message_label": "Zpráva pro studenty (volitelné)",
+    "message_placeholder": "Zde můžete napsat krátkou zprávu pro studenty...",
     "errors_label": "Chyby",
     "cancel_send": "Zrušit zaslání",
     "unknown_dept": "Neznámá katedra"
@@ -434,7 +449,25 @@
   "registration": {
     "success": "Registrace úspěšná",
     "error": "Chyba při registraci",
-    "check_form": "Zkontrolujte prosím formulář."
+    "check_form": "Zkontrolujte prosím formulář.",
+    "privacy_required": "Musíte přijmout zásady ochrany osobních údajů.",
+    "privacy_label": "Souhlasím se zpracováním osobních údajů v souladu se",
+    "privacy_link": "Zásadami ochrany osobních údajů"
+  },
+  "privacy": {
+    "title": "Zásady ochrany osobních údajů",
+    "controller_title": "1. Správce osobních údajů",
+    "controller_text": "Správcem osobních údajů je Univerzita Jana Evangelisty Purkyně v Ústí nad Labem, se sídlem Pasteurova 3544/1, 400 96 Ústí nad Labem.",
+    "data_collected_title": "2. Shromažďované údaje",
+    "data_collected_text": "Shromažďujeme jméno, příjmení, e-mail, telefonní číslo, údaje o studiu a praxích, životopis a profilový obrázek. Tyto údaje jsou poskytovány dobrovolně.",
+    "purpose_title": "3. Účel zpracování",
+    "purpose_text": "Osobní údaje jsou zpracovávány za účelem správy studentských praxí, komunikace s uživateli a zajištění funkčnosti systému InternHub.",
+    "retention_title": "4. Doba uložení",
+    "retention_text": "Osobní údaje jsou ukládány po dobu nezbytně nutnou, maximálně však po dobu 3 let od poslední aktivity účtu. Po této době jsou data anonymizována.",
+    "rights_title": "5. Vaše práva",
+    "rights_text": "Máte právo na přístup ke svým údajům, jejich opravu, výmaz (právo být zapomenut), omezení zpracování a přenositelnost údajů. Tato práva můžete uplatnit prostřednictvím profilu v aplikaci nebo kontaktováním správce.",
+    "contact_title": "6. Kontakt",
+    "contact_text": "Pro uplatnění svých práv nebo dotazy týkající se ochrany osobních údajů nás kontaktujte na e-mailu: dpo@ujep.cz"
   },
   "password_reset": {
     "request_title": "Zapomenuté heslo",
@@ -487,6 +520,14 @@
     "pending": "Čeká",
     "apply_button": "Podat"
   },
+  "errors": {
+    "page_not_found": "Stránka nenalezena",
+    "page_not_found_desc": "Požadovaná stránka neexistuje nebo byla přesunuta.",
+    "forbidden": "Přístup odepřen",
+    "forbidden_desc": "Nemáte oprávnění pro přístup k této stránce.",
+    "network_error": "Nelze se připojit k serveru. Zkontrolujte připojení k internetu.",
+    "server_unreachable": "Server je nedostupný. Zkuste to prosím později."
+  },
   "api_errors": {
     "NOT_FOUND": "Záznam nebyl nalezen.",
     "UNAUTHORIZED": "K této akci nemáte dostatečná oprávnění.",
@@ -502,6 +543,8 @@
     "INVALID_EXTENSION": "Jsou povoleny pouze dokumenty ve formátu Word (.doc, .docx).",
     "INTERNAL_ERROR": "Došlo k vnitřní chybě na straně serveru.",
     "UNKNOWN_ERROR": "Došlo k neočekávané chybě serveru.",
+    "NETWORK_ERROR": "Nelze se připojit k serveru. Zkontrolujte připojení k internetu.",
+    "SERVER_UNREACHABLE": "Server je nedostupný. Zkuste to prosím později.",
     "DRF_ERROR": "Chyba při komunikaci se serverem.",
     "VALIDATION_ERROR": "Prosím zkontrolujte zadané údaje.",
     "PRACTICE_ALREADY_FINALIZED": "Tato praxe je již schválena nebo zamítnuta.",

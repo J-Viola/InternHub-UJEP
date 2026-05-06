@@ -10,12 +10,16 @@ import { useStudentPracticeAPI } from "src/api/student_practice/student_practice
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
 import { useUserAPI } from "src/api/user/userAPI";
+import { useMessage } from "@hooks/MessageContext";
 import Button from "@components/core/Button/Button";
 import {useNabidkaAPI} from "../api/nabidka/nabidkaAPI";
 import Pagination from "@core/Pagination";
 import useDebounce from "@hooks/useDebounce";
 import { useTranslation } from "react-i18next";
 import EmptyState from "@core/Feedback/EmptyState";
+import NabidkaEntityInline from "@components/Nabidka/NabidkaEntityInline";
+import PopUpCon from "@core/Container/PopUpCon";
+import TextField from "@core/Form/TextField";
 
 const PAGE_SIZE = 10;
 
@@ -30,13 +34,18 @@ export default function StudentPage() {
     const [error, setError] = useState(null);
     const [count, setCount] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
+    const [showInviteModal, setShowInviteModal] = useState(false);
+    const [invitationNabidky, setInvitationNabidky] = useState([]);
+    const [selectedNabidkaForInvite, setSelectedNabidkaForInvite] = useState(null);
+    const [invitationMessage, setInvitationMessage] = useState("");
     const navigate = useNavigate()
-    const { getStudentsByPracticeId } = useStudentPracticeAPI()
-    const { getNabidkaById } = useNabidkaAPI()
+    const { getStudentsByPracticeId, createInvitation } = useStudentPracticeAPI()
+    const { getNabidkaById, getOrganizationPractices } = useNabidkaAPI()
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const { user } = useUser();
     const { getAllStudents } = useUserAPI();
+    const { addMessage } = useMessage();
 
 
     // admin / org-without-view use server-side pagination + search
@@ -47,6 +56,20 @@ export default function StudentPage() {
 
     // Delay BE requests until user stops typing (400 ms)
     const debouncedSearchName = useDebounce(filterValues.name, 400);
+
+    // Fetch practices for invitation if needed
+    useEffect(() => {
+        if (showInviteModal && user.isOrganizationUser() && !id) {
+            getOrganizationPractices().then(res => {
+                // Backend might return {results: [], count: 0} or []
+                const data = res.results !== undefined ? res.results : res;
+                setInvitationNabidky(data || []);
+            }).catch(err => {
+                console.error("Error loading practices for invite:", err);
+            });
+        }
+    }, [showInviteModal, user, id, getOrganizationPractices]);
+
 
     // Non-paginated modes: load once on route change
     useEffect(() => {
@@ -98,6 +121,7 @@ export default function StudentPage() {
     const loadPractice = async () => {
         const fetchedPractice = await getNabidkaById(id);
         setPractice(fetchedPractice);
+        setSelectedNabidkaForInvite(fetchedPractice);
     };
 
     const loadStudentsByPractice = async () => {
@@ -281,24 +305,39 @@ export default function StudentPage() {
     };
 
     const handleInvite = () => {
-        const selectedIds = Array.from(selectedStudents);
-        if (selectedIds.length > 0) {
-            const selectedStudentsData = entities.filter(entity =>
-                selectedIds.includes(entity.user_id)
-            );
-            const studentNames = selectedStudentsData.map(student =>
-                student.student_full_name ||
-                `${student.first_name || ''} ${student.last_name || ''}`.trim() ||
-                student.name ||
-                t('students.unknown_student')
-            );
+        if (selectedStudents.size > 0) {
+            setShowInviteModal(true);
+        }
+    };
 
-            const queryParams = new URLSearchParams({
-                type: 'create',
-                id: selectedIds.join(','),
-                names: studentNames.join(',')
-            });
-            navigate(`/pozvanka?${queryParams.toString()}`);
+    const handleSendInvitations = async () => {
+        const studentIds = Array.from(selectedStudents);
+        const practiceId = id || selectedNabidkaForInvite?.practice_id;
+
+        if (!practiceId) {
+            addMessage(t('invitations.select_practice'), "E");
+            return;
+        }
+
+        try {
+            // Optional: we can send the message too if backend supports it,
+            // but currently createInvitation only takes practiceId and studentIds.
+            // Let's assume for now we just want to implement the UI as planned.
+            const res = await createInvitation(practiceId, studentIds);
+            if (res) {
+                addMessage(t('invitations.create_success', { count: res.created }), "S");
+                if (res.errors && res.errors.length > 0) {
+                    addMessage(`${t('invitations.errors_label')}: ${res.errors.join(", ")}`, "E");
+                }
+                setShowInviteModal(false);
+                setSelectedStudents(new Set());
+                setSelectedNabidkaForInvite(null);
+                setInvitationMessage("");
+            }
+        } catch (error) {
+            console.error(t('invitations.create_error'), error);
+            const errorCode = error.code || "UNKNOWN_ERROR";
+            addMessage(`${t('invitations.create_error')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
         }
     };
 
@@ -399,6 +438,56 @@ export default function StudentPage() {
                     />
                 )}
             </Container>
+
+            {showInviteModal && (
+                <PopUpCon
+                    onClose={() => setShowInviteModal(false)}
+                    title={t('invitations.invite_modal_title')}
+                    text={t('invitations.invite_modal_text', { count: selectedStudents.size })}
+                    onSubmit={handleSendInvitations}
+                    onReject={() => setShowInviteModal(false)}
+                    submitText={t('common.confirm')}
+                    rejectText={t('common.cancel')}
+                    variant="blue"
+                >
+                    <Container property="mt-4 px-4 space-y-6 pb-4">
+                        {!id && (
+                            <Container>
+                                <Headings sizeTag="h5" property="mb-3">
+                                    {t('invitations.select_practice')}
+                                </Headings>
+                                <Container property="space-y-3 max-h-60 overflow-y-auto pr-2 border-b pb-4">
+                                    {invitationNabidky.length > 0 ? (
+                                        invitationNabidky.map((nabidka) => (
+                                            <NabidkaEntityInline
+                                                key={nabidka.practice_id}
+                                                entity={nabidka}
+                                                isSelected={selectedNabidkaForInvite?.practice_id === nabidka.practice_id}
+                                                onClick={() => setSelectedNabidkaForInvite(nabidka)}
+                                                onView={() => navigate(`/nabidka/${nabidka.practice_id}`)}
+                                            />
+                                        ))
+                                    ) : (
+                                        <Paragraph property="text-gray-500 italic">
+                                            {t('offers.loading')}
+                                        </Paragraph>
+                                    )}
+                                </Container>
+                            </Container>
+                        )}
+
+                        <Container>
+                            <TextField
+                                id="invitationMessage"
+                                label={t('invitations.message_label')}
+                                placeholder={t('invitations.message_placeholder')}
+                                value={invitationMessage}
+                                onChange={(val) => setInvitationMessage(val.invitationMessage)}
+                            />
+                        </Container>
+                    </Container>
+                </PopUpCon>
+            )}
         </>
     );
 }

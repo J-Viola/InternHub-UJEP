@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from django.conf import settings
 from django.core.cache import cache
@@ -26,6 +28,8 @@ from users.models import (
 )
 from users.stag_api import get_stag_client
 
+logger = logging.getLogger(__name__)
+
 
 def register_organization(validated_data):
     """
@@ -45,50 +49,58 @@ def register_organization(validated_data):
     if not ares_data:
         raise ValueError(UserMessages.ARES_FETCH_FAILED)
 
-    with transaction.atomic():
-        user = OrganizationUser.objects.create(
-            email=validated_data["email"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
-            title_before=validated_data.get("title_before", ""),
-            title_after=validated_data.get("title_after", ""),
-            phone=validated_data.get("phone", ""),
-            organization_role=OrganizationRole.OWNER,
-            is_active=True,
-        )
+    try:
+        with transaction.atomic():
+            user = OrganizationUser.objects.create(
+                email=validated_data["email"],
+                first_name=validated_data["first_name"],
+                last_name=validated_data["last_name"],
+                title_before=validated_data.get("title_before", ""),
+                title_after=validated_data.get("title_after", ""),
+                phone=validated_data.get("phone", ""),
+                organization_role=OrganizationRole.OWNER,
+                is_active=True,
+            )
 
-        if hasattr(ares_data, "sidlo") and ares_data.sidlo:
-            sidlo = ares_data.sidlo
-            address_ares = sidlo.textovaAdresa or ""
-            zip_code_ares = sidlo.psc
-        else:
-            address_ares = ""
-            zip_code_ares = None
+            if hasattr(ares_data, "sidlo") and ares_data.sidlo:
+                sidlo = ares_data.sidlo
+                address_ares = sidlo.textovaAdresa or ""
+                zip_code_ares = sidlo.psc
+            else:
+                address_ares = ""
+                zip_code_ares = None
 
-        employer_profile = EmployerProfile.objects.create(
-            employer_id=user.id,
-            ico=ico,
-            dic=dic if dic else (ares_data.dic or ""),
-            company_name=(company_name if company_name else (ares_data.obchodniJmeno or "")),
-            address=address if address else address_ares,
-            zip_code=zip_code_ares,
-            approval_status=ApprovalStatus.PENDING,
-            logo=logo,
-        )
+            employer_profile = EmployerProfile.objects.create(
+                employer_id=user.id,
+                ico=ico,
+                dic=dic if dic else (ares_data.dic or ""),
+                company_name=(company_name if company_name else (ares_data.obchodniJmeno or "")),
+                address=address if address else address_ares,
+                zip_code=zip_code_ares,
+                approval_status=ApprovalStatus.PENDING,
+                logo=logo,
+            )
 
-        user.employer_profile = employer_profile
-        user.set_password(password)
-        user.save()
+            user.employer_profile = employer_profile
+            user.set_password(password)
+            user.save()
 
-        ActionLogService.log(
-            user=user,
-            action_type=ActionLogType.REGISTER,
-            object_type="OrganizationUser",
-            object_id=user.id,
-            description=f"Registrace organizace {employer_profile.company_name} (IČO: {ico}), email: {user.email}",
-        )
+            ActionLogService.log(
+                user=user,
+                action_type=ActionLogType.REGISTER,
+                object_type="OrganizationUser",
+                object_id=user.id,
+                description=f"Registrace organizace {employer_profile.company_name} (IČO: {ico}), email: {user.email}",
+            )
 
-        return user
+            # Notify user via email only after successful transaction commit
+            from users.helpers import EmailService
+
+            transaction.on_commit(lambda: EmailService.notify_org_welcome(user))
+
+            return user
+    except IntegrityError:
+        raise ValueError(UserMessages.EMAIL_ALREADY_EXISTS)
 
 
 def update_organization_from_ares(user, ico: str):
@@ -186,7 +198,8 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
             ares_dto = EkonomickySubjektDTO.model_validate(response_data)
             cache.set(cache_key, ares_dto.model_dump(), timeout=3600)
             return ares_dto
-    except requests.RequestException:
+    except requests.RequestException as e:
+        logger.warning("ARES lookup failed for IČO %s: %s", ico, e)
         return None
 
     return None
@@ -230,6 +243,18 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
 def get_or_create_stag_user(stag_data: dict, ticket: str):
     """
     Creates or updates a StudentUser or ProfessorUser based on STAG data.
+    Wrapped in transaction.atomic to handle concurrent STAG logins.
+    """
+    try:
+        with transaction.atomic():
+            return _get_or_create_stag_user_inner(stag_data, ticket)
+    except IntegrityError:
+        raise AuthenticationFailed("Concurrent STAG login conflict. Please try again.")
+
+
+def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
+    """
+    Creates or updates a StudentUser or ProfessorUser based on STAG data.
     """
     email = stag_data["email"]
     first_name = stag_data["first_name"]
@@ -262,6 +287,10 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
                 f"violation and no fallback by role_name found. Error: {e}"
             )
         except Exception as e_inner:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Unexpected error during STAG role handling")
             raise AuthenticationFailed(f"An unexpected error occurred during STAG role handling: {e_inner}")
 
     user = None

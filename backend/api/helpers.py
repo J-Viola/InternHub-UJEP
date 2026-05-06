@@ -5,6 +5,7 @@ from datetime import datetime
 import bleach
 from django.core.files.base import ContentFile
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 
 from practices.messages import PracticeMessages
 
@@ -19,6 +20,41 @@ class SanitizedCharField(serializers.CharField):
     def to_internal_value(self, data):
         data = super().to_internal_value(data)
         return sanitize_html(data)
+
+
+def can_manage_practice(user, student_practice) -> dict:
+    """
+    Centralized permission check for a user relative to a StudentPractice.
+    Returns a dict with role flags: {is_professor, is_org, is_admin}.
+    Raises ValueError if the user has no authorization.
+    """
+    from users.models import (
+        DepartmentRole,
+        OrganizationUser,
+        ProfessorUser,
+        UserSubjectType,
+    )
+
+    is_professor = isinstance(user, ProfessorUser)
+    is_org = isinstance(user, OrganizationUser)
+    is_admin = user.is_superuser
+
+    if is_professor and not is_admin:
+        subject = student_practice.practice.subject
+        is_head = user.department_role == DepartmentRole.HEAD and user.department == subject.department
+        is_manager = subject.subject_manager == user
+        is_teacher = user.user_subjects.filter(subject=subject, role=UserSubjectType.Professor).exists()
+        if not (is_head or is_manager or is_teacher):
+            is_professor = False
+
+    if is_org and not is_admin:
+        if student_practice.practice.employer != getattr(user, "employer_profile", None):
+            is_org = False
+
+    if not (is_professor or is_org or is_admin):
+        raise PermissionDenied()
+
+    return {"is_professor": is_professor, "is_org": is_org, "is_admin": is_admin}
 
 
 class FormattedDateField(serializers.DateField):

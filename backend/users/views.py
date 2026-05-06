@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from notifications.services import EmailService
 from rest_framework import filters as drf_filters
 from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -12,8 +12,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from api.views import StandardResultsSetPagination
 from users.action_log import ActionLogService
@@ -33,7 +34,7 @@ from users.permissions import (
     IsStagTeacher,
 )
 from users.services import fetch_ares_data, update_organization_from_ares
-from users.throttling import LoginThrottle, PasswordResetThrottle
+from users.throttling import AresThrottle, LoginThrottle, PasswordResetThrottle
 
 from .serializers import (
     AdminOrganizationSerializer,
@@ -57,10 +58,31 @@ from .serializers import (
 )
 
 
+def _set_refresh_cookie(response, refresh_token):
+    jwt_settings = getattr(settings, "SIMPLE_JWT", {})
+    response.set_cookie(
+        key=jwt_settings.get("AUTH_COOKIE", "refresh_token"),
+        value=refresh_token,
+        max_age=jwt_settings.get("AUTH_COOKIE_MAX_AGE", 86400),
+        httponly=jwt_settings.get("AUTH_COOKIE_HTTP_ONLY", True),
+        samesite=jwt_settings.get("AUTH_COOKIE_SAME_SITE", "Lax"),
+        secure=jwt_settings.get("AUTH_COOKIE_SECURE", False),
+        path=jwt_settings.get("AUTH_COOKIE_PATH", "/api"),
+    )
+
+
+def _clear_refresh_cookie(response):
+    jwt_settings = getattr(settings, "SIMPLE_JWT", {})
+    response.delete_cookie(
+        key=jwt_settings.get("AUTH_COOKIE", "refresh_token"),
+        path=jwt_settings.get("AUTH_COOKIE_PATH", "/api"),
+    )
+
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = OrganizationRegisterSerializer
     permission_classes = (AllowAny,)
-    throttle_classes = [AnonRateThrottle] if not settings.DEBUG else []
+    throttle_classes = [AnonRateThrottle]
 
     @extend_schema(
         summary="Register a new organization user",
@@ -71,7 +93,7 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         try:
             serializer.save()
-        except Exception as e:
+        except ValueError as e:
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -84,7 +106,7 @@ class RegisterView(generics.CreateAPIView):
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [PasswordResetThrottle] if not settings.DEBUG else []
+    throttle_classes = [PasswordResetThrottle]
 
     @extend_schema(
         summary="Request password reset email",
@@ -109,15 +131,11 @@ class PasswordResetRequestView(APIView):
             token = default_token_generator.make_token(user)
 
             frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+            if not settings.DEBUG and frontend_url.startswith("http://"):
+                frontend_url = frontend_url.replace("http://", "https://", 1)
             reset_url = f"{frontend_url}/reset-password/{uid}/{token}"
 
-            send_mail(
-                "Obnova hesla - InternHub UJEP",
-                f"Pro obnovu hesla klikněte na tento odkaz: {reset_url}\n\nPokud jste o obnovu nežádali, tento email ignorujte.",
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
+            EmailService.notify_password_reset(user, reset_url)
 
             ActionLogService.log(
                 user=user,
@@ -137,6 +155,7 @@ class PasswordResetRequestView(APIView):
 
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     @extend_schema(
         summary="Confirm password reset",
@@ -165,6 +184,8 @@ class PasswordResetConfirmView(APIView):
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
+
+        EmailService.notify_password_changed(user)
 
         ActionLogService.log(
             user=user,
@@ -210,6 +231,8 @@ class ChangePasswordView(APIView):
         user.set_password(serializer.validated_data["new_password"])
         user.save()
 
+        EmailService.notify_password_changed(user)
+
         ActionLogService.log(
             user=user,
             action_type=ActionLogType.PASSWORD_CHANGE,
@@ -232,11 +255,16 @@ class LogoutView(generics.GenericAPIView):
         responses={200: OpenApiResponse(description="Successfully logged out")},
     )
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        cookie_name = getattr(settings, "SIMPLE_JWT", {}).get("AUTH_COOKIE", "refresh_token")
+        refresh_token = request.COOKIES.get(cookie_name) or request.data.get("refresh")
+
+        if not refresh_token:
+            return Response(
+                {"error": "Refresh token not provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            refresh_token = serializer.validated_data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
 
@@ -248,16 +276,19 @@ class LogoutView(generics.GenericAPIView):
                 description=f"Odhlášení uživatele {request.user.email}",
             )
 
-            return Response(
+            response = Response(
                 {"success": "Successfully logged out"},
                 status=status.HTTP_200_OK,
             )
-        except Exception as e:
+            _clear_refresh_cookie(response)
+            return response
+        except TokenError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AresJusticeView(generics.GenericAPIView):
     serializer_class = AresJusticeSerializer
+    throttle_classes = [AresThrottle]
 
     @extend_schema(
         summary="Fetch data from ARES",
@@ -313,7 +344,7 @@ class UpdateAresSubjectView(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-    throttle_classes = [LoginThrottle] if not settings.DEBUG else []
+    throttle_classes = [LoginThrottle]
 
     @extend_schema(
         summary="Login / Obtain JWT Token",
@@ -338,13 +369,62 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         user_info_serializer = UserInfoSerializer(user)
 
-        return Response(
+        response = Response(
             {
                 "access": tokens["access"],
-                "refresh": tokens["refresh"],
                 "user": user_info_serializer.data,
             }
         )
+        _set_refresh_cookie(response, tokens["refresh"])
+        return response
+
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """
+    Reads refresh token from HttpOnly cookie instead of request body.
+    Returns new access token in body, sets new refresh token in cookie.
+    """
+
+    @extend_schema(
+        summary="Refresh JWT token",
+        description="Refreshes the access token using the HttpOnly refresh token cookie.",
+        tags=["Auth"],
+        responses={200: OpenApiResponse(description="Token refreshed successfully")},
+    )
+    def post(self, request, *args, **kwargs):
+        cookie_name = getattr(settings, "SIMPLE_JWT", {}).get("AUTH_COOKIE", "refresh_token")
+        refresh_token = request.COOKIES.get(cookie_name)
+
+        if not refresh_token:
+            return Response(
+                {"detail": "No refresh token provided"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        try:
+            token = RefreshToken(refresh_token)
+        except TokenError:
+            return Response(
+                {"detail": "Invalid or expired refresh token"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        data = {"refresh": str(token)}
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        response = Response(
+            {
+                "access": serializer.validated_data["access"],
+            }
+        )
+
+        if getattr(settings, "SIMPLE_JWT", {}).get("ROTATE_REFRESH_TOKENS", False):
+            new_refresh = serializer.validated_data.get("refresh")
+            if new_refresh:
+                _set_refresh_cookie(response, new_refresh)
+
+        return response
 
 
 @extend_schema_view(
@@ -444,7 +524,7 @@ class AdminOrganizationViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     serializer_class = AdminOrganizationSerializer
 
-    queryset = EmployerProfile.objects.all()
+    queryset = EmployerProfile.objects.all().prefetch_related("organization_users")
     pagination_class = StandardResultsSetPagination
     parser_classes = [MultiPartParser, FormParser]
 
@@ -476,7 +556,13 @@ class AdminOrganizationViewSet(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        old_status = instance.approval_status
         response = super().update(request, *args, **kwargs)
+
+        # Refresh instance to get new status
+        instance.refresh_from_db()
+        if instance.approval_status != old_status:
+            EmailService.notify_org_profile_status(instance)
 
         ActionLogService.log(
             user=request.user,

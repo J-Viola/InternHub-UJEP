@@ -1,7 +1,10 @@
 from datetime import date
 
 from django.db import transaction
+from notifications.services import EmailService
+from rest_framework.exceptions import PermissionDenied
 
+from api.helpers import can_manage_practice
 from practices.models import Practice, ProgressStatus
 from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
@@ -50,6 +53,7 @@ class StudentPracticeService:
                     },
                 )
                 if created:
+                    EmailService.notify_student_invitation(invitation)
                     created_count += 1
             except StudentUser.DoesNotExist:
                 errors.append(f"Student ID {student_id} neexistuje.")
@@ -70,7 +74,7 @@ class StudentPracticeService:
         Process the approval or rejection of an employer invitation.
         """
         try:
-            invitation = EmployerInvitation.objects.get(invitation_id=invitation_id, user=user)
+            invitation = EmployerInvitation.objects.select_for_update().get(invitation_id=invitation_id, user=user)
         except EmployerInvitation.DoesNotExist:
             raise ValueError(StudentPracticeMessages.INVITATION_NOT_FOUND)
 
@@ -134,41 +138,17 @@ class StudentPracticeService:
         Updates the status of a StudentPractice with transaction safety (select_for_update)
         to handle dual approval correctly.
         """
-        from users.models import (
-            DepartmentRole,
-            OrganizationUser,
-            ProfessorUser,
-            UserSubjectType,
-        )
-
-        # Use select_for_update to lock the row
         try:
             student_practice = StudentPractice.objects.select_for_update().get(pk=student_practice_id)
         except StudentPractice.DoesNotExist:
             raise ValueError(StudentPracticeMessages.NOT_FOUND)
 
-        # Determine roles for the user relative to this specific practice
-        is_professor = isinstance(user, ProfessorUser)
-        is_org = isinstance(user, OrganizationUser)
-        is_admin = user.is_superuser
+        old_status = student_practice.approval_status
 
-        # Detailed role check for professor (must be from same dept or teacher of the subject)
-        if is_professor and not is_admin:
-            subject = student_practice.practice.subject
-            is_head = user.department_role == DepartmentRole.HEAD and user.department == subject.department
-            is_manager = subject.subject_manager == user
-            is_teacher = user.user_subjects.filter(subject=subject, role=UserSubjectType.Professor).exists()
-            if not (is_head or is_manager or is_teacher):
-                is_professor = False  # Not authorized for THIS practice
-
-        # Detailed role check for org (must be from the same organization)
-        if is_org and not is_admin:
-            if student_practice.practice.employer != getattr(user, "employer_profile", None):
-                is_org = False  # Not authorized for THIS practice
-
-        # GLOBAL AUTHORIZATION CHECK
-        if not (is_professor or is_org or is_admin):
-            raise ValueError(StudentPracticeMessages.UNAUTHORIZED)
+        roles = can_manage_practice(user, student_practice)
+        is_professor = roles["is_professor"]
+        is_org = roles["is_org"]
+        is_admin = roles["is_admin"]
 
         # 1. Handle dual approval_status update
         if "approval_status" in data:
@@ -216,6 +196,9 @@ class StudentPracticeService:
 
         student_practice.save()
 
+        if student_practice.approval_status != old_status:
+            EmailService.notify_student_application_status(student_practice)
+
         ActionLogService.log(
             user=user,
             action_type=ActionLogType.STATUS_CHANGE,
@@ -233,11 +216,6 @@ class StudentPracticeService:
         Allows a professor or admin to approve or reject a document.
         """
         from student_practices.models import UploadedDocument
-        from users.models import (
-            DepartmentRole,
-            ProfessorUser,
-            UserSubjectType,
-        )
 
         document = UploadedDocument.objects.select_for_update().get(pk=document_id)
         student_practice = document.student_practice
@@ -245,23 +223,15 @@ class StudentPracticeService:
         if not student_practice:
             raise ValueError(StudentPracticeMessages.NOT_FOUND)
 
-        is_professor = isinstance(user, ProfessorUser)
-        is_admin = user.is_superuser
-
-        if is_professor and not is_admin:
-            subject = student_practice.practice.subject
-            is_head = user.department_role == DepartmentRole.HEAD and user.department == subject.department
-            is_manager = subject.subject_manager == user
-            is_teacher = user.user_subjects.filter(subject=subject, role=UserSubjectType.Professor).exists()
-            if not (is_head or is_manager or is_teacher):
-                raise ValueError(StudentPracticeMessages.UNAUTHORIZED)
-
-        if not (is_professor or is_admin):
-            raise ValueError(StudentPracticeMessages.UNAUTHORIZED)
+        roles = can_manage_practice(user, student_practice)
+        if not (roles["is_professor"] or roles["is_admin"]):
+            raise PermissionDenied()
 
         document.status = status_val
         document.review_note = review_note
         document.save()
+
+        EmailService.notify_student_document_review(document)
 
         status_label = "schválen" if status_val == DocumentStatus.APPROVED else "zamítnut"
         ActionLogService.log(

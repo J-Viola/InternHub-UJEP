@@ -25,15 +25,9 @@ class StudentPracticeViewTests(TestCase):
         self.client = APIClient()
 
         # Users
-        self.student = StudentUser.objects.create(
-            email="student@test.com", first_name="S", last_name="U", is_active=True
-        )
-        self.other_student = StudentUser.objects.create(
-            email="other@test.com", first_name="O", last_name="S", is_active=True
-        )
-        self.employer_user = OrganizationUser.objects.create(
-            email="emp@test.com", first_name="E", last_name="O", is_active=True
-        )
+        self.student = StudentUser.objects.create(email="student@test.com", first_name="S", last_name="U", is_active=True)
+        self.other_student = StudentUser.objects.create(email="other@test.com", first_name="O", last_name="S", is_active=True)
+        self.employer_user = OrganizationUser.objects.create(email="emp@test.com", first_name="E", last_name="O", is_active=True)
         self.employer_profile = EmployerProfile.objects.create(
             employer_id=self.employer_user.id,
             company_name="Test Co",
@@ -102,12 +96,14 @@ class StudentPracticeViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_upload_document_success_for_owner(self):
-        # Create StudentPractice for this test case
+        import io
+        import zipfile
+
         sp = StudentPractice.objects.create(
             user=self.student,
             practice=self.practice,
-            approval_status=ApprovalStatus.APPROVED,
-            progress_status=ProgressStatus.IN_PROGRESS,
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 1),
         )
@@ -118,9 +114,14 @@ class StudentPracticeViewTests(TestCase):
         self.client.force_authenticate(user=self.student)
         url = f"/api/student-practices/upload-document/{contract_doc.document_id}"
 
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("[Content_Types].xml", "<Types/>")
+        buf.seek(0)
+
         file = SimpleUploadedFile(
             "contract.docx",
-            b"content",
+            buf.read(),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         data = {"document": file}

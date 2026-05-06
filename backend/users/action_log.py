@@ -16,4 +16,8 @@ class ActionLogService:
                 action_date=timezone.now(),
             )
         except Exception:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Failed to create ActionLog entry")
             pass

@@ -2,8 +2,9 @@ import base64
 import mimetypes
 from datetime import date
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
+from notifications.services import EmailService
 
 from practices.messages import PracticeMessages
 from practices.models import Practice, ProgressStatus
@@ -102,7 +103,12 @@ class PracticeService:
 
         serializer = StudentPracticeSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            try:
+                student_practice = serializer.save()
+            except IntegrityError:
+                raise ValueError(PracticeMessages.ALREADY_APPLIED)
+
+            EmailService.notify_org_new_application(student_practice)
 
             ActionLogService.log(
                 user=user,
@@ -128,14 +134,20 @@ class PracticeService:
         approved_student_practices = StudentPractice.objects.filter(
             practice__subject__department_id__in=dept_ids,
             approval_status=ApprovalStatus.APPROVED,
-        ).select_related("user", "practice", "practice__subject", "practice__contact_user")
+        ).select_related(
+            "user",
+            "practice",
+            "practice__subject",
+            "practice__subject__department",
+            "practice__employer",
+            "practice__contact_user",
+        )
 
-        # Practice offers waiting for VK approval (the original wheel)
         to_approve_offers = Practice.objects.filter(
             subject__department_id__in=dept_ids,
             approval_status=ApprovalStatus.PENDING,
             is_active=True,
-        ).select_related("subject", "contact_user")
+        ).select_related("subject", "subject__department", "contact_user", "employer")
 
         return {
             "approved": approved_student_practices,

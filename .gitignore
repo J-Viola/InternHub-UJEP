@@ -21,6 +21,7 @@ db.sqlite3
 media/
 staticfiles/
 backend/logs/
+backend/storage/
 .ruff_cache/
 .pytest_cache/
 .coverage

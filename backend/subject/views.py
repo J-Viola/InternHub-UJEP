@@ -22,7 +22,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
     ViewSet for managing subjects.
     """
 
-    queryset = Subject.objects.all()
+    queryset = Subject.objects.select_related("department", "subject_manager").prefetch_related("user_subjects__user")
     serializer_class = SubjectSerializer
     filter_backends = [
         DjangoFilterBackend,

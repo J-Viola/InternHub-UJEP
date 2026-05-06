@@ -16,8 +16,6 @@ from users.models import (
     OrganizationUser,
     ProfessorUser,
     StudentUser,
-    UserSubject,
-    UserSubjectType,
     UserType,
 )
 from users.services import (
@@ -78,6 +76,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             except AuthenticationFailed:
                 raise
             except Exception as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.exception("Unexpected error during STAG ticket validation")
                 raise AuthenticationFailed(str(e))
 
         email = attrs.get("email")
@@ -92,10 +94,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise AuthenticationFailed("No account found with this email address")
+            raise AuthenticationFailed("Invalid credentials")
 
         if not user.check_password(password) or not user.is_active:
-            raise AuthenticationFailed("Invalid credentials or disabled account")
+            raise AuthenticationFailed("Invalid credentials")
 
         # authenticate() updates last_login internally if used, but here we verify manually.
         update_last_login(None, user)
@@ -431,13 +433,13 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
         ]
 
     def get_owner(self, obj):
-        owner = OrganizationUser.objects.filter(employer_profile=obj, organization_role=OrganizationRole.OWNER).first()
-        if owner:
-            return {
-                "id": owner.id,
-                "email": owner.email,
-                "full_name": owner.full_name,
-            }
+        for user in obj.organization_users.all():
+            if user.organization_role == OrganizationRole.OWNER:
+                return {
+                    "id": user.id,
+                    "email": user.email,
+                    "full_name": user.full_name,
+                }
         return None
 
 
@@ -459,12 +461,14 @@ class AllStudentsListSerializer(serializers.ModelSerializer):
         ]
 
     def get_department(self, obj):
-        # Získáme katedru studenta přes jeho předměty
-        user_subjects = UserSubject.objects.filter(user=obj, role=UserSubjectType.Student.value).select_related("subject__department")
-
         departments = set()
-        for user_subject in user_subjects:
-            if user_subject.subject.department:
+        for user_subject in obj.user_subjects.all():
+            if (
+                hasattr(user_subject, "subject")
+                and user_subject.subject
+                and hasattr(user_subject.subject, "department")
+                and user_subject.subject.department
+            ):
                 departments.add(user_subject.subject.department.department_name)
 
         return list(departments) if departments else None

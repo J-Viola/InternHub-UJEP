@@ -31,6 +31,11 @@ const maskSensitiveData = (data) => {
     return masked;
 };
 
+let _accessToken = null;
+
+export const getAccessToken = () => _accessToken;
+export const setAccessToken = (token) => { _accessToken = token; };
+
 export const createApiClient = (navigate) => {
     const apiClient = axios.create({
         baseURL: BASE_URL,
@@ -43,10 +48,7 @@ export const createApiClient = (navigate) => {
     // Request interceptor
     apiClient.interceptors.request.use(
         (config) => {
-            const token = localStorage.getItem("accessToken");
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
+            config.headers.Authorization = `Bearer ${_accessToken}`;
 
             // Sync language with backend
             const lang = i18n.language || 'cs';
@@ -73,12 +75,23 @@ export const createApiClient = (navigate) => {
             return response;
         },
         error => {
-            console.error(`API Error: ${error.response?.status} ${error.config?.url}`, error.response?.data);
-            if (error.response?.status === 401) {
-                navigate('/');
+            const isDev = process.env.NODE_ENV === 'development';
+
+            if (!error.response) {
+                if (isDev) {
+                    console.error('API Network Error:', error.message);
+                }
+                let networkError = new Error(error.message);
+                networkError.code = navigator.onLine ? "SERVER_UNREACHABLE" : "NETWORK_ERROR";
+                networkError.details = null;
+                networkError.status = 0;
+                return Promise.reject(networkError);
             }
 
-            // Standardize the error for the frontend translations
+            if (isDev) {
+                console.error(`API Error: ${error.response?.status} ${error.config?.url}`, error.response?.data);
+            }
+
             let standardError = new Error(error.message);
             standardError.code = "UNKNOWN_ERROR";
             standardError.details = null;

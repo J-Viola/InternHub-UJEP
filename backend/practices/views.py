@@ -1,10 +1,11 @@
 import logging
 from datetime import date
 
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
+from notifications.services import EmailService
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -59,9 +60,9 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ["start_date", "end_date", "title", "practice_id"]
 
     def get_queryset(self):
-        return (
+        qs = (
             Practice.objects.filter(is_active=True)
-            .select_related("employer", "subject", "subject__department")
+            .select_related("employer", "subject", "subject__department", "contact_user")
             .annotate(
                 approved_count=Count(
                     "student_practices",
@@ -73,6 +74,19 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
                 ),
             )
         )
+
+        if self.request.user.is_authenticated:
+            from student_practices.models import StudentPractice
+
+            qs = qs.prefetch_related(
+                Prefetch(
+                    "student_practices",
+                    queryset=StudentPractice.objects.filter(user_id=self.request.user.id),
+                    to_attr="_current_user_practices",
+                )
+            )
+
+        return qs
 
     @extend_schema(summary="Get user's practices and invitations", tags=["Practices - Student"])
     @action(detail=False, methods=["get"])
@@ -394,6 +408,8 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         practice_obj.approval_status = approval_status
         practice_obj.save()
 
+        EmailService.notify_org_practice_status(practice_obj)
+
         status_name = "schválena" if approval_status == ApprovalStatus.APPROVED else "zamítnuta"
         action_type = ActionLogType.APPROVE if approval_status == ApprovalStatus.APPROVED else ActionLogType.REJECT
 
@@ -458,6 +474,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         students = StudentUser.objects.filter(user_subjects__subject__department_id__in=dept_ids).distinct()
         practices = (
             Practice.objects.filter(student_practices__user__in=students, is_active=True)
+            .select_related("subject", "contact_user")
             .distinct()
             .annotate(
                 total_student_count=Count("student_practices"),
@@ -510,7 +527,10 @@ class AdminPracticesListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = OrganizationPracticeSerializer
 
-    @extend_schema(summary="List all practices grouped by status (Admin)", tags=["Practices - Admin"])
+    @extend_schema(
+        summary="List all practices grouped by status (Admin)",
+        tags=["Practices - Admin"],
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 

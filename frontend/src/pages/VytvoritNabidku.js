@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 import { useTranslation } from "react-i18next";
 import { validateRequired } from "@utils/validationUtils";
+import LoadingState from "@components/core/Feedback/LoadingState";
+import ErrorState from "@components/core/Feedback/ErrorState";
 
 
 export default function VytvoritNabidku() {
@@ -17,18 +19,34 @@ export default function VytvoritNabidku() {
     const [ subjects, setSubjects ] = useState([])
     const [ organizationUsers, setOrganizationUsers ] = useState([]);
     const [ errors, setErrors ] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const codeList = useCodeListAPI();
     const userAPI = useUserAPI();
     const nabidkaAPI = useNabidkaAPI();
     const navigate = useNavigate();
     const { addMessage } = useMessage();
 
-    useEffect(()=> {
-        const initFetch = async() => {
-            await codeList.getUniqueSubjects().then(val => setSubjects(val))
-            await userAPI.getOrganizationUsers().then(val => setOrganizationUsers(val))
+    const fetchInitData = async () => {
+        setLoading(true);
+        setLoadError(false);
+        try {
+            const [subjectsRes, usersRes] = await Promise.all([
+                codeList.getUniqueSubjects(),
+                userAPI.getOrganizationUsers()
+            ]);
+            setSubjects(subjectsRes);
+            setOrganizationUsers(usersRes);
+        } catch (error) {
+            addMessage(t('form.load_error'), "E");
+            setLoadError(true);
+        } finally {
+            setLoading(false);
         }
-        initFetch();
+    };
+
+    useEffect(()=> {
+        fetchInitData();
     },[])
 
 
@@ -102,6 +120,16 @@ export default function VytvoritNabidku() {
     return(
         <>
             <BackButton/>
+            {loading && (
+                <LoadingState message={t('form.loading_form')} />
+            )}
+            {!loading && loadError && (
+                <ErrorState
+                    description={t('form.load_error')}
+                    onRetry={fetchInitData}
+                />
+            )}
+            {!loading && !loadError && (
             <Container property={"bg-white mt-2 p-8 rounded-lg shadow-sm"}>
                 <NabidkaForm
                     formData={formData}
@@ -112,6 +140,7 @@ export default function VytvoritNabidku() {
                     errors={errors}
                 />
             </Container>
+            )}
         </>
     )
 }

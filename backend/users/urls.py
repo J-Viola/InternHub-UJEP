@@ -1,12 +1,12 @@
 from django.urls import include, path
 from rest_framework import routers
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     AdminOrganizationViewSet,
     AllStudentsListView,
     AresJusticeView,
     ChangePasswordView,
+    CookieTokenRefreshView,
     CurrentUserProfileView,
     CustomTokenObtainPairView,
     LogoutView,
@@ -50,7 +50,7 @@ urlpatterns = [
     ),
     path("ares-justice/", AresJusticeView.as_view()),
     path("ares/update/", UpdateAresSubjectView.as_view(), name="update-ares"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("token/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh"),
     path("profile/", CurrentUserProfileView.as_view(), name="current_user_profile"),
     path(
         "student-profile/<int:student_id>/",
