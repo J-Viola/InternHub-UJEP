@@ -36,6 +36,9 @@ class DocumentPermissionMiddleware(MiddlewareMixin):
 
     def _check_document_access(self, request):
         rel_path = request.path.lstrip("/")
+        storage_prefix = settings.STORAGE_URL.rstrip("/") + "/"
+        if rel_path.startswith(storage_prefix):
+            rel_path = rel_path[len(storage_prefix) :]
 
         doc = UploadedDocument.objects.filter(document=rel_path).only("document_id").first()
         if doc is None:

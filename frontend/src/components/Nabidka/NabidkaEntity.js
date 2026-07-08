@@ -7,6 +7,7 @@ import { Image } from "@components/core/Image"
 import { useNavigate } from "react-router-dom"
 import Button from "@components/core/Button/Button"
 import Icon from "@components/core/Icon/Icon"
+import StateBadge from "@core/StateBadge";
 import { useUser } from "@hooks/UserProvider"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useTranslation } from "react-i18next"
@@ -58,32 +59,6 @@ export default function NabidkaEntity({ entity }) {
         }
     }
 
-    const handleVariant = (approval_status, buttonType=false) => {
-        switch (approval_status) {
-            case 0: // PENDING
-                return buttonType ? "yellowSmall" : "yellow";
-            case 1: // APPROVED
-                return buttonType ? "green" : "green";
-            case 2: // REJECTED
-                return buttonType ? "redSmall" : "red";
-            default:
-                return buttonType ? "gray" : "gray";
-        }
-    }
-
-    const approvalTag = (approval_status) => {
-        switch (approval_status) {
-            case 0: // PENDING
-                return t('status.PENDING');
-            case 1: // APPROVED
-                return t('status.APPROVED');
-            case 2: // REJECTED
-                return t('status.REJECTED');
-            default:
-                return;
-        }
-    }
-
     const handleClick = () => {
         navigate(`/nabidka/${entity.practice_id}`);
     }
@@ -119,14 +94,7 @@ export default function NabidkaEntity({ entity }) {
                         {/* ACTIONS (Heart / Status) */}
                         <Container property="flex gap-4 items-center shrink-0 ml-4">
                              {(user.isDepartmentMg() || user.isAdmin() || user.isOrganizationUser()) &&
-                                <Button
-                                    variant={handleVariant(entity.approval_status, true)}
-                                    onClick={handleClick}
-                                    hover={false}
-                                    property="px-3 py-1 text-[10px] font-black uppercase tracking-widest border-black"
-                                >
-                                    {approvalTag(entity.approval_status)}
-                                </Button>
+                                <StateBadge status={entity.workflow_state || entity.approval_status} />
                             }
 
                             {user.isStudent() && (
@@ -152,7 +120,7 @@ export default function NabidkaEntity({ entity }) {
                         {/* MÍSTO */}
                         <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
                             <Icon name="location-dot" size={14} color="text-white" />
-                            {t('offers.location')}: {entity.employer.address}
+                            {t('offers.location')}: {entity.employer?.address || t('common.not_specified')}
                         </Container>
 
                         {/* SKILLS */}

@@ -1,10 +1,11 @@
+import { useCallback, useMemo } from "react";
 import { useApi } from "@hooks/useApi";
 import { buildFormData } from "@utils/formDataUtils";
 
 export const useNabidkaAPI = () => {
     const api = useApi();
 
-    const getNabidky = async (params = {}) => {
+    const getNabidky = useCallback(async (params = {}) => {
         try {
             const response = await api.get('/practices/student/', { params });
 
@@ -26,9 +27,9 @@ export const useNabidkaAPI = () => {
         } catch (error) {
             throw error;
         }
-    };
+    }, [api]);
 
-    const getAdminPractices = async () => {
+    const getAdminPractices = useCallback(async () => {
         try {
             const response = await api.get('/practices/admin-practices/');
             if (response && response.data) {
@@ -39,9 +40,9 @@ export const useNabidkaAPI = () => {
             console.error("Chyba při získávání praxí admina:", error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const getNabidkaById = async (id) => {
+    const getNabidkaById = useCallback(async (id) => {
         try {
             const response = await api.get(`/practices/student/${id}/`)
 
@@ -55,9 +56,9 @@ export const useNabidkaAPI = () => {
             console.error("Chyba při získávání nabídky podle ID:", error);
             throw error;
         }
-    }
+    }, [api]);
 
-    const createNabidka = async (data) => {
+    const createNabidka = useCallback(async (data) => {
         try {
             const formData = buildFormData(data);
 
@@ -79,9 +80,9 @@ export const useNabidkaAPI = () => {
             console.error("Chyba při vytváření nabídky:", error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const applyNabidka = async (data) => {
+    const applyNabidka = useCallback(async (data) => {
         try {
             const formData = buildFormData(data);
 
@@ -99,9 +100,9 @@ export const useNabidkaAPI = () => {
             console.error("Chyba při vytváření nabídky:", error);
             throw error;
         }
-    }
+    }, [api]);
 
-    const getPracticeUserRelations = async () => {
+    const getPracticeUserRelations = useCallback(async () => {
         try {
             const response = await api.get('/practices/student/get_practice_user_relations/');
 
@@ -114,9 +115,9 @@ export const useNabidkaAPI = () => {
             console.error('Chyba při získávání uživatelů organizace:', error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const getOrganizationPractices = async () => {
+    const getOrganizationPractices = useCallback(async () => {
         try {
             const response = await api.get('/practices/employer/');
 
@@ -135,9 +136,9 @@ export const useNabidkaAPI = () => {
             console.error('Chyba při získávání praxí organizace:', error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const getNabidkyByUserDepartment = async () => {
+    const getNabidkyByUserDepartment = useCallback(async () => {
         try {
             const response = await api.get('/practices/staff/department_overview/');
             if (response && response.data) {
@@ -148,9 +149,9 @@ export const useNabidkaAPI = () => {
             console.error('Chyba při získávání nabídek podle katedry uživatele:', error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const changeStatus = async (id, status) => {
+    const changeStatus = useCallback(async (id, status) => {
         try {
             const response = await api.post(`/practices/staff/${id}/approve/`, status);
             if (response && response.data) {
@@ -160,9 +161,9 @@ export const useNabidkaAPI = () => {
             console.error('Chyba při změně stavu nabídky:', error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const calculateEndDate = async (startDate, employmentLoad) => {
+    const calculateEndDate = useCallback(async (startDate, employmentLoad) => {
         try {
             const response = await api.post('/practices/get-end-date/', {
                 start_date: startDate,
@@ -177,9 +178,9 @@ export const useNabidkaAPI = () => {
             console.error('Chyba při výpočtu koncového data:', error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const updateNabidka = async (id, data, isPartial = false) => {
+    const updateNabidka = useCallback(async (id, data, isPartial = false) => {
         try {
             const formData = buildFormData(data);
 
@@ -202,9 +203,27 @@ export const useNabidkaAPI = () => {
             console.error("Chyba při aktualizaci nabídky:", error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const toggleFavorite = async (id) => {
+    const createExternalPractice = useCallback(async (data) => {
+        try {
+            const response = await api.post('/practices/external/', data, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response && response.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Chyba při vytváření mimosystémové praxe:", error);
+            throw error;
+        }
+    }, [api]);
+
+    const toggleFavorite = useCallback(async (id) => {
         try {
             const response = await api.post(`/practices/student/${id}/toggle_favorite/`);
             return response.data;
@@ -212,9 +231,9 @@ export const useNabidkaAPI = () => {
             console.error('Chyba při změně oblíbených:', error);
             throw error;
         }
-    };
+    }, [api]);
 
-    return {
+    return useMemo(() => ({
         getNabidky,
         getNabidkaById,
         createNabidka,
@@ -226,6 +245,10 @@ export const useNabidkaAPI = () => {
         calculateEndDate,
         updateNabidka,
         getAdminPractices,
-        toggleFavorite
-    };
+        toggleFavorite,
+        createExternalPractice
+    }), [getNabidky, getNabidkaById, createNabidka, applyNabidka,
+        getPracticeUserRelations, getOrganizationPractices, getNabidkyByUserDepartment,
+        changeStatus, calculateEndDate, updateNabidka,
+        getAdminPractices, toggleFavorite, createExternalPractice]);
 };

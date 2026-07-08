@@ -6,7 +6,7 @@ export function MessageProvider({children}){
     const [messages, setMessages] = useState([]);
 
     const addMessage = (text, type = 'info') => {
-        const id = Date.now();
+        const id = Date.now() + Math.random();
         const newMessage = {id, text, type};
         setMessages(prev => {
             const updatedMessages = [...prev, newMessage];

@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from api.helpers import FormattedDateField
 from practices.messages import PracticeMessages
-from practices.models import Practice, ProgressStatus
+from practices.models import ApplicationClosureReason, Practice, PracticeWorkflowState, ProgressStatus
 from practices.utils import calculate_end_date
 from student_practices.serializers import StudentPracticeStatusSerializer
 from subject.models import Subject
@@ -34,6 +34,7 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
             "approved_count",
             "pending_count",
             "approval_status",
+            "workflow_state",
             "progress_status",
         ]
 
@@ -66,6 +67,8 @@ class PracticeSerializer(serializers.ModelSerializer):
 
     contact_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
     contact_user_info = serializers.SerializerMethodField(read_only=True)
+    external_employer = serializers.PrimaryKeyRelatedField(read_only=True)
+    external_employer_info = serializers.SerializerMethodField()
     student_practice_status = serializers.SerializerMethodField(read_only=True)
     student_practice_documents = serializers.SerializerMethodField(read_only=True)
     start_date = FormattedDateField()
@@ -85,6 +88,11 @@ class PracticeSerializer(serializers.ModelSerializer):
             }
         return None
 
+    def get_external_employer_info(self, obj):
+        if obj.external_employer:
+            return {"id": obj.external_employer.id, "name": obj.external_employer.name}
+        return None
+
     def get_student_practice_documents(self, obj):
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
@@ -95,7 +103,11 @@ class PracticeSerializer(serializers.ModelSerializer):
         if not isinstance(request.user, StudentUser):
             return []
 
-        practices = getattr(obj, "_current_user_practices", None) or obj.student_practices.all()
+        user_id = request.user.id
+        if hasattr(obj, "_current_user_practices"):
+            practices = [sp for sp in obj._current_user_practices if sp.user_id == user_id]
+        else:
+            practices = obj.student_practices.filter(user_id=user_id)
 
         student_practice_documents = []
         for sp in practices:
@@ -120,7 +132,12 @@ class PracticeSerializer(serializers.ModelSerializer):
         if not isinstance(request.user, StudentUser):
             return None
 
-        practices = getattr(obj, "_current_user_practices", None) or obj.student_practices.all()
+        user_id = request.user.id
+        if hasattr(obj, "_current_user_practices"):
+            practices = [sp for sp in obj._current_user_practices if sp.user_id == user_id]
+        else:
+            practices = obj.student_practices.filter(user_id=user_id)
+
         for sp in practices:
             return StudentPracticeStatusSerializer(sp).data
 
@@ -142,6 +159,7 @@ class PracticeSerializer(serializers.ModelSerializer):
             "end_date",
             "progress_status",
             "approval_status",
+            "workflow_state",
             "contact_user",
             "contact_user_info",
             "student_practice_documents",
@@ -149,9 +167,12 @@ class PracticeSerializer(serializers.ModelSerializer):
             "image_base64",
             "coefficient",
             "student_practice_status",
+            "is_external",
+            "external_employer",
+            "external_employer_info",
             "skills",
         ]
-        read_only_fields = ["practice_id", "is_active"]
+        read_only_fields = ["practice_id", "is_active", "workflow_state", "approval_status", "progress_status"]
 
     def validate(self, data):
         """
@@ -172,6 +193,7 @@ class PracticeSerializer(serializers.ModelSerializer):
         validated_data.setdefault("is_active", True)
         validated_data.setdefault("progress_status", ProgressStatus.NOT_STARTED)
         validated_data.setdefault("approval_status", ApprovalStatus.PENDING)
+        validated_data.setdefault("workflow_state", PracticeWorkflowState.PENDING_CONTENT_APPROVAL)
 
         start_date = validated_data.get("start_date")
         coefficient = validated_data.get("coefficient")
@@ -216,7 +238,7 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
             "available_positions",
             "skills",
         ]
-        read_only_fields = ["practice_id", "is_active"]
+        read_only_fields = ["practice_id", "is_active", "workflow_state", "approval_status", "progress_status"]
 
     def get_contact_user_info(self, obj):
         if obj.contact_user:
@@ -259,6 +281,8 @@ class RunningPracticeSerializer(serializers.ModelSerializer):
             validated_data["progress_status"] = ProgressStatus.NOT_STARTED
         if "approval_status" not in validated_data:
             validated_data["approval_status"] = ApprovalStatus.PENDING
+        if "workflow_state" not in validated_data:
+            validated_data["workflow_state"] = PracticeWorkflowState.PENDING_CONTENT_APPROVAL
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -307,3 +331,107 @@ class EndDateRequestSerializer(serializers.Serializer):
 
 class EndDateResponseSerializer(serializers.Serializer):
     end_date = FormattedDateField(help_text="Calculated end date")
+
+
+class TransitionPracticeSerializer(serializers.Serializer):
+    """
+    Request serializer pro POST /api/practices/{id}/transition.
+    """
+
+    target_state = serializers.ChoiceField(
+        choices=[(s.value, s.name) for s in list(PracticeWorkflowState)],
+        help_text="Cílový stav workflow (číselná hodnota enumu).",
+    )
+    reason = serializers.CharField(required=False, allow_blank=True, help_text="Důvod přechodu (nepovinný).")
+
+
+class CancelPracticeSerializer(serializers.Serializer):
+    """Request serializer pro POST /api/practices/{id}/cancel."""
+
+    reason = serializers.CharField(required=True, help_text="Důvod storna (povinný).")
+
+
+class CloseApplicationsSerializer(serializers.Serializer):
+    """Request serializer pro POST /api/practices/{id}/close-applications."""
+
+    reason = serializers.ChoiceField(
+        choices=[(r.value, r.name) for r in list(ApplicationClosureReason)],
+        help_text="Důvod uzávěrky přihlášek.",
+    )
+
+
+class ExternalPracticeSerializer(serializers.ModelSerializer):
+    """Serializer pro vytvoření mimosystémové praxe (studenti/škola bez registrované firmy)."""
+
+    employer_name = serializers.CharField(required=True, help_text="Název externí organizace.")
+    contact_person = serializers.CharField(required=False, allow_blank=True, help_text="Kontaktní osoba v externí organizaci.")
+    contact_email = serializers.EmailField(required=False, allow_blank=True, help_text="Kontaktní email externí organizace.")
+    ico = serializers.CharField(required=False, allow_blank=True, help_text="IČO externí organizace.")
+    address = serializers.CharField(required=False, allow_blank=True, help_text="Adresa externí organizace.")
+    contact_phone = serializers.CharField(required=False, allow_blank=True, help_text="Telefonní kontakt externí organizace.")
+    start_date = FormattedDateField()
+    end_date = FormattedDateField(required=False)
+
+    class Meta:
+        model = Practice
+        fields = [
+            "employer_name",
+            "contact_person",
+            "contact_email",
+            "ico",
+            "address",
+            "contact_phone",
+            "subject_id",
+            "title",
+            "description",
+            "responsibilities",
+            "available_positions",
+            "start_date",
+            "end_date",
+            "skills",
+            "coefficient",
+        ]
+
+    def validate(self, data):
+        """Check start_date is not in the past and end_date ≥ start_date."""
+        from datetime import date
+
+        start = data.get("start_date")
+        end = data.get("end_date")
+        if start and start < date.today():
+            raise serializers.ValidationError(PracticeMessages.DATE_IN_PAST)
+        if start and end and end < start:
+            raise serializers.ValidationError(PracticeMessages.END_DATE_BEFORE_START)
+        return data
+
+    def create(self, validated_data):
+        from practices.models import ExternalEmployerInfo
+
+        employer_name = validated_data.pop("employer_name")
+        contact_person = validated_data.pop("contact_person", "")
+        contact_email = validated_data.pop("contact_email", "")
+        ico = validated_data.pop("ico", "")
+        address = validated_data.pop("address", "")
+        contact_phone = validated_data.pop("contact_phone", "")
+
+        created_by = self.context["request"].user
+
+        external_info = ExternalEmployerInfo.objects.create(
+            name=employer_name,
+            ico=ico,
+            address=address,
+            contact_name=contact_person,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            created_by=created_by,
+        )
+
+        validated_data["is_external"] = True
+        validated_data["external_employer"] = external_info
+        validated_data["employer"] = None  # externí praxe nemá EmployerProfile
+        validated_data.setdefault("is_active", True)
+        validated_data.setdefault("workflow_state", PracticeWorkflowState.PENDING_CONTENT_APPROVAL)
+        validated_data.setdefault("approval_status", ApprovalStatus.PENDING)
+        validated_data.setdefault("progress_status", ProgressStatus.NOT_STARTED)
+
+        return super().create(validated_data)

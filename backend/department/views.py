@@ -15,12 +15,11 @@ from department.services import (
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
 from users.models import ProfessorUser
-from users.permissions import IsOrganizationUser, IsStagTeacher
+from users.permissions import IsAdminUser, IsStagTeacher
 from users.serializers import ProfessorUserProfileSerializer
 
 from .serializers import (
     AdminDepartmentSerializer,
-    DepartmentUserSerializer,
     ProfessorDetailSerializer,
     StudentDetailSerializer,
 )
@@ -29,7 +28,7 @@ from .serializers import (
 class DepartmentProfessorDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProfessorUser.objects.all()
     serializer_class = ProfessorUserProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsStagTeacher | IsAdminUser]
 
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -69,65 +68,6 @@ class DepartmentStudentListView(generics.ListAPIView):
 
     def get_queryset(self):
         return get_department_students(self.request.user)
-
-
-class DepartmentUserRoleDetailView(generics.RetrieveUpdateDestroyAPIView):
-    @extend_schema(
-        summary="Retrieve/Update/Delete department user role",
-        description="Manages a specific user's role within a department. **Permissions: Authenticated User**",
-        tags=["Department"],
-    )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
-    @extend_schema(
-        summary="Update department user role",
-        description="Updates the role of a user within a department. **Permissions: Authenticated User**",
-        tags=["Department"],
-    )
-    def put(self, request, *args, **kwargs):
-        return super().put(request, *args, **kwargs)
-
-    @extend_schema(
-        summary="Partial update department user role",
-        description="Partially updates the role of a user within a department. **Permissions: Authenticated User**",
-        tags=["Department"],
-    )
-    def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
-
-    @extend_schema(
-        summary="Delete department user role",
-        description="Removes a user's role from a department. **Permissions: Authenticated User**",
-        tags=["Department"],
-    )
-    def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
-
-    queryset = Department.objects.all()
-    serializer_class = DepartmentUserSerializer
-    permission_classes = [IsAuthenticated]
-
-    def perform_update(self, serializer):
-        instance = serializer.save()
-
-        ActionLogService.log(
-            user=self.request.user,
-            action_type=ActionLogType.UPDATE,
-            object_type="Department",
-            object_id=instance.department_id,
-            description=f"Úprava role na katedře {instance.department_name} (ID: {instance.department_id})",
-        )
-
-    def perform_destroy(self, instance):
-        ActionLogService.log(
-            user=self.request.user,
-            action_type=ActionLogType.DELETE,
-            object_type="Department",
-            object_id=instance.department_id,
-            description=f"Smazání role na katedře {instance.department_name} (ID: {instance.department_id})",
-        )
-        instance.delete()
 
 
 class DepartmentProfessorListView(generics.ListAPIView):
@@ -174,28 +114,10 @@ class AdminDepartmentViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            from rest_framework import permissions
-
-            return [permissions.IsAdminUser()]
+            return [IsAdminUser()]
         if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), (IsOrganizationUser | IsStagTeacher)()]
+            return [IsAuthenticated(), (IsAdminUser | IsStagTeacher)()]
         return [IsAuthenticated()]
-
-    def list(self, request, *args, **kwargs):
-        # GET /api/admin-department/
-        departments = self.queryset
-        page = self.paginate_queryset(departments)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(departments, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def retrieve(self, request, pk=None, *args, **kwargs):
-        # GET /api/admin-department/{id}/
-        department = self.get_object()
-        serializer = self.get_serializer(department)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()

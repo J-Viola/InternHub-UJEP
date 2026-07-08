@@ -30,6 +30,7 @@ from users.models import (
 )
 from users.permissions import (
     CanViewStudentProfile,
+    IsAdminUser,
     IsOrganizationOwner,
     IsStagTeacher,
 )
@@ -120,7 +121,7 @@ class PasswordResetRequestView(APIView):
         email = serializer.validated_data["email"]
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
             if isinstance(user, StagUser):
                 return Response(
                     {"detail": UserMessages.STAG_PASSWORD_CHANGE_DISABLED},
@@ -142,7 +143,7 @@ class PasswordResetRequestView(APIView):
                 action_type=ActionLogType.PASSWORD_RESET,
                 object_type="User",
                 object_id=user.id,
-                description=f"Žádost o reset hesla pro {email}",
+                description="Žádost o reset hesla",
             )
         except User.DoesNotExist:
             pass
@@ -192,7 +193,7 @@ class PasswordResetConfirmView(APIView):
             action_type=ActionLogType.PASSWORD_RESET,
             object_type="User",
             object_id=user.id,
-            description=f"Reset hesla pro uživatele {user.email}",
+            description="Reset hesla",
         )
 
         return Response(
@@ -238,7 +239,7 @@ class ChangePasswordView(APIView):
             action_type=ActionLogType.PASSWORD_CHANGE,
             object_type="User",
             object_id=user.id,
-            description=f"Změna hesla pro uživatele {user.email}",
+            description="Změna hesla",
         )
 
         return Response({"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK)
@@ -273,7 +274,7 @@ class LogoutView(generics.GenericAPIView):
                 action_type=ActionLogType.LOGOUT,
                 object_type="User",
                 object_id=request.user.id,
-                description=f"Odhlášení uživatele {request.user.email}",
+                description="Odhlášení uživatele",
             )
 
             response = Response(
@@ -364,7 +365,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             action_type=ActionLogType.LOGIN,
             object_type=type(user).__name__,
             object_id=user.id,
-            description=f"Přihlášení uživatele {user.email}",
+            description="Přihlášení uživatele",
         )
 
         user_info_serializer = UserInfoSerializer(user)
@@ -413,11 +414,22 @@ class CookieTokenRefreshView(TokenRefreshView):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
 
-        response = Response(
-            {
-                "access": serializer.validated_data["access"],
-            }
-        )
+        response_data = {
+            "access": serializer.validated_data["access"],
+        }
+
+        # Include user data so the frontend can hydrate the User object
+        # after cookie-based auto-login (page refresh / token expiry).
+        user_id = token.payload.get("user_id")
+        if user_id:
+            try:
+                user = User.objects.get(user_id=user_id)
+                user_serializer = UserInfoSerializer(user)
+                response_data["user"] = user_serializer.data
+            except User.DoesNotExist:
+                pass
+
+        response = Response(response_data)
 
         if getattr(settings, "SIMPLE_JWT", {}).get("ROTATE_REFRESH_TOKENS", False):
             new_refresh = serializer.validated_data.get("refresh")
@@ -485,7 +497,7 @@ class StudentProfileView(APIView):
             action_type=ActionLogType.VIEW,
             object_type="StudentUser",
             object_id=student.id,
-            description=f"Zobrazení profilu studenta {student.email}",
+            description="Zobrazení profilu studenta",
         )
 
         return Response(serializer.data)
@@ -499,7 +511,7 @@ class StudentProfileView(APIView):
     )
 )
 class AllStudentsListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated, IsStagTeacher | permissions.IsAdminUser]
+    permission_classes = [IsAuthenticated, IsStagTeacher | IsAdminUser]
     serializer_class = AllStudentsListSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [drf_filters.SearchFilter]
@@ -529,11 +541,13 @@ class AdminOrganizationViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
 
     def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.IsAdminUser()]
         if self.action == "create":
             return [permissions.IsAdminUser()]
         if self.action in ["update", "partial_update", "destroy"]:
             return [permissions.IsAdminUser()]
-        return [permissions.IsAuthenticated()]
+        return [permissions.IsAdminUser()]
 
     def create(self, request, *args, **kwargs):
         serializer = OrganizationRegisterSerializer(data=request.data)
@@ -544,7 +558,7 @@ class AdminOrganizationViewSet(ModelViewSet):
             user=request.user,
             action_type=ActionLogType.CREATE,
             object_type="EmployerProfile",
-            description=f"Admin vytvořil organizaci pro {user.email}",
+            description="Admin vytvořil organizaci",
         )
 
         if hasattr(user, "employer_profile"):
@@ -630,16 +644,15 @@ class CurrentUserProfileView(APIView):
         else:
             serializer = UserProfileSerializer(user, data=request.data, partial=True)
 
-        if serializer.is_valid():
-            serializer.save()
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-            ActionLogService.log(
-                user=user,
-                action_type=ActionLogType.PROFILE_UPDATE,
-                object_type=type(user).__name__,
-                object_id=user.id,
-                description=f"Úprava profilu uživatele {user.email}",
-            )
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.PROFILE_UPDATE,
+            object_type=type(user).__name__,
+            object_id=user.id,
+            description="Úprava profilu",
+        )
 
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data)

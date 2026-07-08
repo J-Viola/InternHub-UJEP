@@ -226,8 +226,8 @@ class UserInfoSerializerTests(TestCase):
             is_active=True,
         )
         data = UserInfoSerializer(student).data
-        # StudentUser now always returns "ST" as role
-        self.assertEqual(data["role"], "ST")
+        # StudentUser.role uses StagRoleEnum.ST.value (= "st", lowercase)
+        self.assertEqual(data["role"], "st")
 
     def test_favorite_practices_empty_list_for_new_student(self):
         student = StudentUser.objects.create(

@@ -85,14 +85,17 @@ class SubjectViewSet(viewsets.ModelViewSet):
         )
 
     def perform_destroy(self, instance):
+        pk = instance.pk
+        name = instance.subject_name
+        code = instance.subject_code
+        instance.delete()
         ActionLogService.log(
             user=self.request.user,
             action_type=ActionLogType.DELETE,
             object_type="Subject",
-            object_id=instance.pk,
-            description=f"Smazání předmětu {instance.subject_name} ({instance.subject_code})",
+            object_id=pk,
+            description=f"Smazání předmětu {name} ({code})",
         )
-        instance.delete()
 
     @extend_schema(
         summary="Get department-specific subjects",
@@ -117,7 +120,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
             return Response({"error": PracticeMessages.NO_DEPARTMENT}, status=400)
 
         # Get all subjects from the user's departments
-        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related("department")
+        subjects = Subject.objects.filter(department_id__in=dept_ids).select_related("department").prefetch_related("user_subjects__user")
 
         # Serialize the subjects
         serializer = self.get_serializer(subjects, many=True)

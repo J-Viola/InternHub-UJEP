@@ -103,11 +103,7 @@ class MockStagClient(StagDataProvider):
 
     def get_student_subjects(self, ticket: str, os_cislo: str):
         # Return generic subjects for any mock student
-        if (
-            ticket.startswith("mock-student:")
-            or ticket == "student-ticket"
-            or ticket == "demo-ticket"
-        ):
+        if ticket.startswith("mock-student:") or ticket == "student-ticket" or ticket == "demo-ticket":
             return [
                 {
                     "zkratka": "OP1",
@@ -134,3 +130,22 @@ class MockStagClient(StagDataProvider):
                 },
             ]
         return []
+
+    def get_student_info(self, ticket: str, os_cislo: str):
+        return {
+            "jmeno": "Jan",
+            "prijmeni": "Novák",
+            "email": "jan.novak@ujep.cz",
+            "osCislo": os_cislo or "S22123",
+            "titul": "Bc.",
+            "datNarozeni": "2000-05-15",
+            "mistoNarozeni": "Ústí nad Labem",
+            "ulice": "Pasteurova",
+            "cisloPopisne": "3544/1",
+            "psc": "400 96",
+            "obec": "Ústí nad Labem",
+            "oborNazev": "Informatika (dvouoborové)",
+            "rocnik": 3,
+            "formaStudia": "Prezenční",
+            "stav": "Studuje",
+        }

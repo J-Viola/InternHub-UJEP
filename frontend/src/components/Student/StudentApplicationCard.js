@@ -5,31 +5,13 @@ import Paragraph from "@components/core/Text/Paragraph";
 import Headings from "@components/core/Text/Headings";
 import { Image } from "@components/core/Image";
 import Button from "@components/core/Button/Button";
+import StateBadge from "@core/StateBadge";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 export default function StudentApplicationCard({ entity }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
-
-    const handleVariant = (status) => {
-        switch (status) {
-            case "PENDING":
-                return "yellow";
-            case "APPROVED":
-                return "green";
-            case "REJECTED":
-                return "red";
-            case "IN_PROGRESS":
-                return "blue";
-            case "COMPLETED":
-                return "green";
-            case "CANCELLED":
-                return "red";
-            default:
-                return "gray";
-        }
-    };
 
     return (
         <ContainerForEntity
@@ -53,15 +35,8 @@ export default function StudentApplicationCard({ entity }) {
                 </Container>
 
                 {/* Column 3: Status Badge */}
-                <Container property="flex justify-end">
-                     <Button
-                        variant={handleVariant(entity.workflow_status)}
-                        pointer={false}
-                        hover={false}
-                        property="px-4 py-1 text-xs"
-                    >
-                        {entity.workflow_status_label}
-                    </Button>
+                <Container property="flex items-center gap-2 justify-end">
+                    <StateBadge status={entity.workflow_status} />
                 </Container>
             </Container>
         </ContainerForEntity>

@@ -70,9 +70,7 @@ class ProfileUpdateTests(APITestCase):
     def test_student_profile_update_cv_file(self):
         """Test uploading a CV file"""
         self.client.force_authenticate(user=self.student)
-        cv_file = SimpleUploadedFile(
-            "resume.pdf", b"pdf content", content_type="application/pdf"
-        )
+        cv_file = SimpleUploadedFile("resume.pdf", b"pdf content", content_type="application/pdf")
         data = {"cv_file": cv_file}
         # Use multipart for file upload
         response = self.client.patch(self.profile_url, data, format="multipart")
@@ -88,7 +86,7 @@ class ProfileUpdateTests(APITestCase):
         data = {"email": "org@test.com"}
         response = self.client.patch(self.profile_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("email", response.data)
+        self.assertIn("email", response.data["details"])
 
     def test_validate_email_allow_same_email(self):
         """Test that keeping the same email during update doesn't trigger uniqueness error"""
@@ -117,4 +115,4 @@ class ProfileUpdateTests(APITestCase):
         data = {"skills": "invalid-json-{[}"}
         response = self.client.patch(self.profile_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("skills", response.data)
+        self.assertIn("skills", response.data["details"])

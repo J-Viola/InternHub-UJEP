@@ -11,8 +11,8 @@ def _delete_file(field):
     if field and field.name:
         try:
             field.delete(save=False)
-        except Exception:
-            logger.warning("Could not delete file %s", field.name)
+        except Exception as e:
+            logger.warning("Could not delete file %s: %s", field.name, e, exc_info=True)
 
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,8 @@
-import re
-
+import requests
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -28,12 +28,7 @@ User = get_user_model()
 
 
 class AresRequestSerializer(serializers.Serializer):
-    ico = serializers.CharField(required=True, help_text="8-digit IČO")
-
-    def validate_ico(self, value):
-        if not re.fullmatch(r"\d{8}", str(value)):
-            raise serializers.ValidationError("Invalid IČO format. It must be 8 digits.")
-        return value
+    ico = serializers.RegexField(regex=r"^\d{8}$")
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -75,7 +70,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 }
             except AuthenticationFailed:
                 raise
-            except Exception as e:
+            except (requests.RequestException, IntegrityError, ValueError) as e:
                 import logging
 
                 logger = logging.getLogger(__name__)
@@ -92,7 +87,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def _validate_with_credentials(self, email, password):
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             raise AuthenticationFailed("Invalid credentials")
 
@@ -116,7 +111,7 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
     ico = serializers.RegexField(regex=r"^\d{8}$", write_only=True, required=True)
-    email = serializers.CharField(write_only=True, required=True)
+    email = serializers.EmailField(write_only=True, required=True)
     phone = serializers.CharField(write_only=True, required=True)
     logo = serializers.ImageField(write_only=True, required=False)
     companyName = serializers.CharField(write_only=True, required=False)
@@ -147,6 +142,11 @@ class OrganizationRegisterSerializer(serializers.ModelSerializer):
             "first_name": {"required": True},
             "last_name": {"required": True},
         }
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(UserMessages.EMAIL_ALREADY_EXISTS)
+        return value.lower()
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
@@ -380,7 +380,7 @@ class StudentUserProfileSerializer(UserProfileSerializer):
             try:
                 return json.loads(value)
             except ValueError:
-                return []
+                raise serializers.ValidationError("Neplatný JSON")
         return value
 
 
@@ -403,6 +403,12 @@ class OrganizationUserProfileSerializer(UserProfileSerializer):
 
     def get_employer_profile(self, obj):
         if hasattr(obj, "employer_profile") and obj.employer_profile:
+            logo_url = None
+            if obj.employer_profile.logo:
+                try:
+                    logo_url = obj.employer_profile.logo.url
+                except (ValueError, Exception):
+                    logo_url = None
             return {
                 "id": obj.employer_profile.employer_id,
                 "company_name": obj.employer_profile.company_name,
@@ -410,7 +416,7 @@ class OrganizationUserProfileSerializer(UserProfileSerializer):
                 "city": obj.employer_profile.city,
                 "address": obj.employer_profile.address,
                 "zip_code": obj.employer_profile.zip_code,
-                "logo": (obj.employer_profile.logo.url if obj.employer_profile.logo else None),
+                "logo": logo_url,
             }
         return None
 
@@ -433,13 +439,13 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
         ]
 
     def get_owner(self, obj):
-        for user in obj.organization_users.all():
-            if user.organization_role == OrganizationRole.OWNER:
-                return {
-                    "id": user.id,
-                    "email": user.email,
-                    "full_name": user.full_name,
-                }
+        owner = obj.organization_users.filter(organization_role=OrganizationRole.OWNER).first()
+        if owner:
+            return {
+                "id": owner.id,
+                "email": owner.email,
+                "full_name": owner.full_name,
+            }
         return None
 
 

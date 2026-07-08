@@ -6,8 +6,18 @@ import { useNabidkaAPI } from '@api/nabidka/nabidkaAPI';
 import { useUser } from '@hooks/UserProvider';
 import { useMessage } from '@hooks/MessageContext';
 
+// Mock i18n — component uses t() throughout
+// Spread actual module so initReactI18next (used by src/i18n.js dependency chain) is available
+jest.mock('react-i18next', () => ({
+  ...jest.requireActual('react-i18next'),
+  useTranslation: () => ({ t: (key) => key }),
+}));
+
 // Mock hooks
 jest.mock('@api/nabidka/nabidkaAPI');
+jest.mock('@api/student_practice/student_practiceAPI', () => ({
+  useStudentPracticeAPI: () => ({}),
+}));
 jest.mock('@hooks/UserProvider');
 jest.mock('@hooks/MessageContext');
 jest.mock('@api/documents/documentsAPI', () => ({

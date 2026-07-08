@@ -43,12 +43,16 @@ export const createApiClient = (navigate) => {
             'Content-Type': 'application/json',
         },
         withCredentials: true,
+        timeout: 30000,
     });
 
     // Request interceptor
     apiClient.interceptors.request.use(
         (config) => {
-            config.headers.Authorization = `Bearer ${_accessToken}`;
+            const token = _accessToken;
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
 
             // Sync language with backend
             const lang = i18n.language || 'cs';
@@ -85,6 +89,7 @@ export const createApiClient = (navigate) => {
                 networkError.code = navigator.onLine ? "SERVER_UNREACHABLE" : "NETWORK_ERROR";
                 networkError.details = null;
                 networkError.status = 0;
+                networkError.response = error.response;
                 return Promise.reject(networkError);
             }
 
@@ -96,6 +101,9 @@ export const createApiClient = (navigate) => {
             standardError.code = "UNKNOWN_ERROR";
             standardError.details = null;
             standardError.status = error.response?.status;
+            standardError.response = error.response;
+            // Preserve raw response data for downstream consumers (e.g., form error handling)
+            standardError.responseData = error.response?.data ?? null;
 
             if (error.response && error.response.data) {
                 const data = error.response.data;

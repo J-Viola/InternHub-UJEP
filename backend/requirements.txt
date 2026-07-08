@@ -19,3 +19,4 @@ django-seed
 holidays
 Pillow
 bleach
+python-docx>=1.0,<2.0

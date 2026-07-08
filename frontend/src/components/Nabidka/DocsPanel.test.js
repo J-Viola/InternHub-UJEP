@@ -35,7 +35,8 @@ describe('DocsPanel', () => {
       user: {
         isDepartmentMg: jest.fn().mockReturnValue(false),
         isDepartmentUser: jest.fn().mockReturnValue(false),
-        isAdmin: jest.fn().mockReturnValue(false)
+        isAdmin: jest.fn().mockReturnValue(false),
+        isStudent: jest.fn().mockReturnValue(false)
       }
     });
   });
@@ -122,7 +123,8 @@ describe('DocsPanel', () => {
       user: {
         isDepartmentMg: jest.fn().mockReturnValue(true),
         isDepartmentUser: jest.fn().mockReturnValue(true),
-        isAdmin: jest.fn().mockReturnValue(false)
+        isAdmin: jest.fn().mockReturnValue(false),
+        isStudent: jest.fn().mockReturnValue(false)
       }
     });
 

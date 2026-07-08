@@ -1,10 +1,11 @@
+import { useMemo, useCallback } from "react";
 import { useApi } from "@hooks/useApi";
 //import { createParams } from "@api/createParams";
 
 export const useCodeListAPI = () => {
     const api = useApi();
 
-    const getSubjects = async () => {
+    const getSubjects = useCallback(async () => {
         try {
             const response = await api.get('/subjects/');
 
@@ -19,9 +20,9 @@ export const useCodeListAPI = () => {
             console.error("Chyba při získávání předmětů:", error);
             return [];
         }
-    };
+    }, [api]);
 
-    const getUniqueLocations = async () => {
+    const getUniqueLocations = useCallback(async () => {
         try {
             const response = await api.get('/code-lists/locations/');
             if (response?.data) {
@@ -32,9 +33,9 @@ export const useCodeListAPI = () => {
             console.error("Chyba při získávání unikátních lokací:", error);
             throw error;
         }
-    };
+    }, [api]);
 
-    const getUniqueSubjects = async () => {
+    const getUniqueSubjects = useCallback(async () => {
         try {
             const subjects = await getSubjects();
 
@@ -49,11 +50,11 @@ export const useCodeListAPI = () => {
             console.error("Chyba při získávání unikátních předmětů:", error);
             return [];
         }
-    };
+    }, [api]);
 
-    return {
+    return useMemo(() => ({
         getSubjects,
         getUniqueLocations,
         getUniqueSubjects,
-    };
+    }), [getSubjects, getUniqueLocations, getUniqueSubjects]);
 };

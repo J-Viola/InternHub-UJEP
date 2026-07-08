@@ -7,6 +7,13 @@ import { useUserAPI } from '@api/user/userAPI';
 import { useCodeListAPI } from '@api/code_list/code_listAPI';
 import { useMessage } from '@hooks/MessageContext';
 
+// Mock i18n — component uses t() for labels/validation/error messages
+// Spread actual module so initReactI18next (used by src/i18n.js dependency chain) is available
+jest.mock('react-i18next', () => ({
+  ...jest.requireActual('react-i18next'),
+  useTranslation: () => ({ t: (key) => key }),
+}));
+
 // Mock hooks
 jest.mock('@api/nabidka/nabidkaAPI');
 jest.mock('@api/user/userAPI');
@@ -94,6 +101,10 @@ describe('VytvoritNabidku', () => {
             </MemoryRouter>
         );
 
+        await waitFor(() => {
+            expect(screen.getByTestId('nabidka-form')).toBeInTheDocument();
+        });
+
         fireEvent.click(screen.getByText('Set All Data'));
 
         await waitFor(() => {
@@ -112,6 +123,10 @@ describe('VytvoritNabidku', () => {
                 <VytvoritNabidku />
             </MemoryRouter>
         );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('nabidka-form')).toBeInTheDocument();
+        });
 
         fireEvent.click(screen.getByText('Set All Data'));
 
@@ -140,6 +155,10 @@ describe('VytvoritNabidku', () => {
                 <VytvoritNabidku />
             </MemoryRouter>
         );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('nabidka-form')).toBeInTheDocument();
+        });
 
         fireEvent.click(screen.getByText('Set All Data'));
 

@@ -108,6 +108,7 @@ DATABASES = {
         "PASSWORD": DB_PASSWORD,
         "HOST": DB_HOST,
         "PORT": DB_PORT,
+        "CONN_MAX_AGE": 60,
     }
 }
 
@@ -172,6 +173,11 @@ DEMO_DEPARTMENT_CODE = os.environ.get("DEMO_DEPARTMENT_CODE", "DEMO")
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
 STAG_MOCK = os.environ.get("STAG_MOCK", "False") == "True"
 
+# University info for document generation (WP7)
+UNIVERSITY_NAME = "Univerzita Jana Evangelisty Purkyně v Ústí nad Labem"
+UNIVERSITY_ADDRESS = "Pasteurova 3544/1, 400 96 Ústí nad Labem"
+UNIVERSITY_ICO = "44555601"
+
 # Produkční bezpečnostní kontroly — zabrání spuštění s nebezpečnou konfigurací
 if not DEBUG:
     import sys
@@ -221,6 +227,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "DEFAULT_RENDERER_CLASSES": (
+        ("rest_framework.renderers.JSONRenderer",)
+        if not DEBUG
+        else ("rest_framework.renderers.JSONRenderer", "rest_framework.renderers.BrowsableAPIRenderer")
+    ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
@@ -266,7 +277,7 @@ SIMPLE_JWT = {
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST")
-EMAIL_PORT = os.environ.get("EMAIL_PORT")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_HOST_USER = os.environ.get("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
@@ -282,14 +293,10 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://www.localhost:3000",
-    "http://www.localhost:8000",
-]
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000,http://www.localhost:3000,http://www.localhost:8000",
+).split(",")
 
 CORS_ALLOW_CREDENTIALS = True
 

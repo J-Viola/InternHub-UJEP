@@ -285,12 +285,12 @@ class StudentPracticeLifecycleTests(TestCase):
 
         self.client.force_authenticate(user=self.student)
 
-        # Test with Czech header (should now return code PENDING)
+        # Test with Czech header (should return "Neznámý" since workflow_state is None)
         response_cs = self.client.get(url, HTTP_ACCEPT_LANGUAGE="cs")
         self.assertEqual(response_cs.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_cs.data["workflow_status_label"], "PENDING")
+        self.assertEqual(response_cs.data["workflow_status_label"], "Neznámý")
 
-        # Test with English header (should also return code PENDING)
+        # Test with English header (should also return "Neznámý")
         response_en = self.client.get(url, HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(response_en.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_en.data["workflow_status_label"], "PENDING")
+        self.assertEqual(response_en.data["workflow_status_label"], "Neznámý")

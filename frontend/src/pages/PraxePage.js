@@ -3,6 +3,7 @@ import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
+import StateBadge from "@core/StateBadge";
 import { Image } from "@components/core/Image";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
@@ -17,26 +18,6 @@ import ContainerForEntity from "@core/Container/ContainerForEntity";
 function ApplicationCard({ entity }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
-
-    const handleVariant = (status) => {
-        switch (status) {
-            case 0: return "yellow";
-            case 1: return "green";
-            case 2: return "red";
-            case 3: return "gray";
-            default: return "gray";
-        }
-    };
-
-    const statusToText = (status) => {
-        switch (status) {
-            case 0: return t('status.PENDING');
-            case 1: return t('status.APPROVED');
-            case 2: return t('status.REJECTED');
-            case 3: return t('status.CANCELLED');
-            default: return t('common.not_specified');
-        }
-    };
 
     return (
         <ContainerForEntity
@@ -62,14 +43,7 @@ function ApplicationCard({ entity }) {
                     </Paragraph>
                 </Container>
                 <Container property="shrink-0">
-                    <Button
-                        variant={handleVariant(entity.status)}
-                        pointer={false}
-                        hover={false}
-                        property="px-4 py-1 text-xs"
-                    >
-                        {statusToText(entity.status)}
-                    </Button>
+                    <StateBadge status={entity.workflow_status || entity.status} />
                 </Container>
             </Container>
         </ContainerForEntity>
@@ -88,7 +62,7 @@ function InvitationCard({ entity, onResponse }) {
         setLoading(true);
         try {
             await manageEmployerInvitation(entity.invitation_id, action);
-            addMessage(action === "ACCEPT" ? t('internships.invitation_accepted') : t('internships.invitation_rejected'), "S");
+            addMessage(action === "accept" ? t('internships.invitation_accepted') : t('internships.invitation_rejected'), "S");
             if (onResponse) onResponse();
         } catch (error) {
             addMessage(t('internships.invitation_error'), "E");
@@ -123,14 +97,14 @@ function InvitationCard({ entity, onResponse }) {
                 <Container property="shrink-0 flex gap-2">
                     <Button
                         variant="greenSmall"
-                        onClick={(e) => handleResponse("ACCEPT", e)}
+                        onClick={(e) => handleResponse("accept", e)}
                         property={loading ? "opacity-50" : ""}
                     >
                         {t('internships.accept')}
                     </Button>
                     <Button
                         variant="redSmall"
-                        onClick={(e) => handleResponse("REJECT", e)}
+                        onClick={(e) => handleResponse("reject", e)}
                         property={loading ? "opacity-50" : ""}
                     >
                         {t('internships.decline')}
@@ -157,7 +131,9 @@ export default function PraxePage() {
         try {
             if (user.isOrganizationUser() || user.isAdmin()) {
                 const res = await nabidkaAPI.getOrganizationPractices();
-                setData(res);
+                // Normalize: getOrganizationPractices() returns paginated {results, count}
+                const normalized = res?.results ? res.results : (Array.isArray(res) ? res : []);
+                setData(normalized);
             } else if (user.isStudent()) {
                 const res = await nabidkaAPI.getPracticeUserRelations();
                 setData(res);
@@ -236,6 +212,12 @@ export default function PraxePage() {
                                                 <Paragraph property={"font-medium"}>
                                                     {entity.title}
                                                 </Paragraph>
+                                            </Container>
+                                            <Container property={"min-w-[120px]"}>
+                                                <Paragraph property={"text-sm text-gray-500 mb-1"}>
+                                                    {t('common.status')}
+                                                </Paragraph>
+                                                <StateBadge status={entity.workflow_state || entity.approval_status} />
                                             </Container>
                                             <Container property={"min-w-[150px]"}>
                                                 <Paragraph property={"text-sm text-gray-500 mb-1"}>

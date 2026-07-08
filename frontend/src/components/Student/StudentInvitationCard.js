@@ -22,7 +22,7 @@ export default function StudentInvitationCard({ entity, onResponse }) {
         setLoading(true);
         try {
             await manageEmployerInvitation(entity.invitation_id, action);
-            addMessage(action === "ACCEPT" ? t('internships.invitation_accepted') : t('internships.invitation_rejected'), "S");
+            addMessage(action === "accept" ? t('internships.invitation_accepted') : t('internships.invitation_rejected'), "S");
             if (onResponse) onResponse();
         } catch (error) {
             addMessage(t('internships.invitation_error'), "E");
@@ -59,14 +59,14 @@ export default function StudentInvitationCard({ entity, onResponse }) {
                 <Container property="justify-self-end flex gap-2">
                      <Button
                         variant="green"
-                        onClick={(e) => handleResponse("ACCEPT", e)}
+                        onClick={(e) => handleResponse("accept", e)}
                         loading={loading}
                     >
                         {t('internships.accept')}
                     </Button>
                     <Button
                         variant="red"
-                        onClick={(e) => handleResponse("REJECT", e)}
+                        onClick={(e) => handleResponse("reject", e)}
                         loading={loading}
                     >
                         {t('internships.decline')}

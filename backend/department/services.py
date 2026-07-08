@@ -1,7 +1,7 @@
 from django.db.models import Prefetch
 
 from student_practices.models import StudentPractice
-from users.models import ProfessorUser, StudentUser, UserSubject, UserSubjectType
+from users.models import DepartmentRole, ProfessorUser, StudentUser, UserSubject, UserSubjectType
 from users.services import get_user_department_ids
 
 
@@ -35,7 +35,10 @@ def get_department_professors(user):
     if not dept_ids:
         return ProfessorUser.objects.none()
 
-    professors = ProfessorUser.objects.filter(department_id__in=dept_ids, department_role=UserSubjectType.Professor.value).distinct()
+    professors = ProfessorUser.objects.filter(
+        department_id__in=dept_ids,
+        department_role__in=[DepartmentRole.TEACHER.value, DepartmentRole.HEAD.value],
+    ).distinct()
 
     return professors.prefetch_related(
         Prefetch(

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 
 from users.dtos.dtos import EkonomickySubjektDTO
-from users.models import ApprovalStatus, EmployerProfile, OrganizationUser
+from users.models import ApprovalStatus, OrganizationUser
 from users.services import register_organization, update_organization_from_ares
 
 
@@ -34,12 +34,10 @@ class UserServiceTests(TestCase):
 
         self.assertIsInstance(user, OrganizationUser)
         self.assertEqual(user.email, "org@test.com")
-        self.assertTrue(EmployerProfile.objects.filter(employer_id=user.id).exists())
-        profile = EmployerProfile.objects.get(employer_id=user.id)
+        self.assertIsNotNone(user.employer_profile)
+        profile = user.employer_profile
         self.assertEqual(profile.ico, "12345678")
-        self.assertEqual(
-            profile.company_name, "Test Corp"
-        )  # Should use provided name over ARES if provided
+        self.assertEqual(profile.company_name, "Test Corp")  # Should use provided name over ARES if provided
         self.assertEqual(profile.approval_status, ApprovalStatus.PENDING)
 
     @patch("users.services.fetch_ares_data")
@@ -52,9 +50,7 @@ class UserServiceTests(TestCase):
     @patch("users.services.fetch_ares_data")
     def test_update_organization_from_ares_success(self, mock_fetch_ares):
         # Setup existing user
-        user = OrganizationUser.objects.create(
-            email="update@test.com", first_name="U", last_name="D"
-        )
+        user = OrganizationUser.objects.create(email="update@test.com", first_name="U", last_name="D")
 
         # Mock ARES
         mock_ares_dto = MagicMock(spec=EkonomickySubjektDTO)
@@ -72,7 +68,9 @@ class UserServiceTests(TestCase):
         update_organization_from_ares(user, "87654321")
 
         # Verify
-        profile = EmployerProfile.objects.get(employer_id=user.id)
+        user.refresh_from_db()
+        profile = user.employer_profile
+        self.assertIsNotNone(profile)
         self.assertEqual(profile.ico, "87654321")
         self.assertEqual(profile.company_name, "Updated Corp")
         self.assertEqual(profile.address, "New Address 1")

@@ -2,7 +2,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from api.views import StorageAuthCheckView, UniqueLocationsListView, serve_user_file
+from api.views import HealthCheckView, ServeUserFileView, StorageAuthCheckView, UniqueLocationsListView
 
 from . import settings
 from .views import index
@@ -11,13 +11,15 @@ urlpatterns = [
     path("", index),
     path("admin/", admin.site.urls),
     path("api/users/", include("users.urls")),
+    path("api/notifications/", include("notifications.urls")),
     path("api/practices/", include("practices.urls")),
     path("api/departments/", include("department.urls")),
     path("api/subjects/", include("subject.urls")),
     path("api/student-practices/", include("student_practices.urls")),
     path("api/code-lists/locations/", UniqueLocationsListView.as_view()),
-    path("api/documents/<path:path>/", serve_user_file),
+    path("api/documents/<path:path>/", ServeUserFileView.as_view()),
     path("api/auth/check/", StorageAuthCheckView.as_view()),
+    path("api/health/", HealthCheckView.as_view(), name="health-check"),
 ]
 
 if settings.DEBUG:

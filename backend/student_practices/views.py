@@ -1,4 +1,5 @@
 import logging
+import random
 
 from django.db import transaction
 from django.http import FileResponse
@@ -11,8 +12,8 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from notifications.services import EmailService
-from rest_framework import generics, permissions, serializers, status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework import generics, serializers, status
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -38,14 +39,25 @@ from student_practices.services import StudentPracticeService
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
 from users.models import ApprovalStatus
-from users.permissions import IsOrganizationOwner
+from users.permissions import (
+    CanCancelStudentPractice,
+    IsAdminUser,
+    IsGarantPraxe,
+    IsNotCancelled,
+    IsOrganizationOwner,
+    IsStagStudent,
+    IsStagTeacher,
+    IsStudentPracticeAccessible,
+)
 
 from .serializers import (
+    CancelStudentPracticeSerializer,
     CreateInvitationSerializer,
     EmployerInvitationApprovalSerializer,
     EmployerInvitationSerializer,
     ListStudentPracticeSerializer,
     StudentPracticeCardSerializer,
+    TransitionStudentPracticeSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,13 +68,18 @@ class EmployerInvitationViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = EmployerInvitationSerializer
 
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [IsAuthenticated(), IsOrganizationOwner()]
+        return [IsAuthenticated()]
+
     def get_queryset(self):
         user = self.request.user
         qs = EmployerInvitation.objects.select_related("user", "employer", "practice", "practice__subject__department")
         if user.is_superuser:
             return qs
         if hasattr(user, "employer_profile") and user.employer_profile:
-            return qs.filter(employer=user.employer_profile)
+            return qs.filter(practice__employer=user.employer_profile)
         return EmployerInvitation.objects.none()
 
     @extend_schema(summary="List all employer invitations")
@@ -173,16 +190,37 @@ class EmployerInvitationApprovalView(APIView):
     )
 )
 class AdminPracticeListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    """
+    Lists pending student practice applications.
+
+    Ref: CR-ARCH-3 — tightened permissions from IsAuthenticated to
+    IsStagTeacher | IsGarantPraxe | IsAdminUser, and added department-scoped
+    filtering so teachers/garents only see applications from their own department.
+    """
+
+    permission_classes = [IsAuthenticated, IsStagTeacher | IsGarantPraxe | IsAdminUser]
     serializer_class = ListStudentPracticeSerializer
     queryset = StudentPractice.objects.all()
 
     def get_queryset(self):
-        return StudentPractice.objects.filter(approval_status=ApprovalStatus.PENDING).select_related(
+        user = self.request.user
+        qs = StudentPractice.objects.filter(approval_status=ApprovalStatus.PENDING, is_cancelled=False).select_related(
             "user",
             "practice__subject__department",
             "practice__employer",
         )
+
+        # CR-ARCH-3: Non-admin professors see only applications from their own department
+        from users.models import ProfessorUser
+
+        if not user.is_superuser and isinstance(user, ProfessorUser):
+            from users.services import get_user_department_ids
+
+            dept_ids = get_user_department_ids(user)
+            if dept_ids:
+                qs = qs.filter(practice__subject__department_id__in=dept_ids)
+
+        return qs
 
 
 class ProfessorApplicationsView(generics.ListAPIView):
@@ -225,7 +263,7 @@ class ProfessorApplicationsView(generics.ListAPIView):
         filters |= Q(practice__subject_id__in=subject_ids)
 
         return (
-            StudentPractice.objects.filter(filters, approval_status=ApprovalStatus.PENDING)
+            StudentPractice.objects.filter(filters, approval_status=ApprovalStatus.PENDING, is_cancelled=False)
             .select_related(
                 "user",
                 "practice__subject__department",
@@ -244,12 +282,13 @@ class StudentPracticeListView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, IsStagTeacher | IsGarantPraxe | IsAdminUser]
     serializer_class = ListStudentPracticeSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         # Tohle má být probíhajících praxí po prokliknutí na specifickou praxi
+        user = self.request.user
         practice_id = self.kwargs.get("practice_id")
 
         if not practice_id:
@@ -260,7 +299,7 @@ class StudentPracticeListView(generics.ListAPIView):
             raise NotFound({"error": "Practice not found"})
 
         # Filter student practices by practice_id with select_related for optimization
-        return (
+        qs = (
             StudentPractice.objects.filter(practice=practice)
             .select_related(
                 "user",
@@ -269,6 +308,18 @@ class StudentPracticeListView(generics.ListAPIView):
             )
             .all()
         )
+
+        # Department scope for non-admin professors
+        from users.models import ProfessorUser
+
+        if not user.is_superuser and isinstance(user, ProfessorUser):
+            from users.services import get_user_department_ids
+
+            dept_ids = get_user_department_ids(user)
+            if dept_ids:
+                qs = qs.filter(practice__subject__department_id__in=dept_ids)
+
+        return qs
 
 
 class OrganizationApplicationsView(generics.ListAPIView):
@@ -298,6 +349,7 @@ class OrganizationApplicationsView(generics.ListAPIView):
         return StudentPractice.objects.filter(
             practice__employer=employer_profile,
             approval_status=ApprovalStatus.PENDING,
+            is_cancelled=False,
         ).select_related(
             "user",
             "practice__subject__department",
@@ -318,7 +370,7 @@ class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
 class StudentPracticeStatusUpdateView(APIView):
     permission_classes = [
         IsAuthenticated,
-        IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | permissions.IsAdminUser,
+        IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | IsAdminUser,
     ]
 
     @extend_schema(
@@ -333,6 +385,7 @@ class StudentPracticeStatusUpdateView(APIView):
     )
     def patch(self, request, student_practice_id):
         try:
+            student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
             student_practice = StudentPracticeService.update_student_practice_status(
                 user=request.user,
                 student_practice_id=student_practice_id,
@@ -344,10 +397,7 @@ class StudentPracticeStatusUpdateView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
             logger.exception("Chyba při aktualizaci stavu přihlášky")
-            return Response(
-                {"detail": StudentPracticeMessages.INTERNAL_ERROR},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            raise
 
 
 class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
@@ -382,7 +432,6 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         allowed_mimes = {
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/octet-stream",
         }
         content_type = getattr(uploaded_file, "content_type", "")
         if content_type and content_type not in allowed_mimes:
@@ -397,7 +446,9 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
             instance.document.delete(save=False)
 
         file = validated_data["document"]
-        file.name = DocumentHelper.create_name_for_document(instance.document_type, instance.student_practice.user.user_id, file.name)
+        sp = getattr(instance, "student_practice", None)
+        user_id = getattr(getattr(sp, "user", None), "user_id", None) or random.randint(0, 99999999)
+        file.name = DocumentHelper.create_name_for_document(instance.document_type, user_id, file.name)
         instance.document = file
         instance.uploaded_at = timezone.now()  # Use timezone.now()
         instance.status = DocumentStatus.PENDING  # Reset status on re-upload
@@ -414,7 +465,7 @@ class DocumentReviewSerializer(serializers.ModelSerializer):
 class DocumentReviewView(APIView):
     permission_classes = [
         IsAuthenticated,
-        IsSubjectTeacherOrHeadForPractice | permissions.IsAdminUser,
+        IsSubjectTeacherOrHeadForPractice | IsAdminUser,
     ]
 
     @extend_schema(
@@ -433,6 +484,9 @@ class DocumentReviewView(APIView):
             if status_val is None:
                 raise ValueError("Status is required")
 
+            # Verify document exists (get_object_or_404 raises 404 if missing)
+            get_object_or_404(UploadedDocument, document_id=document_id)
+
             document = StudentPracticeService.process_document_review(
                 user=request.user,
                 document_id=document_id,
@@ -441,14 +495,13 @@ class DocumentReviewView(APIView):
             )
             serializer = DocumentReviewSerializer(document)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        except PermissionDenied:
+            raise  # Let DRF return 403, not 500
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
             logger.exception("Chyba při recenzi dokumentu")
-            return Response(
-                {"detail": StudentPracticeMessages.INTERNAL_ERROR},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            raise
 
 
 class StudentPracticeUploadDocumentView(APIView):
@@ -485,6 +538,7 @@ class StudentPracticeUploadDocumentView(APIView):
 
         serializer = StudentPracticeUploadDocumentSerializer(document, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+
         serializer.save()
 
         EmailService.notify_professors_document_upload(document)
@@ -544,6 +598,16 @@ class StudentPracticeDownloadDocumentView(APIView):
 
 
 class StudentPracticeCardView(APIView):
+    """
+    Returns detailed information about a specific StudentPractice.
+
+    Ref: CR-ARCH-2 — added IsStudentPracticeAccessible permission to prevent
+    any authenticated user from viewing another student's personal data,
+    documents, and evaluations (IDOR vulnerability).
+    """
+
+    permission_classes = [IsAuthenticated, IsStudentPracticeAccessible]
+
     @extend_schema(
         summary="Get student practice card",
         description="Returns detailed information about a specific student practice. **Permissions: Authenticated User**",
@@ -577,6 +641,8 @@ class StudentPracticeCardView(APIView):
             ),
             pk=student_practice_id,
         )
+        # CR-ARCH-2: enforce object-level permission (student owner, professor, admin, etc.)
+        self.check_object_permissions(request, student_practice)
 
         serializer = StudentPracticeCardSerializer(student_practice, context={"request": request})
 
@@ -589,3 +655,294 @@ class StudentPracticeCardView(APIView):
         )
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ========================================================================
+# WP4 — State Machine Endpoints pro StudentPractice
+# ========================================================================
+
+
+class TransitionStudentPracticeView(APIView):
+    """
+    POST /api/student-practices/{student_practice_id}/transition/
+    Provede přechod stavu studentské praxe podle state machine.
+    Permissions: IsStagTeacher or IsGarantPraxe or IsAdminUser
+    """
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, (IsStagTeacher | IsGarantPraxe | IsAdminUser)]
+
+    @extend_schema(
+        summary="Transition student practice workflow state",
+        description="Provede přechod stavu studentské praxe podle definovaného state machine.",
+        tags=["Student Practices"],
+        request=TransitionStudentPracticeSerializer,
+        responses={200: ListStudentPracticeSerializer},
+    )
+    def post(self, request, student_practice_id):
+        student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, student_practice)
+        serializer = TransitionStudentPracticeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        from student_practices.models import StudentPracticeWorkflowState
+
+        target_state = StudentPracticeWorkflowState(serializer.validated_data["target_state"])
+        reason = serializer.validated_data.get("reason", "")
+
+        try:
+            from student_practices.services import transition_student_practice_state
+
+            sp = transition_student_practice_state(
+                sp=student_practice,
+                target_state=target_state,
+                actor=request.user,
+                reason=reason,
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(ListStudentPracticeSerializer(sp, context={"request": request}).data)
+
+
+class CancelStudentPracticeView(APIView):
+    """
+    POST /api/student-practices/{student_practice_id}/cancel/
+    Stornuje studentskou praxi.
+    Permissions: CanCancelStudentPractice
+    """
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, CanCancelStudentPractice]
+
+    @extend_schema(
+        summary="Cancel a student practice",
+        description="Stornuje studentskou praxi a zaznamená důvod storna.",
+        tags=["Student Practices"],
+        request=CancelStudentPracticeSerializer,
+        responses={200: ListStudentPracticeSerializer},
+    )
+    def post(self, request, student_practice_id):
+        student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, student_practice)
+        serializer = CancelStudentPracticeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        reason = serializer.validated_data["reason"]
+        try:
+            from student_practices.services import cancel_student_practice
+
+            sp = cancel_student_practice(sp=student_practice, actor=request.user, reason=reason)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(ListStudentPracticeSerializer(sp, context={"request": request}).data)
+
+
+# ===================================================================
+# WP7: Document generation views (contract, content, report, feedback)
+# ===================================================================
+
+
+class StudentPracticeContractDownloadView(APIView):
+    """
+    Generates and downloads a Czech internship contract (.docx)
+    for the given StudentPractice.
+    """
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, IsStudentPracticeAccessible]
+
+    @extend_schema(
+        summary="Download generated contract",
+        description="Generates a Czech internship contract (.docx) from STAG data + template.",
+        tags=["Documents"],
+        parameters=[
+            OpenApiParameter(
+                name="student_practice_id",
+                location=OpenApiParameter.PATH,
+                type=int,
+                description="StudentPractice ID",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=OpenApiTypes.BINARY, description="Generated .docx file"),
+            403: OpenApiResponse(description="Permission denied"),
+            404: OpenApiResponse(description="StudentPractice not found"),
+        },
+    )
+    def get(self, request, student_practice_id):
+        sp = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, sp)
+
+        from student_practices.services import generate_contract
+
+        buffer = generate_contract(sp)
+        filename = f"smlouva_{sp.student_practice_id}.docx"
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=f"Vygenerována smlouva pro praxi ID {sp.student_practice_id}",
+        )
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+
+class StudentPracticeContentDownloadView(APIView):
+    """Generates and downloads a work content description (Pracovní náplň)."""
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, IsStudentPracticeAccessible]
+
+    @extend_schema(
+        summary="Download work content description",
+        description="Generates a Pracovní náplň (.docx) document.",
+        tags=["Documents"],
+        parameters=[
+            OpenApiParameter(name="student_practice_id", location=OpenApiParameter.PATH, type=int),
+        ],
+        responses={200: OpenApiResponse(response=OpenApiTypes.BINARY), 403: OpenApiResponse(), 404: OpenApiResponse()},
+    )
+    def get(self, request, student_practice_id):
+        sp = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, sp)
+
+        from student_practices.services import generate_content_document
+
+        buffer = generate_content_document(sp)
+        filename = f"napln_prace_{sp.student_practice_id}.docx"
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=f"Vygenerována pracovní náplň pro praxi ID {sp.student_practice_id}",
+        )
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+
+class StudentPracticeReportDownloadView(APIView):
+    """Generates and downloads a practice report/log (Výkaz odborné praxe)."""
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, IsStudentPracticeAccessible]
+
+    @extend_schema(
+        summary="Download practice report/log",
+        description="Generates a Výkaz odborné praxe (.docx) document.",
+        tags=["Documents"],
+        parameters=[
+            OpenApiParameter(name="student_practice_id", location=OpenApiParameter.PATH, type=int),
+        ],
+        responses={200: OpenApiResponse(response=OpenApiTypes.BINARY), 403: OpenApiResponse(), 404: OpenApiResponse()},
+    )
+    def get(self, request, student_practice_id):
+        sp = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, sp)
+
+        from student_practices.services import generate_report
+
+        buffer = generate_report(sp)
+        filename = f"vykaz_{sp.student_practice_id}.docx"
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=f"Vygenerován výkaz praxe pro praxi ID {sp.student_practice_id}",
+        )
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+
+class StudentPracticeFeedbackDownloadView(APIView):
+    """Generates and downloads a practice evaluation form (Hodnocení odborné praxe)."""
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, IsStudentPracticeAccessible]
+
+    @extend_schema(
+        summary="Download evaluation form",
+        description="Generates a Hodnocení odborné praxe (.docx) document.",
+        tags=["Documents"],
+        parameters=[
+            OpenApiParameter(name="student_practice_id", location=OpenApiParameter.PATH, type=int),
+        ],
+        responses={200: OpenApiResponse(response=OpenApiTypes.BINARY), 403: OpenApiResponse(), 404: OpenApiResponse()},
+    )
+    def get(self, request, student_practice_id):
+        sp = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, sp)
+
+        from student_practices.services import generate_feedback_form
+
+        buffer = generate_feedback_form(sp)
+        filename = f"hodnoceni_{sp.student_practice_id}.docx"
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.VIEW,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=f"Vygenerován formulář hodnocení pro praxi ID {sp.student_practice_id}",
+        )
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+
+class ReapplyToPracticeView(APIView):
+    """Allows a student to re-apply to a practice after their previous application was rejected or cancelled."""
+
+    permission_classes = [IsAuthenticated, IsStagStudent]
+
+    @extend_schema(
+        summary="Re-apply to practice",
+        description="Creates a new student practice application after a previous one was rejected or cancelled.",
+        tags=["Applications"],
+        parameters=[OpenApiParameter(name="practice_id", location=OpenApiParameter.PATH, type=int)],
+        request=None,
+        responses={
+            201: StudentPracticeCardSerializer,
+            400: OpenApiResponse(description="Validation error (capacity, duplicate, state)"),
+            403: OpenApiResponse(),
+            404: OpenApiResponse(),
+        },
+    )
+    def post(self, request, practice_id):
+        get_object_or_404(Practice, pk=practice_id)
+        student = request.user
+        try:
+            sp = StudentPracticeService.reapply_to_practice(student, practice_id)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.APPLY,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=f"Student znovu požádal o praxi ID {practice_id} (nové SP ID {sp.student_practice_id})",
+        )
+
+        serializer = StudentPracticeCardSerializer(sp, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

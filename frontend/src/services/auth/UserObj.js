@@ -72,6 +72,11 @@ class User {
         return this.hasRole("INSERTER")
     }
 
+    // Check if user is logged in
+    isLoggedIn() {
+        return this.isAuthenticated;
+    }
+
     // Check if user has any data
     hasData() {
         return this.isAuthenticated && this.id && this.role;

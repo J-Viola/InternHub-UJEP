@@ -152,3 +152,37 @@ class EmailServiceTest(TestCase):
         self.assertIn("profilu organizace", mail.outbox[0].subject)
         self.assertIn("schválen", mail.outbox[0].body)
         self.assertIn("org@test.com", mail.outbox[0].to)
+
+    # --- M-M4-2: Cancellation email tests ---
+
+    def test_notify_student_cancellation(self):
+        reason = "Praxe byla zrušena organizací"
+        EmailService.notify_student_cancellation(self.student, self.student_practice, reason)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("přihláška na praxi byla zrušena", mail.outbox[0].subject)
+        self.assertIn(reason, mail.outbox[0].body)
+        self.assertIn(self.practice.title, mail.outbox[0].body)
+        self.assertIn("student@test.com", mail.outbox[0].to)
+
+    def test_notify_student_cancellation_no_email(self):
+        """Should silently return if user has no email."""
+        self.student.email = ""
+        self.student.save()
+        EmailService.notify_student_cancellation(self.student, self.student_practice, "reason")
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_notify_org_cancellation(self):
+        reason = "Student odstoupil"
+        EmailService.notify_org_cancellation(self.employer, self.student_practice, reason)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("přihláška studenta na praxi byla zrušena", mail.outbox[0].subject.lower())
+        self.assertIn(reason, mail.outbox[0].body)
+        self.assertIn("John Doe", mail.outbox[0].body)
+        self.assertIn("org@test.com", mail.outbox[0].to)
+
+    def test_notify_org_cancellation_no_contact(self):
+        """Should silently return if no org contact."""
+        self.practice.contact_user = None
+        self.practice.save()
+        EmailService.notify_org_cancellation(self.employer, self.student_practice, "reason")
+        self.assertEqual(len(mail.outbox), 0)

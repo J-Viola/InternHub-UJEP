@@ -10,6 +10,11 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockedUsedNavigate,
 }));
 
+// Mock i18n — StateBadge now uses t() instead of hardcoded Czech strings
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key) => key }),
+}));
+
 describe('StudentApplicationCard', () => {
     const mockEntity = {
         practice_id: 123,
@@ -29,7 +34,7 @@ describe('StudentApplicationCard', () => {
 
         expect(screen.getByText('Vývojář Reactu')).toBeInTheDocument();
         expect(screen.getByText(/01.01.2026/)).toBeInTheDocument();
-        expect(screen.getByText('Čeká na schválení')).toBeInTheDocument();
+        expect(screen.getByText('state_badge.PENDING')).toBeInTheDocument();
     });
 
     test('renders approved status correctly', () => {
@@ -44,7 +49,7 @@ describe('StudentApplicationCard', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Schváleno')).toBeInTheDocument();
+        expect(screen.getByText('state_badge.APPROVED')).toBeInTheDocument();
     });
 
     test('renders rejected status correctly', () => {
@@ -59,7 +64,7 @@ describe('StudentApplicationCard', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Zamítnuto')).toBeInTheDocument();
+        expect(screen.getByText('state_badge.REJECTED')).toBeInTheDocument();
     });
 
     test('navigates to detail page on click', () => {

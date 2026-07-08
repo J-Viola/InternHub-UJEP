@@ -3,17 +3,24 @@ from rest_framework import routers
 
 from .views import (
     AdminPracticeListView,
+    CancelStudentPracticeView,
     CreateInvitationView,
     DocumentReviewView,
     EmployerInvitationApprovalView,
     EmployerInvitationViewSet,
     OrganizationApplicationsView,
     ProfessorApplicationsView,
+    ReapplyToPracticeView,
     StudentPracticeCardView,
+    StudentPracticeContentDownloadView,
+    StudentPracticeContractDownloadView,
     StudentPracticeDownloadDocumentView,
+    StudentPracticeFeedbackDownloadView,
     StudentPracticeListView,
+    StudentPracticeReportDownloadView,
     StudentPracticeStatusUpdateView,
     StudentPracticeUploadDocumentView,
+    TransitionStudentPracticeView,
 )
 
 app_name = "student_practices"
@@ -79,5 +86,43 @@ urlpatterns = [
         "review-document/<int:document_id>",
         DocumentReviewView.as_view(),
         name="document-review",
+    ),
+    # WP4 — State machine endpoints
+    path(
+        "<int:student_practice_id>/transition/",
+        TransitionStudentPracticeView.as_view(),
+        name="student-practice-transition",
+    ),
+    path(
+        "<int:student_practice_id>/cancel/",
+        CancelStudentPracticeView.as_view(),
+        name="student-practice-cancel",
+    ),
+    # WP7 — Document generation endpoints
+    path(
+        "<int:student_practice_id>/contract/",
+        StudentPracticeContractDownloadView.as_view(),
+        name="student-practice-contract",
+    ),
+    path(
+        "<int:student_practice_id>/content/",
+        StudentPracticeContentDownloadView.as_view(),
+        name="student-practice-content",
+    ),
+    path(
+        "<int:student_practice_id>/report/",
+        StudentPracticeReportDownloadView.as_view(),
+        name="student-practice-report",
+    ),
+    path(
+        "<int:student_practice_id>/feedback/",
+        StudentPracticeFeedbackDownloadView.as_view(),
+        name="student-practice-feedback",
+    ),
+    # WP8 — Re-apply endpoint
+    path(
+        "reapply/<int:practice_id>/",
+        ReapplyToPracticeView.as_view(),
+        name="student-practice-reapply",
     ),
 ]

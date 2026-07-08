@@ -31,6 +31,7 @@ class SubjectSerializer(serializers.ModelSerializer):
             "subject_name",
             "department",
             "hours_required",
+            "min_hours",
             "teacher",
             "teacher_id",
         ]
@@ -41,15 +42,10 @@ class SubjectSerializer(serializers.ModelSerializer):
         if obj.subject_manager:
             return TeacherSerializer(obj.subject_manager).data
 
-        # Fallback to UserSubject relationship for backward compatibility
-        teacher_relationship = (
-            UserSubject.objects.filter(subject=obj, role=UserSubjectType.Professor)
-            .select_related("user")
-            .first()
-        )
-
-        if teacher_relationship:
-            return TeacherSerializer(teacher_relationship.user).data
+        # Use prefetched user_subjects to avoid N+1
+        for us in obj.user_subjects.all():
+            if us.role == UserSubjectType.Professor:
+                return TeacherSerializer(us.user).data
         return None
 
     def validate_subject_code(self, value):
@@ -87,9 +83,7 @@ class SubjectSerializer(serializers.ModelSerializer):
         if old_manager != new_manager:
             # Remove old manager's UserSubject if exists
             if old_manager:
-                UserSubject.objects.filter(
-                    user=old_manager, subject=subject, role=UserSubjectType.Professor
-                ).delete()
+                UserSubject.objects.filter(user=old_manager, subject=subject, role=UserSubjectType.Professor).delete()
 
             # Add new manager's UserSubject if exists
             if new_manager:

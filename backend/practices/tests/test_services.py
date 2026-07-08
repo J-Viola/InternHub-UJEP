@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from practices.models import Practice
+from practices.models import Practice, PracticeWorkflowState
 from practices.services import PracticeService
 from student_practices.models import StudentPractice
 from users.models import StudentUser
@@ -17,23 +17,30 @@ class PracticeServiceTests(TestCase):
         self.practice = MagicMock(spec=Practice)
         self.practice.practice_id = 1
         self.practice.is_active = True
+        self.practice.workflow_state = PracticeWorkflowState.OPEN_FOR_APPLICATIONS
         self.practice.start_date = date(2024, 1, 1)
         self.practice.end_date = date(2024, 6, 1)
+        self.practice.available_positions = 5
+        self.practice.contact_user = None
 
-    @patch("practices.services.StudentPractice.objects.filter")
-    @patch("practices.services.Practice.objects.filter")
     @patch("practices.services.StudentPracticeSerializer")
-    def test_apply_student_practice_success(
-        self, mock_serializer, mock_practice_filter, mock_sp_filter
-    ):
-        # Setup mocks
+    @patch("practices.services.StudentPractice.objects.filter")
+    @patch("practices.services.Practice.objects.select_for_update")
+    def test_apply_student_practice_success(self, mock_select_for_update, mock_sp_filter, mock_serializer):
+        # Setup mocks — active-app check returns False (no existing application)
         mock_sp_filter.return_value.exists.return_value = False
-        mock_practice_filter.return_value.first.return_value = self.practice
+        # Capacity count returns 0 (below available_positions)
+        mock_sp_filter.return_value.count.return_value = 0
+        # select_for_update chain returns practice
+        mock_queryset = MagicMock()
+        mock_queryset.filter.return_value.first.return_value = self.practice
+        mock_select_for_update.return_value = mock_queryset
 
         serializer_instance = mock_serializer.return_value
         serializer_instance.is_valid.return_value = True
-        serializer_instance.save.return_value = MagicMock(spec=StudentPractice)
         serializer_instance.data = {"id": 1, "status": "pending"}
+        sp_mock = MagicMock(spec=StudentPractice)
+        serializer_instance.save.return_value = sp_mock
 
         # Call service
         result = PracticeService.apply_student_practice(self.user, 1)
@@ -41,10 +48,18 @@ class PracticeServiceTests(TestCase):
         # Assertions
         self.assertEqual(result, {"id": 1, "status": "pending"})
         mock_serializer.assert_called_once()
+        # C3.1: workflow_state should be set directly on the SP object
+        sp_mock.save.assert_called_with(update_fields=["workflow_state"])
 
     @patch("practices.services.StudentPractice.objects.filter")
-    def test_apply_student_practice_already_exists(self, mock_sp_filter):
+    @patch("practices.services.Practice.objects.select_for_update")
+    def test_apply_student_practice_already_exists(self, mock_select_for_update, mock_sp_filter):
+        # Active application exists, but capacity is not full
         mock_sp_filter.return_value.exists.return_value = True
+        mock_sp_filter.return_value.count.return_value = 0
+        mock_queryset = MagicMock()
+        mock_queryset.filter.return_value.first.return_value = self.practice
+        mock_select_for_update.return_value = mock_queryset
 
         with self.assertRaises(ValueError) as cm:
             PracticeService.apply_student_practice(self.user, 1)
@@ -52,12 +67,13 @@ class PracticeServiceTests(TestCase):
         self.assertIn("ALREADY_APPLIED", str(cm.exception))
 
     @patch("practices.services.StudentPractice.objects.filter")
-    @patch("practices.services.Practice.objects.filter")
-    def test_apply_student_practice_not_found(
-        self, mock_practice_filter, mock_sp_filter
-    ):
+    @patch("practices.services.Practice.objects.select_for_update")
+    def test_apply_student_practice_not_found(self, mock_select_for_update, mock_sp_filter):
         mock_sp_filter.return_value.exists.return_value = False
-        mock_practice_filter.return_value.first.return_value = None
+        mock_sp_filter.return_value.count.return_value = 0
+        mock_queryset = MagicMock()
+        mock_queryset.filter.return_value.first.return_value = None
+        mock_select_for_update.return_value = mock_queryset
 
         with self.assertRaises(ValueError) as cm:
             PracticeService.apply_student_practice(self.user, 1)

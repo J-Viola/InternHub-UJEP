@@ -1,3 +1,5 @@
+from typing import Any
+
 import requests
 from django.conf import settings
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
@@ -74,3 +76,19 @@ class RealStagClient(StagDataProvider):
             pass
 
         return []
+
+    def get_student_info(self, ticket: str, os_cislo: str) -> dict[str, Any]:
+        url = f"{settings.STAG_WS_URL}/services/rest2/student/getStudentInfo"
+        params = {"osCislo": os_cislo, "outputFormat": "JSON"}
+        cookies = {"WSCOOKIE": ticket}
+        try:
+            response = requests.get(url, cookies=cookies, params=params, timeout=(3, 10), headers={"Accept": "application/json"})
+            if response.status_code == 200:
+                data = response.json()
+                # STAG returns student info — extract the first result
+                if isinstance(data, list) and len(data) > 0:
+                    return data[0]
+                return data
+        except requests.RequestException:
+            pass
+        return {}

@@ -8,6 +8,7 @@ from django.db import models
 from django.db.models import OneToOneRel
 from django_enumfield import enum
 
+from api.mixins import CancellationMixin
 from practices.models import ProgressStatus
 from student_practices.messages import StudentPracticeMessages
 from users.models import ApprovalStatus
@@ -20,6 +21,37 @@ class EmployerInvitationStatus(enum.Enum):
     ACCEPTED = 1
     REJECTED = 2
     CANCELLED = 3
+    EXPIRED = 4  # task 1.12: pozvánka expirovala po expiration_date (N9 fix)
+
+
+class StudentPracticeWorkflowState(enum.Enum):
+    """
+    Stavový automat přihlášky studenta na praxi (StudentPractice).
+
+    Ref: THESIS_ARCHITECTURE_PLAN.md sekce 3.3
+    Implementováno dle doporučení autora:
+      OQ1: CONTRACTED spouští katedra ručně (po fyzickém doručení smlouvy)
+      OQ2: STARTED/ENDED dle data + podmínka CONTRACTED (datum = trigger)
+
+    Přechody:
+      APPLIED              → PRELIMINARY_APPROVED  (katedra schválí studenta)
+      APPLIED              → REJECTED              (katedra/firma zamítne)
+      PRELIMINARY_APPROVED → CONTRACTED            (katedra ručně po podpisu smlouvy)
+      PRELIMINARY_APPROVED → REJECTED              (zamítnutí)
+      CONTRACTED           → STARTED               (datum start_date + podmínka CONTRACTED)
+      STARTED              → ENDED                 (datum end_date / manuál)
+      ENDED                → COMPLETED             (katedra udělí zápočet)
+
+    Stará pole approval_status + progress_status zůstávají pro backward compat.
+    """
+
+    APPLIED = 0  # Student se přihlásil (nebo byl pozván a akceptoval)
+    PRELIMINARY_APPROVED = 1  # Předběžně schváleno katedrou (school_approved=True)
+    REJECTED = 2  # Zamítnutí přihlášky — terminální stav
+    CONTRACTED = 3  # Zasmluvněno — trojstranná smlouva podepsána
+    STARTED = 4  # Student fyzicky nastoupil
+    ENDED = 5  # Praxe ukončena (časový rámec uplynul)
+    COMPLETED = 6  # Zápočet udělen — terminální úspěšný stav
 
 
 class EmployerInvitation(models.Model):
@@ -54,12 +86,9 @@ class EmployerInvitation(models.Model):
 
     class Meta:
         db_table = "employer_invitations"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["practice", "user"],
-                name="unique_invitation_per_student_practice",
-            ),
-        ]
+        # Constraint unique_invitation_per_student_practice odstraněn (task 1.2):
+        # Re-aplikace povolena dle Ministr 5 — student smí dostat druhou pozvánku
+        # po odmítnuté přihlášce. Ref: THESIS_ARCHITECTURE_PLAN.md N1, 2.2.4
 
     def __str__(self):
         return f"Invitation {self.invitation_id} for {self.user} to {self.practice}"
@@ -209,12 +238,34 @@ class DocumentHelper:
         except (AttributeError, ValueError, models.ObjectDoesNotExist):
             user_id = random.randint(0, 99999999)
 
+        docs_created = 0
+
         if not student_practice.contract_document:
-            student_practice.contract_document = DocumentHelper.create_default_document(DocumentType.CONTRACT, user_id)
+            doc = DocumentHelper.create_default_document(DocumentType.CONTRACT, user_id)
+            if doc:
+                student_practice.contract_document = doc
+                docs_created += 1
+
         if not student_practice.content_document:
-            student_practice.content_document = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
+            doc = DocumentHelper.create_default_document(DocumentType.CONTENT, user_id)
+            if doc:
+                student_practice.content_document = doc
+                docs_created += 1
+
         if not student_practice.feedback_document:
-            student_practice.feedback_document = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
+            doc = DocumentHelper.create_default_document(DocumentType.FEEDBACK, user_id)
+            if doc:
+                student_practice.feedback_document = doc
+                docs_created += 1
+
+        if docs_created == 0:
+            logger.error(
+                "No default documents could be created for StudentPractice %s. "
+                "Templates are missing from %s/default_documents/. "
+                "Practice cannot progress without documents.",
+                student_practice.pk,
+                settings.MEDIA_ROOT,
+            )
 
         student_practice.save()
 
@@ -234,7 +285,7 @@ def validate_content_document_type(value):
         raise ValidationError(StudentPracticeMessages.CONTENT_DOC_REQUIRED)
 
 
-class StudentPractice(models.Model):
+class StudentPractice(CancellationMixin, models.Model):
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         "users.StudentUser",
@@ -251,17 +302,22 @@ class StudentPractice(models.Model):
         related_name="student_practices",
     )
     application_date = models.DateField(blank=True, null=True)
+    # Nový stavový automat (task 1.4) — bude jediným zdrojem pravdy po data migraci (1.10).
+    # Nullable pro backward compat — data migration v task 1.10 ho naplní.
+    workflow_state = enum.EnumField(
+        StudentPracticeWorkflowState,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Stavový automat přihlášky. Po data migraci (1.10) nenullable.",
+    )
+    # Stará pole — zachována pro backward compat (task 4.8), budou odstraněna po FE migraci
     approval_status = enum.EnumField(ApprovalStatus)
     progress_status = enum.EnumField(ProgressStatus)
     hours_completed = models.IntegerField(blank=True, null=True)
-    cancellation_reason = models.TextField(blank=True, default="")
-    cancelled_by_user = models.ForeignKey(
-        "users.StagUser",
-        models.SET_NULL,
-        related_name="cancelled_student_practices",
-        blank=True,
-        null=True,
-    )
+    # cancellation_reason a cancelled_by pocházejí z CancellationMixin (task 1.1 / 1.11).
+    # Původní cancelled_by_user (FK na StagUser) odstraněn — nahrazeno mixin polem
+    # cancelled_by (FK na User, obecnější). Pole nikdy neplněno (N8 fix).
     year = models.IntegerField(blank=True, null=True)
     contract_document = models.OneToOneField(
         UploadedDocument,
@@ -296,10 +352,10 @@ class StudentPractice(models.Model):
         db_table = "student_practices"
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "practice"],
-                name="unique_user_practice",
-                condition=models.Q(user__isnull=False),
-            ),
+                fields=["practice", "user"],
+                condition=models.Q(is_cancelled=False),
+                name="unique_active_student_practice_per_user",
+            )
         ]
 
     def __str__(self):
@@ -307,29 +363,28 @@ class StudentPractice(models.Model):
 
     @property
     def workflow_status(self):
-        if self.approval_status == ApprovalStatus.REJECTED:
-            return "REJECTED"
-        if self.approval_status == ApprovalStatus.PENDING:
-            return "PENDING"
-
-        # Approved, so look at progress_status
-        if self.progress_status == ProgressStatus.IN_PROGRESS:
-            return "IN_PROGRESS"
-        if self.progress_status == ProgressStatus.COMPLETED:
-            return "COMPLETED"
-        if self.progress_status == ProgressStatus.CANCELLED:
+        """Backward-compat property. Returns string derived from workflow_state."""
+        if self.is_cancelled:
             return "CANCELLED"
-
-        return "APPROVED"  # Approved but not started
+        if self.workflow_state is None:
+            return "UNKNOWN"
+        return (
+            self.workflow_state.name
+        )  # e.g., "APPLIED", "PRELIMINARY_APPROVED", "CONTRACTED", "STARTED", "COMPLETED", "REJECTED", "CANCELLED"
 
     @property
     def workflow_status_label(self):
+        """Human-readable Czech label for workflow_state."""
+        if self.is_cancelled:
+            return "Zrušeno"
         labels = {
-            "REJECTED": "REJECTED",
-            "PENDING": "PENDING",
-            "APPROVED": "APPROVED",
-            "IN_PROGRESS": "IN_PROGRESS",
-            "COMPLETED": "COMPLETED",
-            "CANCELLED": "CANCELLED",
+            "APPLIED": "Přihlášeno",
+            "PRELIMINARY_APPROVED": "Předběžně schváleno",
+            "CONTRACTED": "Sjednána smlouva",
+            "STARTED": "Probíhá",
+            "COMPLETED": "Dokončeno",
+            "REJECTED": "Zamítnuto",
+            "CANCELLED": "Zrušeno",
+            "ENDED": "Ukončeno",
         }
-        return labels.get(self.workflow_status, "UNKNOWN_STATUS")
+        return labels.get(self.workflow_state.name if self.workflow_state else "", "Neznámý")

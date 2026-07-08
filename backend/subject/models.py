@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -13,6 +14,16 @@ class Subject(models.Model):
         related_name="subjects",
     )
     hours_required = models.IntegerField(blank=True, null=True)
+    # min_hours: minimální počet hodin pro splnění praxe v rámci předmětu (task 1.6).
+    # Přesun koeficientu z Practice.coefficient dle Ministr 8 + KI_BOP 480h pravidlo.
+    # OQ12 (doporučení autora): 480 jako hard default, override per předmět možný.
+    # hours_required zůstává pro backward compat (seed data, serializer, admin).
+    min_hours = models.IntegerField(
+        default=480,
+        validators=[MinValueValidator(0)],
+        db_index=True,
+        help_text="Minimální počet hodin praxe pro splnění předmětu (default 480 dle KI/BOP).",
+    )
     subject_manager = models.ForeignKey(
         "users.ProfessorUser",
         models.SET_NULL,

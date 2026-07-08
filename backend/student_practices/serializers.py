@@ -9,6 +9,7 @@ from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     EmployerInvitation,
     StudentPractice,
+    StudentPracticeWorkflowState,
     UploadedDocument,
 )
 from users.models import ApprovalStatus, User
@@ -107,16 +108,17 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
     - progress_status: nested Status (read-only)
     - hours_completed: počet dokončených hodin
     - cancellation_reason: důvod zrušení
-    - cancelled_by_user: PK uživatele, kdo zrušil (write-only, volitelné)
-    - cancelled_by_user_info: informace o uživateli, který zrušil (read-only)
+    - cancelled_by: PK uživatele, kdo zrušil (write-only, volitelné) — z CancellationMixin
+    - cancelled_by_info: informace o uživateli, který zrušil (read-only)
     """
 
     practice = serializers.PrimaryKeyRelatedField(queryset=Practice.objects.all(), write_only=True, required=True)
     title = serializers.CharField(source="practice.title", read_only=True)
     logo = serializers.CharField(source="practice.image_base64", read_only=True)
 
-    cancelled_by_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
-    cancelled_by_user_info = serializers.SerializerMethodField(read_only=True)
+    # cancelled_by z CancellationMixin (task 1.11 — přejmenování cancelled_by_user)
+    cancelled_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
+    cancelled_by_info = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = StudentPractice
@@ -130,22 +132,22 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
             "progress_status",
             "hours_completed",
             "cancellation_reason",
-            "cancelled_by_user",
-            "cancelled_by_user_info",
+            "cancelled_by",
+            "cancelled_by_info",
         ]
         read_only_fields = [
             "student_practice_id",
             "title",
             "logo",
             "application_date",
-            "cancelled_by_user_info",
+            "cancelled_by_info",
         ]
 
-    def get_cancelled_by_user_info(self, obj):
-        if obj.cancelled_by_user:
+    def get_cancelled_by_info(self, obj):
+        if obj.cancelled_by:
             return {
-                "user_id": obj.cancelled_by_user.user_id,
-                "username": obj.cancelled_by_user.username,
+                "user_id": obj.cancelled_by.user_id,
+                "full_name": obj.cancelled_by.full_name,
             }
         return None
 
@@ -199,9 +201,8 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     student_full_name = serializers.CharField(source="user.full_name", read_only=True)
     user_id = serializers.IntegerField(source="user.user_id", read_only=True)
     # pro admin list view
-    employer_id = serializers.IntegerField(source="practice.employer.employer_id", read_only=True)
-    employer_name = serializers.CharField(source="practice.employer.company_name", read_only=True)
-    can_approve = serializers.SerializerMethodField()
+    employer_id = serializers.SerializerMethodField()
+    employer_name = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice
@@ -222,6 +223,10 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "employer_id",
             "employer_name",
             "can_approve",
+            "is_cancelled",
+            "cancelled_at",
+            "cancellation_reason",
+            "cancelled_by_info",
         ]
         read_only_fields = [
             "student_practice_id",
@@ -230,12 +235,34 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "workflow_status",
             "workflow_status_label",
             "can_approve",
+            "is_cancelled",
+            "cancelled_at",
+            "cancellation_reason",
+            "cancelled_by_info",
         ]
 
+    def get_employer_id(self, obj):
+        return obj.practice.employer.employer_id if obj.practice.employer else None
+
+    def get_employer_name(self, obj):
+        return obj.practice.employer.company_name if obj.practice.employer else None
+
+    # TODO ME-1: N+1 — can_approve_practice() queries user_subjects per row.
+    # Prefetch user.user_subjects in the view's get_queryset or cache subject IDs.
     def get_can_approve(self, obj):
         from .utils import can_approve_practice
 
         return can_approve_practice(self.context.get("request").user, obj) if "request" in self.context else False
+
+    cancelled_by_info = serializers.SerializerMethodField(read_only=True)
+
+    def get_cancelled_by_info(self, obj):
+        if obj.cancelled_by:
+            return {
+                "user_id": obj.cancelled_by.user_id,
+                "full_name": obj.cancelled_by.full_name,
+            }
+        return None
 
 
 class StudentPracticeStatusSerializer(serializers.ModelSerializer):
@@ -316,6 +343,9 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "student_practice_status",
             "student_practice_documents",
             "can_approve",
+            "is_cancelled",
+            "cancelled_at",
+            "cancellation_reason",
         ]
 
     def get_can_approve(self, obj):
@@ -342,6 +372,8 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     def get_employer(self, obj):
         from users.serializers import EmployerProfileSerializer
 
+        if not obj.practice.employer:
+            return None
         return EmployerProfileSerializer(obj.practice.employer).data
 
     def get_subject(self, obj):
@@ -349,6 +381,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
 
         return SubjectSerializer(obj.practice.subject).data
 
+    # TODO ME-2: Ensure calling views select_related contract_document, content_document, feedback_document
     def get_student_practice_documents(self, obj):
         student_practice_documents = []
         if obj.contract_document:
@@ -379,3 +412,28 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
                 }
             )
         return student_practice_documents
+
+
+# ========================================================================
+# WP4 — Nové serializery pro state machine endpointy
+# ========================================================================
+
+
+class TransitionStudentPracticeSerializer(serializers.Serializer):
+    """
+    Request serializer pro POST /api/student-practices/{id}/transition.
+    """
+
+    target_state = serializers.ChoiceField(
+        choices=[(s.value, s.name) for s in list(StudentPracticeWorkflowState)],
+        help_text="Cílový stav workflow (číselná hodnota enumu).",
+    )
+    reason = serializers.CharField(required=False, allow_blank=True, help_text="Důvod přechodu (nepovinný).")
+
+
+class CancelStudentPracticeSerializer(serializers.Serializer):
+    """
+    Request serializer pro POST /api/student-practices/{id}/cancel.
+    """
+
+    reason = serializers.CharField(required=True, help_text="Důvod storna (povinný).")

@@ -1,6 +1,7 @@
 import logging
 from datetime import date
 
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -17,15 +18,19 @@ from api.views import StandardResultsSetPagination
 from department.models import Department
 from practices.filters import PracticeFilter
 from practices.messages import PracticeMessages
-from practices.models import Practice, ProgressStatus
+from practices.models import Practice, PracticeWorkflowState, ProgressStatus
 from practices.serializers import (
+    CancelPracticeSerializer,
+    CloseApplicationsSerializer,
     EndDateRequestSerializer,
     EndDateResponseSerializer,
+    ExternalPracticeSerializer,
     OrganizationPracticeSerializer,
     PracticeApprovalSerializer,
     PracticeApprovalStatusSerializer,
     PracticeSerializer,
     RunningPracticeSerializer,
+    TransitionPracticeSerializer,
 )
 from practices.services import PracticeService
 from practices.utils import calculate_end_date
@@ -33,7 +38,15 @@ from student_practices.serializers import ListStudentPracticeSerializer
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
 from users.models import ApprovalStatus, ProfessorUser, StagRoleEnum, StudentUser
-from users.permissions import IsOrganizationOwner, IsOrganizationUser, IsStagTeacher
+from users.permissions import (
+    CanCancelPractice,
+    IsAdminUser,
+    IsGarantPraxe,
+    IsNotCancelled,
+    IsOrganizationOwner,
+    IsOrganizationUser,
+    IsStagTeacher,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +125,24 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["post"])
     def apply(self, request):
         user = request.user
+
+        # C3.5: Only students can apply
+        if not isinstance(user, StudentUser):
+            return Response(
+                {"detail": "Only students can apply for practices"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         practice_id = request.data.get("practice")
         if not practice_id:
             return Response(
                 {"detail": PracticeMessages.MISSING_PRACTICE_ID},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        data = PracticeService.apply_student_practice(user, practice_id)
+        try:
+            data = PracticeService.apply_student_practice(user, practice_id)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(data, status=status.HTTP_201_CREATED)
 
     @extend_schema(summary="Toggle favorite practice", tags=["Practices - Student"])
@@ -328,14 +352,29 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
 
+        # C3.10: block deletion if practice has active (non-cancelled) applications
+        if instance.student_practices.filter(is_cancelled=False).exists():
+            return Response(
+                {"detail": "Cannot delete practice with active applications"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # C3.10: soft-delete via service layer for consistent audit trail + notifications
+        with transaction.atomic():
+            instance = PracticeService.cancel_practice(
+                practice=instance,
+                actor=request.user,
+                reason="Deleted by employer",
+            )
+
         ActionLogService.log(
             user=request.user,
-            action_type=ActionLogType.DELETE,
+            action_type=ActionLogType.STORNO,
             object_type="Practice",
             object_id=instance.pk,
             description=f"Smazání nabídky praxe '{instance.title}' (ID: {instance.pk})",
         )
-        return super().destroy(request, *args, **kwargs)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # -------------------------------------------------------------
@@ -353,7 +392,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
 
     def get_permissions(self):
         if self.action == "approve":
-            return [IsAuthenticated(), (IsStagTeacher | permissions.IsAdminUser)()]
+            return [IsAuthenticated(), (IsStagTeacher | IsAdminUser)()]
         return [IsAuthenticated(), IsStagTeacher()]
 
     @extend_schema(summary="List practices waiting for approval")
@@ -404,9 +443,23 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        approval_status = ApprovalStatus.get(name_or_numeric=serializer.validated_data.get("approval_status"))
-        practice_obj.approval_status = approval_status
-        practice_obj.save()
+        with transaction.atomic():
+            approval_status = ApprovalStatus.get(name_or_numeric=serializer.validated_data.get("approval_status"))
+            practice_obj.approval_status = approval_status
+            practice_obj.save()
+
+            # Also update workflow_state to keep state machine consistent
+            new_workflow_state = (
+                PracticeWorkflowState.CONTENT_APPROVED
+                if approval_status == ApprovalStatus.APPROVED
+                else PracticeWorkflowState.CONTENT_REJECTED
+            )
+            practice_obj = PracticeService.transition_practice_state(
+                practice_obj,
+                new_workflow_state,
+                request.user,
+                reason="Schváleno přes starý approve endpoint",
+            )
 
         EmailService.notify_org_practice_status(practice_obj)
 
@@ -463,7 +516,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
             isinstance(user, ProfessorUser)
             and hasattr(user, "stag_role")
             and user.stag_role
-            and user.stag_role.role == StagRoleEnum.VK.value
+            and user.stag_role.role.lower() == StagRoleEnum.VK
         )
 
         if is_head_of_department:
@@ -524,7 +577,7 @@ class GetEndDateView(APIView):
 
 
 class AdminPracticesListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminUser]
     serializer_class = OrganizationPracticeSerializer
 
     @extend_schema(
@@ -560,3 +613,167 @@ class AdminPracticesListView(generics.ListAPIView):
                 "to_approve_practices": self.get_serializer(queryset.filter(approval_status=ApprovalStatus.PENDING), many=True).data,
             }
         )
+
+
+# -------------------------------------------------------------
+# 4. State Machine Endpoints — Přechody, storno, uzávěrka
+# -------------------------------------------------------------
+
+
+class TransitionPracticeView(APIView):
+    """
+    POST /api/practices/{pk}/transition/
+    Provede přechod stavu nabídky podle state machine.
+    Permissions: IsStagTeacher or IsGarantPraxe or IsAdminUser
+    """
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, (IsStagTeacher | IsGarantPraxe | IsAdminUser)]
+
+    @extend_schema(
+        summary="Transition practice workflow state",
+        description="Provede přechod stavu nabídky praxe podle definovaného state machine.",
+        tags=["Practices - Staff"],
+        request=TransitionPracticeSerializer,
+        responses={200: PracticeSerializer},
+    )
+    def post(self, request, pk):
+        practice = get_object_or_404(Practice, pk=pk)
+        self.check_object_permissions(request, practice)
+        serializer = TransitionPracticeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_state = PracticeWorkflowState(serializer.validated_data["target_state"])
+        reason = serializer.validated_data.get("reason", "")
+
+        try:
+            practice = PracticeService.transition_practice_state(
+                practice=practice,
+                target_state=target_state,
+                actor=request.user,
+                reason=reason,
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(PracticeSerializer(practice).data)
+
+
+class CancelPracticeView(APIView):
+    """
+    POST /api/practices/{pk}/cancel/
+    Stornuje nabídku praxe.
+    Permissions: CanCancelPractice
+    """
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, CanCancelPractice]
+
+    @extend_schema(
+        summary="Cancel a practice",
+        description="Stornuje nabídku praxe — deaktivuje ji a zaznamená důvod storna.",
+        tags=["Practices - Staff"],
+        request=CancelPracticeSerializer,
+        responses={200: PracticeSerializer},
+    )
+    def post(self, request, pk):
+        practice = get_object_or_404(Practice, pk=pk)
+        self.check_object_permissions(request, practice)
+        serializer = CancelPracticeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        reason = serializer.validated_data["reason"]
+        try:
+            practice = PracticeService.cancel_practice(practice=practice, actor=request.user, reason=reason)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(PracticeSerializer(practice).data)
+
+
+class CloseApplicationsView(APIView):
+    """
+    POST /api/practices/{pk}/close-applications/
+    Uzavře sběr přihlášek na nabídku.
+    Permissions: IsStagTeacher or IsGarantPraxe or IsAdminUser
+    """
+
+    permission_classes = [IsAuthenticated, IsNotCancelled, (IsStagTeacher | IsGarantPraxe | IsAdminUser)]
+
+    @extend_schema(
+        summary="Close practice for applications",
+        description="Uzavře sběr přihlášek na nabídku praxe (manuálně).",
+        tags=["Practices - Staff"],
+        request=CloseApplicationsSerializer,
+        responses={200: PracticeSerializer},
+    )
+    def post(self, request, pk):
+        practice = get_object_or_404(Practice, pk=pk)
+        self.check_object_permissions(request, practice)
+        serializer = CloseApplicationsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        reason = serializer.validated_data["reason"]
+        try:
+            practice = PracticeService.close_practice_for_applications(practice=practice, reason=reason, actor=request.user)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(PracticeSerializer(practice).data)
+
+
+class IsStudentOrStaff(permissions.BasePermission):
+    """Allows students, STAG teachers, garant praxe, and admins."""
+
+    def has_permission(self, request, view):
+        from users.models import StudentUser
+        from users.permissions import IsGarantPraxe, IsStagTeacher
+
+        return (
+            isinstance(request.user, StudentUser)
+            or IsStagTeacher().has_permission(request, view)
+            or IsGarantPraxe().has_permission(request, view)
+            or bool(request.user and request.user.is_superuser)
+        )
+
+
+class ExternalPracticeView(APIView):
+    """
+    POST /api/practices/external/
+    Vytvoří mimosystémovou praxi (bez registrované firmy).
+    """
+
+    permission_classes = [IsAuthenticated, IsStudentOrStaff]
+
+    @extend_schema(
+        summary="Create external practice",
+        description="Vytvoří mimosystémovou praxi — pro studenty nebo školy, kde firma není registrována v systému.",
+        tags=["Practices - External"],
+        request=ExternalPracticeSerializer,
+        responses={201: PracticeSerializer},
+    )
+    def post(self, request):
+        serializer = ExternalPracticeSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        practice = serializer.save()
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.CREATE,
+            object_type="Practice",
+            object_id=practice.pk,
+            description=f"Vytvoření mimosystémové praxe '{practice.title}' uživatelem {request.user.email}",
+        )
+
+        # If a student creates, automatically apply them
+        if isinstance(request.user, StudentUser):
+            from practices.services import PracticeService
+
+            try:
+                PracticeService.apply_student_practice(request.user, practice.pk)
+            except ValueError as e:
+                return Response(
+                    {**PracticeSerializer(practice).data, "warning": str(e)},
+                    status=status.HTTP_201_CREATED,
+                )
+
+        return Response(PracticeSerializer(practice).data, status=status.HTTP_201_CREATED)

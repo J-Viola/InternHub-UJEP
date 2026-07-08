@@ -10,6 +10,7 @@ import ProfilPage from '@pages/ProfilPage';
 import PraxePage from '@pages/PraxePage';
 import StudentPage from '@pages/StudentsPage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
+import VytvoritExterniPraxi from '@pages/VytvoritExterniPraxi';
 import UpravitNabidku from '@pages/UpravitNabidku';
 import RegistracePage from '@pages/RegistracePage';
 import LogoutUser from '@services/auth/Logout';
@@ -24,6 +25,7 @@ import reportWebVitals from './reportWebVitals';
 import UserProvider from '@hooks/UserProvider';
 import AuthProvider, { useAuth } from '@services/auth/Auth';
 import { MessageProvider } from '@hooks/MessageContext';
+import { NotificationProvider } from '@hooks/NotificationProvider';
 import InvitationPage from '@pages/PozvankyPage';
 import PozvankyListPage from '@pages/PozvankyListPage';
 import DepartmentsPage from '@pages/DepartmentsPage';
@@ -69,6 +71,7 @@ const AppRoutes = () => {
         <Route path="/karta-praxe/:id" element={<ProtectedRoute allowedRoles={['ST', 'VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><PraxeDetailPage /></ProtectedRoute>} />
         <Route path="/students/:id?" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><StudentPage /></ProtectedRoute>} />
         <Route path="/vytvorit-nabidku" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><VytvoritNabidku /></ProtectedRoute>} />
+        <Route path="/vytvorit-externi-praxi" element={<ProtectedRoute allowedRoles={['ST', 'VY', 'VK', 'admin']}><VytvoritExterniPraxi /></ProtectedRoute>} />
         <Route path="/upravit-nabidku/:id" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><UpravitNabidku /></ProtectedRoute>} />
         <Route path="/logout" element={<ProtectedRoute><LogoutUser /></ProtectedRoute>} />
         <Route path="/users/:type" element={<ProtectedRoute allowedRoles={['VK', 'OWNER', 'INSERTER', 'admin']}><UserCRUDPage /></ProtectedRoute>} />
@@ -94,10 +97,12 @@ root.render(
         <UserProvider>
           <BrowserRouter>
             <AuthProvider>
-              <ErrorBoundary>
-                <MessageToast />
-                <AppRoutes />
-              </ErrorBoundary>
+              <NotificationProvider>
+                <ErrorBoundary>
+                  <MessageToast />
+                  <AppRoutes />
+                </ErrorBoundary>
+              </NotificationProvider>
             </AuthProvider>
           </BrowserRouter>
         </UserProvider>

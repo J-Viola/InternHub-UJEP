@@ -5,17 +5,22 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from department.models import Department
 from practices.models import Practice, ProgressStatus
 from student_practices.models import (
     DocumentHelper,
+    DocumentStatus,
     EmployerInvitation,
     EmployerInvitationStatus,
     StudentPractice,
 )
+from subject.models import Subject
 from users.models import (
     ApprovalStatus,
+    DepartmentRole,
     EmployerProfile,
     OrganizationUser,
+    ProfessorUser,
     StudentUser,
 )
 
@@ -45,6 +50,7 @@ class StudentPracticeViewTests(TestCase):
             end_date=date(2024, 6, 1),
             approval_status=ApprovalStatus.APPROVED,
             progress_status=ProgressStatus.NOT_STARTED,
+            is_active=True,
         )
 
         # Invitation
@@ -167,3 +173,74 @@ class StudentPracticeViewTests(TestCase):
         url = f"/api/student-practices/download-document/{contract_doc.document_id}"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_document_review_student_cannot_approve_own_document(self):
+        """
+        C-M4-C1: A student must not be able to approve/review a document
+        via the review endpoint — should return 403, not 500.
+        """
+        sp = StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice,
+            approval_status=ApprovalStatus.APPROVED,
+            progress_status=ProgressStatus.IN_PROGRESS,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 1),
+        )
+        DocumentHelper.assign_default_documents(sp)
+        sp.refresh_from_db()
+        contract_doc = sp.contract_document
+
+        self.client.force_authenticate(user=self.student)
+        url = f"/api/student-practices/review-document/{contract_doc.document_id}"
+        response = self.client.patch(url, {"status": DocumentStatus.APPROVED.value}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_document_review_permission_denied_returns_403_not_500(self):
+        """
+        C-M4-C1: An unauthorized professor (not subject teacher, not head)
+        must receive 403, not 500, when calling the document review endpoint.
+        """
+        dept = Department.objects.create(department_name="Fyzika", department_code="FYZ")
+        subj = Subject.objects.create(subject_name="Fyzika Praxe", subject_code="FYZP", department=dept)
+        practice_with_subj = Practice.objects.create(
+            title="Physics Practice",
+            coefficient=1.0,
+            employer=self.employer_profile,
+            subject=subj,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 1),
+            approval_status=ApprovalStatus.APPROVED,
+            progress_status=ProgressStatus.NOT_STARTED,
+        )
+
+        sp = StudentPractice.objects.create(
+            user=self.student,
+            practice=practice_with_subj,
+            approval_status=ApprovalStatus.APPROVED,
+            progress_status=ProgressStatus.IN_PROGRESS,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 1),
+        )
+        DocumentHelper.assign_default_documents(sp)
+        sp.refresh_from_db()
+        contract_doc = sp.contract_document
+
+        # Create a professor NOT associated with the subject/department
+        other_dept = Department.objects.create(department_name="Chemie", department_code="CHE")
+        unauthorized_prof = ProfessorUser.objects.create_user(
+            email="unauth_prof@test.com",
+            password="password123",
+            first_name="Un",
+            last_name="Auth",
+            is_active=True,
+            department=other_dept,
+            department_role=DepartmentRole.TEACHER,
+        )
+
+        self.client.force_authenticate(user=unauthorized_prof)
+        url = f"/api/student-practices/review-document/{contract_doc.document_id}"
+        response = self.client.patch(url, {"status": DocumentStatus.APPROVED.value}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

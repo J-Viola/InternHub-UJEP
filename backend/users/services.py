@@ -52,7 +52,7 @@ def register_organization(validated_data):
     try:
         with transaction.atomic():
             user = OrganizationUser.objects.create(
-                email=validated_data["email"],
+                email=validated_data["email"].lower(),
                 first_name=validated_data["first_name"],
                 last_name=validated_data["last_name"],
                 title_before=validated_data.get("title_before", ""),
@@ -71,7 +71,6 @@ def register_organization(validated_data):
                 zip_code_ares = None
 
             employer_profile = EmployerProfile.objects.create(
-                employer_id=user.id,
                 ico=ico,
                 dic=dic if dic else (ares_data.dic or ""),
                 company_name=(company_name if company_name else (ares_data.obchodniJmeno or "")),
@@ -94,9 +93,10 @@ def register_organization(validated_data):
             )
 
             # Notify user via email only after successful transaction commit
-            from users.helpers import EmailService
+            from notifications.services import EmailService
 
             transaction.on_commit(lambda: EmailService.notify_org_welcome(user))
+            transaction.on_commit(lambda: EmailService.notify_admins_new_org_registration(user))
 
             return user
     except IntegrityError:
@@ -112,29 +112,27 @@ def update_organization_from_ares(user, ico: str):
     if not ares_data:
         raise ValueError(UserMessages.ARES_FETCH_FAILED)
 
-    try:
-        EmployerProfile.objects.get(employer_id=user.id)
-        # Update existing profile logic could go here if needed
-    except EmployerProfile.DoesNotExist:
-        status_enum = ApprovalStatus.PENDING
+    with transaction.atomic():
+        if not (hasattr(user, "employer_profile") and user.employer_profile):
+            status_enum = ApprovalStatus.PENDING
 
-        address = ""
-        zip_code = None
-        if hasattr(ares_data, "sidlo") and ares_data.sidlo:
-            address = ares_data.sidlo.textovaAdresa or ""
-            zip_code = ares_data.sidlo.psc
+            address = ""
+            zip_code = None
+            if hasattr(ares_data, "sidlo") and ares_data.sidlo:
+                address = ares_data.sidlo.textovaAdresa or ""
+                zip_code = ares_data.sidlo.psc
 
-        EmployerProfile.objects.create(
-            employer_id=user.id,
-            ico=ares_data.ico,
-            dic=ares_data.dic or "",
-            company_name=ares_data.obchodniJmeno or "",
-            address=address,
-            zip_code=zip_code,
-            approval_status=status_enum,
-        )
+            employer_profile = EmployerProfile.objects.create(
+                ico=ares_data.ico,
+                dic=ares_data.dic or "",
+                company_name=ares_data.obchodniJmeno or "",
+                address=address,
+                zip_code=zip_code,
+                approval_status=status_enum,
+            )
+            user.employer_profile = employer_profile
 
-    user.save()
+        user.save()
 
     ActionLogService.log(
         user=user,
@@ -211,6 +209,9 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
     In mock mode, accepts pre-decoded stagUserInfo from the STAG redirect URL directly.
     In real mode, always validates the ticket against the STAG API.
     """
+    if stag_user_info and not getattr(settings, "STAG_MOCK", False):
+        raise AuthenticationFailed("stag_user_info is only allowed in mock/development mode")
+
     from users.stag_api.mock_client import MockStagClient
 
     client = get_stag_client()
@@ -222,8 +223,8 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
         details = client.validate_ticket(ticket)
 
     email = details.get("email")
-    jmeno = details.pop("jmeno")
-    prijmeni = details.pop("prijmeni")
+    jmeno = details.get("jmeno")
+    prijmeni = details.get("prijmeni")
     stagUserInfos = details.get("stagUserInfo")
 
     if not stagUserInfos or len(stagUserInfos) == 0:
@@ -299,7 +300,7 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
         user = None
         # 1. Try finding by email
         try:
-            user = StudentUser.objects.get(email=email)
+            user = StudentUser.objects.get(email__iexact=email)
         except StudentUser.DoesNotExist:
             # 2. Try finding by osCislo
             try:
@@ -310,7 +311,7 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
             except StudentUser.DoesNotExist:
                 # Not found by email nor ID -> Check for conflict with generic User
                 try:
-                    existing_user = User.objects.get(email=email)
+                    existing_user = User.objects.get(email__iexact=email)
                     # If we are here, user exists but is not StudentUser
                     if settings.DEMO_LOGIN:
                         if existing_user.is_staff or existing_user.is_superuser:
@@ -339,20 +340,31 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
                     pass
 
         if user:
+            if not user.is_active:
+                raise AuthenticationFailed("Účet je deaktivován")
             # Update basic info
             user.first_name = first_name
             user.last_name = last_name
             user.os_cislo = osCislo
+            user.stag_ticket = ticket
             user.save()
         else:
             user = StudentUser.objects.create(
-                email=email,
+                email=email.lower(),
                 stag_role=stagRole,
                 first_name=first_name,
                 last_name=last_name,
                 os_cislo=osCislo,
+                stag_ticket=ticket,
                 is_active=True,
             )
+
+        # After student creation/update, try to fetch additional data from STAG
+        if user.os_cislo:
+            try:
+                fetch_student_data_from_stag(user, ticket=ticket)
+            except Exception:
+                pass  # Non-critical — login should not fail if STAG data fetch fails
 
         ActionLogService.log(
             user=user,
@@ -370,7 +382,7 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
         # For professors, department assignment is critical, so we must ensure it exists
         user = None
         try:
-            user = ProfessorUser.objects.get(email=email)
+            user = ProfessorUser.objects.get(email__iexact=email)
         except ProfessorUser.DoesNotExist:
             # Try to find by ucitIdno if email changed
             try:
@@ -381,7 +393,7 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
             except ProfessorUser.DoesNotExist:
                 # Not found by email nor ID -> Check for conflict with generic User
                 try:
-                    existing_user = User.objects.get(email=email)
+                    existing_user = User.objects.get(email__iexact=email)
                     # If we are here, user exists but is not ProfessorUser
                     if settings.DEMO_LOGIN:
                         if existing_user.is_staff or existing_user.is_superuser:
@@ -410,9 +422,12 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
                     pass
 
         if user:
+            if not user.is_active:
+                raise AuthenticationFailed("Účet je deaktivován")
             # Update basic info
             user.first_name = first_name
             user.last_name = last_name
+            user.stag_ticket = ticket
             user.save()
         else:
             katedra = info.get("katedra")
@@ -424,14 +439,15 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
                 else:
                     raise AuthenticationFailed(f"Katedra {katedra} nebyla nalezena v databázi. Kontaktujte správce systému")
 
-            department_role = DepartmentRole.HEAD if stagRole.role == StagRoleEnum.VK else DepartmentRole.TEACHER
+            department_role = DepartmentRole.HEAD if stagRole.role.lower() == StagRoleEnum.VK else DepartmentRole.TEACHER
 
             user = ProfessorUser.objects.create(
-                email=email,
+                email=email.lower(),
                 stag_role=stagRole,
                 first_name=first_name,
                 last_name=last_name,
                 ucit_idno=ucitIdno,
+                stag_ticket=ticket,
                 is_active=True,
                 department=department,
                 department_role=department_role,
@@ -459,66 +475,67 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
     if getattr(settings, "STAG_MOCK", False):
         return
 
-    client = get_stag_client()
-    items = client.get_student_subjects(stag_ticket, osCislo)
+    with transaction.atomic():
+        client = get_stag_client()
+        items = client.get_student_subjects(stag_ticket, osCislo)
 
-    valid_subject_codes = set()
+        valid_subject_codes = set()
 
-    if settings.DEMO_LOGIN:
-        subject, _ = Subject.objects.get_or_create(subject_code=settings.DEMO_SUBJECT_CODE)
-        UserSubject.objects.update_or_create(
-            subject=subject,
-            user=user,
-            defaults={
-                "role": UserSubjectType.Student,
-                "is_active": True,
-            },
-        )
-        valid_subject_codes.add(settings.DEMO_SUBJECT_CODE)
-
-    for subj in items:
-        zkratka = subj.get("zkratka")
-        nazev = subj.get("nazev")
-        katedra_kod = subj.get("katedra")
-
-        department = None
-        if katedra_kod:
-            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
-
-        if zkratka:
-            valid_subject_codes.add(zkratka)
-            subjInDb, created = Subject.objects.get_or_create(
-                subject_code=zkratka,
-                defaults={"subject_name": nazev or zkratka, "department": department},
-            )
-
-            # Update department if missing or changed (optional, prioritizing STAG data)
-            if department and subjInDb.department != department:
-                subjInDb.department = department
-                subjInDb.save()
-
-            # Ensure relationship is active
+        if settings.DEMO_LOGIN:
+            subject, _ = Subject.objects.get_or_create(subject_code=settings.DEMO_SUBJECT_CODE)
             UserSubject.objects.update_or_create(
-                subject=subjInDb,
+                subject=subject,
                 user=user,
                 defaults={
                     "role": UserSubjectType.Student,
                     "is_active": True,
                 },
             )
+            valid_subject_codes.add(settings.DEMO_SUBJECT_CODE)
 
-    # Soft-delete subjects the user is no longer enrolled in
-    UserSubject.objects.filter(user=user, role=UserSubjectType.Student, is_active=True).exclude(
-        subject__subject_code__in=valid_subject_codes
-    ).update(is_active=False)
+        for subj in items:
+            zkratka = subj.get("zkratka")
+            nazev = subj.get("nazev")
+            katedra_kod = subj.get("katedra")
 
-    ActionLogService.log(
-        user=user,
-        action_type=ActionLogType.VIEW,
-        object_type="STAG",
-        object_id=user.id,
-        description=f"STAG synchronizace předmětů studenta {user.email} ({len(valid_subject_codes)} předmětů)",
-    )
+            department = None
+            if katedra_kod:
+                department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+
+            if zkratka:
+                valid_subject_codes.add(zkratka)
+                subjInDb, created = Subject.objects.get_or_create(
+                    subject_code=zkratka,
+                    defaults={"subject_name": nazev or zkratka, "department": department},
+                )
+
+                # Update department if missing or changed (optional, prioritizing STAG data)
+                if department and subjInDb.department != department:
+                    subjInDb.department = department
+                    subjInDb.save()
+
+                # Ensure relationship is active
+                UserSubject.objects.update_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={
+                        "role": UserSubjectType.Student,
+                        "is_active": True,
+                    },
+                )
+
+        # Soft-delete subjects the user is no longer enrolled in
+        UserSubject.objects.filter(user=user, role=UserSubjectType.Student, is_active=True).exclude(
+            subject__subject_code__in=valid_subject_codes
+        ).update(is_active=False)
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.VIEW,
+            object_type="STAG",
+            object_id=user.id,
+            description=f"STAG synchronizace předmětů studenta {user.email} ({len(valid_subject_codes)} předmětů)",
+        )
 
 
 def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: ProfessorUser):
@@ -530,49 +547,128 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
     if getattr(settings, "STAG_MOCK", False):
         return
 
+    with transaction.atomic():
+        client = get_stag_client()
+        items = client.get_teacher_subjects(stag_ticket, ucitIdno)
+
+        valid_subject_codes = set()
+
+        for subj in items:
+            zkratka = subj.get("zkratka")
+            nazev = subj.get("nazev")
+            katedra_kod = subj.get("katedra")
+
+            department = None
+            if katedra_kod:
+                department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+
+            if zkratka:
+                valid_subject_codes.add(zkratka)
+                subjInDb, created = Subject.objects.get_or_create(
+                    subject_code=zkratka,
+                    defaults={"subject_name": nazev or zkratka, "department": department},
+                )
+
+                if department and subjInDb.department != department:
+                    subjInDb.department = department
+                    subjInDb.save()
+
+                UserSubject.objects.update_or_create(
+                    subject=subjInDb,
+                    user=user,
+                    defaults={
+                        "role": UserSubjectType.Professor,
+                        "is_active": True,
+                    },
+                )
+
+        # Soft-delete subjects the teacher is no longer assigned to
+        UserSubject.objects.filter(user=user, role=UserSubjectType.Professor, is_active=True).exclude(
+            subject__subject_code__in=valid_subject_codes
+        ).update(is_active=False)
+
+        ActionLogService.log(
+            user=user,
+            action_type=ActionLogType.VIEW,
+            object_type="STAG",
+            object_id=user.id,
+            description=f"STAG synchronizace předmětů učitele {user.email} ({len(valid_subject_codes)} předmětů)",
+        )
+
+
+def fetch_student_data_from_stag(student, ticket=None):
+    """
+    Fetch detailed student personal data from STAG and update the StudentUser model.
+
+    Args:
+        student: StudentUser instance (must have os_cislo and stagUser model for STAG ticket)
+        ticket: Optional fresh STAG ticket. If not provided, uses the stored ticket
+                from student.stag_user_ptr.stag_ticket.
+
+    Returns:
+        dict with the fetched student data, or empty dict on failure.
+
+    Raises:
+        ValueError: if student has no os_cislo
+    """
+    if not student.os_cislo:
+        raise ValueError("Student has no os_cislo — cannot fetch from STAG")
+
+    from django.conf import settings
+
+    if getattr(settings, "STAG_MOCK", False) or getattr(settings, "DEMO_LOGIN", False):
+        ticket = f"mock-student:{student.os_cislo}"
+    else:
+        if not ticket:
+            ticket = student.stag_user_ptr.get_ticket()
+        if not ticket:
+            return {}
+
     client = get_stag_client()
-    items = client.get_teacher_subjects(stag_ticket, ucitIdno)
+    data = client.get_student_info(ticket, student.os_cislo)
 
-    valid_subject_codes = set()
+    if not data:
+        return {}
 
-    for subj in items:
-        zkratka = subj.get("zkratka")
-        nazev = subj.get("nazev")
-        katedra_kod = subj.get("katedra")
+    # Update StudentUser fields from STAG data
+    with transaction.atomic():
+        if "datNarozeni" in data and data["datNarozeni"]:
+            try:
+                from datetime import datetime
 
-        department = None
-        if katedra_kod:
-            department, _ = Department.objects.get_or_create(department_code=katedra_kod, defaults={"department_name": katedra_kod})
+                student.date_of_birth = datetime.strptime(data["datNarozeni"], "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                pass
 
-        if zkratka:
-            valid_subject_codes.add(zkratka)
-            subjInDb, created = Subject.objects.get_or_create(
-                subject_code=zkratka,
-                defaults={"subject_name": nazev or zkratka, "department": department},
-            )
+        if "mistoNarozeni" in data:
+            student.place_of_birth = str(data["mistoNarozeni"])[:100]
+        if "ulice" in data:
+            student.street = str(data["ulice"])[:100]
+        if "cisloPopisne" in data:
+            student.street_number = str(data["cisloPopisne"])[:10]
+        if "psc" in data:
+            student.zip_code = str(data["psc"])[:10]
+        if "obec" in data:
+            student.city = str(data["obec"])[:100]
+        if "oborNazev" in data:
+            student.field_of_study = str(data["oborNazev"])[:100]
+        if "rocnik" in data and data["rocnik"] is not None:
+            try:
+                student.year_of_study = int(data["rocnik"])
+            except (ValueError, TypeError):
+                pass
 
-            if department and subjInDb.department != department:
-                subjInDb.department = department
-                subjInDb.save()
+        student.save(
+            update_fields=[
+                "date_of_birth",
+                "place_of_birth",
+                "street",
+                "street_number",
+                "zip_code",
+                "city",
+                "field_of_study",
+                "year_of_study",
+            ]
+        )
 
-            UserSubject.objects.update_or_create(
-                subject=subjInDb,
-                user=user,
-                defaults={
-                    "role": UserSubjectType.Professor,
-                    "is_active": True,
-                },
-            )
-
-    # Soft-delete subjects the teacher is no longer assigned to
-    UserSubject.objects.filter(user=user, role=UserSubjectType.Professor, is_active=True).exclude(
-        subject__subject_code__in=valid_subject_codes
-    ).update(is_active=False)
-
-    ActionLogService.log(
-        user=user,
-        action_type=ActionLogType.VIEW,
-        object_type="STAG",
-        object_id=user.id,
-        description=f"STAG synchronizace předmětů učitele {user.email} ({len(valid_subject_codes)} předmětů)",
-    )
+    return data

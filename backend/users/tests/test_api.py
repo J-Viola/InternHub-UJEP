@@ -310,3 +310,71 @@ class OrganizationUserListTests(APITestCase):
         self.assertIn(self.owner.id, ids)
         self.assertIn(self.employee.id, ids)
         self.assertNotIn(self.other.id, ids)
+
+
+class UserManagerTests(TestCase):
+    """C2.1: Verify UserManager is not destroyed by migration 0005."""
+
+    def test_create_user_works(self):
+        """create_user must succeed after all migrations."""
+        user = User.objects.create_user(
+            email="test_create_user@example.com",
+            password="StrongPassword123",
+            first_name="Test",
+            last_name="User",
+        )
+        self.assertIsNotNone(user.pk)
+        self.assertEqual(user.email, "test_create_user@example.com")
+        self.assertTrue(user.check_password("StrongPassword123"))
+
+    def test_create_superuser_works(self):
+        """create_superuser must succeed after all migrations."""
+        user = User.objects.create_superuser(
+            email="admin_test@example.com",
+            password="AdminPass123!",
+        )
+        self.assertIsNotNone(user.pk)
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_active)
+
+
+class DeactivatedUserLoginTests(TestCase):
+    """C2.3: Deactivated STAG users must not be able to login."""
+
+    def setUp(self):
+        from users.models import StudentUser
+
+        self.serializer = CustomTokenObtainPairSerializer()
+        self.student = StudentUser.objects.create(
+            email="deactivated@example.com",
+            first_name="Deactivated",
+            last_name="User",
+            is_active=False,
+        )
+        self.student.set_password("ValidPass123")
+        self.student.save()
+
+    def test_deactivated_user_cannot_login_with_credentials(self):
+        """Deactivated user must get AuthenticationFailed with credentials."""
+        with self.assertRaises(Exception) as context:
+            self.serializer.validate(
+                {
+                    "email": "deactivated@example.com",
+                    "password": "ValidPass123",
+                }
+            )
+        self.assertIn("Invalid credentials", str(context.exception))
+
+    def test_active_user_can_login_with_credentials(self):
+        """Active user can still login."""
+        self.student.is_active = True
+        self.student.save()
+        result = self.serializer.validate(
+            {
+                "email": "deactivated@example.com",
+                "password": "ValidPass123",
+            }
+        )
+        self.assertIn("refresh", result)
+        self.assertIn("access", result)

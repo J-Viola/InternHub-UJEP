@@ -6,9 +6,11 @@ import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useParams } from "react-router-dom";
 import Button from "@core/Button/Button";
+import StateBadge from "@core/StateBadge";
 import DocsPanel from "@components/Nabidka/DocsPanel";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
+import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useUser } from "@hooks/UserProvider";
 import { Image } from "@components/core/Image"
 import { useMessage } from "@hooks/MessageContext";
@@ -27,6 +29,7 @@ export default function NabidkaDetailPage() {
     const [ popUp, setPopUp ] = useState(false);
     const [ entity, setEntity ] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
+    const studentPracticeAPI = useStudentPracticeAPI();
     const documentAPI = useDocumentsAPI();
     const { user } = useUser();
     const { addMessage } = useMessage();
@@ -67,6 +70,7 @@ export default function NabidkaDetailPage() {
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
+            setTimeout(() => window.URL.revokeObjectURL(url), 100);
         } catch (error) {
             addMessage(t('common.error'), "E");
         }
@@ -138,23 +142,24 @@ export default function NabidkaDetailPage() {
         setPopUp(false);
     }
 
+    const handleReapply = async () => {
+        try {
+            await studentPracticeAPI.reapplyToPractice(entity.practice_id);
+            addMessage(t('practice_detail.reapply_success'), "S");
+            navigate('/praxe');
+        } catch (error) {
+            const detail = error?.response?.data?.detail || error?.details || t('practice_detail.reapply_error');
+            addMessage(detail, "E");
+        }
+    }
+
     const renderContactInfo = () => {
         return (
             <Container property={"editor-content mt-2"}>
                 <Container property="flex justify-between items-center mb-4">
                     <Headings sizeTag="h3">{t('offers.contact_person')}</Headings>
                     {entity.student_practice_status && (
-                        <Button
-                            variant={
-                                entity.student_practice_status.workflow_status === "PENDING" ? "yellowSmall" :
-                                ["REJECTED", "CANCELLED"].includes(entity.student_practice_status.workflow_status) ? "redSmall" :
-                                "greenSmall"
-                            }
-                            pointer={false}
-                            hover={false}
-                        >
-                            {t('status.label')}: {entity.student_practice_status.workflow_status_label}
-                        </Button>
+                        <StateBadge status={entity.student_practice_status.workflow_status} />
                     )}
                 </Container>
                 {(entity.contact_user_info.first_name || entity.contact_user_info.last_name) && (
@@ -262,6 +267,12 @@ export default function NabidkaDetailPage() {
                         <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>{t('offers.apply')}</Button>
                     )}
 
+                    {user && user.isStudent() && entity?.student_practice_status &&
+                        (entity.student_practice_status.workflow_status === "REJECTED" || entity.student_practice_status.workflow_status === "CANCELLED") && (
+                        <Button variant="green" onClick={handleReapply}>
+                            {t('practice_detail.reapply_button')}
+                        </Button>
+                    )}
 
                     {user && user.isProfessor() && entity?.approval_status === 1 && (
                         <>

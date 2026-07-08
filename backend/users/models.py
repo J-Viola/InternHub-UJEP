@@ -7,25 +7,23 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.db import models
+from django.db.models import Q
 from django_enumfield import enum
 from polymorphic.models import PolymorphicManager, PolymorphicModel
 
 from users.messages import UserMessages
 
 
-class UserType(PythonEnum):
+class UserType(str, PythonEnum):
     ADMIN = "admin"
     STAG = "stag"
     ORGANIZATION = "organization"
 
-    def values(self):
-        return [member.value for member in self.__class__]
 
-
-class StagRoleEnum(PythonEnum):
-    ST = "st"
-    VY = "vy"
-    VK = "vk"
+class StagRoleEnum(models.TextChoices):
+    ST = "st", "Student"
+    VY = "vy", "Vyučující"
+    VK = "vk", "Vedoucí katedry"
 
 
 class UserManager(PolymorphicManager, BaseUserManager):
@@ -44,10 +42,7 @@ class UserManager(PolymorphicManager, BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
-        if (
-            extra_fields.get("is_staff") is not True
-            or extra_fields.get("is_superuser") is not True
-        ):
+        if extra_fields.get("is_staff") is not True or extra_fields.get("is_superuser") is not True:
             raise ValueError(UserMessages.SUPERUSER_INVALID_FLAGS)
         return self.create_user(email, password, **extra_fields)
 
@@ -72,7 +67,7 @@ class Role(models.Model):
 
 class StagRole(models.Model):
     id = models.AutoField(primary_key=True)
-    role = models.CharField(unique=True, blank=False, null=False)
+    role = models.CharField(unique=True, blank=False, null=False, max_length=10, choices=StagRoleEnum.choices)
     role_name = models.CharField(unique=True, max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, default="")
 
@@ -85,26 +80,24 @@ class StagRole(models.Model):
 
 class EmployerProfile(models.Model):
     employer_id = models.AutoField(primary_key=True)
-    company_name = models.CharField(
-        max_length=100, blank=True, default="", db_index=True
-    )
-    ico = models.CharField(
-        unique=True, max_length=15, blank=True, null=True, db_index=True
-    )
-    dic = models.CharField(unique=True, max_length=15, blank=True, null=True)
+    company_name = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    ico = models.CharField(max_length=15, blank=True, null=True, db_index=True)  # noqa: DJ001
+    dic = models.CharField(max_length=15, blank=True, null=True)  # noqa: DJ001
     city = models.TextField(blank=True, default="")
     address = models.TextField(blank=True, default="")
-    zip_code = models.IntegerField(blank=True, null=True)
+    zip_code = models.CharField(max_length=10, blank=True, null=True)  # noqa: DJ001
     company_profile = models.TextField(blank=True, default="")
     approval_status = enum.EnumField(ApprovalStatus)
-    logo = models.ImageField(
-        upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True
-    )
+    logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "employer_profiles"
+        constraints = [
+            models.UniqueConstraint(fields=["ico"], condition=Q(ico__gt=""), name="unique_ico_when_set"),
+            models.UniqueConstraint(fields=["dic"], condition=Q(dic__gt=""), name="unique_dic_when_set"),
+        ]
 
     def __str__(self):
         return self.company_name or super().__str__()
@@ -131,6 +124,11 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+    def save(self, *args, **kwargs):
+        if self.email:
+            self.email = self.email.lower()
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = "users"
         swappable = "AUTH_USER_MODEL"
@@ -147,7 +145,8 @@ class User(PolymorphicModel, AbstractBaseUser, PermissionsMixin):
 
     @property
     def full_name(self):
-        return f"{self.title_before or ' '} {self.first_name} {self.last_name} {self.title_after or ' '}".strip()
+        parts = [self.title_before, self.first_name, self.last_name, self.title_after]
+        return " ".join(p for p in parts if p).strip()
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
@@ -161,7 +160,7 @@ class OrganizationRole(enum.Enum):
 class OrganizationUser(User):
     employer_profile = models.ForeignKey(
         EmployerProfile,
-        models.CASCADE,
+        models.SET_NULL,
         blank=True,
         null=True,
         related_name="organization_users",
@@ -176,14 +175,16 @@ class OrganizationUser(User):
 
     @property
     def role(self):
-        return (
-            self.organization_role.name if self.organization_role is not None else None
-        )
+        return self.organization_role.name if self.organization_role is not None else None
 
 
 class StagUser(User):
-    stag_role = models.ForeignKey(
-        StagRole, models.PROTECT, blank=True, null=True, related_name="stag_users"
+    stag_role = models.ForeignKey(StagRole, models.PROTECT, blank=True, null=True, related_name="stag_users")
+    stag_ticket = models.CharField(
+        max_length=700,
+        blank=True,
+        default="",
+        help_text="Šifrovaný dočasný STAG ticket (uložen při loginu pro on-demand fetch student info).",
     )
 
     class Meta:
@@ -196,11 +197,70 @@ class StagUser(User):
     def role(self):
         return self.stag_role.role if self.stag_role else None
 
+    # ------------------------------------------------------------------
+    # stag_ticket encryption helpers
+    # ------------------------------------------------------------------
+
+    def get_ticket(self):
+        """
+        Returns the decrypted STAG ticket.
+
+        Graceful migration: if the value stored in the DB is still plaintext
+        (from before encryption was introduced), it is returned as-is.
+        """
+        if not self.stag_ticket:
+            return ""
+        return self._decrypt_ticket(self.stag_ticket)
+
+    def save(self, *args, **kwargs):
+        """Encrypt stag_ticket before saving if it is in plaintext."""
+        if self.stag_ticket:
+            # Skip if the value is already encrypted (re-saves from DB loads)
+            if not self._is_ticket_encrypted(self.stag_ticket):
+                self.stag_ticket = self._encrypt_ticket(self.stag_ticket)
+        super().save(*args, **kwargs)
+
+    # --- static helpers (no side effects) ----------------------------------
+
+    @staticmethod
+    def _encrypt_ticket(plain_text):
+        """Sign (encrypt) a plaintext ticket for storage."""
+        from django.core.signing import Signer
+
+        signer = Signer(salt="stag_ticket_encryption")
+        return signer.sign(plain_text)
+
+    @staticmethod
+    def _decrypt_ticket(encrypted_text):
+        """
+        Verify signature and return original plaintext.
+        Falls back to returning the raw value if the signature is invalid
+        (handles existing plaintext records during migration).
+        """
+        from django.core.signing import BadSignature, Signer
+
+        signer = Signer(salt="stag_ticket_encryption")
+        try:
+            return signer.unsign(encrypted_text)
+        except BadSignature:
+            # Plaintext value – graceful migration for existing records
+            return encrypted_text
+
+    @staticmethod
+    def _is_ticket_encrypted(value):
+        """Returns True if *value* is already signed (encrypted)."""
+        from django.core.signing import BadSignature, Signer
+
+        signer = Signer(salt="stag_ticket_encryption")
+        try:
+            signer.unsign(value)
+            return True
+        except BadSignature:
+            return False
+
 
 class StudentUser(StagUser):
-    profile_picture = models.ImageField(
-        upload_to=settings.STORAGE_URL + "images/profiles", blank=True, null=True
-    )
+    profile_picture = models.ImageField(upload_to=settings.STORAGE_URL + "images/profiles", blank=True, null=True)
     os_cislo = models.CharField(unique=True, max_length=64, blank=True, null=True)
     field_of_study = models.CharField(max_length=100, blank=True, default="")
     year_of_study = models.IntegerField(blank=True, null=True)
@@ -222,19 +282,15 @@ class StudentUser(StagUser):
 
     # New fields
     skills = models.JSONField(default=list, blank=True)
-    cv_file = models.FileField(
-        upload_to=settings.STORAGE_URL + "documents/cvs", blank=True, null=True
-    )
-    favorite_practices = models.ManyToManyField(
-        "practices.Practice", related_name="favorited_by", blank=True
-    )
+    cv_file = models.FileField(upload_to=settings.STORAGE_URL + "documents/cvs", blank=True, null=True)
+    favorite_practices = models.ManyToManyField("practices.Practice", related_name="favorited_by", blank=True)
 
     class Meta:
         db_table = "student_users"
 
     @property
     def role(self):
-        return "ST"
+        return StagRoleEnum.ST
 
 
 class DepartmentRole(enum.Enum):
@@ -252,6 +308,11 @@ class ProfessorUser(StagUser):
         related_name="professor_users",
     )
     department_role = enum.EnumField(DepartmentRole, blank=True, null=True)
+    is_garant_praxe = models.BooleanField(
+        default=False,
+        help_text="Garant Praxe — oprávnění spravovat stavy praxí napříč katedrou. "
+        "Varianta C dle THESIS_ARCHITECTURE_PLAN.md sekce 2.2.6.",
+    )
 
     class Meta:
         db_table = "professor_users"
@@ -259,23 +320,25 @@ class ProfessorUser(StagUser):
     @property
     def role(self):
         if self.department_role == DepartmentRole.HEAD:
-            return "VK"
-        return "VY"
+            return StagRoleEnum.VK
+        return StagRoleEnum.VY
 
 
 class ActionLog(models.Model):
     action_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        User, models.SET_NULL, blank=True, null=True, related_name="action_logs"
-    )
-    action_type = models.CharField(max_length=50, blank=True, default="")
+    user = models.ForeignKey(User, models.SET_NULL, blank=True, null=True, related_name="action_logs")
+    action_type = models.CharField(max_length=50, blank=True, default="", db_index=True)
     object_type = models.CharField(max_length=50, blank=True, default="")
     object_id = models.IntegerField(blank=True, null=True)
     action_description = models.TextField(blank=True, default="")
-    action_date = models.DateTimeField(blank=True, null=True)
+    action_date = models.DateTimeField(blank=True, null=True, db_index=True)
 
     class Meta:
         db_table = "action_logs"
+        indexes = [
+            models.Index(fields=["object_type", "object_id"]),
+            models.Index(fields=["user", "action_date"]),
+        ]
 
     def __str__(self):
         user_repr = str(self.user) if self.user else "Unknown"
@@ -289,9 +352,7 @@ class UserSubjectType(enum.Enum):
 
 class UserSubject(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        StagUser, models.CASCADE, blank=True, null=True, related_name="user_subjects"
-    )
+    user = models.ForeignKey(StagUser, models.CASCADE, blank=True, null=True, related_name="user_subjects")
     subject = models.ForeignKey(
         "subject.Subject",
         models.CASCADE,
@@ -301,7 +362,7 @@ class UserSubject(models.Model):
     )
     role = enum.EnumField(UserSubjectType)
     is_active = models.BooleanField(default=True, db_index=True)
-    last_synced_at = models.DateTimeField(auto_now=True)
+    last_synced_at = models.DateTimeField(auto_now=True, db_index=True)
 
     class Meta:
         db_table = "user_subjects"

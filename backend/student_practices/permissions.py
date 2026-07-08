@@ -12,6 +12,9 @@ from users.models import (
 class IsSubjectTeacherOrHeadForPractice(permissions.BasePermission):
     """
     Umožní přístup, pokud je uživatel oprávněn schválit danou praxi (Učitel/Vedoucí).
+
+    Object-level only — view must call check_object_permissions().
+    has_permission defaults to True (class-level gate is a pass-through).
     """
 
     def has_object_permission(self, request, view, obj):
@@ -23,6 +26,9 @@ class IsSubjectTeacherOrHeadForPractice(permissions.BasePermission):
 class IsPracticeOrganizationOwner(permissions.BasePermission):
     """
     Umožní přístup, pokud je uživatel oprávněn schválit danou praxi (Zástupce organizace).
+
+    Object-level only — view must call check_object_permissions().
+    has_permission defaults to True (class-level gate is a pass-through).
     """
 
     def has_object_permission(self, request, view, obj):
@@ -59,17 +65,12 @@ class HasDocumentAccess(permissions.BasePermission):
 
             subject = sp.practice.subject
             user_subjects = subject.user_subjects
-            is_professor_for_subject = user_subjects.filter(
-                user=user, role=UserSubjectType.Professor
-            ).exists()
+            is_professor_for_subject = user_subjects.filter(user=user, role=UserSubjectType.Professor).exists()
             if is_professor_for_subject:
                 return True
 
             # Check if professor is head of the department
-            if (
-                user.department_role == DepartmentRole.HEAD
-                and user.department == subject.department
-            ):
+            if user.department_role == DepartmentRole.HEAD and user.department == subject.department:
                 return True
 
         elif isinstance(user, OrganizationUser):

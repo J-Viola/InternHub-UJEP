@@ -115,6 +115,34 @@ export const useStudentPracticeAPI = () => {
         }
     };
 
+    // POST /api/student-practices/reapply/<practiceId>/
+    const reapplyToPractice = async (practiceId) => {
+        try {
+            const response = await api.post(`/student-practices/reapply/${practiceId}/`);
+            if (response && response.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Error reapplying to practice:", error);
+            throw error;
+        }
+    };
+
+    // WP7 — Document generation (stahování vygenerovaných .docx šablon)
+    const downloadGeneratedDocument = async (studentPracticeId, docType) => {
+        try {
+            const res = await api.get(
+                `/student-practices/${studentPracticeId}/${docType}/`,
+                { responseType: "blob" }
+            );
+            return res.data;
+        } catch (error) {
+            console.error(`Chyba při generování dokumentu (${docType}):`, error);
+            throw error;
+        }
+    };
+
     return {
         manageEmployerInvitation,
         getOrganizationApplications,
@@ -123,6 +151,8 @@ export const useStudentPracticeAPI = () => {
         getStudentsByPracticeId,
         getStudentPracticeCard,
         getAdminPendingApplications,
-        createInvitation
+        createInvitation,
+        downloadGeneratedDocument,
+        reapplyToPractice,
     };
 };

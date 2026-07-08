@@ -7,12 +7,11 @@ from .views import (
     DepartmentProfessorDetailView,
     DepartmentProfessorListView,
     DepartmentStudentListView,
-    DepartmentUserRoleDetailView,
 )
 
 app_name = "department"
 router = routers.DefaultRouter()
-router.register(r"admin-departments", AdminDepartmentViewSet, basename="practice")
+router.register(r"admin-departments", AdminDepartmentViewSet, basename="admin-department")
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -25,11 +24,6 @@ urlpatterns = [
         "department-students/",
         DepartmentStudentListView.as_view(),
         name="departmentuserrole-list",
-    ),
-    path(
-        "department-users/<int:pk>/",
-        DepartmentUserRoleDetailView.as_view(),
-        name="departmentuserrole-detail",
     ),
     path(
         "department-professor/",

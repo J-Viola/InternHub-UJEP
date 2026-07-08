@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from department.models import Department
-from practices.models import Practice, ProgressStatus
+from practices.models import Practice, PracticeWorkflowState, ProgressStatus
 from student_practices.models import StudentPractice
 from subject.models import Subject
 from users.models import (
@@ -23,9 +23,7 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):
         self.client = APIClient()
 
         # Create Department and Subject for practices
-        self.department = Department.objects.create(
-            department_name="Test Dept", department_code="TD"
-        )
+        self.department = Department.objects.create(department_name="Test Dept", department_code="TD")
         self.subject = Subject.objects.create(
             subject_name="Test Subject",
             subject_code="TS101",
@@ -86,6 +84,7 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):
             approval_status=ApprovalStatus.APPROVED,
             progress_status=ProgressStatus.NOT_STARTED,
             coefficient=1.0,
+            workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
         )
 
         self.student_list_url = "/api/practices/student/"
@@ -98,9 +97,7 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):
         response = self.client.post(self.apply_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        application = StudentPractice.objects.filter(
-            user=self.student, practice=self.practice
-        ).first()
+        application = StudentPractice.objects.filter(user=self.student, practice=self.practice).first()
         self.assertIsNotNone(application)
         self.assertEqual(application.approval_status, ApprovalStatus.PENDING)
 
@@ -139,9 +136,7 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):
             "employer_id": self.employer_profile.employer_id,
             "contact_user": self.employer_user.user_id,
         }
-        response = self.client.post(
-            self.employer_list_url, new_practice_data, format="json"
-        )
+        response = self.client.post(self.employer_list_url, new_practice_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created_practice = Practice.objects.get(title="New Practice Title")
         self.assertEqual(created_practice.employer, self.employer_profile)
@@ -149,17 +144,13 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):
     def test_student_cannot_create_practice(self):
         self.client.force_authenticate(user=self.student)
         new_practice_data = {"title": "Student Created Practice"}
-        response = self.client.post(
-            self.employer_list_url, new_practice_data, format="json"
-        )
+        response = self.client.post(self.employer_list_url, new_practice_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_professor_cannot_create_practice(self):
         self.client.force_authenticate(user=self.professor)
         new_practice_data = {"title": "Professor Created Practice"}
-        response = self.client.post(
-            self.employer_list_url, new_practice_data, format="json"
-        )
+        response = self.client.post(self.employer_list_url, new_practice_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_organization_user_can_update_own_practice(self):

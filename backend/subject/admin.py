@@ -10,7 +10,8 @@ class SubjectAdmin(admin.ModelAdmin):
         "subject_name",
         "department",
         "hours_required",
+        "min_hours",
         "subject_manager",
     )
-    list_filter = ("department",)
+    list_filter = ("department", "min_hours")
     search_fields = ("subject_code", "subject_name")
