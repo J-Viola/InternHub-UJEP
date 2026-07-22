@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -110,7 +110,7 @@ class AdminDepartmentViewSet(ModelViewSet):
 
     queryset = Department.objects.all()
     pagination_class = StandardResultsSetPagination
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_permissions(self):
         if self.action == "create":

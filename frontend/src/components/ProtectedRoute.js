@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
         return <Navigate to="/" replace />;
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (allowedRoles && !allowedRoles.some(r => r.toLowerCase() === (user.role || '').toLowerCase())) {
         console.warn(`Access denied for role "${user.role}" to a protected route. Allowed roles: ${allowedRoles.join(', ')}`);
         return <Navigate to="/nabidka" replace />;
     }

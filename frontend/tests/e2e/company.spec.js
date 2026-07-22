@@ -18,8 +18,7 @@ test.describe('Company role navigation', () => {
   });
 
   test('can navigate to Students', async ({ page }) => {
-    await clickNavLink(page, null, 'Studenti');
-    // Use getByRole heading to avoid strict mode violation with nav link
+    await clickNavLink(page, null, 'Studentské účty');
     await expect(page.getByRole('heading', { name: 'Studenti', exact: true })).toBeVisible();
   });
 

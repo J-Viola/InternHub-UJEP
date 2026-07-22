@@ -36,9 +36,9 @@ async function loginAs(page, email, password, storageFile) {
   // Wait for redirect to /nabidka
   await page.waitForURL('**/nabidka', { timeout: 20000 });
 
-  // Ensure localStorage is populated
+  // Ensure user is stored in localStorage (refreshToken is in httpOnly cookie)
   await page.waitForFunction(() => {
-    return localStorage.getItem('user') !== null && localStorage.getItem('refreshToken') !== null;
+    return localStorage.getItem('user') !== null;
   }, { timeout: 10000 });
 
   // Save auth state

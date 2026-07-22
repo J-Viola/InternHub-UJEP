@@ -21,7 +21,7 @@ test.describe('Student Profile Management (E2E)', () => {
 
     // 2. Edit basic fields
     await page.getByLabel('Telefonní číslo').fill('777888999');
-    await page.getByLabel('O mě').fill(uniqueBio);
+    await page.getByLabel('O mně').fill(uniqueBio);
 
     // 3. Add a skill
     // Check if we need to click "Přidat dovednost" or if an empty row exists

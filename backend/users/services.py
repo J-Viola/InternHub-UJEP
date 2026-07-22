@@ -27,6 +27,7 @@ from users.models import (
     UserSubjectType,
 )
 from users.stag_api import get_stag_client
+from users.stag_api.exceptions import StagUnreachableError
 
 logger = logging.getLogger(__name__)
 
@@ -203,11 +204,18 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
     return None
 
 
+STAG_CIRCUIT_BREAKER_KEY = "stag_unreachable_since"
+STAG_RETRY_COOLDOWN = 30  # seconds to wait before retrying STAG after a failure
+
+
 def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
     """
     Validates STAG service ticket and returns user details.
     In mock mode, accepts pre-decoded stagUserInfo from the STAG redirect URL directly.
     In real mode, always validates the ticket against the STAG API.
+
+    Implements a circuit-breaker: if STAG was unreachable within the last
+    STAG_RETRY_COOLDOWN seconds, fails fast without making a network request.
     """
     if stag_user_info and not getattr(settings, "STAG_MOCK", False):
         raise AuthenticationFailed("stag_user_info is only allowed in mock/development mode")
@@ -216,11 +224,25 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
 
     client = get_stag_client()
 
+    # Circuit breaker: skip the STAG call if we know it's down
+    if not isinstance(client, MockStagClient):
+        if cache.get(STAG_CIRCUIT_BREAKER_KEY):
+            logger.warning("STAG circuit breaker active — skipping ticket validation")
+            raise StagUnreachableError()
+
     if stag_user_info and isinstance(client, MockStagClient):
         # Dev/mock mode: trust the stagUserInfo sent by the STAG server in the redirect URL
         details = stag_user_info
     else:
-        details = client.validate_ticket(ticket)
+        try:
+            details = client.validate_ticket(ticket)
+            # Success — clear any active circuit breaker
+            cache.delete(STAG_CIRCUIT_BREAKER_KEY)
+        except StagUnreachableError:
+            # Mark STAG as unreachable so subsequent requests fail fast
+            cache.set(STAG_CIRCUIT_BREAKER_KEY, True, STAG_RETRY_COOLDOWN)
+            logger.warning("STAG unreachable — circuit breaker activated for %ds", STAG_RETRY_COOLDOWN)
+            raise
 
     email = details.get("email")
     jmeno = details.get("jmeno")

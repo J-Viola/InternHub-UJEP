@@ -1,20 +1,27 @@
 {
-  "cookies": [],
+  "cookies": [
+    {
+      "name": "refresh_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NDgwMzgxNSwiaWF0IjoxNzg0NzE3NDE1LCJqdGkiOiJlYTk3MWUwZjk1NzE0N2E4YTgxYjU0ZWVjMjBjN2ZkYSIsInVzZXJfaWQiOiI1IiwidHlwZSI6InZ5In0.sDtJzrTUGRxIQ_rV-MtSVCDYNgjW1hhm9DKqMNetqUY",
+      "domain": "localhost",
+      "path": "/api",
+      "expires": 1784803815.68606,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
   "origins": [
     {
       "origin": "http://localhost:3000",
       "localStorage": [
         {
-          "name": "accessToken",
-          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcyMzgyODE0LCJpYXQiOjE3NzIzODI1MTQsImp0aSI6IjE0ODQ3MDZlYzEzODRmODBiNjVmOGFhMWM4ZWI0MmE3IiwidXNlcl9pZCI6IjUiLCJ0eXBlIjoiVksifQ.cZzpL8YHAvAMWUWhGZQ3Ug3L5vID5-PtcFssW-9a5Io"
+          "name": "i18nextLng",
+          "value": "cs"
         },
         {
           "name": "user",
-          "value": "{\"id\":5,\"email\":\"professor@ujep.cz\",\"role\":\"VK\",\"firstName\":\"Petr\",\"lastName\":\"Vomáčka\",\"department\":{\"id\":1,\"name\":\"Katedra informatiky\",\"code\":null},\"favorite_practices\":[]}"
-        },
-        {
-          "name": "refreshToken",
-          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MjQ2ODkxNCwiaWF0IjoxNzcyMzgyNTE0LCJqdGkiOiIwOGNkMzdlOTQ5MjU0OTViOTFiZTU4ZDk0MGRmOWYzYSIsInVzZXJfaWQiOiI1IiwidHlwZSI6IlZLIn0.eefk4UeMwybuIAefGRLALJ9JiTFPVt3CLiUDMLX8iz8"
+          "value": "{\"id\":5,\"email\":\"professor@ujep.cz\",\"role\":\"vy\",\"firstName\":\"Petr\",\"lastName\":\"Vomáčka\",\"department\":{\"id\":1,\"name\":\"Katedra informatiky\",\"code\":null},\"favorite_practices\":[]}"
         }
       ]
     }

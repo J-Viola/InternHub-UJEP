@@ -1,0 +1,16 @@
+version: '3.8'
+
+# Override for running E2E tests.
+# Bypasses the CRA dev server proxy by pointing the React app directly
+# at the Django backend. The CRA proxy (localhost:3000/api/*) is a
+# bottleneck that causes ERR_INSUFFICIENT_RESOURCES when Chromium's
+# per-origin connection pool is exhausted during test runs.
+#
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.e2e.yaml up -d
+services:
+  frontend:
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - WDS_SOCKET_PORT=0
+      - FAST_REFRESH=false
+      - CHOKIDAR_USEPOLLING=true

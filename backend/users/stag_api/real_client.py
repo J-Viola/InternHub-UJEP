@@ -4,6 +4,7 @@ import requests
 from django.conf import settings
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
+from .exceptions import StagUnreachableError
 from .protocol import StagDataProvider
 
 
@@ -18,7 +19,7 @@ class RealStagClient(StagDataProvider):
                 headers={"Accept": "application/json"},
             )
         except requests.RequestException:
-            raise AuthenticationFailed("Failed to connect to STAG")
+            raise StagUnreachableError()
 
         if resp.status_code != 200:
             raise AuthenticationFailed("Failed to authenticate with STAG")

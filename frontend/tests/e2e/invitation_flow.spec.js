@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { waitForAppLoad, clickNavLink, confirmPopup } from './helpers';
+import { waitForAppLoad, clickNavLink, confirmPopup, safeClick } from './helpers';
 
 test.describe('Invitation Flow (E2E)', () => {
   test.setTimeout(90000);
@@ -44,10 +44,10 @@ test.describe('Invitation Flow (E2E)', () => {
     await practiceToSelect.click();
 
     // Click "Vytvořit pozvánku"
-    await companyPage.getByRole('button', { name: 'Vytvořit pozvánku' }).click();
+    await safeClick(companyPage.getByRole('button', { name: 'Vytvořit pozvánku' }));
 
     // Confirm in popup
-    await companyPage.getByRole('button', { name: 'Vytvořit', exact: true }).click();
+    await safeClick(companyPage.getByRole('button', { name: 'Vytvořit', exact: true }));
 
     // Should redirect to /pozvanky-list
     await expect(companyPage).toHaveURL(/.*\/pozvanky-list/, { timeout: 15000 });
@@ -61,7 +61,7 @@ test.describe('Invitation Flow (E2E)', () => {
 
     await studentPage.goto('/');
     await waitForAppLoad(studentPage);
-    await clickNavLink(studentPage, null, 'Praxe');
+    await studentPage.goto('/praxe');
     await waitForAppLoad(studentPage);
 
     // Explicitly reload to fetch fresh invitations and wait for the section to appear

@@ -25,7 +25,11 @@ urlpatterns = [
 if settings.DEBUG:
     from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+    from api.views import TestResetDBView, TestScenarioView
+
     urlpatterns += [
+        path("api/test/reset-db/", TestResetDBView.as_view(), name="test-reset-db"),
+        path("api/test/scenario/<str:name>/", TestScenarioView.as_view(), name="test-scenario"),
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         path(
             "api/schema/swagger-ui/",

@@ -205,7 +205,7 @@ export default function PrihlaskyPage() {
 												key={entity.student_practice_id}
 												entity={entity}
 												onProfile={() => onProfile(entity)}
-												onPopup={() => handleOpenPopup(entity)}
+												onSettings={() => handleOpenPopup(entity)}
 											/>
 										))}
 									</Container>
@@ -233,7 +233,7 @@ export default function PrihlaskyPage() {
 									key={entity.student_practice_id}
 									entity={entity}
 									onProfile={() => onProfile(entity)}
-									onPopup={() => handleOpenPopup(entity)}
+									onSettings={() => handleOpenPopup(entity)}
 								/>
 							))
 						)}

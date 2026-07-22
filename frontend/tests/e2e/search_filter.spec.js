@@ -15,9 +15,7 @@ test.describe('Search and Filter (E2E)', () => {
     // Wait for debounced search to finish
     await expect(page.getByText('Načítání nabídek...')).not.toBeVisible();
 
-    // Check results
-    const results = page.locator('div[id^="nabidka-"]'); // Assuming NabidkaEntity has an id pattern
-    // If id pattern is not clear, we just check text
+    // Check results via text content (no data-testid dependency)
     await expect(page.getByText('Python').first()).toBeVisible();
 
     // 2. Filter by location (dropdown)

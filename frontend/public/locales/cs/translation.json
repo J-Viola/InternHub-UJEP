@@ -555,6 +555,7 @@
     "UNKNOWN_ERROR": "Došlo k neočekávané chybě serveru.",
     "NETWORK_ERROR": "Nelze se připojit k serveru. Zkontrolujte připojení k internetu.",
     "SERVER_UNREACHABLE": "Server je nedostupný. Zkuste to prosím později.",
+    "AUTHENTICATION_FAILED": "Autentizace selhala. Zkontrolujte své přihlašovací údaje.",
     "DRF_ERROR": "Chyba při komunikaci se serverem.",
     "VALIDATION_ERROR": "Prosím zkontrolujte zadané údaje.",
     "PRACTICE_ALREADY_FINALIZED": "Tato praxe je již schválena nebo zamítnuta.",

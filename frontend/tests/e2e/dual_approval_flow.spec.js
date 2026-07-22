@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { navigateAndCheck, waitForAppLoad, clickNavLink, confirmPopup } from './helpers';
+import { navigateAndCheck, waitForAppLoad, clickNavLink, confirmPopup, safeClick } from './helpers';
 
 test.describe('Dual Approval Flow (E2E)', () => {
   // Use a long timeout as this is a complex multi-step test
@@ -27,7 +27,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
     // Fill the form
     await companyPage.getByLabel('Název').fill(practiceTitle);
     await companyPage.getByLabel('Popis stáže').fill('This is a test practice for E2E dual approval.');
-    await companyPage.getByLabel('Odpovědnost stáže').fill('Testing, clicking, approving.');
+    await companyPage.getByLabel('Náplň práce').fill('Testing, clicking, approving.');
 
     // Wait for dropdowns to be populated
     await expect(companyPage.locator('select[id="contact_user"] option').nth(1)).toBeAttached({ timeout: 10000 });
@@ -50,7 +50,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
     // Wait for end date to populate
     await expect(companyPage.locator('input[id="end_date"]')).not.toHaveValue('', { timeout: 15000 });
 
-    await companyPage.getByRole('button', { name: 'Vytvořit' }).click();
+    await safeClick(companyPage.getByRole('button', { name: 'Vytvořit' }));
 
     // Wait for success message or redirect
     console.log('Waiting for redirect to /praxe...');
@@ -109,9 +109,9 @@ test.describe('Dual Approval Flow (E2E)', () => {
     await expect(practiceCardStudent).toBeVisible();
     await practiceCardStudent.click();
 
-    await studentPage.getByRole('button', { name: 'Podat přihlášku' }).click();
+    await safeClick(studentPage.getByRole('button', { name: 'Podat přihlášku' }));
     // In NabidkaDetailPage, the popup uses "Ano"
-    await studentPage.getByRole('button', { name: 'Ano', exact: true }).click();
+    await safeClick(studentPage.getByRole('button', { name: 'Ano', exact: true }));
     await expect(studentPage.getByRole('button', { name: 'Podat přihlášku' })).not.toBeVisible();
     await studentContext.close();
 
@@ -185,7 +185,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
     await profPage2.waitForURL(/.*\/karta-praxe\/.*/);
     await waitForAppLoad(profPage2);
 
-    await profPage2.getByRole('button', { name: 'Spravovat' }).click();
+    await safeClick(profPage2.getByRole('button', { name: 'Spravovat' }));
 
     await confirmPopup(profPage2, 'Změnit stav přihlášky');
     await profContext2.close();
@@ -198,7 +198,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
 
     await studentPage2.goto('/');
     await waitForAppLoad(studentPage2);
-    await clickNavLink(studentPage2, null, 'Praxe');
+    await studentPage2.goto('/praxe');
 
     const finalAppCard = studentPage2.locator('div').filter({ hasText: practiceTitle }).first();
     await expect(finalAppCard).toBeVisible();

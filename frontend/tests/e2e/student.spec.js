@@ -8,7 +8,7 @@ test.describe('Student role navigation', () => {
   });
 
   test('can navigate to Moje aplikace', async ({ page }) => {
-    await clickNavLink(page, null, 'Praxe');
+    await clickNavLink(page, null, 'Moje stáže');
     // Targeting specifically the h3 heading to avoid conflict with the "no applications" message
     await expect(page.locator('h3').filter({ hasText: 'Podané přihlášky' })).toBeVisible();
   });

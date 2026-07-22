@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Container from "@core/Container/Container";
-//import Headings from "@core/Text/Headings";
-//import Button from "@core/Button/Button";
 import LoginForm from "@login/LoginForm";
 import { getParams, STAGLogin } from "@auth/STAGLogin";
 import { useAuth } from "@auth/Auth";
@@ -9,6 +7,21 @@ import { useUser } from "@hooks/UserProvider";
 import { useMessage } from "@hooks/MessageContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+
+
+function cleanUrlFromStagParams() {
+    const url = new URL(window.location.href);
+    let changed = false;
+    for (const param of ["stagUserTicket", "stagUserInfo", "state"]) {
+        if (url.searchParams.has(param)) {
+            url.searchParams.delete(param);
+            changed = true;
+        }
+    }
+    if (changed) {
+        window.history.replaceState({}, "", url.toString());
+    }
+}
 
 
 export default function LoginPage() {
@@ -20,6 +33,7 @@ export default function LoginPage() {
     const { addMessage } = useMessage();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const processedTicketRef = useRef(null);
 
     // Přesměrování pokud je uživatel již přihlášen
     useEffect(() => {
@@ -43,26 +57,38 @@ export default function LoginPage() {
             const stagUserTicket = searchParams.get("stagUserTicket");
             if (stagUserTicket) {
                 addMessage(t('login.error_stag') + ": Invalid state", "E");
+                cleanUrlFromStagParams();
             }
         }
     }, [searchParams]);
 
-    // Zpracování STAG loginu při změně ticketu
+    // Zpracování STAG loginu při změně ticketu (pouze jednou na ticket)
     useEffect(() => {
         const handleSTAGLogin = async () => {
             if (!ticket) {
                 return;
             }
 
+            // Ochrana proti double-fire v React StrictMode a opakovanému zpracování stejného ticketu
+            if (processedTicketRef.current === ticket) {
+                return;
+            }
+            processedTicketRef.current = ticket;
+
             try {
                 const payload = { service_ticket: ticket };
                 if (stagUserInfo) payload.stag_user_info = stagUserInfo;
                 await login(payload);
+                // Po úspěchu smažeme STAG parametry z URL, aby refresh nezpůsobil opakování
+                cleanUrlFromStagParams();
 
             } catch (error) {
                 console.error("Error during STAG login:", error);
                 const errorCode = error.code || "UNKNOWN_ERROR";
                 addMessage(`${t('login.error_stag')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
+                // Po neúspěchu také smažeme STAG parametry — ticket je jednorázový,
+                // znovu použít stejný ticket už nedává smysl
+                cleanUrlFromStagParams();
             }
         };
 

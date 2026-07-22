@@ -203,6 +203,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     # pro admin list view
     employer_id = serializers.SerializerMethodField()
     employer_name = serializers.SerializerMethodField()
+    can_approve = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice

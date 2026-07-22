@@ -36,6 +36,7 @@ dist/
 frontend/node_modules/
 frontend/build/
 frontend/.eslintcache
+frontend/test-results/
 
 # Docker
 .docker_data/

@@ -3,6 +3,8 @@ import { expect } from '@playwright/test';
 export async function waitForAppLoad(page) {
   // Listen for console messages to catch API errors
   page.on('console', msg => {
+    // Skip React Router v6→v7 future flag info warnings (noisy, not actionable)
+    if (msg.text().includes('React Router Future Flag Warning')) return;
     if (msg.type() === 'error' || msg.type() === 'warning') {
       console.log(`PAGE ${msg.type().toUpperCase()}: ${msg.text()}`);
     }
@@ -40,6 +42,15 @@ export async function clickNavLink(page, menuText, linkText) {
 
 export async function checkHeading(page, headingText) {
   await expect(page.getByRole('heading', { name: headingText, exact: false }).or(page.getByText(headingText))).toBeVisible();
+}
+
+/**
+ * Click a locator only after confirming it's visible (fast-fail after 5s).
+ * Prevents 2-minute timeouts when an element never appears.
+ */
+export async function safeClick(locator, { timeout = 5000 } = {}) {
+  await expect(locator).toBeVisible({ timeout });
+  await locator.click();
 }
 
 export async function confirmPopup(page, headingText) {

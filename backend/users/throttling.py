@@ -7,6 +7,12 @@ class LoginThrottle(AnonRateThrottle):
     scope = "login"
 
 
+class StagTicketThrottle(AnonRateThrottle):
+    """Limits STAG ticket validation requests to prevent spamming STAG."""
+
+    scope = "stag_ticket"
+
+
 class PasswordResetThrottle(AnonRateThrottle):
     """Prevents automated password-reset email flooding."""
 

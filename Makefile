@@ -32,6 +32,12 @@ test: ## Runs tests for the backend (pytest)
 test-frontend: ## Runs tests for the frontend
 	docker container exec internhub-frontend npm test -- --watchAll=false --passWithNoTests
 
+test-e2e: ## E2E Playwright tests (frontend)
+	cd frontend && npx playwright test
+
+test-e2e-ui: ## E2E Playwright tests (frontend) with UI
+	cd frontend && npx playwright test --ui
+
 migrate: ## Runs Django migrations inside the backend container
 	docker container exec internhub-backend python manage.py migrate
 

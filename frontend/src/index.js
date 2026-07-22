@@ -40,6 +40,15 @@ import ProtectedRoute from '@components/ProtectedRoute';
 import ErrorBoundary from '@components/ErrorBoundary';
 import { useTranslation } from 'react-i18next';
 
+// Global error handlers — catches errors outside React tree
+window.addEventListener('error', (event) => {
+  console.error('Nezachycená chyba:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Nezachycené odmítnutí promise:', event.reason);
+});
+
 const AppRoutes = () => {
   const { isInitializing } = useAuth();
   const { t } = useTranslation();
@@ -98,10 +107,8 @@ root.render(
           <BrowserRouter>
             <AuthProvider>
               <NotificationProvider>
-                <ErrorBoundary>
-                  <MessageToast />
-                  <AppRoutes />
-                </ErrorBoundary>
+                <MessageToast />
+                <AppRoutes />
               </NotificationProvider>
             </AuthProvider>
           </BrowserRouter>

@@ -25,15 +25,20 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "craco build",
+    "build": "GENERATE_SOURCEMAP=false craco build",
     "test": "craco test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "no-console": "warn"
+    }
   },
   "browserslist": {
     "production": [
@@ -53,6 +58,8 @@
     "tailwindcss": "^3.4.17"
   },
   "overrides": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "uuid": "^11.1.1",
+    "underscore": "^1.13.7"
   }
 }

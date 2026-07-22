@@ -98,6 +98,23 @@ class SubjectViewSet(viewsets.ModelViewSet):
         )
 
     @extend_schema(
+        summary="Get subjects for the current user",
+        description=(
+            "Returns all subjects where the logged-in user has an active UserSubject record. " "Works for both students and professors."
+        ),
+        responses={200: SubjectSerializer(many=True)},
+    )
+    @action(detail=False, methods=["get"], url_path="my-subjects")
+    def my_subjects(self, request):
+        """
+        Get subjects for the current user based on their UserSubject records.
+        """
+        user = request.user
+        subjects = Subject.objects.filter(user_subjects__user=user).select_related("department").distinct()
+        serializer = self.get_serializer(subjects, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
         summary="Get department-specific subjects",
         description=(
             "Returns all subjects belonging to the department(s) associated with the logged-in professor. "

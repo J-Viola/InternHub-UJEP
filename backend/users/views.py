@@ -32,10 +32,11 @@ from users.permissions import (
     CanViewStudentProfile,
     IsAdminUser,
     IsOrganizationOwner,
+    IsOrganizationUser,
     IsStagTeacher,
 )
 from users.services import fetch_ares_data, update_organization_from_ares
-from users.throttling import AresThrottle, LoginThrottle, PasswordResetThrottle
+from users.throttling import AresThrottle, LoginThrottle, PasswordResetThrottle, StagTicketThrottle
 
 from .serializers import (
     AdminOrganizationSerializer,
@@ -289,6 +290,8 @@ class LogoutView(generics.GenericAPIView):
 
 class AresJusticeView(generics.GenericAPIView):
     serializer_class = AresJusticeSerializer
+    authentication_classes = []  # Public endpoint (used during registration)
+    permission_classes = [AllowAny]
     throttle_classes = [AresThrottle]
 
     @extend_schema(
@@ -345,7 +348,7 @@ class UpdateAresSubjectView(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-    throttle_classes = [LoginThrottle]
+    throttle_classes = [LoginThrottle, StagTicketThrottle]
 
     @extend_schema(
         summary="Login / Obtain JWT Token",
@@ -511,7 +514,7 @@ class StudentProfileView(APIView):
     )
 )
 class AllStudentsListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated, IsStagTeacher | IsAdminUser]
+    permission_classes = [IsAuthenticated, IsStagTeacher | IsAdminUser | IsOrganizationUser]
     serializer_class = AllStudentsListSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [drf_filters.SearchFilter]

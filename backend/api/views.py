@@ -5,6 +5,7 @@ Infrastructure views: file serving, health checks, utility endpoints.
 from pathlib import Path
 
 from django.conf import settings
+from django.core import management
 from django.db import connection
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -15,6 +16,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.test_scenarios import ScenarioBuilder
 from student_practices.models import UploadedDocument
 from users.models import (
     DepartmentRole,
@@ -162,6 +164,198 @@ class StorageAuthCheckView(APIView):
 
     def get(self, request):
         return HttpResponse(status=200)
+
+
+# ---------------------------------------------------------------------------
+# Test utility  (only available when DEBUG=True)
+
+# ---------------------------------------------------------------------------
+
+
+class TestResetDBView(APIView):
+    """
+    Reset the database to a known seed state for E2E testing.
+
+    **Only available when ``DEBUG=True``** — returns 403 in production.
+    Flushes all data and re-runs ``seed_db`` to get reproducible demo data.
+
+    Usage::
+
+        POST /api/test/reset-db/
+
+    Response::
+
+        {"status": "ok", "seeded": true}
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []  # no auth needed in DEBUG mode
+    throttle_classes = []  # exempt from all throttling for test runs
+
+    def post(self, request):
+        if not settings.DEBUG:
+            return JsonResponse({"error": "Test endpoint is only available in DEBUG mode"}, status=403)
+
+        # Prevent accidental use when STAG is configured for real
+        if not settings.STAG_MOCK:
+            return JsonResponse({"error": "Test endpoint requires STAG_MOCK=True"}, status=400)
+
+        try:
+            management.call_command("flush", "--noinput", interactive=False)
+            management.call_command("seed_db")
+            self._create_e2e_test_users()
+
+            # Disable token rotation so the SAME refresh token works across
+            # multiple Playwright test contexts (each loads storage state with
+            # the same cookie and calls refreshUX on mount).
+            from django.conf import settings as dj_settings
+
+            if hasattr(dj_settings, "SIMPLE_JWT"):
+                dj_settings.SIMPLE_JWT["ROTATE_REFRESH_TOKENS"] = False
+                dj_settings.SIMPLE_JWT["BLACKLIST_AFTER_ROTATION"] = False
+
+            # Reset throttle cache so previously accumulated counters don't block requests
+            from django.core.cache import cache
+
+            cache.clear()
+
+            # Lift all throttle limits for E2E test runs — many page loads & API
+            # calls in quick succession would otherwise hit production-safe limits.
+            if "DEFAULT_THROTTLE_RATES" in dj_settings.REST_FRAMEWORK:
+                for scope in ("anon", "user", "login", "stag_ticket", "password_reset", "ares"):
+                    dj_settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"][scope] = "100000/hour"
+
+            return JsonResponse({"status": "ok", "seeded": True})
+        except Exception as e:
+            return JsonResponse({"status": "error", "detail": str(e)}, status=500)
+
+    def _create_e2e_test_users(self):
+        """Create professor and student users needed by E2E tests."""
+        from django.contrib.auth.hashers import make_password
+
+        from department.models import Department
+        from users.models import (
+            ProfessorUser,
+            StagRole,
+            StudentUser,
+            User,
+            UserSubject,
+            UserSubjectType,
+        )
+
+        pw = make_password("password123")
+        dept = Department.objects.first()
+        stag_st, _ = StagRole.objects.get_or_create(role="st", defaults={"role_name": "Student", "description": "Student VŠ"})
+        stag_vy, _ = StagRole.objects.get_or_create(role="vy", defaults={"role_name": "Vyučující", "description": "Vyučující na katedře"})
+
+        if not User.objects.filter(email="professor@ujep.cz").exists():
+            professor = ProfessorUser.objects.create(
+                email="professor@ujep.cz",
+                password=pw,
+                first_name="Petr",
+                last_name="Vomáčka",
+                username="professor@ujep.cz",
+                is_active=True,
+                stag_role=stag_vy,
+                department=dept,
+                # Intentionally NOT setting department_role=HEAD
+                # so that User.role returns "vy" (VY) = profesor role
+                # Frontend UserObj.isProfessor() then matches correctly
+                # and uses professorDict instead of departmentDict
+                ucit_idno="654321",
+            )
+            # Link professor to subjects if any exist
+            from subject.models import Subject
+
+            for subj in Subject.objects.all():
+                UserSubject.objects.get_or_create(
+                    user=professor,
+                    subject=subj,
+                    defaults={"role": UserSubjectType.Professor},
+                )
+
+        if not User.objects.filter(email="tsedlacek@example.org").exists():
+            student = StudentUser.objects.create(
+                email="tsedlacek@example.org",
+                password=pw,
+                first_name="Ignác",
+                last_name="Sedláček",
+                username="tsedlacek@example.org",
+                is_active=True,
+                stag_role=stag_st,
+                os_cislo="S12345",
+                field_of_study="Informatika",
+                year_of_study=3,
+                city="Ústí nad Labem",
+                skills=["Python", "React", "SQL"],
+            )
+            # Link student to first subject
+            from subject.models import Subject
+
+            first = Subject.objects.first()
+            if first:
+                UserSubject.objects.get_or_create(user=student, subject=first, defaults={"role": UserSubjectType.Student})
+
+
+class TestScenarioView(APIView):
+    """
+    Prepare a specific database scenario for E2E tests.
+
+    **Only available when ``DEBUG=True``** — returns 403 in production.
+
+    Usage::
+
+        POST /api/test/scenario/{name}/
+
+    Available scenarios:
+
+        student-has-applications  — student with an application
+        student-has-documents     — student with application + documents
+        invitation-exists         — employer invitation to student
+        practice-has-favorites    — student favorited a practice
+        practice-pending-approval — practice with PENDING status
+        application-ready         — practice + application for company approval
+        capacity-full             — practice with 1 spot, 1 approved student
+        dual-approval-completed   — fully approved StudentPractice
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []  # no auth needed in DEBUG mode
+    throttle_classes = []  # exempt from all throttling for test runs
+
+    def post(self, request, name):
+        if not settings.DEBUG:
+            return JsonResponse({"error": "Only available in DEBUG mode"}, status=403)
+        if not settings.STAG_MOCK:
+            return JsonResponse({"error": "Requires STAG_MOCK=True"}, status=400)
+
+        builder = ScenarioBuilder()
+        scenarios = {
+            "student-has-applications": builder.student_has_applications,
+            "student-has-documents": builder.student_has_documents,
+            "invitation-exists": builder.invitation_exists,
+            "practice-has-favorites": builder.practice_has_favorites,
+            "practice-pending-approval": builder.practice_pending_approval,
+            "application-ready": builder.application_ready,
+            "capacity-full": builder.capacity_full,
+            "dual-approval-completed": builder.dual_approval_completed,
+        }
+
+        handler = scenarios.get(name)
+        if not handler:
+            return JsonResponse(
+                {
+                    "error": f"Unknown scenario: {name}",
+                    "available": list(scenarios.keys()),
+                },
+                status=400,
+            )
+
+        try:
+            result = handler()
+            return JsonResponse({"status": "ok", "scenario": name, "result": result})
+        except Exception as e:
+            return JsonResponse({"status": "error", "detail": str(e)}, status=500)
 
 
 class HealthCheckView(APIView):

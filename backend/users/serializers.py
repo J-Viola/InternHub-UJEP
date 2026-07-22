@@ -23,6 +23,7 @@ from users.services import (
     register_organization,
     validate_stag_ticket,
 )
+from users.stag_api.exceptions import StagUnreachableError
 
 User = get_user_model()
 
@@ -68,7 +69,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     "access": str(refresh.access_token),
                     "user": user,
                 }
-            except AuthenticationFailed:
+            except (AuthenticationFailed, StagUnreachableError):
                 raise
             except (requests.RequestException, IntegrityError, ValueError) as e:
                 import logging

@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,django").split(",")
 
 AUTH_USER_MODEL = "users.User"
 
@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "corsheaders",
+    "csp",
 ]
 
 MIDDLEWARE = [
@@ -67,6 +68,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "api.middleware.DocumentPermissionMiddleware",
+    "csp.middleware.CSPMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -208,9 +210,31 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
+    # Přepnuto na argon2 — odolnější vůči GPU/ASIC útokům než výchozí PBKDF2
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.Argon2PasswordHasher",
+        "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+        "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    ]
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_IMG_SRC = ("'self'", "data:", "https:")
+CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_FRAME_ANCESTORS = ("'self'",)
+CSP_BASE_URI = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+
+if DEBUG:
+    # Dev: allow direct backend connections (REACT_APP_API_URL) and eval for CRA source maps
+    CSP_CONNECT_SRC = ("'self'", "http://localhost:8000", "http://0.0.0.0:8000")
+    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
+else:
+    CSP_CONNECT_SRC = ("'self'",)
 
 # File upload settings
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
@@ -247,6 +271,7 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
         "login": "10/min",
+        "stag_ticket": "30/min",
         "password_reset": "5/hour",
         "ares": "20/hour",
     },
@@ -266,6 +291,8 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
     "AUTH_COOKIE": "refresh_token",
     "AUTH_COOKIE_MAX_AGE": 86400,
+    # Dev proxy makes API same-origin, so SameSite=Lax works for POST.
+    # Secure=false for dev (no HTTPS needed via proxy).
     "AUTH_COOKIE_SECURE": not DEBUG,
     "AUTH_COOKIE_HTTP_ONLY": True,
     "AUTH_COOKIE_SAME_SITE": "Lax",
@@ -322,7 +349,9 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # Additional CORS settings
-CORS_ORIGIN_ALLOW_ALL = DEBUG  # Pro vývoj
+# Use explicit CORS_ALLOWED_ORIGINS so Access-Control-Allow-Credentials works
+# (browsers reject credentials when Allow-Origin is *)
+CORS_ORIGIN_ALLOW_ALL = False
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 

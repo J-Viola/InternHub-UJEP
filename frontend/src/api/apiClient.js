@@ -4,10 +4,14 @@ import i18n from '../i18n';
 const API_ROOT = '/api';
 const DEFAULT_URL = 'http://localhost:8000';
 
-// Use REACT_APP_API_URL in production, fallback to localhost for dev
+// Use REACT_APP_API_URL in production, fallback to localhost for dev.
+// When REACT_APP_API_URL is empty (unset or explicitly ''), use relative /api
+// which goes through the CRA dev proxy (same-origin — no cookie issues).
 const getBaseUrl = () => {
-    let url = process.env.REACT_APP_API_URL || DEFAULT_URL;
-    // Remove trailing slash if present
+    let url = process.env.REACT_APP_API_URL;
+    if (!url) {
+        return API_ROOT;  // relative /api for dev proxy
+    }
     if (url.endsWith('/')) {
         url = url.slice(0, -1);
     }
