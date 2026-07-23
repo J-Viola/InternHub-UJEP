@@ -16,6 +16,8 @@ from .views import (
     RegisterView,
     StudentProfileView,
     UpdateAresSubjectView,
+    UserAnonymizeView,
+    UserDataExportView,
 )
 
 app_name = "users"
@@ -58,4 +60,6 @@ urlpatterns = [
         name="student_profile",
     ),
     path("all-students/", AllStudentsListView.as_view(), name="all_students"),
+    path("me/anonymize/", UserAnonymizeView.as_view(), name="user_anonymize"),
+    path("me/export/", UserDataExportView.as_view(), name="user_data_export"),
 ]

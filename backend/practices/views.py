@@ -6,7 +6,8 @@ from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from notifications.services import EmailService
+from notifications.models import NotificationType
+from notifications.services import EmailService, NotificationService
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -43,8 +44,8 @@ from users.permissions import (
     IsAdminUser,
     IsGarantPraxe,
     IsNotCancelled,
+    IsOrganizationOrReadOnly,
     IsOrganizationOwner,
-    IsOrganizationUser,
     IsStagTeacher,
 )
 
@@ -248,7 +249,7 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ["update", "partial_update", "destroy"]:
             return [permissions.IsAuthenticated(), IsOrganizationOwner()]
-        return [permissions.IsAuthenticated(), IsOrganizationUser()]
+        return [permissions.IsAuthenticated(), IsOrganizationOrReadOnly()]
 
     def get_queryset(self):
         user = self.request.user
@@ -303,12 +304,42 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
         data.setdefault("approval_status", ApprovalStatus.PENDING.value)
         data.setdefault("progress_status", ProgressStatus.NOT_STARTED.value)
 
-        if "coefficient" not in data or data["coefficient"] is None:
-            data["coefficient"] = 1.0
+        # DEPRECATION: coefficient je nyní read-only; Subject.min_hours se používá pro výpočet end_date.
+        if "coefficient" in data and data["coefficient"] is not None:
+            logger.warning(
+                "coefficient field is deprecated and read-only — value ignored. "
+                "Use Subject.min_hours (default 480) for practice duration.",
+            )
+            # Remove from data so the read-only serializer field ignores it
+            del data["coefficient"]
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        # 3.8: Notifikace garantovi při vytvoření inzerátu
+        practice = serializer.instance
+        if practice and practice.subject and practice.subject.subject_manager:
+            garant = practice.subject.subject_manager
+            NotificationService.create_notification(
+                recipient=garant,
+                verb="PRACTICE_CREATED",
+                message=f"Byla vytvořena nová nabídka praxe '{practice.title}' organizací "
+                f"{practice.employer.company_name if practice.employer else 'externí organizace'}.",
+                actor=request.user,
+                target=practice,
+                notification_type=NotificationType.INFO,
+            )
+            EmailService._send_email(
+                subject="Nová nabídka praxe ke schválení",
+                message=(
+                    f"Dobrý den,\n\n"
+                    f"byla vytvořena nová nabídka praxe '{practice.title}', "
+                    f"která čeká na Vaše schválení v systému InternHub.\n\n"
+                    f"Tým InternHub"
+                ),
+                recipient_list=[garant.email],
+            )
 
         ActionLogService.log(
             user=request.user,
@@ -323,6 +354,15 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Update an organization practice")
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        # 3.6: Blokace editace — pouze PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED
+        if instance.workflow_state not in (
+            PracticeWorkflowState.PENDING_CONTENT_APPROVAL,
+            PracticeWorkflowState.CONTENT_REJECTED,
+        ):
+            return Response(
+                {"detail": "Nabídku lze editovat pouze ve stavu PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         response = super().update(request, *args, **kwargs)
 
         ActionLogService.log(
@@ -337,6 +377,15 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Partially update an organization practice")
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
+        # 3.6: Blokace editace — pouze PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED
+        if instance.workflow_state not in (
+            PracticeWorkflowState.PENDING_CONTENT_APPROVAL,
+            PracticeWorkflowState.CONTENT_REJECTED,
+        ):
+            return Response(
+                {"detail": "Nabídku lze editovat pouze ve stavu PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         response = super().partial_update(request, *args, **kwargs)
 
         ActionLogService.log(
@@ -567,8 +616,9 @@ class GetEndDateView(APIView):
         serializer = EndDateRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         end_date = calculate_end_date(
-            serializer.validated_data["start_date"],
-            serializer.validated_data["coefficient"],
+            start_date=serializer.validated_data["start_date"],
+            coefficient=serializer.validated_data.get("coefficient"),
+            min_hours=serializer.validated_data.get("min_hours"),
         )
         return Response(
             EndDateResponseSerializer({"end_date": end_date}).data,
@@ -607,10 +657,26 @@ class AdminPracticesListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        # For approved practices, return StudentPractice objects so the frontend
+        # can display workflow states, contract status, and navigate to practice cards.
+        from student_practices.models import StudentPractice
+        from student_practices.serializers import ListStudentPracticeSerializer
+
+        # Evaluate the base queryset once (avoids re-executing filter twice).
+        # Materialize both subsets before serialization.
+        pending_qs = queryset.filter(approval_status=ApprovalStatus.PENDING)
+        approved_ids = list(queryset.filter(approval_status=ApprovalStatus.APPROVED).values_list("practice_id", flat=True))
+
+        approved_student_practices = StudentPractice.objects.filter(practice_id__in=approved_ids, is_cancelled=False).select_related(
+            "user", "practice__subject__department", "practice__employer"
+        )
+
         return Response(
             {
-                "approved_practices": self.get_serializer(queryset.filter(approval_status=ApprovalStatus.APPROVED), many=True).data,
-                "to_approve_practices": self.get_serializer(queryset.filter(approval_status=ApprovalStatus.PENDING), many=True).data,
+                "approved_practices": ListStudentPracticeSerializer(
+                    approved_student_practices, many=True, context={"request": request}
+                ).data,
+                "to_approve_practices": self.get_serializer(pending_qs, many=True).data,
             }
         )
 

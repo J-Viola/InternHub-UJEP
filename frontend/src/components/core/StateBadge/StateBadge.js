@@ -9,34 +9,50 @@ import { useTranslation } from "react-i18next";
  */
 export function getStateLabelKey(status) {
   const keyMap = {
-    // Practice workflow states (integer values from django_enumfield)
-    0: "state_badge.PENDING_CONTENT_APPROVAL",
-    1: "state_badge.CONTENT_APPROVED",
-    2: "state_badge.CONTENT_REJECTED",
-    3: "state_badge.OPEN_FOR_APPLICATIONS",
-    4: "state_badge.CLOSED_FOR_APPLICATIONS",
-    // String fallbacks (for back-compat if any API still sends strings)
+    // Integer values from django_enumfield / DRF
+    0: "state_badge.APPLIED",
+    1: "state_badge.PRELIMINARY_APPROVED",
+    2: "state_badge.REJECTED",
+    3: "state_badge.CONTRACTED",
+    4: "state_badge.STARTED",
+    5: "state_badge.ENDED",
+    6: "state_badge.COMPLETED",
+    7: "state_badge.AWAITING_CONTRACT",
+    8: "state_badge.AWAITING_DOCUMENTS",
+    9: "state_badge.DOCUMENTS_REJECTED",
+    10: "state_badge.AWAITING_CONTENT_APPROVAL",
+    11: "state_badge.CONTENT_REJECTED",
+    12: "state_badge.CONTENT_APPROVED",
+
+    // String keys
     DRAFT: "state_badge.DRAFT",
     PENDING_CONTENT_APPROVAL: "state_badge.PENDING_CONTENT_APPROVAL",
     CONTENT_APPROVED: "state_badge.CONTENT_APPROVED",
     CONTENT_REJECTED: "state_badge.CONTENT_REJECTED",
     OPEN_FOR_APPLICATIONS: "state_badge.OPEN_FOR_APPLICATIONS",
     CLOSED_FOR_APPLICATIONS: "state_badge.CLOSED_FOR_APPLICATIONS",
-    // StudentPractice workflow states
+
     APPLIED: "state_badge.APPLIED",
     PRELIMINARY_APPROVED: "state_badge.PRELIMINARY_APPROVED",
     REJECTED: "state_badge.REJECTED",
     CONTRACTED: "state_badge.CONTRACTED",
     STARTED: "state_badge.STARTED",
+    ENDED: "state_badge.ENDED",
     COMPLETED: "state_badge.COMPLETED",
     CANCELLED: "state_badge.CANCELLED",
+
+    AWAITING_CONTRACT: "state_badge.AWAITING_CONTRACT",
+    AWAITING_DOCUMENTS: "state_badge.AWAITING_DOCUMENTS",
+    DOCUMENTS_REJECTED: "state_badge.DOCUMENTS_REJECTED",
+    AWAITING_CONTENT_APPROVAL: "state_badge.AWAITING_CONTENT_APPROVAL",
+
     // Legacy / approval_status
     PENDING: "state_badge.PENDING",
     APPROVED: "state_badge.APPROVED",
     IN_PROGRESS: "state_badge.IN_PROGRESS",
   };
   return (
-    keyMap[status] || (status ? `state_badge.UNKNOWN` : "state_badge.UNKNOWN")
+    keyMap[status] || (status !== undefined && status !== null ? `state_badge.${status}` : "state_badge.UNKNOWN")
   );
 }
 
@@ -47,21 +63,28 @@ export function getStateVariant(status) {
   const warning = [
     "PENDING",
     "PENDING_CONTENT_APPROVAL",
+    "AWAITING_CONTENT_APPROVAL",
     "PRELIMINARY_APPROVED",
+    "AWAITING_CONTRACT",
+    "AWAITING_DOCUMENTS",
     "CLOSED_FOR_APPLICATIONS",
-    0,
-    4,
+    1,
+    7,
+    8,
+    10,
   ];
   const success = [
     "APPROVED",
     "CONTENT_APPROVED",
     "CONTRACTED",
     "COMPLETED",
-    1,
+    3,
+    6,
+    12,
   ];
-  const danger = ["REJECTED", "CONTENT_REJECTED", "CANCELLED", 2];
-  const active = ["OPEN_FOR_APPLICATIONS", "IN_PROGRESS", "STARTED", 3];
-  const neutral = ["DRAFT", "APPLIED"];
+  const danger = ["REJECTED", "CONTENT_REJECTED", "DOCUMENTS_REJECTED", "CANCELLED", 2, 9, 11];
+  const active = ["OPEN_FOR_APPLICATIONS", "IN_PROGRESS", "STARTED", 4, 5];
+  const neutral = ["DRAFT", "APPLIED", "ENDED", 0];
 
   if (warning.includes(status)) return "yellow";
   if (success.includes(status)) return "green";

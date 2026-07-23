@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import Paragraph from "./Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
 import { FaUser } from "react-icons/fa";
-import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "@components/core/NotificationBell";
 import { useTranslation } from "react-i18next";
 
@@ -198,6 +197,12 @@ function Nav({}) {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:text-blue-700 focus:p-2 focus:rounded focus:shadow-lg"
+      >
+        {t("common.skip_to_main")}
+      </a>
       <Container property={"w-full bg-facultyCol"}>
         <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"}>
           <Container property={"flex items-center justify-between h-16"}>
@@ -212,13 +217,15 @@ function Nav({}) {
             </Container>
 
             {/* Desktop Menu */}
-            <Container property={"w-full flex hidden md:flex justify-end mr-8"}>
+            <nav
+              aria-label={t("nav.main_navigation")}
+              className="w-full flex hidden md:flex justify-end mr-8"
+            >
               <LinkNav navigationDict={navigationDict} />
-            </Container>
+            </nav>
 
-            {/* Language Switcher & User Info */}
+            {/* User Info */}
             <Container property={"hidden md:flex items-center gap-4"}>
-              <LanguageSwitcher />
               {user && user.isLoggedIn && user.isLoggedIn() && (
                 <NotificationBell />
               )}
@@ -260,11 +267,11 @@ function Nav({}) {
 
             {/* Mobile menu button */}
             <Container property={"md:hidden flex items-center gap-4"}>
-              <LanguageSwitcher />
               <Button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 property="text-white hover:text-gray-200"
                 noVariant={true}
+                title={t("nav.toggle_menu")}
               >
                 {isMobileMenuOpen ? (
                   <FaTimes size={24} />
@@ -278,11 +285,14 @@ function Nav({}) {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <Container property={"md:hidden"}>
+          <nav
+            aria-label={t("nav.main_navigation")}
+            className="md:hidden"
+          >
             <Container property={"px-2 pt-2 pb-3 space-y-1 sm:px-3"}>
               <LinkNav navigationDict={navigationDict} isMobile={true} />
             </Container>
-          </Container>
+          </nav>
         )}
       </Container>
     </>

@@ -1,0 +1,20 @@
+{% extends "notifications/email_base.html" %}
+
+{% block title %}Stav přihlášky na praxi{% endblock %}
+
+{% block content %}
+<p>Dobrý den,</p>
+<p>Vaše přihláška na praxi <strong>{{ practice_title }}</strong> byla posouzena a její stav se změnil na:
+  <span class="badge {% if is_approved %}badge-success{% else %}badge-danger{% endif %}">{{ status_text }}</span>.
+</p>
+
+{% if rejection_reason %}
+<p style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin-top: 15px;">
+  <strong>Důvod zamítnutí:</strong> {{ rejection_reason }}
+</p>
+{% endif %}
+
+<p>Více detailů a návazné kroky naleznete po přihlášení do systému InternHub.</p>
+
+<a href="{{ site_url }}" class="btn">Otevřít InternHub</a>
+{% endblock %}

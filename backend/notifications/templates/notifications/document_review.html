@@ -1,0 +1,18 @@
+{% extends "notifications/email_base.html" %}
+
+{% block title %}Posouzení dokumentu k praxi{% endblock %}
+
+{% block content %}
+<p>Dobrý den,</p>
+<p>Váš nahrávaný dokument <strong>{{ document_type }}</strong> k praxi <strong>{{ practice_title }}</strong> byl vyučujícím:
+  <span class="badge {% if is_approved %}badge-success{% else %}badge-danger{% endif %}">{{ status_text }}</span>.
+</p>
+
+{% if review_note %}
+<p style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin-top: 15px;">
+  <strong>Poznámka vyučujícího:</strong> {{ review_note }}
+</p>
+{% endif %}
+
+<a href="{{ site_url }}" class="btn">Zobrazit detail praxe</a>
+{% endblock %}

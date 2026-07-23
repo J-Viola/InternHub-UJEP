@@ -10,12 +10,22 @@ export default function FilterNabidka({
     handleFilterChange,
     onSearchClear,
     onSearchSubmit,
+    onClearAll,
+    hasActiveFilters,
     locations,
     subjects
 })
 
     {
     const { t } = useTranslation();
+
+    const durationOptions = [
+        { value: "", label: t('offers.filter.all') },
+        { value: "1", label: t('offers.filter.duration_1') },
+        { value: "3", label: t('offers.filter.duration_3') },
+        { value: "6", label: t('offers.filter.duration_6') },
+    ];
+
     return (
         <Container property="w-full mb-8">
             {/* PRVNÍ ŘÁDEK - VYHLEDÁVÁNÍ */}
@@ -68,9 +78,72 @@ export default function FilterNabidka({
                     onChange={(dict) => handleFilterChange(null, "subject", dict.subject, true)}
                     property="w-32"
                 />
+
+                {/* FILTR DÉLKY */}
+                <Container property="w-full mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('offers.filter.duration')}:
+                    </label>
+                    <select
+                        id="duration"
+                        value={filterValue?.duration || ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) {
+                                onSearchClear("min_duration");
+                                onSearchClear("max_duration");
+                                onSearchClear("duration");
+                            } else {
+                                handleFilterChange(null, "min_duration", "1", true);
+                                handleFilterChange(null, "max_duration", val, true);
+                                handleFilterChange(null, "duration", val, true);
+                            }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        {durationOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                </Container>
+
+                {/* FILTR KAPACITY */}
+                <Container property="w-full mt-6 flex items-center gap-2">
+                    <input
+                        id="has_capacity"
+                        type="checkbox"
+                        checked={filterValue?.has_capacity === "true"}
+                        onChange={(e) => {
+                            if (e.target.checked) {
+                                handleFilterChange(null, "has_capacity", "true", true);
+                            } else {
+                                onSearchClear("has_capacity");
+                            }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="has_capacity" className="text-sm text-gray-700">
+                        {t('offers.filter.has_capacity')}
+                    </label>
+                </Container>
             </Container>
 
             <Container property="border-t border-gray-300 my-4"></Container>
+
+            {/* CLEAR FILTERS */}
+            {hasActiveFilters && (
+                <Container property="flex justify-end mb-2">
+                    <Button
+                        variant="red"
+                        property="text-sm px-4 py-1.5"
+                        onClick={onClearAll}
+                    >
+                        {t('offers.filter.clear_all')}
+                    </Button>
+                </Container>
+            )}
 
         </Container>
     )

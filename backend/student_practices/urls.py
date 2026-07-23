@@ -1,13 +1,17 @@
 from django.urls import include, path
 from rest_framework import routers
 
+from api.views import DataExportView
+
 from .views import (
     AdminPracticeListView,
     CancelStudentPracticeView,
+    ConfirmContractView,
     CreateInvitationView,
     DocumentReviewView,
     EmployerInvitationApprovalView,
     EmployerInvitationViewSet,
+    EvaluationViewSet,
     OrganizationApplicationsView,
     ProfessorApplicationsView,
     ReapplyToPracticeView,
@@ -16,19 +20,23 @@ from .views import (
     StudentPracticeContractDownloadView,
     StudentPracticeDownloadDocumentView,
     StudentPracticeFeedbackDownloadView,
+    StudentPracticeHistoryView,
     StudentPracticeListView,
     StudentPracticeReportDownloadView,
     StudentPracticeStatusUpdateView,
     StudentPracticeUploadDocumentView,
     TransitionStudentPracticeView,
+    WithdrawStudentPracticeView,
 )
 
 app_name = "student_practices"
 
 router = routers.DefaultRouter()
 router.register(r"invitations", EmployerInvitationViewSet, basename="invitations")
+router.register(r"evaluations", EvaluationViewSet, basename="evaluations")
 
 urlpatterns = [
+    path("export-data/", DataExportView.as_view(), name="export-data"),
     path("", include(router.urls)),
     # Admin
     path(
@@ -42,6 +50,7 @@ urlpatterns = [
         name="professor-applications",
     ),
     # Zbytek API
+    path("export-data/", DataExportView.as_view(), name="export-data"),
     path(
         "by-practice/<int:practice_id>",
         StudentPracticeListView.as_view(),
@@ -94,6 +103,11 @@ urlpatterns = [
         name="student-practice-transition",
     ),
     path(
+        "<int:student_practice_id>/withdraw/",
+        WithdrawStudentPracticeView.as_view(),
+        name="student-practice-withdraw",
+    ),
+    path(
         "<int:student_practice_id>/cancel/",
         CancelStudentPracticeView.as_view(),
         name="student-practice-cancel",
@@ -119,10 +133,26 @@ urlpatterns = [
         StudentPracticeFeedbackDownloadView.as_view(),
         name="student-practice-feedback",
     ),
+    # History endpoint
+    path(
+        "<int:student_practice_id>/history/",
+        StudentPracticeHistoryView.as_view(),
+        name="student-practice-history",
+    ),
     # WP8 — Re-apply endpoint
     path(
         "reapply/<int:practice_id>/",
         ReapplyToPracticeView.as_view(),
         name="student-practice-reapply",
+    ),
+    path(
+        "<int:pk>/confirm-contract/",
+        ConfirmContractView.as_view(),
+        name="student-practice-confirm-contract",
+    ),
+    path(
+        "export/",
+        DataExportView.as_view(),
+        name="student-practice-export",
     ),
 ]

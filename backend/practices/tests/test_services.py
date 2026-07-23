@@ -22,6 +22,7 @@ class PracticeServiceTests(TestCase):
         self.practice.end_date = date(2024, 6, 1)
         self.practice.available_positions = 5
         self.practice.contact_user = None
+        self.practice.is_cancelled = False
 
     @patch("practices.services.StudentPracticeSerializer")
     @patch("practices.services.StudentPractice.objects.filter")
@@ -55,8 +56,19 @@ class PracticeServiceTests(TestCase):
     @patch("practices.services.Practice.objects.select_for_update")
     def test_apply_student_practice_already_exists(self, mock_select_for_update, mock_sp_filter):
         # Active application exists, but capacity is not full
-        mock_sp_filter.return_value.exists.return_value = True
+        # First exists() = unresolved_cancellation (is_cancelled=True) → False
+        # Second exists() = existing_active (is_cancelled=False) → True
         mock_sp_filter.return_value.count.return_value = 0
+
+        def exists_side_effect():
+            if not hasattr(exists_side_effect, "call_count"):
+                exists_side_effect.call_count = 0
+            exists_side_effect.call_count += 1
+            # First call is unresolved_cancellation (should be False)
+            # Second call is existing_active (should be True)
+            return exists_side_effect.call_count == 2
+
+        mock_sp_filter.return_value.exists.side_effect = exists_side_effect
         mock_queryset = MagicMock()
         mock_queryset.filter.return_value.first.return_value = self.practice
         mock_select_for_update.return_value = mock_queryset
@@ -79,3 +91,20 @@ class PracticeServiceTests(TestCase):
             PracticeService.apply_student_practice(self.user, 1)
 
         self.assertIn("NOT_FOUND", str(cm.exception))
+
+    @patch("practices.services.StudentPracticeSerializer")
+    @patch("practices.services.StudentPractice.objects.filter")
+    @patch("practices.services.Practice.objects.select_for_update")
+    def test_apply_student_practice_cancelled_practice(self, mock_select_for_update, mock_sp_filter, mock_serializer):
+        """3.7: Cannot apply to a cancelled practice."""
+        mock_sp_filter.return_value.exists.return_value = False
+        mock_sp_filter.return_value.count.return_value = 0
+        self.practice.is_cancelled = True
+        mock_queryset = MagicMock()
+        mock_queryset.filter.return_value.first.return_value = self.practice
+        mock_select_for_update.return_value = mock_queryset
+
+        with self.assertRaises(ValueError) as cm:
+            PracticeService.apply_student_practice(self.user, 1)
+
+        self.assertIn("PRACTICE_IS_CANCELLED", str(cm.exception))

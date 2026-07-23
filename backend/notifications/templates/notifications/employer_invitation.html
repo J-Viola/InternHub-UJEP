@@ -1,0 +1,11 @@
+{% extends "notifications/email_base.html" %}
+
+{% block title %}Pozvánka na praxi od zaměstnavatele{% endblock %}
+
+{% block content %}
+<p>Dobrý den,</p>
+<p>Organizace <strong>{{ company_name }}</strong> Vás pozvala k účasti na praxi <strong>{{ practice_title }}</strong>.</p>
+<p>Detaily nabízené pozice a odkaz pro přijetí či odmítnutí pozvánky naleznete v systému InternHub.</p>
+
+<a href="{{ site_url }}" class="btn">Zobrazit pozvánku</a>
+{% endblock %}

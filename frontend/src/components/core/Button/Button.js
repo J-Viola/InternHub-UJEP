@@ -64,6 +64,7 @@ export default function Button({id, children, text, property, onClick, title, te
         <button
             id={id}
             title={title}
+            aria-label={title}
             disabled={disabled}
             className={`
                 ${noVariant ? "" : variants[variant]}

@@ -26,6 +26,21 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
+  redis:
+    image: redis:7-alpine
+    container_name: internhub-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - internhub
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   django:
     build:
       context: .
@@ -43,6 +58,8 @@ services:
       - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - internhub
@@ -66,6 +83,48 @@ services:
       - "3000:3000"
     networks:
       - internhub
+  celery-worker:
+    build:
+      context: .
+      dockerfile: .docker/Backend/Dockerfile
+      args:
+        - PY_VERSION=${PY_VERSION}
+    container_name: internhub-celery-worker
+    command: celery -A app worker --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app/backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internhub
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: .docker/Backend/Dockerfile
+      args:
+        - PY_VERSION=${PY_VERSION}
+    container_name: internhub-celery-beat
+    command: celery -A app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app/backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internhub
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: internhub-pgadmin
@@ -89,3 +148,4 @@ volumes:
   node-modules:
   pgadmin-data:
   pgdata:
+  redis-data:

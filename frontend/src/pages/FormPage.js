@@ -16,11 +16,13 @@ import CompanyForm from "@components/Forms/CompanyForm";
 import EmployerForm from "@components/Forms/EmployerForm";
 import ProfessorForm from "@components/Forms/ProfessorForm";
 import { useTranslation } from "react-i18next";
+import { useMessage } from "@hooks/MessageContext";
 
 export default function FormPage() {
     const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { addMessage } = useMessage();
 
     // API hooks
     const subjectAPI = useSubjectAPI();
@@ -29,12 +31,24 @@ export default function FormPage() {
     const companyAPI = useCompanyAPI();
     const employerAPI = useEmployerAPI();
 
+    const getErrorMessage = (error) => {
+        if (error?.response?.data?.detail) {
+            return error.response.data.detail;
+        }
+        if (error?.response?.data && typeof error.response.data === "object") {
+            const firstError = Object.values(error.response.data)[0];
+            if (Array.isArray(firstError)) return firstError[0];
+            if (typeof firstError === "string") return firstError;
+        }
+        return t("form.save_error");
+    };
+
     const handleCreate = (createApi) => async (data) => {
         try {
             await createApi(data);
             navigate(-1); // Go back to previous page
         } catch (error) {
-            console.error('Error saving:', error);
+            addMessage(getErrorMessage(error), "E");
         }
     };
 
@@ -43,7 +57,7 @@ export default function FormPage() {
             await updateApi(id, data);
             navigate(-1); // Go back to previous page
         } catch (error) {
-            console.error('Error updating:', error);
+            addMessage(getErrorMessage(error), "E");
         }
     };
 

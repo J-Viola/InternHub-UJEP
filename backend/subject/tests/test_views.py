@@ -11,12 +11,8 @@ class SubjectViewTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-        self.department = Department.objects.create(
-            department_name="Computer Science", department_code="KI"
-        )
-        self.stag_role_vy = StagRole.objects.create(
-            role=StagRoleEnum.VY, role_name="Teacher"
-        )
+        self.department = Department.objects.create(department_name="Computer Science", department_code="KI")
+        self.stag_role_vy = StagRole.objects.create(role=StagRoleEnum.VY, role_name="Teacher")
 
         self.professor = ProfessorUser.objects.create(
             email="prof@test.com",
@@ -34,9 +30,7 @@ class SubjectViewTests(TestCase):
             department=self.department,
         )
 
-        self.other_department = Department.objects.create(
-            department_name="Math", department_code="KMA"
-        )
+        self.other_department = Department.objects.create(department_name="Math", department_code="KMA")
         self.other_subject = Subject.objects.create(
             subject_name="Calculus",
             subject_code="KMA/101",

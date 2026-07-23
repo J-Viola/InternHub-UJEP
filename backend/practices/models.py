@@ -154,9 +154,9 @@ class Practice(CancellationMixin, models.Model):
     skills = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(blank=True, null=True, db_index=True)
     image_base64 = models.TextField(blank=True, default="")
-    # DEPRECATED (task 1.7): coefficient se přesouvá na Subject.min_hours (Ministr 8).
-    # Zatím zachováno, protože calculate_end_date() ho stále používá.
-    # Nullable + default=1.0 — bude smazáno po refaktoru utils/serializers/views (WP2/WP8).
+    # DEPRECATED (task 1.7 → 3.9): coefficient je nahrazen Subject.min_hours.
+    # Už se nepoužívá pro výpočet end_date. Zachováno pro backward compat,
+    # null=True, blank=True pro migraci.
     coefficient = models.FloatField(default=1.0, null=True, blank=True)
     # Uzavření sběru přihlášek (task 1.5, Ministr 5)
     closed_for_applications_at = models.DateTimeField(

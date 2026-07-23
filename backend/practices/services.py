@@ -121,6 +121,10 @@ class PracticeService:
         if not practice.start_date or not practice.end_date:
             raise ValueError("MISSING_DATES")
 
+        # 3.7: Blokace storna — practice byla stornována
+        if practice.is_cancelled:
+            raise ValueError("PRACTICE_IS_CANCELLED")
+
         # C3.3: capacity guard — available_positions > 0 and not already full
         if practice.available_positions is not None and practice.available_positions <= 0:
             raise ValueError("NO_CAPACITY_AVAILABLE")
@@ -139,6 +143,15 @@ class PracticeService:
             ).count()
             if active_count >= practice.available_positions:
                 raise ValueError("CAPACITY_FULL")
+
+        # 3.7: Blokace storna — pokud má student nevyřešené storno, blokovat přihlášku
+        unresolved_cancellation = StudentPractice.objects.filter(
+            user=user,
+            is_cancelled=True,
+            cancellation_resolved_at__isnull=True,
+        ).exists()
+        if unresolved_cancellation:
+            raise ValueError("Máte nevyřešené storno")
 
         # C3.4: allow re-application only if previous was rejected or cancelled
         existing_active = StudentPractice.objects.filter(

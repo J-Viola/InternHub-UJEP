@@ -40,6 +40,11 @@ class CancellationMixin(models.Model):
         default="",
         help_text="Povinný důvod storna (zadáván uživatelem v UI).",
     )
+    cancellation_resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp vyřešení storna (pokud bylo storno vyřešeno).",
+    )
 
     class Meta:
         abstract = True

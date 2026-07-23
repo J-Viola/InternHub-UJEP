@@ -371,3 +371,18 @@ class UserSubject(models.Model):
     def __str__(self):
         status = "Active" if self.is_active else "Inactive"
         return f"{self.user} - {self.subject} ({self.role}) [{status}]"
+
+
+class UserConsent(models.Model):
+    consent_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="consents")
+    consent_type = models.CharField(max_length=50, default="GDPR_TERMS")
+    agreed = models.BooleanField(default=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = "user_consents"
+
+    def __str__(self):
+        return f"{self.user} - {self.consent_type} ({'Agreed' if self.agreed else 'Refused'})"

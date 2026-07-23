@@ -463,3 +463,63 @@ class IsAdminUser(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return self.has_permission(request, view)
+
+
+class IsGarantOrReadOnly(permissions.BasePermission):
+    """
+    Povolí write (POST, PUT, PATCH, DELETE) pouze garantovi / vedoucímu katedry
+    (uživatel s rolí VY nebo VK). Pro ostatní pouze read (GET, HEAD, OPTIONS).
+
+    Ref: Task 1.10
+    """
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        if not isinstance(request.user, ProfessorUser):
+            return False
+        stag_role = getattr(request.user, "stag_role", None)
+        if stag_role is None:
+            return False
+        return stag_role.role.lower() in (StagRoleEnum.VY, StagRoleEnum.VK)
+
+
+class IsOrganizationOrReadOnly(permissions.BasePermission):
+    """
+    Povolí write (POST, PUT, PATCH, DELETE) pouze organizaci (employer).
+    Pro ostatní pouze read (GET, HEAD, OPTIONS).
+
+    Ref: Task 1.10
+    """
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return bool(getattr(request.user, "employer_profile", None))
+
+
+class IsStudentOwner(permissions.BasePermission):
+    """
+    Povolí přístup pouze studentovi, který je vlastníkem objektu.
+    Implementuje has_object_permission ověřující obj.user == request.user.
+
+    Ref: Task 1.10
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if not isinstance(user, StudentUser):
+            return False
+        obj_user = getattr(obj, "user", None)
+        if obj_user is None:
+            return False
+        return obj_user == user

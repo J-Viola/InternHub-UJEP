@@ -8,11 +8,12 @@ from practices.models import Practice
 from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     EmployerInvitation,
+    Evaluation,
     StudentPractice,
     StudentPracticeWorkflowState,
     UploadedDocument,
 )
-from users.models import ApprovalStatus, User
+from users.models import ActionLog, ApprovalStatus, User
 
 
 class EmployerInvitationApprovalSerializer(serializers.Serializer):
@@ -72,8 +73,10 @@ class StudentPracticeSerializer(serializers.ModelSerializer):
             "application_date",
             "approval_status",
             "progress_status",
+            "workflow_state",
             "workflow_status",
             "workflow_status_label",
+            "rejection_reason",
             "hours_completed",
             "cancellation_reason",
             "year",
@@ -130,6 +133,8 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
             "application_date",
             "approval_status",
             "progress_status",
+            "workflow_state",
+            "rejection_reason",
             "hours_completed",
             "cancellation_reason",
             "cancelled_by",
@@ -204,6 +209,9 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     employer_id = serializers.SerializerMethodField()
     employer_name = serializers.SerializerMethodField()
     can_approve = serializers.SerializerMethodField()
+    workflow_state = serializers.SerializerMethodField()
+    contract_received_date = serializers.SerializerMethodField()
+    updated_at = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPractice
@@ -220,6 +228,9 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "progress_status",
             "workflow_status",
             "workflow_status_label",
+            "workflow_state",
+            "contract_received_date",
+            "updated_at",
             "hours_completed",
             "employer_id",
             "employer_name",
@@ -247,6 +258,15 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
 
     def get_employer_name(self, obj):
         return obj.practice.employer.company_name if obj.practice.employer else None
+
+    def get_workflow_state(self, obj):
+        return obj.workflow_state.name if obj.workflow_state else None
+
+    def get_contract_received_date(self, obj):
+        return obj.contract_received_date.strftime("%d.%m.%Y %H:%M") if obj.contract_received_date else None
+
+    def get_updated_at(self, obj):
+        return obj.updated_at.strftime("%d.%m.%Y %H:%M") if obj.updated_at else None
 
     # TODO ME-1: N+1 — can_approve_practice() queries user_subjects per row.
     # Prefetch user.user_subjects in the view's get_queryset or cache subject IDs.
@@ -347,6 +367,8 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "is_cancelled",
             "cancelled_at",
             "cancellation_reason",
+            "contract_received_date",
+            "updated_at",
         ]
 
     def get_can_approve(self, obj):
@@ -438,3 +460,57 @@ class CancelStudentPracticeSerializer(serializers.Serializer):
     """
 
     reason = serializers.CharField(required=True, help_text="Důvod storna (povinný).")
+
+
+class ActionLogSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source="user.full_name", read_only=True, default="")
+
+    class Meta:
+        model = ActionLog
+        fields = [
+            "action_id",
+            "user_name",
+            "action_type",
+            "action_description",
+            "action_date",
+        ]
+
+
+class EvaluationSerializer(serializers.ModelSerializer):
+    student_practice_id = serializers.IntegerField(write_only=True)
+    evaluated_by_name = serializers.CharField(source="evaluated_by.full_name", read_only=True)
+
+    class Meta:
+        model = Evaluation
+        fields = [
+            "evaluation_id",
+            "student_practice_id",
+            "expertise_rating",
+            "expertise_comment",
+            "communication_rating",
+            "communication_comment",
+            "initiative_rating",
+            "initiative_comment",
+            "overall_comment",
+            "pdf_file",
+            "pdf_protokol",
+            "evaluated_by",
+            "evaluated_by_name",
+            "evaluated_at",
+        ]
+        read_only_fields = ["evaluation_id", "evaluated_by", "evaluated_by_name", "evaluated_at", "pdf_protokol"]
+
+    def validate_expertise_rating(self, val):
+        if not (1 <= val <= 5):
+            raise serializers.ValidationError("Hodnocení musí být v rozmezí 1 až 5.")
+        return val
+
+    def validate_communication_rating(self, val):
+        if not (1 <= val <= 5):
+            raise serializers.ValidationError("Hodnocení musí být v rozmezí 1 až 5.")
+        return val
+
+    def validate_initiative_rating(self, val):
+        if not (1 <= val <= 5):
+            raise serializers.ValidationError("Hodnocení musí být v rozmezí 1 až 5.")
+        return val

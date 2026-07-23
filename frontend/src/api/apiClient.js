@@ -58,10 +58,6 @@ export const createApiClient = (navigate) => {
                 config.headers.Authorization = `Bearer ${token}`;
             }
 
-            // Sync language with backend
-            const lang = i18n.language || 'cs';
-            config.headers['Accept-Language'] = lang;
-
             const isDev = process.env.NODE_ENV === 'development';
             if (isDev) {
                 const maskedData = maskSensitiveData(config.data);

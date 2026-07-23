@@ -20,12 +20,16 @@ import { useTranslation } from "react-i18next";
 import { buildFormData } from "@utils/formDataUtils";
 import LoadingState from "@components/core/Feedback/LoadingState";
 import ErrorState from "@components/core/Feedback/ErrorState";
+import Timeline from "@components/Student/Timeline";
 
 export default function PraxeDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
   const [popUp, setPopUp] = useState(false);
   const [docsPopUp, setDocsPopUp] = useState(false);
+  const [rejectPopUp, setRejectPopUp] = useState(false);
+  const [withdrawPopUp, setWithdrawPopUp] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [entity, setEntity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -171,14 +175,64 @@ export default function PraxeDetailPage() {
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = () => {
+    setRejectReason("");
+    setRejectPopUp(true);
+    setPopUp(false);
+  };
+
+  const handleRejectWithReason = async () => {
+    if (rejectReason.trim().length < 10) {
+      addMessage(t("practice_detail.reject_reason_required"), "E");
+      return;
+    }
     try {
-      await studentpraticeAPI.updateStudentPracticeStatus(id, "reject");
+      await studentpraticeAPI.updateStudentPracticeStatus(id, "reject", {
+        reason: rejectReason.trim(),
+      });
       addMessage(t("practice_detail.reject_success"), "S");
       fetchData();
-      setPopUp(false);
+      setRejectPopUp(false);
+      setRejectReason("");
     } catch (error) {
       addMessage(t("practice_detail.reject_error"), "E");
+    }
+  };
+
+  const handleConfirmContract = async () => {
+    try {
+      await studentpraticeAPI.confirmContract(id);
+      addMessage(t("practice_detail.confirm_contract_success"), "S");
+      fetchData();
+    } catch (error) {
+      addMessage(t("practice_detail.confirm_contract_error"), "E");
+    }
+  };
+
+  const handleResubmit = async () => {
+    try {
+      await studentpraticeAPI.updateStudentPracticeStatus(id, "resubmit");
+      addMessage(t("practice_detail.resubmit_success"), "S");
+      fetchData();
+    } catch (error) {
+      addMessage(t("practice_detail.resubmit_error"), "E");
+    }
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      await studentpraticeAPI.withdrawApplication(id);
+      addMessage(t("practice_detail.withdraw_success"), "S");
+      setWithdrawPopUp(false);
+      fetchData();
+    } catch (error) {
+      const errorCode = error.code || "UNKNOWN_ERROR";
+      addMessage(
+        t(`api_errors.${errorCode}`, {
+          defaultValue: t("practice_detail.withdraw_error"),
+        }),
+        "E",
+      );
     }
   };
 
@@ -258,6 +312,41 @@ export default function PraxeDetailPage() {
                 )}
             </Container>
           </ContainerForEntity>
+
+          {/* REJECTED BANNER - Show rejection reason */}
+          {entity?.student_practice_status?.workflow_status === "REJECTED" &&
+            entity?.student_practice_status?.rejection_reason && (
+              <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
+                <Container property="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+                  <Paragraph property="text-red-800 font-semibold text-sm">
+                    {t("practice_detail.rejected_banner")}
+                  </Paragraph>
+                  <Paragraph property="text-red-700 text-sm mt-1">
+                    {entity.student_practice_status.rejection_reason}
+                  </Paragraph>
+                </Container>
+              </ContainerForEntity>
+            )}
+
+          {/* CONTENT_REJECTED BANNER - Student can see rejection reason and resubmit */}
+          {user &&
+            user.isStudent() &&
+            entity?.student_practice_status?.workflow_status === "CONTENT_REJECTED" && (
+              <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
+                <Container property="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg shadow-sm flex flex-col gap-3">
+                  <Paragraph property="text-red-800 font-medium">
+                    {t("practice_detail.content_rejected_banner", {
+                      reason:
+                        entity.student_practice_status.rejection_reason ||
+                        t("common.not_specified"),
+                    })}
+                  </Paragraph>
+                  <Button variant="primary" onClick={handleResubmit} property="w-fit">
+                    {t("practice_detail.resubmit_button")}
+                  </Button>
+                </Container>
+              </ContainerForEntity>
+            )}
 
           {/* DOCS PANEL - show for anyone except REJECTED, or show always for professors */}
           {entity?.student_practice_status?.workflow_status &&
@@ -453,8 +542,53 @@ export default function PraxeDetailPage() {
                   </Button>
                 </Container>
               )}
+
+              {/* STAŽENÍ ŽÁDOSTI - student ve stavu APPLIED nebo PRELIMINARY_APPROVED */}
+              {user &&
+                user.isStudent() &&
+                entity?.student_practice_status &&
+                ["APPLIED", "PRELIMINARY_APPROVED"].includes(
+                  entity.student_practice_status.workflow_status,
+                ) && (
+                  <Container property="flex justify-end">
+                    <Button
+                      variant="red"
+                      property="px-4 py-2 text-sm font-medium"
+                      onClick={() => setWithdrawPopUp(true)}
+                    >
+                      {t("practice_detail.withdraw_button")}
+                    </Button>
+                  </Container>
+                )}
+
+              {/* POTVRZENÍ SMLOUVY - garant/profesor ve stavu AWAITING_CONTRACT */}
+              {user &&
+                (user.isProfessor() || user.isDepartmentUser() || user.isAdmin()) &&
+                entity?.student_practice_status?.workflow_status === "AWAITING_CONTRACT" && (
+                  <Container property="flex gap-4 justify-end">
+                    <Button
+                      variant="greenSmall"
+                      onClick={handleConfirmContract}
+                    >
+                      {t("practice_detail.confirm_contract")}
+                    </Button>
+                  </Container>
+                )}
             </Container>
           </ContainerForEntity>
+
+          {/* TIMELINE - historie změn stavu */}
+          {entity?.student_practice_status && (
+            <ContainerForEntity property="pl-8 pr-8 pt-4 pb-8 mt-2">
+              <Headings sizeTag="h4" property="mb-4">
+                {t("practice_detail.timeline_title")}
+              </Headings>
+              <Timeline
+                studentPracticeId={id}
+                currentStatus={entity.student_practice_status.workflow_status}
+              />
+            </ContainerForEntity>
+          )}
 
           {entity?.student_practice_status?.workflow_status &&
             !["PENDING", "REJECTED"].includes(
@@ -510,6 +644,52 @@ export default function PraxeDetailPage() {
               onClose={handleDocsPopUp}
               title={t("practice_detail.docs_check_title")}
               text={t("practice_detail.docs_check_not_defined")}
+            />
+          )}
+
+          {/* REJECT MODAL S DŮVODEM */}
+          {rejectPopUp && (
+            <PopUpCon
+              onClose={() => {
+                setRejectPopUp(false);
+                setRejectReason("");
+              }}
+              title={t("practice_detail.reject_reason_title")}
+              text={t("practice_detail.reject_reason_text")}
+              onSubmit={handleRejectWithReason}
+              onSubmitText={t("common.reject")}
+              onReject={() => {
+                setRejectPopUp(false);
+                setRejectReason("");
+              }}
+              onRejectText={t("common.cancel")}
+            >
+              <Container property="mt-4 mb-4 px-4">
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder={t("practice_detail.reject_reason_placeholder")}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none text-sm"
+                />
+                {rejectReason.trim().length > 0 && rejectReason.trim().length < 10 && (
+                  <Paragraph property="text-red-500 text-xs mt-2">
+                    {t("practice_detail.reject_reason_required")}
+                  </Paragraph>
+                )}
+              </Container>
+            </PopUpCon>
+          )}
+
+          {/* WITHDRAW MODAL */}
+          {withdrawPopUp && (
+            <PopUpCon
+              onClose={() => setWithdrawPopUp(false)}
+              title={t("practice_detail.withdraw_title")}
+              text={t("practice_detail.withdraw_text")}
+              onSubmit={handleWithdraw}
+              onSubmitText={t("practice_detail.withdraw_confirm")}
+              onReject={() => setWithdrawPopUp(false)}
+              onRejectText={t("common.cancel")}
             />
           )}
         </>

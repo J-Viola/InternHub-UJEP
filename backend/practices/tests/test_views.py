@@ -314,6 +314,22 @@ class PracticeViewTests(TestCase):
         self.assertIn("CAPACITY_FULL", str(response.data.get("detail", "")))
 
     # ===========================================================================
+    # 3.7 — Blokace storna praxe
+    # ===========================================================================
+
+    def test_apply_student_practice_cancelled_practice(self):
+        """3.7: Aplikace na stornovanou praxi musí být zamítnuta."""
+        self.practice.is_cancelled = True
+        self.practice.save(update_fields=["is_cancelled"])
+        self.client.force_authenticate(user=self.student)
+        url = "/api/practices/student/apply/"
+        data = {"practice": self.practice.practice_id}
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("PRACTICE_IS_CANCELLED", str(response.data.get("detail", "")))
+
+    # ===========================================================================
     # C3.7 — External practice preserves ico, address, contact_phone
     # ===========================================================================
 

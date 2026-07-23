@@ -1,4 +1,5 @@
 import io
+import warnings
 from datetime import date
 
 from django.db import IntegrityError, transaction
@@ -24,7 +25,7 @@ from student_practices.models import (
 )
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
-from users.models import ApprovalStatus, StudentUser
+from users.models import ApprovalStatus, OrganizationUser, ProfessorUser, StagRoleEnum, StudentUser
 from users.services import fetch_student_data_from_stag
 
 SP_TRANSITIONS = {
@@ -33,22 +34,200 @@ SP_TRANSITIONS = {
         StudentPracticeWorkflowState.REJECTED,
     ],
     StudentPracticeWorkflowState.PRELIMINARY_APPROVED: [
+        StudentPracticeWorkflowState.AWAITING_CONTRACT,
         StudentPracticeWorkflowState.CONTRACTED,
+        StudentPracticeWorkflowState.REJECTED,
+    ],
+    StudentPracticeWorkflowState.AWAITING_CONTRACT: [
+        StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+        StudentPracticeWorkflowState.CONTRACTED,
+        StudentPracticeWorkflowState.REJECTED,
+    ],
+    StudentPracticeWorkflowState.AWAITING_DOCUMENTS: [
+        StudentPracticeWorkflowState.CONTRACTED,
+        StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+        StudentPracticeWorkflowState.COMPLETED,
+    ],
+    StudentPracticeWorkflowState.DOCUMENTS_REJECTED: [
+        StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
         StudentPracticeWorkflowState.REJECTED,
     ],
     StudentPracticeWorkflowState.CONTRACTED: [
         StudentPracticeWorkflowState.STARTED,
+        StudentPracticeWorkflowState.REJECTED,
     ],
     StudentPracticeWorkflowState.STARTED: [
         StudentPracticeWorkflowState.ENDED,
     ],
     StudentPracticeWorkflowState.ENDED: [
         StudentPracticeWorkflowState.COMPLETED,
+        StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+    ],
+    StudentPracticeWorkflowState.COMPLETED: [],
+    StudentPracticeWorkflowState.REJECTED: [],
+}
+
+# MANUAL_SP_TRANSITIONS: transitions for external (manual) practices.
+# Derived from SP_TRANSITIONS to avoid duplication — the shared states
+# (AWAITING_CONTRACT, AWAITING_DOCUMENTS, DOCUMENTS_REJECTED, CONTRACTED,
+#  STARTED, ENDED, COMPLETED, REJECTED) are identical.
+# Only APPLIED/PRELIMINARY_APPROVED and the CONTENT_* chain differ.
+_MANUAL_BASE = {
+    StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL: [
+        StudentPracticeWorkflowState.CONTENT_APPROVED,
+        StudentPracticeWorkflowState.CONTENT_REJECTED,
+        StudentPracticeWorkflowState.REJECTED,
+    ],
+    StudentPracticeWorkflowState.CONTENT_REJECTED: [
+        StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL,
+        StudentPracticeWorkflowState.REJECTED,
+    ],
+    StudentPracticeWorkflowState.CONTENT_APPROVED: [
+        StudentPracticeWorkflowState.AWAITING_CONTRACT,
+        StudentPracticeWorkflowState.CONTRACTED,
+        StudentPracticeWorkflowState.REJECTED,
     ],
 }
 
+MANUAL_SP_TRANSITIONS = {**_MANUAL_BASE}
+# Copy shared states from SP_TRANSITIONS (skip APPLIED and PRELIMINARY_APPROVED
+# which have different flow in manual mode).
+for _state, _transitions in SP_TRANSITIONS.items():
+    if _state in (
+        StudentPracticeWorkflowState.AWAITING_CONTRACT,
+        StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+        StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+        StudentPracticeWorkflowState.CONTRACTED,
+        StudentPracticeWorkflowState.STARTED,
+        StudentPracticeWorkflowState.ENDED,
+        StudentPracticeWorkflowState.COMPLETED,
+        StudentPracticeWorkflowState.REJECTED,
+    ):
+        MANUAL_SP_TRANSITIONS[_state] = _transitions
+
+
+def get_transitions_matrix(sp: StudentPractice) -> dict:
+    if sp.practice and getattr(sp.practice, "is_external", False):
+        return MANUAL_SP_TRANSITIONS
+    return SP_TRANSITIONS
+
+
+@transaction.atomic
+def withdraw_student_practice(sp, actor):
+    """
+    Student withdraws their application.
+    Only allowed in APPLIED or PRELIMINARY_APPROVED state.
+    Sets workflow_state to REJECTED.
+    """
+    sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+
+    if sp.is_cancelled:
+        raise ValueError(StudentPracticeMessages.CANCELLED_CANNOT_MODIFY)
+
+    allowed_states = (
+        StudentPracticeWorkflowState.APPLIED,
+        StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
+    )
+    if sp.workflow_state not in allowed_states:
+        raise ValueError("Žádost lze stáhnout pouze ve stavu APPLIED nebo PRELIMINARY_APPROVED.")
+
+    old_state = sp.workflow_state
+    sp.workflow_state = StudentPracticeWorkflowState.REJECTED
+    sp.approval_status = ApprovalStatus.REJECTED
+    sp.save()
+
+    # ActionLog
+    ActionLogService.log(
+        user=actor,
+        action_type=ActionLogType.STORNO,
+        object_type="StudentPractice",
+        object_id=sp.student_practice_id,
+        description=(f"Student stahl zadost ID {sp.student_practice_id}: " f"{old_state.name if old_state else 'None'} -> REJECTED"),
+    )
+
+    # Notify garant (subject manager)
+    practice = sp.practice
+    if practice and practice.subject and practice.subject.subject_manager:
+        garant = practice.subject.subject_manager
+        NotificationService.create_notification(
+            recipient=garant,
+            verb="APPLICATION_WITHDRAWN",
+            message=f"Student {sp.user.full_name} stáhl svou žádost na praxi '{practice.title}'.",
+            actor=actor,
+            target=sp,
+            notification_type=NotificationType.WARNING,
+        )
+
+    # Notify organization contact
+    org_contact = getattr(practice, "contact_user", None) if practice else None
+    if org_contact:
+        NotificationService.create_notification(
+            recipient=org_contact,
+            verb="APPLICATION_WITHDRAWN",
+            message=f"Student {sp.user.full_name} stáhl svou žádost na praxi '{practice.title}'.",
+            actor=actor,
+            target=sp,
+            notification_type=NotificationType.WARNING,
+        )
+
+    return sp
+
+
+def _check_transition_role(actor, from_state, to_state, sp) -> None:
+    """
+    Validates that the actor has the right role to perform the given transition.
+
+    Rules:
+    - StudentUser:     only DOCUMENTS_REJECTED→AWAITING_DOCUMENTS, CONTENT_REJECTED→AWAITING_CONTENT_APPROVAL
+    - OrganizationUser (employer): only from PRELIMINARY_APPROVED → AWAITING_CONTRACT / CONTRACTED / REJECTED
+    - Garant/Professor (VY/VK role): all remaining transitions
+    - Admin/superuser: any transition
+
+    Raises ValueError if the actor is not authorized.
+    """
+    # Admin / superuser — always allowed
+    if getattr(actor, "is_superuser", False):
+        return
+
+    if isinstance(actor, StudentUser):
+        allowed = [
+            (StudentPracticeWorkflowState.DOCUMENTS_REJECTED, StudentPracticeWorkflowState.AWAITING_DOCUMENTS),
+            (StudentPracticeWorkflowState.CONTENT_REJECTED, StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL),
+        ]
+        if (from_state, to_state) not in allowed:
+            raise ValueError("Student nemůže provést tento přechod.")
+        return
+
+    if isinstance(actor, OrganizationUser) and hasattr(actor, "employer_profile"):
+        # Organization can only transition from PRELIMINARY_APPROVED
+        if from_state != StudentPracticeWorkflowState.PRELIMINARY_APPROVED:
+            raise ValueError("Organizace nemůže provést tento přechod.")
+        allowed_to = [
+            StudentPracticeWorkflowState.AWAITING_CONTRACT,
+            StudentPracticeWorkflowState.CONTRACTED,
+            StudentPracticeWorkflowState.REJECTED,
+        ]
+        if to_state not in allowed_to:
+            raise ValueError("Organizace nemůže provést tento přechod.")
+        return
+
+    # Garant / Professor with VY or VK role — all remaining transitions
+    if isinstance(actor, ProfessorUser):
+        stag_role = getattr(actor, "stag_role", None)
+        if stag_role and stag_role.role.lower() in (StagRoleEnum.VY, StagRoleEnum.VK):
+            return
+        if getattr(actor, "is_garant_praxe", False):
+            return
+
+    # Any other authenticated user (incl. staff without VY/VK) — deny
+    raise ValueError("Neoprávněná role pro tento přechod.")
+
 
 class StudentPracticeService:
+    @staticmethod
+    def get_transitions_matrix(sp=None):
+        return get_transitions_matrix(sp)
+
     @staticmethod
     @transaction.atomic
     def create_invitations(user, practice_id: int, student_ids: list[int]) -> dict:
@@ -127,12 +306,16 @@ class StudentPracticeService:
         if sp.is_cancelled:
             raise ValueError(StudentPracticeMessages.CANCELLED_CANNOT_MODIFY)
 
+        # Role-based authorization check (K1)
+        if sp.workflow_state is not None:
+            _check_transition_role(actor, sp.workflow_state, target_state, sp)
+
         # Only allow initialization from None to APPLIED
         if sp.workflow_state is None:
             if target_state != StudentPracticeWorkflowState.APPLIED:
                 raise ValueError(f"Neinicializovana prihlaska — povolen je pouze prechod do APPLIED, " f"ne do {target_state.name}")
 
-        allowed = SP_TRANSITIONS.get(sp.workflow_state)
+        allowed = get_transitions_matrix(sp).get(sp.workflow_state)
         if sp.workflow_state is not None and allowed is None:
             raise ValueError(StudentPracticeMessages.TRANSITION_NOT_DEFINED.format(sp.workflow_state))
 
@@ -213,11 +396,125 @@ class StudentPracticeService:
 
         # --- Send in-app notification ---
         student = sp.user
-        if target_state == StudentPracticeWorkflowState.PRELIMINARY_APPROVED:
+        practice_title = sp.practice.title if sp.practice else "N/A"
+
+        # Transition-specific notifications (check both old_state and target_state)
+        if (
+            old_state == StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
+            and target_state == StudentPracticeWorkflowState.CONTENT_APPROVED
+        ):
+            NotificationService.create_notification(
+                recipient=student,
+                verb="CONTENT_APPROVED",
+                message=f"Obsah praxe '{practice_title}' byl schválen garantem.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.SUCCESS,
+            )
+        elif (
+            old_state == StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
+            and target_state == StudentPracticeWorkflowState.CONTENT_REJECTED
+        ):
+            NotificationService.create_notification(
+                recipient=student,
+                verb="CONTENT_REJECTED",
+                message=f"Obsah praxe '{practice_title}' byl zamítnut." + (f" Důvod: {reason}" if reason else ""),
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.ERROR,
+            )
+        elif (
+            old_state == StudentPracticeWorkflowState.CONTENT_REJECTED
+            and target_state == StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
+        ):
+            # Notify professor/garant that content was re-submitted for approval
+            garant = sp.practice.subject.subject_manager if sp.practice and sp.practice.subject else None
+            if garant:
+                NotificationService.create_notification(
+                    recipient=garant,
+                    verb="CONTENT_RESUBMITTED",
+                    message=f"Student {student.full_name} znovu odeslal obsah praxe '{practice_title}' ke schválení.",
+                    actor=actor,
+                    target=sp,
+                    notification_type=NotificationType.INFO,
+                )
+        elif (
+            old_state in (StudentPracticeWorkflowState.APPLIED, StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
+            and target_state == StudentPracticeWorkflowState.AWAITING_CONTRACT
+        ):
+            NotificationService.create_notification(
+                recipient=student,
+                verb="AWAITING_CONTRACT",
+                message=f"Byla zahájena příprava smlouvy k praxi '{practice_title}'.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.INFO,
+            )
+        elif (
+            old_state == StudentPracticeWorkflowState.AWAITING_CONTRACT and target_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS
+        ):
+            NotificationService.create_notification(
+                recipient=student,
+                verb="AWAITING_DOCUMENTS",
+                message=f"Žádáme o nahrání dokumentů k praxi '{practice_title}'.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.INFO,
+            )
+        elif (
+            old_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS and target_state == StudentPracticeWorkflowState.DOCUMENTS_REJECTED
+        ):
+            NotificationService.create_notification(
+                recipient=student,
+                verb="DOCUMENTS_REJECTED",
+                message=f"Dokumenty k praxi '{practice_title}' byly zamítnuty." + (f" Důvod: {reason}" if reason else ""),
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.ERROR,
+            )
+        elif old_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.DOCUMENTS_REJECTED:
+            NotificationService.create_notification(
+                recipient=student,
+                verb="DOCUMENTS_REJECTED",
+                message=f"Finální dokumenty k praxi '{practice_title}' byly zamítnuty." + (f" Důvod: {reason}" if reason else ""),
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.ERROR,
+            )
+        elif old_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.COMPLETED:
+            NotificationService.create_notification(
+                recipient=student,
+                verb="PRACTICE_COMPLETED",
+                message=f"Praxe '{practice_title}' dokončena, zápočet udělen.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.SUCCESS,
+            )
+        elif old_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS and target_state == StudentPracticeWorkflowState.COMPLETED:
+            NotificationService.create_notification(
+                recipient=student,
+                verb="PRACTICE_COMPLETED",
+                message=f"Vaše praxe '{practice_title}' byla dokončena!",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.SUCCESS,
+            )
+        elif old_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS and target_state == StudentPracticeWorkflowState.CONTRACTED:
+            NotificationService.create_notification(
+                recipient=student,
+                verb="APPLICATION_CONTRACTED",
+                message=f"Smlouva k praxi '{practice_title}' byla potvrzena.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.SUCCESS,
+            )
+
+        # Generic target-state-based notifications (fallback)
+        elif target_state == StudentPracticeWorkflowState.PRELIMINARY_APPROVED:
             NotificationService.create_notification(
                 recipient=student,
                 verb="APPLICATION_PRE_APPROVED",
-                message=f"Vaše přihláška na praxi '{sp.practice.title}' byla předběžně schválena školou.",
+                message=f"Vaše přihláška na praxi '{practice_title}' byla předběžně schválena školou.",
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.SUCCESS,
@@ -226,7 +523,7 @@ class StudentPracticeService:
             NotificationService.create_notification(
                 recipient=student,
                 verb="APPLICATION_REJECTED",
-                message=f"Vaše přihláška na praxi '{sp.practice.title}' byla zamítnuta." + (f" Důvod: {reason}" if reason else ""),
+                message=f"Vaše přihláška na praxi '{practice_title}' byla zamítnuta." + (f" Důvod: {reason}" if reason else ""),
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.ERROR,
@@ -235,7 +532,7 @@ class StudentPracticeService:
             NotificationService.create_notification(
                 recipient=student,
                 verb="APPLICATION_CONTRACTED",
-                message=f"Vaše přihláška na praxi '{sp.practice.title}' byla plně schválena. " f"Nyní nahrajte požadované dokumenty.",
+                message=f"Vaše přihláška na praxi '{practice_title}' byla plně schválena. " f"Nyní nahrajte požadované dokumenty.",
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.SUCCESS,
@@ -244,7 +541,7 @@ class StudentPracticeService:
             NotificationService.create_notification(
                 recipient=student,
                 verb="PRACTICE_STARTED",
-                message=f"Vaše praxe '{sp.practice.title}' byla spuštěna.",
+                message=f"Vaše praxe '{practice_title}' byla spuštěna.",
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.SUCCESS,
@@ -253,7 +550,7 @@ class StudentPracticeService:
             NotificationService.create_notification(
                 recipient=student,
                 verb="PRACTICE_COMPLETED",
-                message=f"Vaše praxe '{sp.practice.title}' byla úspěšně dokončena.",
+                message=f"Vaše praxe '{practice_title}' byla úspěšně dokončena.",
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.SUCCESS,
@@ -375,6 +672,9 @@ class StudentPracticeService:
         if sp.is_cancelled:
             raise ValueError(StudentPracticeMessages.ALREADY_CANCELLED)
 
+        if sp.workflow_state == StudentPracticeWorkflowState.COMPLETED:
+            raise ValueError("Storno nelze provést u již dokončené praxe (COMPLETED).")
+
         if not reason or not reason.strip():
             raise ValueError(StudentPracticeMessages.CANCELLATION_REASON_REQUIRED)
 
@@ -409,6 +709,7 @@ class StudentPracticeService:
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.WARNING,
+                send_email=False,
             )
 
         # --- Notify org contact if applicable ---
@@ -423,6 +724,7 @@ class StudentPracticeService:
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.WARNING,
+                send_email=False,
             )
 
         # --- Send email notifications ---
@@ -517,7 +819,17 @@ class StudentPracticeService:
         """
         Updates the status of a StudentPractice with transaction safety (select_for_update)
         to handle dual approval correctly.
+
+        .. deprecated::
+            Use transition_student_practice_state() instead for workflow state changes.
+            This function is kept for backward compatibility to handle dual-approval flags.
         """
+        warnings.warn(
+            "update_student_practice_status is deprecated. " "Use transition_student_practice_state() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         try:
             student_practice = StudentPractice.objects.select_for_update().get(pk=student_practice_id)
         except StudentPractice.DoesNotExist:
@@ -581,8 +893,17 @@ class StudentPracticeService:
                 if target_wf.value < current_wf.value and target_wf != StudentPracticeWorkflowState.REJECTED:
                     raise ValueError("Nelze vracet stav niz nez aktualni")
 
-            student_practice.workflow_state = target_wf
-            # If neither approved, leave workflow_state as APPLIED (initial state)
+            # Soft redirect: try state machine transition, fall back to direct assignment
+            try:
+                StudentPracticeService.transition_student_practice_state(
+                    sp=student_practice,
+                    target_state=target_wf,
+                    actor=user,
+                    reason="update_student_practice_status (dual approval)",
+                )
+                student_practice.refresh_from_db()
+            except ValueError:
+                student_practice.workflow_state = target_wf
 
         # 2. Handle progress_status update (only after full approval)
         if "progress_status" in data:
@@ -597,9 +918,29 @@ class StudentPracticeService:
             # --- Workflow state mapping from progress_status ---
             if student_practice.progress_status == ProgressStatus.IN_PROGRESS:
                 if student_practice.workflow_state == StudentPracticeWorkflowState.CONTRACTED:
-                    student_practice.workflow_state = StudentPracticeWorkflowState.STARTED
+                    target_wf = StudentPracticeWorkflowState.STARTED
+                    try:
+                        StudentPracticeService.transition_student_practice_state(
+                            sp=student_practice,
+                            target_state=target_wf,
+                            actor=user,
+                            reason="update_student_practice_status (progress_status)",
+                        )
+                        student_practice.refresh_from_db()
+                    except ValueError:
+                        student_practice.workflow_state = target_wf
             elif student_practice.progress_status == ProgressStatus.COMPLETED:
-                student_practice.workflow_state = StudentPracticeWorkflowState.COMPLETED
+                target_wf = StudentPracticeWorkflowState.COMPLETED
+                try:
+                    StudentPracticeService.transition_student_practice_state(
+                        sp=student_practice,
+                        target_state=target_wf,
+                        actor=user,
+                        reason="update_student_practice_status (progress_status)",
+                    )
+                    student_practice.refresh_from_db()
+                except ValueError:
+                    student_practice.workflow_state = target_wf
 
         # 3. Handle other fields (hours_completed, notes, etc.)
         if "hours_completed" in data:

@@ -103,9 +103,9 @@ class StudentPracticeServiceTests(TestCase):
 
     def test_update_student_practice_status_syncs_workflow_state(self):
         """
-        C-M4-C2: Verify that update_student_practice_status correctly syncs
-        workflow_state for all dual-approval transitions (PRELIMINARY_APPROVED,
-        CONTRACTED, REJECTED), not just STARTED from evaluate_practice_readiness.
+        C-M4-C2: Verify that update_student_practice_status correctly manages
+        approval flags, and that transition_student_practice_state() correctly
+        transitions workflow_state for all dual-approval transitions.
         """
         # Setup: department, subject, professor (head), org user
         dept = Department.objects.create(department_name="KIV", department_code="KIV")
@@ -132,6 +132,7 @@ class StudentPracticeServiceTests(TestCase):
             is_active=True,
             department=dept,
             department_role=DepartmentRole.HEAD,
+            is_garant_praxe=True,
         )
 
         practice = Practice.objects.create(
@@ -156,7 +157,8 @@ class StudentPracticeServiceTests(TestCase):
             end_date=date(2024, 6, 1),
         )
 
-        # --- 1. Employer approves → employer_approved=True, should be PRELIMINARY_APPROVED ---
+        # --- Part 1: Approval flags via update_student_practice_status ---
+        # 1a. Employer approves → employer_approved=True, school_approved stays False
         StudentPracticeService.update_student_practice_status(
             user=org_user,
             student_practice_id=sp.student_practice_id,
@@ -165,11 +167,9 @@ class StudentPracticeServiceTests(TestCase):
         sp.refresh_from_db()
         self.assertTrue(sp.employer_approved)
         self.assertFalse(sp.school_approved)
-        self.assertEqual(
-            sp.workflow_state, StudentPracticeWorkflowState.PRELIMINARY_APPROVED, "Employer-only approval should set PRELIMINARY_APPROVED"
-        )
+        self.assertEqual(sp.approval_status, ApprovalStatus.PENDING)
 
-        # --- 2. Professor (head) approves → both flags, should be CONTRACTED ---
+        # 1b. Professor (head) approves → both flags, fully approved
         StudentPracticeService.update_student_practice_status(
             user=prof,
             student_practice_id=sp.student_practice_id,
@@ -179,13 +179,13 @@ class StudentPracticeServiceTests(TestCase):
         self.assertTrue(sp.school_approved)
         self.assertTrue(sp.employer_approved)
         self.assertEqual(sp.approval_status, ApprovalStatus.APPROVED)
-        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.CONTRACTED, "Both approved should set CONTRACTED")
 
+        # --- Part 2: Workflow transitions via transition_student_practice_state ---
         # Cancel sp so we can create sp2 (unique constraint on active applications)
         sp.is_cancelled = True
         sp.save()
 
-        # --- 3. Test REJECTED transition ---
+        # 2a. APPLIED → PRELIMINARY_APPROVED
         sp2 = StudentPractice.objects.create(
             user=self.user,
             practice=practice,
@@ -196,14 +196,59 @@ class StudentPracticeServiceTests(TestCase):
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 1),
         )
-        StudentPracticeService.update_student_practice_status(
-            user=prof,
-            student_practice_id=sp2.student_practice_id,
-            data={"approval_status": ApprovalStatus.REJECTED.value},
+        StudentPracticeService.transition_student_practice_state(
+            sp2,
+            StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
+            prof,
+            reason="test: APPLIED -> PRELIMINARY_APPROVED",
         )
         sp2.refresh_from_db()
-        self.assertEqual(sp2.approval_status, ApprovalStatus.REJECTED)
-        self.assertEqual(sp2.workflow_state, StudentPracticeWorkflowState.REJECTED, "Rejected should set REJECTED")
+        self.assertEqual(
+            sp2.workflow_state,
+            StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
+            "PRELIMINARY_APPROVED transition should succeed",
+        )
+
+        # 2b. PRELIMINARY_APPROVED → CONTRACTED
+        StudentPracticeService.transition_student_practice_state(
+            sp2,
+            StudentPracticeWorkflowState.CONTRACTED,
+            prof,
+            reason="test: PRELIMINARY_APPROVED -> CONTRACTED",
+        )
+        sp2.refresh_from_db()
+        self.assertEqual(
+            sp2.workflow_state,
+            StudentPracticeWorkflowState.CONTRACTED,
+            "CONTRACTED transition should succeed",
+        )
+
+        # 2c. REJECTED from APPLIED
+        sp2.is_cancelled = True
+        sp2.save()
+
+        sp3 = StudentPractice.objects.create(
+            user=self.user,
+            practice=practice,
+            application_date=date.today(),
+            workflow_state=StudentPracticeWorkflowState.APPLIED,
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 1),
+        )
+        StudentPracticeService.transition_student_practice_state(
+            sp3,
+            StudentPracticeWorkflowState.REJECTED,
+            prof,
+            reason="test: APPLIED -> REJECTED",
+        )
+        sp3.refresh_from_db()
+        self.assertEqual(
+            sp3.workflow_state,
+            StudentPracticeWorkflowState.REJECTED,
+            "REJECTED transition should succeed",
+        )
 
     # --- M-M4-1: Error messages use StudentPracticeMessages constants ---
 

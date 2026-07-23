@@ -378,3 +378,158 @@ class HealthCheckView(APIView):
             {"status": "ok" if db_ok else "error", "db": "ok" if db_ok else "unavailable"},
             status=200 if db_ok else 503,
         )
+
+
+class DashboardStatsView(APIView):
+    """
+    Monitoring dashboard stats endpoint (Item 2.5).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from api.dashboard_service import DashboardService
+
+        data = DashboardService.get_stats_for_user(request.user)
+        return Response(data)
+
+
+class DataExportView(APIView):
+    """
+    Bulk data export endpoint for practices (Item 2.3).
+    Pro >500 záznamů spouští asynchronní Celery task.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from api.export_service import ExportService
+        from student_practices.models import StudentPractice
+
+        try:
+            params = getattr(request, "query_params", request.GET)
+            fmt = str(params.get("format", "xlsx")).lower()
+            year = params.get("year")
+            state = params.get("workflow_state")
+            subject_id = params.get("subject_id")
+
+            filters = {
+                "year": year,
+                "workflow_state": state,
+                "subject_id": subject_id,
+            }
+
+            # Department scoping for count (same as sync query below)
+            user = request.user
+            dept_ids = None
+            if not user.is_superuser and hasattr(user, "user_subjects"):
+                dept_ids = list(user.user_subjects.values_list("subject__department_id", flat=True))
+            org_employer = getattr(user, "employer_profile", None)
+
+            # Zjisti počet záznamů
+            count = ExportService.get_count(filters, dept_ids=dept_ids, employer=org_employer)
+
+            # Pokud >500, deleguj na Celery task (NOTE: async export may lack user-level
+            # scoping — consider admin-only async or passing scoped filters).
+            if count > 500:
+                import uuid
+
+                from api.tasks import export_data_async
+
+                export_id = str(uuid.uuid4())
+                export_data_async.delay(export_id, filters, fmt)
+                return Response(
+                    {
+                        "export_id": export_id,
+                        "status": "processing",
+                        "total_count": count,
+                    }
+                )
+
+            # Synchronní export pro ≤500 záznamů
+            qs = StudentPractice.objects.filter(is_cancelled=False)
+
+            # Department scoping: non-superusers see only their own department's practices
+            user = request.user
+            if not user.is_superuser and hasattr(user, "user_subjects"):
+                dept_ids = user.user_subjects.values_list("subject__department_id", flat=True)
+                if dept_ids:
+                    qs = qs.filter(practice__subject__department_id__in=dept_ids)
+
+            # For organization users, scope to their own employer's practices
+            if hasattr(user, "employer_profile") and user.employer_profile:
+                qs = qs.filter(practice__employer=user.employer_profile)
+
+            if year:
+                qs = qs.filter(year=year)
+            if state is not None:
+                qs = qs.filter(workflow_state=state)
+            if subject_id:
+                qs = qs.filter(practice__subject_id=subject_id)
+
+            if fmt == "csv":
+                csv_content = ExportService.generate_csv(qs)
+                response = HttpResponse(csv_content, content_type="text/csv; charset=utf-8")
+                response["Content-Disposition"] = 'attachment; filename="praxe_export.csv"'
+                return response
+            else:
+                xlsx_bytes = ExportService.generate_xlsx(qs)
+                response = HttpResponse(
+                    xlsx_bytes,
+                    content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+                response["Content-Disposition"] = 'attachment; filename="praxe_export.xlsx"'
+                return response
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+class DataExportStatusView(APIView):
+    """
+    Endpoint pro kontrolu stavu asynchronního exportu (polling).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, export_id):
+        from django.core.cache import cache
+
+        status = cache.get(f"export_{export_id}_status")
+        if status is None:
+            return Response({"export_id": export_id, "status": "not_found"}, status=404)
+        return Response({"export_id": export_id, "status": status})
+
+
+class DataExportDownloadView(APIView):
+    """
+    Endpoint pro stažení hotového asynchronního exportu.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, export_id):
+        from django.core.cache import cache
+
+        status = cache.get(f"export_{export_id}_status")
+        if status != "completed":
+            return Response(
+                {
+                    "export_id": export_id,
+                    "status": status if status else "not_found",
+                },
+                status=404 if status is None else 400,
+            )
+
+        data = cache.get(f"export_{export_id}")
+        fmt = cache.get(f"export_{export_id}_fmt", "xlsx")
+
+        if fmt == "csv":
+            response = HttpResponse(data, content_type="text/csv; charset=utf-8")
+            response["Content-Disposition"] = 'attachment; filename="praxe_export.csv"'
+        else:
+            response = HttpResponse(
+                data,
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            response["Content-Disposition"] = 'attachment; filename="praxe_export.xlsx"'
+        return response

@@ -74,7 +74,9 @@ class PracticeSerializer(serializers.ModelSerializer):
     start_date = FormattedDateField()
     end_date = FormattedDateField(required=False)
     available_positions = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=1000)
-    coefficient = serializers.FloatField(required=False, min_value=0.1, max_value=10.0)
+    coefficient = serializers.FloatField(
+        read_only=True, help_text="TODO: DEPRECATED — field bude odstraněn v budoucí verzi. Použijte Subject.min_hours (480 default)."
+    )
 
     def get_contact_user_info(self, obj):
         if obj.contact_user:
@@ -196,9 +198,10 @@ class PracticeSerializer(serializers.ModelSerializer):
         validated_data.setdefault("workflow_state", PracticeWorkflowState.PENDING_CONTENT_APPROVAL)
 
         start_date = validated_data.get("start_date")
-        coefficient = validated_data.get("coefficient")
-        if start_date and coefficient is not None:
-            validated_data["end_date"] = calculate_end_date(start_date, coefficient)
+        subject = validated_data.get("subject")
+        if start_date and subject:
+            min_hours = getattr(subject, "min_hours", 480)
+            validated_data["end_date"] = calculate_end_date(start_date, min_hours=min_hours)
 
         return super().create(validated_data)
 
@@ -323,9 +326,15 @@ class PracticeApprovalStatusSerializer(serializers.Serializer):
 class EndDateRequestSerializer(serializers.Serializer):
     start_date = FormattedDateField(help_text="Start date")
     coefficient = serializers.FloatField(
-        help_text="Coefficient to calculate practice duration",
+        help_text="DEPRECATED — field bude odstraněn v budoucí verzi. Použijte min_hours (480 default).",
         min_value=0.1,
         max_value=10.0,
+        required=False,
+    )
+    min_hours = serializers.IntegerField(
+        help_text="Total minimum practice hours (from Subject.min_hours)",
+        min_value=0,
+        required=False,
     )
 
 

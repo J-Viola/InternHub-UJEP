@@ -2,7 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import send_mail
-from django.db import DatabaseError, IntegrityError
+from django.template.loader import render_to_string
 
 from users.models import ApprovalStatus
 
@@ -18,7 +18,7 @@ class EmailService:
     """
 
     @staticmethod
-    def _send_email(subject, message, recipient_list):
+    def _send_email(subject, message, recipient_list, html_message=None):
         if not recipient_list:
             return
         try:
@@ -27,6 +27,7 @@ class EmailService:
                 message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=recipient_list,
+                html_message=html_message,
                 fail_silently=False,
             )
         except Exception as e:
@@ -78,7 +79,22 @@ class EmailService:
             f"Více informací naleznete v systému InternHub.\n\n"
             f"Tým InternHub"
         )
-        EmailService._send_email(subject, message, [student.email])
+        try:
+            html_message = render_to_string(
+                "notifications/application_status.html",
+                {
+                    "practice_title": practice.title if practice else "",
+                    "is_approved": status == ApprovalStatus.APPROVED,
+                    "status_text": status_text,
+                    "rejection_reason": getattr(student_practice, "rejection_reason", ""),
+                    "site_url": getattr(settings, "SITE_URL", "http://localhost:3000"),
+                },
+            )
+        except Exception as t_err:
+            logger.warning(f"Failed to render application_status HTML template: {t_err}")
+            html_message = None
+
+        EmailService._send_email(subject, message, [student.email], html_message=html_message)
 
     @staticmethod
     def notify_org_practice_status(practice):
@@ -352,6 +368,144 @@ class EmailService:
         )
         EmailService._send_email(subject, message, admin_emails)
 
+    # ------------------------------------------------------------------
+    # 1.11: Notifications for 6 new workflow states
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def notify_student_awaiting_contract(student_practice):
+        """
+        Notify student that the contract preparation has started (AWAITING_CONTRACT).
+        """
+        student = student_practice.user
+        if not student or not student.email:
+            return
+
+        practice_title = student_practice.practice.title if student_practice.practice else "N/A"
+        subject = f"Příprava smlouvy - {practice_title}"
+        message = (
+            f"Dobrý den,\n\n"
+            f"byla zahájena příprava smlouvy k praxi '{practice_title}'.\n\n"
+            f"Jakmile bude smlouva připravena, budete informováni.\n\n"
+            f"Více informací naleznete v systému InternHub.\n\n"
+            f"Tým InternHub"
+        )
+        html_message = None
+        try:
+            html_message = render_to_string(
+                "notifications/application_status.html",
+                {
+                    "practice_title": practice_title,
+                    "is_approved": True,
+                    "status_text": "čeká na smlouvu",
+                    "rejection_reason": "",
+                    "site_url": getattr(settings, "SITE_URL", "http://localhost:3000"),
+                },
+            )
+        except Exception as t_err:
+            logger.warning(f"Failed to render awaiting_contract HTML template: {t_err}")
+        EmailService._send_email(subject, message, [student.email], html_message=html_message)
+
+    @staticmethod
+    def notify_student_awaiting_documents(student_practice):
+        """
+        Notify student that documents are required (AWAITING_DOCUMENTS).
+        """
+        student = student_practice.user
+        if not student or not student.email:
+            return
+
+        practice_title = student_practice.practice.title if student_practice.practice else "N/A"
+        subject = f"Žádost o nahrání dokumentů - {practice_title}"
+        message = (
+            f"Dobrý den,\n\n"
+            f"žádáme Vás o nahrání požadovaných dokumentů k praxi '{practice_title}'.\n\n"
+            f"Prosím nahrajte dokumenty co nejdříve v systému InternHub.\n\n"
+            f"Tým InternHub"
+        )
+        EmailService._send_email(subject, message, [student.email])
+
+    @staticmethod
+    def notify_student_documents_rejected(student_practice, reason):
+        """
+        Notify student that their documents were rejected (DOCUMENTS_REJECTED).
+        """
+        student = student_practice.user
+        if not student or not student.email:
+            return
+
+        practice_title = student_practice.practice.title if student_practice.practice else "N/A"
+        subject = f"Dokumenty zamítnuty - {practice_title}"
+        message = (
+            f"Dobrý den,\n\n"
+            f"Vaše dokumenty k praxi '{practice_title}' byly zamítnuty.\n"
+            f"Důvod: {reason}\n\n"
+            f"Prosím nahrajte opravené dokumenty v systému InternHub.\n\n"
+            f"Tým InternHub"
+        )
+        EmailService._send_email(subject, message, [student.email])
+
+    @staticmethod
+    def notify_professor_content_approval(student_practice):
+        """
+        Notify professor/garant that content awaits approval (AWAITING_CONTENT_APPROVAL).
+        """
+        practice = student_practice.practice
+        subject_obj = practice.subject if practice else None
+        if not subject_obj or not subject_obj.subject_manager or not subject_obj.subject_manager.email:
+            return
+
+        student = student_practice.user
+        student_name = student.full_name if student else "N/A"
+        practice_title = practice.title if practice else "N/A"
+        subject = f"Obsah praxe ke schválení - {student_name}"
+        message = (
+            f"Dobrý den,\n\n"
+            f"student {student_name} odeslal obsah praxe '{practice_title}' ke schválení.\n\n"
+            f"Prosím zkontrolujte a schvalte obsah v systému InternHub.\n\n"
+            f"Tým InternHub"
+        )
+        EmailService._send_email(subject, message, [subject_obj.subject_manager.email])
+
+    @staticmethod
+    def notify_student_content_rejected(student_practice, reason):
+        """
+        Notify student that the content was rejected (CONTENT_REJECTED).
+        """
+        student = student_practice.user
+        if not student or not student.email:
+            return
+
+        practice_title = student_practice.practice.title if student_practice.practice else "N/A"
+        subject = f"Obsah praxe zamítnut - {practice_title}"
+        message = (
+            f"Dobrý den,\n\n"
+            f"obsah praxe '{practice_title}' byl zamítnut garantem.\n"
+            f"Důvod: {reason}\n\n"
+            f"Prosím opravte obsah a odešlete znovu v systému InternHub.\n\n"
+            f"Tým InternHub"
+        )
+        EmailService._send_email(subject, message, [student.email])
+
+    @staticmethod
+    def notify_student_content_approved(student_practice):
+        """
+        Notify student that the content was approved (CONTENT_APPROVED).
+        """
+        student = student_practice.user
+        if not student or not student.email:
+            return
+
+        practice_title = student_practice.practice.title if student_practice.practice else "N/A"
+        subject = f"Obsah praxe schválen - {practice_title}"
+        message = (
+            f"Dobrý den,\n\n"
+            f"obsah praxe '{practice_title}' byl schválen garantem.\n\n"
+            f"Více informací naleznete v systému InternHub.\n\n"
+            f"Tým InternHub"
+        )
+        EmailService._send_email(subject, message, [student.email])
+
 
 class NotificationService:
     """In-app notification service (WP5).
@@ -368,20 +522,16 @@ class NotificationService:
         actor=None,
         target=None,
         notification_type=NotificationType.INFO,
-        send_email=False,
+        send_email=True,
     ):
         """
-        Create an in-app notification. Optionally sends email when send_email=True.
-
-        Args:
-            recipient: User object (required) — who receives the notification.
-            verb: Machine event name, e.g. 'PRACTICE_APPROVED'.
-            message: Human-readable notification text (Czech).
-            actor: User who performed the action (optional, None = system event).
-            target: Any model instance — stored via GenericFK (optional).
-            notification_type: Severity enum (default INFO).
-            send_email: Whether to also send an email (default False per 5.4a).
+        Create an in-app notification and optionally email notification (Item 3.1).
+        Does NOT raise 500 if recipient is None.
         """
+        if not recipient:
+            logger.warning(f"Notification recipient is None for verb={verb}. Skipping notification.")
+            return None
+
         try:
             notification_data = {
                 "recipient": recipient,
@@ -396,13 +546,16 @@ class NotificationService:
 
             notification = Notification.objects.create(**notification_data)
 
-            if send_email and recipient.email:
-                NotificationService._send_email(recipient, verb, message)
+            if send_email and getattr(recipient, "email", None):
+                try:
+                    NotificationService._send_email(recipient, verb, message)
+                except Exception as mail_err:
+                    logger.error(f"Failed to send email notification to {recipient.email}: {mail_err}")
 
             return notification
-        except (DatabaseError, IntegrityError) as e:
+        except Exception as e:
             logger.exception(f"Failed to create notification for {recipient}: {str(e)}")
-            raise
+            return None
 
     @staticmethod
     def _send_email(recipient, verb, message):

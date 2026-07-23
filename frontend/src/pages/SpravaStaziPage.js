@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
 import BackButton from "@core/Button/BackButton";
 import Paragraph from "@core/Text/Paragraph";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PraxeDepartmentEntity from "@components/Praxe/PraxeDepartmentEntity";
 import { useUser } from "@hooks/UserProvider";
 import { useMessage } from "@hooks/MessageContext";
 import { useTranslation } from "react-i18next";
+import { useApi } from "@hooks/useApi";
+import { daysSinceCzechDate, isOlderThan } from "@utils/dateUtils";
 
 export default function SpravaStaziPage() {
     const { t } = useTranslation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [approved, setApproved] = useState([]);
     const [toApprove, setToApprove] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
@@ -23,6 +27,9 @@ export default function SpravaStaziPage() {
     const [selectedEntity, setSelectedEntity] = useState(null);
     const { user } = useUser();
     const { addMessage } = useMessage();
+    const api = useApi();
+
+    const activeFilter = searchParams.get("state") || "ALL";
 
     const fetchData = async () => {
         setLoading(true);
@@ -33,12 +40,41 @@ export default function SpravaStaziPage() {
                 : await nabidkaAPI.getNabidkyByUserDepartment();
             setApproved(res.approved_practices || []);
             setToApprove(res.to_approve_practices || []);
+
+            try {
+                const statsRes = await api.get('/dashboard/stats/');
+                setStats(statsRes.data);
+            } catch (sErr) {
+                console.error("Chyba při načítání statistik dashboardu:", sErr);
+            }
         } catch {
             setError(t('internships.error'));
             setApproved([]);
             setToApprove([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleExport = async (format) => {
+        try {
+            const response = await api.get(`/export-data/?format=${format}`, {
+                responseType: 'blob',
+            });
+            // Create a download link from the blob response
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `praxe_export.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            addMessage(`Export ve formátu ${format.toUpperCase()} byl stažen.`, 'S');
+        } catch (err) {
+            const msg = err?.response?.data?.error || t('common.error');
+            addMessage(msg, 'E');
         }
     };
 
@@ -72,7 +108,6 @@ export default function SpravaStaziPage() {
         }
     };
 
-
     const handleClosePop = () => {
         setPop(false);
         setSelectedEntity(null);
@@ -84,11 +119,9 @@ export default function SpravaStaziPage() {
 
     const handleView = (type, entity) => {
         if (type === "approved_practices") {
-            // For ongoing internships, go to the Practice Card (detail of student's internship)
             navigate(`/karta-praxe/${entity.student_practice_id}`)
         }
         if (type === "to_approve_practices") {
-            // For practices waiting for approval, go to the offer detail
             navigate(`/nabidka/${entity.practice_id}`)
         }
     }
@@ -99,20 +132,173 @@ export default function SpravaStaziPage() {
             setPop(true);
         }
         if (type === "approved_practices") {
-            // "Users" icon leads to all students applied to the same offer
             navigate(`/students/${entity?.practice_id}`);
         }
     };
+
+    // Filter approved practices based on URL state param
+    const filteredApproved = useMemo(() => {
+        if (activeFilter === "ALL") return approved;
+        if (activeFilter === "AT_RISK") {
+            // AT_RISK is computed from stats, but we don't have individual risk flags
+            // on each entity in the list. For now, show all and let the KPI card
+            // handle the at-risk panel.
+            return approved;
+        }
+        if (activeFilter === "CONTRACT_PENDING") {
+            return approved.filter(
+                (e) => e.workflow_state === "PRELIMINARY_APPROVED" && !e.contract_received_date
+            );
+        }
+        return approved.filter((e) => e.workflow_state === activeFilter);
+    }, [approved, activeFilter]);
+
+    // Escalation: practices in PRELIMINARY_APPROVED > 7 days without contract
+    const escalatedPractices = useMemo(() => {
+        return approved.filter((e) => {
+            if (e.workflow_state !== "PRELIMINARY_APPROVED" || e.contract_received_date) return false;
+            if (!e.updated_at) return false;
+            return isOlderThan(e.updated_at, 7);
+        });
+    }, [approved]);
+
+    const setFilter = (filter) => {
+        if (filter === "ALL") {
+            navigate('/sprava-stazi');
+        } else {
+            navigate(`/sprava-stazi?state=${filter}`);
+        }
+    };
+
+    const filterTabs = [
+        { key: "ALL", label: t('internships.filter_all') },
+        { key: "STARTED", label: t('internships.filter_started') },
+        { key: "AWAITING_DOCUMENTS", label: t('internships.filter_awaiting_documents') },
+        { key: "CONTRACT_PENDING", label: t('internships.filter_contract_pending') },
+        { key: "AT_RISK", label: t('internships.filter_at_risk') },
+    ];
 
     return(
         <>
             <BackButton/>
 
-            <Container property={"flex items-center justify-between mb-6 mt-4"}>
-                <Headings sizeTag={"h3"} property={"mt-2"}>
+            {/* Dashboard Stats & Export Toolbar (Item 2.4 & 2.6) */}
+            <Container property={"flex flex-col md:flex-row items-center justify-between mb-6 mt-4 gap-4"}>
+                <Headings sizeTag={"h2"} property={"text-2xl font-bold"}>
                     {t('internships.ongoing_title')}
                 </Headings>
+
+                {/* Export Buttons */}
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => handleExport('xlsx')}
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-md font-medium transition-colors"
+                    >
+                        Export XLSX
+                    </button>
+                    <button
+                        onClick={() => handleExport('csv')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-md font-medium transition-colors"
+                    >
+                        Export CSV
+                    </button>
+                </div>
             </Container>
+
+            {/* Dashboard KPI Cards */}
+            {stats && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    <div
+                        className={`bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-shadow ${activeFilter === "ALL" ? 'ring-2 ring-blue-400 border-blue-400' : 'border-gray-100'}`}
+                        onClick={() => setFilter('ALL')}
+                    >
+                        <p className="text-xs text-gray-500 font-medium">Aktivní přihlášky</p>
+                        <p className="text-2xl font-bold text-blue-600">{stats.total_active}</p>
+                    </div>
+                    <div
+                        className={`bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-shadow ${activeFilter === "STARTED" ? 'ring-2 ring-green-400 border-green-400' : 'border-gray-100'}`}
+                        onClick={() => setFilter('STARTED')}
+                    >
+                        <p className="text-xs text-gray-500 font-medium">Probíhá (STARTED)</p>
+                        <p className="text-2xl font-bold text-green-600">{stats.state_counts?.STARTED || 0}</p>
+                    </div>
+                    <div
+                        className={`bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-shadow ${activeFilter === "AWAITING_DOCUMENTS" ? 'ring-2 ring-amber-400 border-amber-400' : 'border-gray-100'}`}
+                        onClick={() => setFilter('AWAITING_DOCUMENTS')}
+                    >
+                        <p className="text-xs text-gray-500 font-medium">Čeká na dokumenty</p>
+                        <p className="text-2xl font-bold text-amber-600">{stats.state_counts?.AWAITING_DOCUMENTS || 0}</p>
+                    </div>
+                    <div
+                        className={`bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-shadow ${activeFilter === "CONTRACT_PENDING" ? 'ring-2 ring-orange-400 border-orange-400' : 'border-gray-100'}`}
+                        onClick={() => setFilter('CONTRACT_PENDING')}
+                    >
+                        <p className="text-xs text-gray-500 font-medium">Čeká na zasmluvnění</p>
+                        <p className="text-2xl font-bold text-orange-600">{stats.contract_pending_count || 0}</p>
+                    </div>
+                    <div
+                        className={`bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-shadow ${activeFilter === "AT_RISK" ? 'ring-2 ring-red-400 border-red-400' : 'border-red-200 bg-red-50'}`}
+                        onClick={() => setFilter('AT_RISK')}
+                    >
+                        <p className="text-xs text-red-600 font-medium">Rizikové praxe (At Risk)</p>
+                        <p className="text-2xl font-bold text-red-600">{stats.at_risk_count}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* At Risk Alert Panel */}
+            {stats && stats.at_risk_items && stats.at_risk_items.length > 0 && (
+                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 className="text-sm font-bold text-red-800 mb-2">⚠ Praxe vyžadující pozornost (Po termínu / Chybějící dokumenty):</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {stats.at_risk_items.map((item) => (
+                            <div key={item.student_practice_id} className="flex justify-between items-center bg-white p-2 rounded text-xs border border-red-100">
+                                <div>
+                                    <span className="font-semibold">{item.student_name}</span> — {item.practice_title} ({item.employer_name})
+                                </div>
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded font-medium">{item.risk_reason}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Contract Pending Escalation Panel */}
+            {escalatedPractices.length > 0 && (
+                <div className="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <h4 className="text-sm font-bold text-orange-800 mb-2">⏳ Praxe čekající na smlouvu déle než 7 dní:</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {escalatedPractices.map((item) => (
+                            <div key={item.student_practice_id} className="flex justify-between items-center bg-white p-2 rounded text-xs border border-orange-100">
+                                <div>
+                                    <span className="font-semibold">{item.student_full_name || "N/A"}</span> — {item.practice_title || item.title || "N/A"}
+                                </div>
+                                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded font-medium">
+                                    {t('internships.contract_pending_badge', { days: daysSinceCzechDate(item.updated_at) })}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    <p className="text-xs text-orange-700 mt-2">{t('internships.contract_pending_escalation')}</p>
+                </div>
+            )}
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6">
+                {filterTabs.map((tab) => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setFilter(tab.key)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            activeFilter === tab.key
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
 
             {loading && (
                 <Paragraph property="text-center text-gray-500 py-8">{t('internships.loading')}</Paragraph>
@@ -125,14 +311,16 @@ export default function SpravaStaziPage() {
             {!loading && !error && (
                 <>
                     <Container property={"mb-8 space-y-4"}>
-                        {approved.length === 0 ? (
+                        {filteredApproved.length === 0 ? (
                             <Paragraph property="text-center text-gray-500 py-8">
-                                {t('internships.no_approved')}
+                                {activeFilter === "ALL"
+                                    ? t('internships.no_approved')
+                                    : t('internships.no_approved')}
                             </Paragraph>
                         ) : (
-                            approved.map((entity) => (
+                            filteredApproved.map((entity) => (
                                 <PraxeDepartmentEntity
-                                    key={entity.practice_id}
+                                    key={entity.student_practice_id || entity.practice_id}
                                     entity={entity}
                                     type="approved"
                                     onView={() => handleView("approved_practices", entity)}

@@ -1,8 +1,18 @@
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from api.views import HealthCheckView, ServeUserFileView, StorageAuthCheckView, UniqueLocationsListView
+from api.views import (
+    DashboardStatsView,
+    DataExportDownloadView,
+    DataExportStatusView,
+    DataExportView,
+    HealthCheckView,
+    ServeUserFileView,
+    StorageAuthCheckView,
+    UniqueLocationsListView,
+)
 
 from . import settings
 from .views import index
@@ -15,27 +25,26 @@ urlpatterns = [
     path("api/practices/", include("practices.urls")),
     path("api/departments/", include("department.urls")),
     path("api/subjects/", include("subject.urls")),
+    path("api/export-data/", DataExportView.as_view(), name="data-export"),
+    path("api/export/status/<str:export_id>/", DataExportStatusView.as_view(), name="export-status"),
+    path("api/export/download/<str:export_id>/", DataExportDownloadView.as_view(), name="export-download"),
     path("api/student-practices/", include("student_practices.urls")),
     path("api/code-lists/locations/", UniqueLocationsListView.as_view()),
     path("api/documents/<path:path>/", ServeUserFileView.as_view()),
     path("api/auth/check/", StorageAuthCheckView.as_view()),
     path("api/health/", HealthCheckView.as_view(), name="health-check"),
+    path("api/dashboard/stats/", DashboardStatsView.as_view(), name="dashboard-stats"),
+    # OpenAPI schema and Swagger UI
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
 
 if settings.DEBUG:
-    from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-
     from api.views import TestResetDBView, TestScenarioView
 
     urlpatterns += [
         path("api/test/reset-db/", TestResetDBView.as_view(), name="test-reset-db"),
         path("api/test/scenario/<str:name>/", TestScenarioView.as_view(), name="test-scenario"),
-        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-        path(
-            "api/schema/swagger-ui/",
-            SpectacularSwaggerView.as_view(url_name="schema"),
-            name="swagger-ui",
-        ),
     ]
 
 # Serving media files in development

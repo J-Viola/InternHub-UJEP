@@ -32,8 +32,18 @@ export const useStudentPracticeAPI = () => {
     };
 
     // PATCH /api/student-practices/<id>/status/ - Změna stavu přihlášky
-    // action: "approve" | "reject"
-    const updateStudentPracticeStatus = async (studentPracticeId, action) => {
+    // action: "approve" | "reject" | "resubmit"
+    // options: { reason?: string } — povinné pro content reject
+    const updateStudentPracticeStatus = async (studentPracticeId, action, options = {}) => {
+        // Content reject / resubmit používají state machine transition endpoint
+        if (action === "reject" && options.reason) {
+            return transitionStudentPractice(studentPracticeId, 11, options.reason); // CONTENT_REJECTED
+        }
+        if (action === "resubmit") {
+            return transitionStudentPractice(studentPracticeId, 10); // AWAITING_CONTENT_APPROVAL
+        }
+
+        // Legacy dual-approval endpoint (approve / reject bez důvodu)
         let approval_status = null;
         if (action === "approve") approval_status = 1; // APPROVED
         if (action === "reject") approval_status = 2; // REJECTED
@@ -45,6 +55,42 @@ export const useStudentPracticeAPI = () => {
             return response.data;
         } catch (error) {
             console.error('Chyba při změně stavu přihlášky:', error);
+            throw error;
+        }
+    };
+
+    // POST /api/student-practices/<id>/transition/ - State machine přechod
+    const transitionStudentPractice = async (studentPracticeId, targetState, reason = "") => {
+        try {
+            const response = await api.post(`/student-practices/${studentPracticeId}/transition/`, {
+                target_state: targetState,
+                reason
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při přechodu stavu přihlášky:', error);
+            throw error;
+        }
+    };
+
+    // POST /api/student-practices/<id>/withdraw/ - Stažení žádosti studentem
+    const withdrawApplication = async (studentPracticeId) => {
+        try {
+            const response = await api.post(`/student-practices/${studentPracticeId}/withdraw/`);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při stahování žádosti:', error);
+            throw error;
+        }
+    };
+
+    // POST /api/student-practices/<id>/confirm-contract/ - Potvrzení přijetí smlouvy
+    const confirmContract = async (studentPracticeId) => {
+        try {
+            const response = await api.post(`/student-practices/${studentPracticeId}/confirm-contract/`);
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při potvrzování smlouvy:', error);
             throw error;
         }
     };
@@ -148,11 +194,14 @@ export const useStudentPracticeAPI = () => {
         getOrganizationApplications,
         getProfessorApplications,
         updateStudentPracticeStatus,
+        transitionStudentPractice,
         getStudentsByPracticeId,
         getStudentPracticeCard,
         getAdminPendingApplications,
         createInvitation,
         downloadGeneratedDocument,
         reapplyToPractice,
+        confirmContract,
+        withdrawApplication,
     };
 };

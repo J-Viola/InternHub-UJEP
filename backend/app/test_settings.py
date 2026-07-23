@@ -5,9 +5,11 @@ os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("DJANGO_SECRET_KEY", "test-secret-key")
 os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret")
 os.environ.setdefault("JWT_ACCESS_TOKEN_REFRESH_TIME", "300")
-os.environ.setdefault("PG_DB", "test_db")
-os.environ.setdefault("PG_USER", "test_user")
-os.environ.setdefault("PG_PASSWORD", "test_password")
+# Test DB — prefix test_ to prevent accidental use of production database.
+# Credentials below are local-dev only; CI/other environments override via env vars.
+os.environ.setdefault("PG_DB", "test_internhub")
+os.environ.setdefault("PG_USER", "internhub")
+os.environ.setdefault("PG_PASSWORD", "1234")
 os.environ.setdefault("PG_HOST", "localhost")
 os.environ.setdefault("PG_PORT", "5432")
 os.environ.setdefault("EMAIL_HOST", "localhost")
@@ -18,6 +20,8 @@ os.environ.setdefault("EMAIL_FROM", "test@example.com")
 os.environ.setdefault("STAG_MOCK", "True")
 
 from .settings import *  # noqa: F403,E402
+
+ALLOWED_HOSTS = ["*"]
 
 MIGRATION_MODULES = {
     "auth": None,
@@ -33,6 +37,14 @@ MIGRATION_MODULES = {
     "admin": None,
     "token_blacklist": None,
     "notifications": None,
+}
+
+# Use local memory cache for tests (avoids Redis dependency)
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "test-cache",
+    }
 }
 
 LOGGING = {

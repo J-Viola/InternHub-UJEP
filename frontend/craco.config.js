@@ -21,6 +21,28 @@ module.exports = {
 
     },
     configure: (webpackConfig) => {
+      webpackConfig.resolve = {
+        ...webpackConfig.resolve,
+        fallback: {
+          // Node.js core moduly — nepotřebné v browseru, ale některé npm balíčky
+          // (axios, follow-redirects) je importují; CRA/webpack 5 nepolyfilluje
+          http: false,
+          https: false,
+          http2: false,
+          stream: false,
+          util: false,
+          path: false,
+          zlib: false,
+          url: false,
+          crypto: false,
+          assert: false,
+          net: false,
+          tls: false,
+          fs: false,
+          buffer: false,
+          process: false,
+        },
+      };
       webpackConfig.ignoreWarnings = [
         {
           module: /react-datepicker/,

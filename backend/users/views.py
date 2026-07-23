@@ -303,7 +303,7 @@ class AresJusticeView(generics.GenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        ico = serializer.validated_data.get("ico")
+        ico = str(serializer.validated_data.get("ico")).zfill(8)
 
         ares_data = fetch_ares_data(ico)
 
@@ -315,12 +315,53 @@ class AresJusticeView(generics.GenericAPIView):
         )
 
         if ares_data:
-            return Response(ares_data.model_dump(), status=status.HTTP_200_OK)
-        else:
+            data = ares_data.model_dump()
+            data["source"] = "ares"
+            return Response(data, status=status.HTTP_200_OK)
+
+        # Fallback to DB cache lookup if ARES fails/times out
+        from users.models import EmployerProfile, OrganizationUser
+
+        employer = EmployerProfile.objects.filter(ico=ico).first()
+        if employer and employer.company_name:
             return Response(
-                {"error": "Failed to fetch data from ARES"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {
+                    "ico": employer.ico,
+                    "obchodniJmeno": employer.company_name,
+                    "dic": employer.dic or "",
+                    "sidlo": {
+                        "textovaAdresa": employer.address or "",
+                        "psc": employer.zip_code or None,
+                    },
+                    "source": "cache",
+                },
+                status=status.HTTP_200_OK,
             )
+
+        org_user = OrganizationUser.objects.filter(ico=ico).first()
+        if org_user and org_user.company_name:
+            return Response(
+                {
+                    "ico": org_user.ico,
+                    "obchodniJmeno": org_user.company_name,
+                    "dic": org_user.dic or "",
+                    "sidlo": {
+                        "textovaAdresa": org_user.address or "",
+                        "psc": org_user.zip_code or None,
+                    },
+                    "source": "cache",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # DB miss -> 404 with manual input flag
+        return Response(
+            {
+                "error": "ARES API je momentálně nedostupné a záznam nebyl nalezen v databázi.",
+                "manual_input": True,
+            },
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
 
 class UpdateAresSubjectView(APIView):
@@ -659,3 +700,40 @@ class CurrentUserProfileView(APIView):
         )
 
         return Response(serializer.data)
+
+
+class UserAnonymizeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Anonymize user profile (GDPR Right to Erasure)",
+        description="Anonymizes personal data and deactivates account per GDPR Article 17.",
+        tags=["GDPR"],
+        responses={200: OpenApiResponse(description="User anonymized successfully")},
+    )
+    def delete(self, request):
+        from users.gdpr_service import GDPRService
+
+        GDPRService.anonymize_user(request.user)
+        return Response(
+            {"message": "Váš účet a osobní údaje byly úspěšně anonymizovány."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class UserDataExportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Export user data (GDPR Right to Data Portability)",
+        description="Returns a JSON dump of all personal data per GDPR Article 20.",
+        tags=["GDPR"],
+        responses={200: OpenApiResponse(description="JSON data export")},
+    )
+    def get(self, request):
+        from users.gdpr_service import GDPRService
+
+        data = GDPRService.export_user_data(request.user)
+        response = Response(data, status=status.HTTP_200_OK)
+        response["Content-Disposition"] = f'attachment; filename="gdpr_export_{request.user.user_id}.json"'
+        return response

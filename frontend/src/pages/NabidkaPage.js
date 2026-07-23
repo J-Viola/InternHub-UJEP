@@ -108,6 +108,15 @@ export default function NabidkaPage() {
         });
     };
 
+    const handleClearAll = () => {
+        setFilterValue({});
+        setCurrentPage(1);
+        setParams(currentUrl, "");
+        fetchData({}, 1);
+    };
+
+    const hasActiveFilters = Object.keys(filterValue).length > 0;
+
     // Auto-fetch when title text changes (debounced)
     useEffect(() => {
         setCurrentPage(1);
@@ -151,6 +160,8 @@ export default function NabidkaPage() {
                 handleFilterChange={handleFilterChange}
                 onSearchClear={handleSearchClear}
                 onSearchSubmit={handleSearchSubmit}
+                onClearAll={handleClearAll}
+                hasActiveFilters={hasActiveFilters}
                 locations={uniqueLocations}
                 subjects={uniqueSubjects}
             />

@@ -21,11 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# No default fallback in production — crash early rather than run insecure.
+# In DEBUG mode, allow a dev-only fallback for local convenience.
+if DEBUG:
+    SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key-change-in-production")
+else:
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,django").split(",")
 
@@ -55,6 +60,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "csp",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -139,8 +145,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "cs"
 
 LANGUAGES = [
-    ("cs", "Czech"),
-    ("en", "English"),
+    ("cs", "Čeština"),
 ]
 
 LOCALE_PATHS = [
@@ -237,7 +242,7 @@ else:
     CSP_CONNECT_SRC = ("'self'",)
 
 # File upload settings
-MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
 
@@ -277,8 +282,14 @@ REST_FRAMEWORK = {
     },
 }
 
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
-ACCESS_TOKEN_REFRESH_TIME = int(os.environ.get("JWT_ACCESS_TOKEN_REFRESH_TIME"))
+# JWT secrets — no production fallback (crash early if missing in production).
+# In DEBUG mode, dev-only fallback for local convenience.
+if DEBUG:
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "default-jwt-secret-key-32-bytes-long!")
+    ACCESS_TOKEN_REFRESH_TIME = int(os.environ.get("JWT_ACCESS_TOKEN_REFRESH_TIME", "300"))
+else:
+    JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
+    ACCESS_TOKEN_REFRESH_TIME = int(os.environ["JWT_ACCESS_TOKEN_REFRESH_TIME"])
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=ACCESS_TOKEN_REFRESH_TIME),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -319,6 +330,47 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
 }
 
+# Celery / Redis configuration
+_REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
+_REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
+_REDIS_DB = os.environ.get("REDIS_DB", "0")
+_REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+if _REDIS_PASSWORD:
+    REDIS_URL = f"redis://:{_REDIS_PASSWORD}@{_REDIS_HOST}:{_REDIS_PORT}/{_REDIS_DB}"
+else:
+    REDIS_URL = os.environ.get("REDIS_URL", f"redis://{_REDIS_HOST}:{_REDIS_PORT}/{_REDIS_DB}")
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# Fallback: v DEBUG módu běží tasky synchronně (není potřeba Redis)
+CELERY_TASK_ALWAYS_EAGER = DEBUG
+
+# Redis cache backend
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+# Session backend — v produkci vyžaduje explicitní env var USE_REDIS_SESSION=true.
+# Výchozí je DB backend (bezpečnější, nevyžaduje Redis auth).
+# Pozor: cache backend při výpadku Redis ztratí všechna session data.
+_USE_REDIS_SESSION = os.environ.get("USE_REDIS_SESSION", "false").lower() == "true"
+if _USE_REDIS_SESSION:
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
+else:
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
 # CORS settings
 CORS_ALLOWED_ORIGINS = os.environ.get(
     "CORS_ALLOWED_ORIGINS",
@@ -354,6 +406,26 @@ CORS_ALLOW_HEADERS = [
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
+
+# Sentry / error tracking
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration()],
+            send_default_pii=False,
+            traces_sample_rate=0.1,
+            environment="development" if DEBUG else "production",
+        )
+    except ImportError:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.warning("sentry-sdk not installed — Sentry error tracking disabled.")
 
 # Debug settings
 # DEBUG is set via env var at the top of file

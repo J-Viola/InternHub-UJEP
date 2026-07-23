@@ -19,12 +19,15 @@ from users.models import (
 from users.permissions import (
     CanViewStudentProfile,
     HasRolePermission,
+    IsGarantOrReadOnly,
+    IsOrganizationOrReadOnly,
     IsOrganizationOwner,
     IsOrganizationUser,
     IsStagAdmin,
     IsStagStudent,
     IsStagTeacher,
     IsStagUser,
+    IsStudentOwner,
 )
 
 # ---------------------------------------------------------------------------
@@ -335,3 +338,158 @@ class CanViewStudentProfileTests(TestCase):
     def test_denies_unrelated_student(self):
         other_student = make_student("other_student@test.com")
         self.assertFalse(self._check(other_student))
+
+
+# ===========================================================================
+# IsGarantOrReadOnly
+# ===========================================================================
+
+
+def make_safe_request(user):
+    """Simulate a GET request (safe method)."""
+    req = RequestFactory().get("/")
+    req.user = user
+    return req
+
+
+def make_unsafe_request(user):
+    """Simulate a POST request (unsafe method)."""
+    req = RequestFactory().post("/")
+    req.user = user
+    return req
+
+
+class IsGarantOrReadOnlyTests(TestCase):
+    def setUp(self):
+        self.perm = IsGarantOrReadOnly()
+        self.dept = Department.objects.create(department_name="KI6", department_code="KI6")
+
+    def test_grants_vy_read(self):
+        """VY (Vyučující) can read."""
+        prof = make_professor("vy_prof@test.com", self.dept, role_str=StagRoleEnum.VY)
+        self.assertTrue(self.perm.has_permission(make_safe_request(prof), None))
+
+    def test_grants_vk_read(self):
+        """VK (Vedoucí katedry) can read."""
+        prof = make_professor("vk_prof@test.com", self.dept, role_str=StagRoleEnum.VK)
+        self.assertTrue(self.perm.has_permission(make_safe_request(prof), None))
+
+    def test_grants_vy_write(self):
+        """VY can write."""
+        prof = make_professor("vy_prof2@test.com", self.dept, role_str=StagRoleEnum.VY)
+        self.assertTrue(self.perm.has_permission(make_unsafe_request(prof), None))
+
+    def test_grants_vk_write(self):
+        """VK can write."""
+        prof = make_professor("vk_prof2@test.com", self.dept, role_str=StagRoleEnum.VK)
+        self.assertTrue(self.perm.has_permission(make_unsafe_request(prof), None))
+
+    def test_denies_student_write(self):
+        """Student cannot write."""
+        student = make_student("std@test.com")
+        self.assertFalse(self.perm.has_permission(make_unsafe_request(student), None))
+
+    def test_allows_student_read(self):
+        """Student can read (safe method)."""
+        student = make_student("std2@test.com")
+        self.assertTrue(self.perm.has_permission(make_safe_request(student), None))
+
+    def test_denies_anonymous(self):
+        """Anonymous user is denied."""
+        self.assertFalse(self.perm.has_permission(make_unsafe_request(AnonymousUser()), None))
+
+    def test_denies_org_user_write(self):
+        """Organization user cannot write."""
+        org = make_org_user("org_isgarant@test.com")
+        self.assertFalse(self.perm.has_permission(make_unsafe_request(org), None))
+
+
+# ===========================================================================
+# IsOrganizationOrReadOnly
+# ===========================================================================
+
+
+class IsOrganizationOrReadOnlyTests(TestCase):
+    def setUp(self):
+        self.perm = IsOrganizationOrReadOnly()
+        self.profile = make_employer_profile()
+
+    def test_grants_org_user_write(self):
+        """Organization user with employer_profile can write."""
+        org = make_org_user("org_write@test.com", profile=self.profile)
+        self.assertTrue(self.perm.has_permission(make_unsafe_request(org), None))
+
+    def test_allows_student_read(self):
+        """Student can read."""
+        student = make_student("std3@test.com")
+        self.assertTrue(self.perm.has_permission(make_safe_request(student), None))
+
+    def test_denies_student_write(self):
+        """Student cannot write."""
+        student = make_student("std4@test.com")
+        self.assertFalse(self.perm.has_permission(make_unsafe_request(student), None))
+
+    def test_denies_anonymous_write(self):
+        """Anonymous user cannot write."""
+        self.assertFalse(self.perm.has_permission(make_unsafe_request(AnonymousUser()), None))
+
+    def test_denies_anonymous_read(self):
+        """Anonymous user cannot read (not authenticated)."""
+        self.assertFalse(self.perm.has_permission(make_safe_request(AnonymousUser()), None))
+
+    def test_denies_org_user_without_profile_write(self):
+        """Organization user without employer_profile cannot write."""
+        org = make_org_user("org_no_profile@test.com")
+        self.assertFalse(self.perm.has_permission(make_unsafe_request(org), None))
+
+
+# ===========================================================================
+# IsStudentOwner
+# ===========================================================================
+
+
+class IsStudentOwnerTests(TestCase):
+    def setUp(self):
+        self.perm = IsStudentOwner()
+        self.student = make_student("owner_test@test.com")
+
+    def test_grants_owner(self):
+        """Student who owns the object is granted access."""
+        req = make_request(self.student)
+        mock_obj = type("MockObj", (), {"user": self.student})()
+        self.assertTrue(self.perm.has_object_permission(req, None, mock_obj))
+
+    def test_denies_non_owner_student(self):
+        """Different student cannot access."""
+        other = make_student("other_owner@test.com")
+        req = make_request(other)
+        mock_obj = type("MockObj", (), {"user": self.student})()
+        self.assertFalse(self.perm.has_object_permission(req, None, mock_obj))
+
+    def test_denies_professor(self):
+        """Professor cannot access student's object."""
+        dept = Department.objects.create(department_name="KI7", department_code="KI7")
+        prof = make_professor("prof_owner@test.com", dept)
+        req = make_request(prof)
+        mock_obj = type("MockObj", (), {"user": self.student})()
+        self.assertFalse(self.perm.has_object_permission(req, None, mock_obj))
+
+    def test_denies_anonymous(self):
+        """Anonymous user cannot access."""
+        req = make_request(AnonymousUser())
+        mock_obj = type("MockObj", (), {"user": self.student})()
+        self.assertFalse(self.perm.has_object_permission(req, None, mock_obj))
+
+    def test_denies_when_obj_has_no_user(self):
+        """Object without 'user' attribute is denied."""
+        req = make_request(self.student)
+        mock_obj = type("MockObj", (), {})()
+        self.assertFalse(self.perm.has_object_permission(req, None, mock_obj))
+
+    def test_has_permission_grants_authenticated(self):
+        """has_permission returns True for any authenticated user."""
+        self.assertTrue(self.perm.has_permission(make_request(self.student), None))
+
+    def test_has_permission_denies_anonymous(self):
+        """has_permission returns False for anonymous."""
+        self.assertFalse(self.perm.has_permission(make_request(AnonymousUser()), None))

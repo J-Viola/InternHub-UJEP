@@ -169,8 +169,8 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                                         onChange={(e) => handleSkillChange(index, e.target.value)}
                                         property="flex-grow"
                                     />
-                                    <Button 
-                                        variant="redSmall" 
+                                    <Button
+                                        variant="redSmall"
                                         onClick={() => handleRemoveSkill(index)}
                                         property="h-fit"
                                     >
@@ -180,8 +180,8 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                             ))}
                         </Container>
                         {(!formData?.skills || formData.skills.length < 5) && (
-                            <Button 
-                                variant="blueSmall" 
+                            <Button
+                                variant="blueSmall"
                                 onClick={handleAddSkillRow}
                                 property="mt-2"
                             >

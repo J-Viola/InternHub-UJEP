@@ -133,6 +133,24 @@ export default function NabidkaEntity({ entity }) {
                             </Container>
                         ))}
 
+                        {/* OBSAZENOST */}
+                        {entity.available_positions !== undefined && entity.available_positions !== null && (
+                            <Container
+                                property={`px-4 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-1.5 ${
+                                    entity.approved_applications >= entity.available_positions && entity.available_positions > 0
+                                        ? "bg-red-500 text-white"
+                                        : "bg-green-100 text-green-800 border border-green-300"
+                                }`}
+                            >
+                                <span>
+                                    {entity.approved_applications || 0}/{entity.available_positions} {t('offers.occupied')}
+                                </span>
+                                {entity.approved_applications >= entity.available_positions && entity.available_positions > 0 && (
+                                    <span className="uppercase text-xs font-bold">{t('offers.full')}</span>
+                                )}
+                            </Container>
+                        )}
+
                         {/* TERMÍN (Datum - Datum) */}
                         <Container property="flex items-center gap-4 ml-auto">
                             <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">

@@ -27,7 +27,9 @@ from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
     EmployerInvitation,
+    Evaluation,
     StudentPractice,
+    StudentPracticeWorkflowState,
     UploadedDocument,
 )
 from student_practices.permissions import (
@@ -38,23 +40,27 @@ from student_practices.permissions import (
 from student_practices.services import StudentPracticeService
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
-from users.models import ApprovalStatus
+from users.models import ActionLog, ApprovalStatus
 from users.permissions import (
     CanCancelStudentPractice,
     IsAdminUser,
     IsGarantPraxe,
     IsNotCancelled,
     IsOrganizationOwner,
+    IsOrganizationUser,
     IsStagStudent,
     IsStagTeacher,
+    IsStudentOwner,
     IsStudentPracticeAccessible,
 )
 
 from .serializers import (
+    ActionLogSerializer,
     CancelStudentPracticeSerializer,
     CreateInvitationSerializer,
     EmployerInvitationApprovalSerializer,
     EmployerInvitationSerializer,
+    EvaluationSerializer,
     ListStudentPracticeSerializer,
     StudentPracticeCardSerializer,
     TransitionStudentPracticeSerializer,
@@ -409,7 +415,8 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         from django.conf import settings
 
         ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
-        if ext not in ("doc", "docx"):
+        allowed_exts = ("doc", "docx", "pdf", "xlsx")
+        if ext not in allowed_exts:
             raise serializers.ValidationError(StudentPracticeMessages.INVALID_EXTENSION)
 
         if uploaded_file.size > settings.MAX_UPLOAD_SIZE:
@@ -432,6 +439,8 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         allowed_mimes = {
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }
         content_type = getattr(uploaded_file, "content_type", "")
         if content_type and content_type not in allowed_mimes:
@@ -533,12 +542,42 @@ class StudentPracticeUploadDocumentView(APIView):
     )
     @transaction.atomic
     def post(self, request, document_id):
+        import os
+
         document = get_object_or_404(UploadedDocument, pk=document_id)
         self.check_object_permissions(request, document)
 
+        file_obj = request.FILES.get("document") or request.FILES.get("file")
+        if file_obj:
+            # Max 10 MB limit check (Item 3.7)
+            if file_obj.size > 10 * 1024 * 1024:
+                return Response(
+                    {"detail": "Velikost souboru nesmí přesáhnout 10 MB."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Extension and MIME validation
+            ext = os.path.splitext(file_obj.name)[1].lower()
+            if ext not in [".pdf", ".docx", ".doc", ".xlsx", ".png", ".jpg", ".jpeg"]:
+                return Response(
+                    {"detail": "Nepovolený typ souboru. Povolené formáty jsou PDF, DOCX, XLSX, PNG, JPG."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Filename sanitization against path traversal
+            safe_name = os.path.basename(file_obj.name).replace("..", "").replace("/", "").replace("\\", "")
+            file_obj.name = safe_name
+
+            # late_submission flag: pokud je SP v ENDED a nahrává se po end_date
+            sp = document.student_practice
+            if sp and sp.workflow_state == StudentPracticeWorkflowState.ENDED:
+                from django.utils import timezone
+
+                if sp.end_date and timezone.now().date() > sp.end_date:
+                    document.late_submission = True
+
         serializer = StudentPracticeUploadDocumentSerializer(document, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-
         serializer.save()
 
         EmailService.notify_professors_document_upload(document)
@@ -669,7 +708,11 @@ class TransitionStudentPracticeView(APIView):
     Permissions: IsStagTeacher or IsGarantPraxe or IsAdminUser
     """
 
-    permission_classes = [IsAuthenticated, IsNotCancelled, (IsStagTeacher | IsGarantPraxe | IsAdminUser)]
+    permission_classes = [
+        IsAuthenticated,
+        IsNotCancelled,
+        IsStagTeacher | IsGarantPraxe | IsAdminUser | IsStagStudent | IsOrganizationUser,
+    ]
 
     @extend_schema(
         summary="Transition student practice workflow state",
@@ -690,14 +733,64 @@ class TransitionStudentPracticeView(APIView):
         reason = serializer.validated_data.get("reason", "")
 
         try:
-            from student_practices.services import transition_student_practice_state
+            from student_practices.services import StudentPracticeService
 
-            sp = transition_student_practice_state(
+            sp = StudentPracticeService.transition_student_practice_state(
                 sp=student_practice,
                 target_state=target_state,
                 actor=request.user,
                 reason=reason,
             )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(ListStudentPracticeSerializer(sp, context={"request": request}).data)
+
+
+class WithdrawStudentPracticeView(APIView):
+    """
+    POST /api/student-practices/{student_practice_id}/withdraw/
+    Student stáhne svou žádost (pouze ve stavu APPLIED nebo PRELIMINARY_APPROVED).
+    Stav se změní na REJECTED.
+    """
+
+    permission_classes = [IsAuthenticated, IsStagStudent, IsStudentOwner]
+
+    @extend_schema(
+        summary="Withdraw a student application",
+        description=(
+            "Student stáhne svou žádost o praxi. Povoleno pouze ve stavu APPLIED nebo PRELIMINARY_APPROVED. " "Stav se změní na REJECTED."
+        ),
+        tags=["Student Practices"],
+        responses={200: ListStudentPracticeSerializer},
+    )
+    def post(self, request, student_practice_id):
+        sp = get_object_or_404(StudentPractice, pk=student_practice_id)
+
+        # Object-level permission: only the student-owner can withdraw
+        self.check_object_permissions(request, sp)
+
+        if sp.is_cancelled:
+            return Response(
+                {"detail": StudentPracticeMessages.CANCELLED_CANNOT_MODIFY},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Only APPLIED or PRELIMINARY_APPROVED
+        allowed_states = (
+            StudentPracticeWorkflowState.APPLIED,
+            StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
+        )
+        if sp.workflow_state not in allowed_states:
+            return Response(
+                {"detail": "Žádost lze stáhnout pouze ve stavu APPLIED nebo PRELIMINARY_APPROVED."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from student_practices.services import withdraw_student_practice
+
+            sp = withdraw_student_practice(sp=sp, actor=request.user)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -946,3 +1039,116 @@ class ReapplyToPracticeView(APIView):
 
         serializer = StudentPracticeCardSerializer(sp, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class EvaluationViewSet(ModelViewSet):
+    """
+    API ViewSet for mentor evaluations (Item 2.1 & 2.12).
+    """
+
+    queryset = Evaluation.objects.select_related("student_practice", "evaluated_by")
+    serializer_class = EvaluationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        from django.core.files.base import ContentFile
+
+        from student_practices.pdf_service import PDFEvaluationProtocolGenerator
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        sp_id = serializer.validated_data.get("student_practice_id")
+        sp = get_object_or_404(StudentPractice, pk=sp_id)
+
+        if sp.workflow_state != StudentPracticeWorkflowState.ENDED:
+            return Response(
+                {"detail": "Evaluaci lze podat pouze u praxe ve stavu ENDED."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if Evaluation.objects.filter(student_practice=sp).exists():
+            return Response(
+                {"detail": "Evaluace pro tuto praxi již byla odeslána."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        evaluation = serializer.save(evaluated_by=request.user)
+
+        # Auto-generate PDF protocol (RF-10 / Item 2.12)
+        try:
+            pdf_bytes = PDFEvaluationProtocolGenerator.generate_pdf(evaluation)
+            filename = f"eval_protocol_sp_{sp.student_practice_id}.pdf"
+            evaluation.pdf_protokol.save(filename, ContentFile(pdf_bytes), save=True)
+        except Exception as e:
+            logger.error(f"Failed to generate evaluation PDF protocol: {e}")
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.CREATE,
+            object_type="Evaluation",
+            object_id=evaluation.evaluation_id,
+            description=f"Mentorská evaluace vytvořena pro SP #{sp.student_practice_id}",
+        )
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class StudentPracticeHistoryView(APIView):
+    """
+    GET /api/student-practices/{student_practice_id}/history/
+    Vrací chronologický seznam ActionLog záznamů pro danou StudentPractice.
+    Přístup: student (owner), profesor, garant, organizace, admin.
+    """
+
+    permission_classes = [IsAuthenticated, IsStudentPracticeAccessible]
+
+    @extend_schema(
+        summary="Get ActionLog history for a student practice",
+        description="Returns a chronological list of ActionLog entries for the given StudentPractice.",
+        tags=["Student Practices"],
+        responses={200: ActionLogSerializer(many=True)},
+    )
+    def get(self, request, student_practice_id):
+        sp = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, sp)
+
+        logs = (
+            ActionLog.objects.filter(
+                object_type="StudentPractice",
+                object_id=sp.student_practice_id,
+            )
+            .select_related("user")
+            .order_by("-action_date")
+        )
+
+        serializer = ActionLogSerializer(logs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ConfirmContractView(APIView):
+    """
+    Confirms contract receipt and updates contract status (Item 2.7).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        sp = get_object_or_404(StudentPractice, pk=pk)
+        sp.contract_received_date = timezone.now()
+        sp.workflow_state = StudentPracticeWorkflowState.CONTRACTED
+        sp.save()
+
+        ActionLogService.log(
+            user=request.user,
+            action_type=ActionLogType.APPROVE,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=f"Potvrzení přijetí smlouvy u SP #{sp.student_practice_id}",
+        )
+
+        return Response(
+            {"detail": "Přijetí smlouvy bylo úspěšně potvrzeno.", "contract_received_date": sp.contract_received_date},
+            status=status.HTTP_200_OK,
+        )

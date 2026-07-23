@@ -8,9 +8,9 @@ import { useTranslation } from "react-i18next";
 export default function CompanyEntity({entity, buttons, onClick}) {
     const { t } = useTranslation();
     return (
-        <ContainerForEntity 
-            variant="gray" 
-            property="pl-8 pr-8 py-4 mt-2 border border-black rounded-[10px] shadow-none hover:shadow-sm transition-shadow duration-200" 
+        <ContainerForEntity
+            variant="gray"
+            property="pl-8 pr-8 py-4 mt-2 border border-black rounded-[10px] shadow-none hover:shadow-sm transition-shadow duration-200"
             onClick={onClick}
         >
             <Container property="grid grid-cols-[1.5fr,1fr,2fr,auto] gap-4 items-center w-full">

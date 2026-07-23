@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Container from "@core/Container/Container";
 import TextField from "@core/Form/TextField";
 import DropDown from "@core/Form/DropDown";
@@ -6,6 +6,8 @@ import TextBox from "@core/Form/TextBox";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Headings from "@core/Text/Headings";
 import { useTranslation } from "react-i18next";
+import { useAresAPI } from "@api/ARES/aresJusticeAPI";
+import useDebounce from "@hooks/useDebounce";
 
 export default function ExternalPracticeForm({
   formData,
@@ -15,6 +17,52 @@ export default function ExternalPracticeForm({
   subjects = [],
 }) {
   const { t } = useTranslation();
+  const aresAPI = useAresAPI();
+  const [aresLoading, setAresLoading] = useState(false);
+  const [aresStatus, setAresStatus] = useState(null); // { type: 'success'|'warning'|'error', text: '' }
+
+  const debouncedIco = useDebounce(formData?.ico, 500);
+
+  useEffect(() => {
+    if (!debouncedIco || String(debouncedIco).trim().length !== 8) {
+      setAresStatus(null);
+      return;
+    }
+
+    const fetchAres = async () => {
+      setAresLoading(true);
+      setAresStatus(null);
+      try {
+        const data = await aresAPI.getEntityByICO(debouncedIco);
+        if (data && data.obchodniJmeno) {
+          const companyName = data.obchodniJmeno;
+          const address = data.sidlo?.textovaAdresa || "";
+          handleChange({
+            employer_name: companyName,
+            address: address,
+          });
+          const sourceText = data.source === "cache" ? "z databáze (cache)" : "z ARES";
+          setAresStatus({ type: "success", text: `Údaje firmy načteny ${sourceText}.` });
+        }
+      } catch (err) {
+        if (err.response?.status === 404 && err.response?.data?.manual_input) {
+          setAresStatus({
+            type: "warning",
+            text: "ARES nedostupný a IČO nenalezeno v databázi — vyplňte údaje ručně.",
+          });
+        } else {
+          setAresStatus({
+            type: "warning",
+            text: "Nepodařilo se ověřit IČO v ARES. Zkontrolujte IČO nebo zadat ručně.",
+          });
+        }
+      } finally {
+        setAresLoading(false);
+      }
+    };
+
+    fetchAres();
+  }, [debouncedIco]);
 
   const coefficientOptions = [
     { label: "0.5", value: "0.5" },
@@ -85,14 +133,30 @@ export default function ExternalPracticeForm({
           error={errors.contact_phone}
         />
 
-        <TextField
-          id="ico"
-          value={formData?.ico}
-          label={t("external_practice.ico")}
-          placeholder={t("external_practice.ico_placeholder")}
-          onChange={handleChange}
-          error={errors.ico}
-        />
+        <div>
+          <TextField
+            id="ico"
+            value={formData?.ico}
+            label={t("external_practice.ico")}
+            placeholder={t("external_practice.ico_placeholder")}
+            onChange={handleChange}
+            error={errors.ico}
+          />
+          {aresLoading && (
+            <p className="text-xs text-blue-600 mt-1">Ověřuji IČO v ARES...</p>
+          )}
+          {aresStatus && (
+            <p
+              className={`text-xs mt-1 font-medium ${
+                aresStatus.type === "success"
+                  ? "text-green-600"
+                  : "text-amber-600"
+              }`}
+            >
+              {aresStatus.text}
+            </p>
+          )}
+        </div>
 
         <TextField
           id="address"

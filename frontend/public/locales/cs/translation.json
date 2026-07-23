@@ -9,6 +9,7 @@
     "error_label": "Chyba",
     "unexpected_error": "Došlo k neočekávané chybě",
     "retry": "Zkusit znovu",
+    "skip_to_main": "Přeskočit na hlavní obsah",
     "image": "Obrázek",
     "image_not_available": "Obrázek není k dispozici",
     "save": "Uložit",
@@ -56,7 +57,10 @@
     "logout": "Odhlásit se",
     "login": "Přihlášení",
     "profile": "Profil",
-    "notifications": "Oznámení"
+    "notifications": "Oznámení",
+    "main_navigation": "Hlavní navigace",
+    "toggle_menu": "Přepnout menu",
+    "switch_language": "Změnit jazyk"
   },
   "footer": {
     "all_rights_reserved": "Všechna práva vyhrazena.",
@@ -100,14 +104,15 @@
     "responsibilities": "Popis pozice",
     "requirements": "Náplň práce",
     "contact_person": "Kontaktní osoba",
-    "filter": {
-      "placeholder": "Hledat v nabídkách...",
-      "location": "Lokalita",
-      "subject": "Předmět",
-      "name": "Název",
-      "address": "Adresa",
-      "all": "Všechny"
-    }
+      "filter": {
+        "placeholder": "Hledat v nabídkách...",
+        "location": "Lokalita",
+        "subject": "Předmět",
+        "name": "Název",
+        "address": "Adresa",
+        "all": "Všechny",
+        "clear_all": "Zrušit všechny filtry"
+      }
   },
   "form": {
     "offer_data": "Údaje nabídky",
@@ -238,6 +243,13 @@
     "view_applications": "Zobrazit přihlášky",
     "view_detail": "Zobrazit detail",
     "change_status": "Změnit stav nabídky",
+    "filter_all": "Všechny",
+    "filter_started": "Probíhá",
+    "filter_awaiting_documents": "Čeká na dokumenty",
+    "filter_at_risk": "Rizikové",
+    "filter_contract_pending": "Čeká na zasmluvnění",
+    "contract_pending_badge": "Čeká na smlouvu — {{days}} dní",
+    "contract_pending_escalation": "Tato praxe čeká na zasmluvnění déle než 7 dní. Doporučujeme urychleně kontaktovat studenta nebo zaměstnavatele.",
     "edit_internship": "Upravit stáž",
     "manage_invitation": "Spravovat pozvánku",
     "my_practices_and_apps": "Moje praxe a přihlášky",
@@ -528,7 +540,18 @@
     "generate_error": "Chyba při generování dokumentu",
     "reapply_button": "Znovu se přihlásit",
     "reapply_success": "Znovu jste se přihlásili na praxi",
-    "reapply_error": "Chyba při opětovném přihlašování na praxi"
+    "reapply_error": "Chyba při opětovném přihlašování na praxi",
+    "confirm_contract": "Potvrdit přijetí smlouvy",
+    "confirm_contract_success": "Přijetí smlouvy bylo úspěšně potvrzeno",
+    "confirm_contract_error": "Chyba při potvrzování přijetí smlouvy",
+    "reject_reason_title": "Důvod zamítnutí",
+    "reject_reason_text": "Zadejte důvod zamítnutí obsahu praxe. Tento důvod uvidí student.",
+    "reject_reason_placeholder": "Minimálně 10 znaků...",
+    "reject_reason_required": "Důvod zamítnutí musí mít alespoň 10 znaků",
+    "content_rejected_banner": "Obsah praxe byl zamítnut. Důvod: {{reason}}",
+    "resubmit_button": "Upravit a znovu odeslat",
+    "resubmit_success": "Praxe byla znovu odeslána ke schválení",
+    "resubmit_error": "Chyba při opětovném odesílání praxe"
   },
   "errors": {
     "page_not_found": "Stránka nenalezena",
@@ -663,8 +686,12 @@
     "REJECTED": "Zamítnuto",
     "CONTRACTED": "Sjednána smlouva",
     "STARTED": "Probíhá",
+    "ENDED": "Ukončeno",
     "COMPLETED": "Dokončeno",
     "CANCELLED": "Zrušeno",
+    "AWAITING_CONTRACT": "Čeká na smlouvu",
+    "AWAITING_DOCUMENTS": "Čeká na dokumenty",
+    "DOCUMENTS_REJECTED": "Dokumenty zamítnuty",
     "PENDING": "Čeká na schválení",
     "APPROVED": "Schváleno",
     "IN_PROGRESS": "Probíhá",

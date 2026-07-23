@@ -4,6 +4,7 @@ import random
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.core.validators import MinLengthValidator
 from django.db import models
 from django.db.models import OneToOneRel
 from django_enumfield import enum
@@ -52,6 +53,12 @@ class StudentPracticeWorkflowState(enum.Enum):
     STARTED = 4  # Student fyzicky nastoupil
     ENDED = 5  # Praxe ukončena (časový rámec uplynul)
     COMPLETED = 6  # Zápočet udělen — terminální úspěšný stav
+    AWAITING_CONTRACT = 7  # Čeká na zasmluvnění / doručení smlouvy (UC-13)
+    AWAITING_DOCUMENTS = 8  # Čeká na nahrání/kontrolu dokumentů (UC-13)
+    DOCUMENTS_REJECTED = 9  # Dokulenty zamítnuty, očekává se re-upload (UC-13)
+    AWAITING_CONTENT_APPROVAL = 10  # Čeká na schválení obsahu garnatem u externí praxe (UC-15)
+    CONTENT_REJECTED = 11  # Obsah zamítnut garantem, očekává se oprava (UC-15)
+    CONTENT_APPROVED = 12  # Obsah externí praxe schválen garantem (UC-15)
 
 
 class EmployerInvitation(models.Model):
@@ -113,6 +120,7 @@ class UploadedDocument(models.Model):
     document_type = enum.EnumField(DocumentType)
     status = enum.EnumField(DocumentStatus, default=DocumentStatus.PENDING)
     review_note = models.TextField(blank=True, default="")
+    late_submission = models.BooleanField(default=False, help_text="True pokud byl dokument nahrán po end_date praxe")
 
     class Meta:
         db_table = "uploaded_documents"
@@ -314,6 +322,17 @@ class StudentPractice(CancellationMixin, models.Model):
     # Stará pole — zachována pro backward compat (task 4.8), budou odstraněna po FE migraci
     approval_status = enum.EnumField(ApprovalStatus)
     progress_status = enum.EnumField(ProgressStatus)
+    rejection_reason = models.TextField(
+        blank=True,
+        default="",
+        validators=[MinLengthValidator(10)],
+        help_text="Důvod zamítnutí přihlášky nebo obsahu praxe (min 10 znaků)",
+    )
+    contract_received_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Datum doručení / podpisu smlouvy",
+    )
     hours_completed = models.IntegerField(blank=True, null=True)
     # cancellation_reason a cancelled_by pocházejí z CancellationMixin (task 1.1 / 1.11).
     # Původní cancelled_by_user (FK na StagUser) odstraněn — nahrazeno mixin polem
@@ -347,9 +366,15 @@ class StudentPractice(CancellationMixin, models.Model):
     end_date = models.DateField()
     school_approved = models.BooleanField(default=False)
     employer_approved = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True, help_text="Poslední změna záznamu (včetně přechodů stavu)")
 
     class Meta:
         db_table = "student_practices"
+        indexes = [
+            models.Index(fields=["user", "is_cancelled"]),
+            models.Index(fields=["workflow_state", "is_cancelled"]),
+            models.Index(fields=["application_date"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["practice", "user"],
@@ -388,3 +413,39 @@ class StudentPractice(CancellationMixin, models.Model):
             "ENDED": "Ukončeno",
         }
         return labels.get(self.workflow_state.name if self.workflow_state else "", "Neznámý")
+
+
+class Evaluation(models.Model):
+    evaluation_id = models.AutoField(primary_key=True)
+    student_practice = models.OneToOneField(
+        StudentPractice,
+        on_delete=models.CASCADE,
+        related_name="evaluation",
+    )
+    expertise_rating = models.IntegerField(default=5, help_text="Odbornost (1-5)")
+    expertise_comment = models.TextField(blank=True, default="")
+
+    communication_rating = models.IntegerField(default=5, help_text="Komunikace (1-5)")
+    communication_comment = models.TextField(blank=True, default="")
+
+    initiative_rating = models.IntegerField(default=5, help_text="Iniciativa (1-5)")
+    initiative_comment = models.TextField(blank=True, default="")
+
+    overall_comment = models.TextField(blank=True, default="")
+    pdf_file = models.FileField(upload_to="evaluations/pdf/", blank=True, null=True)
+    pdf_protokol = models.FileField(upload_to="evaluations/protokol/", blank=True, null=True)
+
+    evaluated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="evaluations_given",
+    )
+    evaluated_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "evaluations"
+
+    def __str__(self):
+        return f"Evaluation for SP #{self.student_practice_id}"

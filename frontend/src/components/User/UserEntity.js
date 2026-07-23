@@ -51,10 +51,10 @@ export default function UserEntity({entity, attributes, buttons, status="gray", 
     };
 
     return (
-        <ContainerForEntity 
-            id={`user-entity-${entity.user_id}`} 
-            variant={status} 
-            property={"pl-8 pr-8 py-4 mt-2 border border-black bg-[#f9fafb] rounded-[10px] shadow-none"} 
+        <ContainerForEntity
+            id={`user-entity-${entity.user_id}`}
+            variant={status}
+            property={"pl-8 pr-8 py-4 mt-2 border border-black bg-[#f9fafb] rounded-[10px] shadow-none"}
             onClick={onClick}
         >
             <Container property="grid grid-cols-4 gap-4 items-center w-full">

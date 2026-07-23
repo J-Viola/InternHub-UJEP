@@ -11,6 +11,7 @@ import PraxePage from '@pages/PraxePage';
 import StudentPage from '@pages/StudentsPage';
 import VytvoritNabidku from '@pages/VytvoritNabidku';
 import VytvoritExterniPraxi from '@pages/VytvoritExterniPraxi';
+import EvaluationForm from '@pages/EvaluationForm';
 import UpravitNabidku from '@pages/UpravitNabidku';
 import RegistracePage from '@pages/RegistracePage';
 import LogoutUser from '@services/auth/Logout';
@@ -37,8 +38,17 @@ import NotFoundPage from '@pages/NotFoundPage';
 import ForbiddenPage from '@pages/ForbiddenPage';
 import MainLayout from '@components/Layout/MainLayout';
 import ProtectedRoute from '@components/ProtectedRoute';
-import ErrorBoundary from '@components/ErrorBoundary';
+import { withErrorBoundary } from '@components/ErrorBoundary';
 import { useTranslation } from 'react-i18next';
+import * as Sentry from "@sentry/react";
+
+// Sentry error monitoring — only initializes when REACT_APP_SENTRY_DSN is set
+if (process.env.REACT_APP_SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.REACT_APP_SENTRY_DSN,
+        environment: process.env.NODE_ENV || "development",
+    });
+}
 
 // Global error handlers — catches errors outside React tree
 window.addEventListener('error', (event) => {
@@ -48,6 +58,36 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Nezachycené odmítnutí promise:', event.reason);
 });
+
+// Wrap every page component with its own ErrorBoundary so a crash
+// on one route does not take down the entire SPA.
+const w = withErrorBoundary;
+const LoginPageW          = w(LoginPage);
+const NabidkaPageW        = w(NabidkaPage);
+const NabidkaDetailPageW  = w(NabidkaDetailPage);
+const ProfilPageW         = w(ProfilPage);
+const PraxePageW          = w(PraxePage);
+const StudentPageW        = w(StudentPage);
+const VytvoritNabidkuW    = w(VytvoritNabidku);
+const VytvoritExterniPraxiW = w(VytvoritExterniPraxi);
+const EvaluationFormW     = w(EvaluationForm);
+const UpravitNabidkuW     = w(UpravitNabidku);
+const RegistracePageW     = w(RegistracePage);
+const UserCRUDPageW       = w(UserCRUDPage);
+const PrihlaskyPageW      = w(PrihlaskyPage);
+const SpravaStaziPageW    = w(SpravaStaziPage);
+const PraxeDetailPageW    = w(PraxeDetailPage);
+const SubjectPageW        = w(SubjectPage);
+const FormPageW           = w(FormPage);
+const InvitationPageW     = w(InvitationPage);
+const PozvankyListPageW   = w(PozvankyListPage);
+const DepartmentsPageW    = w(DepartmentsPage);
+const CompaniesPageW      = w(CompaniesPage);
+const ChangePasswordPageW = w(ChangePasswordPage);
+const PasswordResetRequestPageW = w(PasswordResetRequestPage);
+const PasswordResetConfirmPageW = w(PasswordResetConfirmPage);
+const NotFoundPageW       = w(NotFoundPage);
+const ForbiddenPageW      = w(ForbiddenPage);
 
 const AppRoutes = () => {
   const { isInitializing } = useAuth();
@@ -65,34 +105,35 @@ const AppRoutes = () => {
     <Routes>
       <Route element={<MainLayout />}>
         {/* Public routes — accessible without authentication */}
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/registrace" element={<RegistracePage />} />
-        <Route path="/reset-password" element={<PasswordResetRequestPage />} />
-        <Route path="/reset-password/:uid/:token" element={<PasswordResetConfirmPage />} />
+        <Route path="/" element={<LoginPageW />} />
+        <Route path="/registrace" element={<RegistracePageW />} />
+        <Route path="/reset-password" element={<PasswordResetRequestPageW />} />
+        <Route path="/reset-password/:uid/:token" element={<PasswordResetConfirmPageW />} />
 
         {/* Protected routes — require a valid access token */}
-        <Route path="/nabidka" element={<ProtectedRoute><NabidkaPage /></ProtectedRoute>} />
-        <Route path="/nabidka/:id" element={<ProtectedRoute><NabidkaDetailPage /></ProtectedRoute>} />
-        <Route path="/subjects" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'admin']}><SubjectPage /></ProtectedRoute>} />
-        <Route path="/profil/:id?" element={<ProtectedRoute><ProfilPage /></ProtectedRoute>} />
-        <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
-        <Route path="/praxe" element={<ProtectedRoute allowedRoles={['ST', 'OWNER', 'INSERTER', 'admin']}><PraxePage /></ProtectedRoute>} />
-        <Route path="/karta-praxe/:id" element={<ProtectedRoute allowedRoles={['ST', 'VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><PraxeDetailPage /></ProtectedRoute>} />
-        <Route path="/students/:id?" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><StudentPage /></ProtectedRoute>} />
-        <Route path="/vytvorit-nabidku" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><VytvoritNabidku /></ProtectedRoute>} />
-        <Route path="/vytvorit-externi-praxi" element={<ProtectedRoute allowedRoles={['ST', 'VY', 'VK', 'admin']}><VytvoritExterniPraxi /></ProtectedRoute>} />
-        <Route path="/upravit-nabidku/:id" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><UpravitNabidku /></ProtectedRoute>} />
+        <Route path="/nabidka" element={<ProtectedRoute><NabidkaPageW /></ProtectedRoute>} />
+        <Route path="/nabidka/:id" element={<ProtectedRoute><NabidkaDetailPageW /></ProtectedRoute>} />
+        <Route path="/subjects" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'admin']}><SubjectPageW /></ProtectedRoute>} />
+        <Route path="/profil/:id?" element={<ProtectedRoute><ProfilPageW /></ProtectedRoute>} />
+        <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPageW /></ProtectedRoute>} />
+        <Route path="/praxe" element={<ProtectedRoute allowedRoles={['ST', 'OWNER', 'INSERTER', 'admin']}><PraxePageW /></ProtectedRoute>} />
+        <Route path="/karta-praxe/:id" element={<ProtectedRoute allowedRoles={['ST', 'VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><PraxeDetailPageW /></ProtectedRoute>} />
+        <Route path="/students/:id?" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'OWNER', 'INSERTER', 'admin']}><StudentPageW /></ProtectedRoute>} />
+        <Route path="/vytvorit-nabidku" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><VytvoritNabidkuW /></ProtectedRoute>} />
+        <Route path="/vytvorit-externi-praxi" element={<ProtectedRoute allowedRoles={['ST', 'VY', 'VK', 'admin']}><VytvoritExterniPraxiW /></ProtectedRoute>} />
+        <Route path="/upravit-nabidku/:id" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><UpravitNabidkuW /></ProtectedRoute>} />
         <Route path="/logout" element={<ProtectedRoute><LogoutUser /></ProtectedRoute>} />
-        <Route path="/users/:type" element={<ProtectedRoute allowedRoles={['VK', 'OWNER', 'INSERTER', 'admin']}><UserCRUDPage /></ProtectedRoute>} />
-        <Route path="/prihlasky" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PrihlaskyPage /></ProtectedRoute>} />
-        <Route path="/sprava-stazi" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'admin']}><SpravaStaziPage /></ProtectedRoute>} />
-        <Route path="/formular" element={<ProtectedRoute><FormPage /></ProtectedRoute>} />
-        <Route path="/pozvanka" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><InvitationPage /></ProtectedRoute>} />
-        <Route path="/pozvanky-list" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PozvankyListPage /></ProtectedRoute>} />
-        <Route path="/departments" element={<ProtectedRoute allowedRoles={['admin']}><DepartmentsPage /></ProtectedRoute>} />
-        <Route path="/companies" element={<ProtectedRoute allowedRoles={['admin']}><CompaniesPage /></ProtectedRoute>} />
-        <Route path="/forbidden" element={<ForbiddenPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="/users/:type" element={<ProtectedRoute allowedRoles={['VK', 'OWNER', 'INSERTER', 'admin']}><UserCRUDPageW /></ProtectedRoute>} />
+        <Route path="/prihlasky" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PrihlaskyPageW /></ProtectedRoute>} />
+        <Route path="/sprava-stazi" element={<ProtectedRoute allowedRoles={['VY', 'VK', 'admin']}><SpravaStaziPageW /></ProtectedRoute>} />
+        <Route path="/evaluace/:id" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'VY', 'VK', 'admin']}><EvaluationFormW /></ProtectedRoute>} />
+        <Route path="/formular" element={<ProtectedRoute><FormPageW /></ProtectedRoute>} />
+        <Route path="/pozvanka" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><InvitationPageW /></ProtectedRoute>} />
+        <Route path="/pozvanky-list" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PozvankyListPageW /></ProtectedRoute>} />
+        <Route path="/departments" element={<ProtectedRoute allowedRoles={['admin']}><DepartmentsPageW /></ProtectedRoute>} />
+        <Route path="/companies" element={<ProtectedRoute allowedRoles={['admin']}><CompaniesPageW /></ProtectedRoute>} />
+        <Route path="/forbidden" element={<ForbiddenPageW />} />
+        <Route path="*" element={<NotFoundPageW />} />
       </Route>
     </Routes>
   );
@@ -101,20 +142,18 @@ const AppRoutes = () => {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <MessageProvider>
-        <UserProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <NotificationProvider>
-                <MessageToast />
-                <AppRoutes />
-              </NotificationProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </UserProvider>
-      </MessageProvider>
-    </ErrorBoundary>
+    <MessageProvider>
+      <UserProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <NotificationProvider>
+              <MessageToast />
+              <AppRoutes />
+            </NotificationProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </UserProvider>
+    </MessageProvider>
   </React.StrictMode>
 );
 
