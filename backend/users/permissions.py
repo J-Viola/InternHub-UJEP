@@ -1,6 +1,8 @@
 from rest_framework import permissions
+from rest_framework.exceptions import APIException
 
 from users.models import (
+    ApprovalStatus,
     DepartmentRole,
     OrganizationRole,
     OrganizationUser,
@@ -12,12 +14,26 @@ from users.models import (
 )
 
 
+class EmployerNotApproved(APIException):
+    """
+    Chyba 403 pro neschválenou organizaci.
+
+    Vyhodí se z permission tříd; custom exception handler (api.exceptions)
+    z default_code vytvoří odpověď ``{"error_code": "EMPLOYER_NOT_APPROVED"}``.
+    FE mapuje error_code na i18n klíč ``employer.not_approved``.
+    """
+
+    status_code = 403
+    default_detail = "Organizace čeká na schválení. Vytváření nabídek není povoleno."
+    default_code = "EMPLOYER_NOT_APPROVED"
+
+
 def _is_stag_admin_or_head(user) -> bool:
     """
     True if user is a superuser, has STAG role VK, or is a department HEAD.
 
     Used by IsStagAdmin and CanCancel* permission classes.
-    Ref: N12 — IsStagAdmin nepokrýval DepartmentRole.HEAD.
+    IsStagAdmin nepokrýval DepartmentRole.HEAD.
     """
     if user.is_superuser:
         return True
@@ -104,17 +120,17 @@ class IsStagTeacher(permissions.BasePermission):
         """
         Object-level: verify the professor belongs to the subject's department.
 
-        Ref: CR-DEPT-2 — when obj is a ProfessorUser (e.g. department professor
+        When obj is a ProfessorUser (e.g. department professor
         operations), check that the requesting teacher and the target professor
         belong to the same department.
-        Ref: H-PRAC-1 — practices without a subject (orphans) are no longer
+        Practices without a subject (orphans) are no longer
         accessible to non-admin teachers, closing a department-scope bypass.
         """
         user = request.user
         if not user or not isinstance(user, ProfessorUser):
             return False
 
-        # CR-DEPT-2: If obj is a ProfessorUser (e.g., department professor
+        # If obj is a ProfessorUser (e.g., department professor
         # CRUD operations), verify same department to prevent a teacher from
         # editing/deleting professors from other departments.
         if isinstance(obj, ProfessorUser):
@@ -125,10 +141,10 @@ class IsStagTeacher(permissions.BasePermission):
         # Get the practice from the object (could be Practice or StudentPractice)
         practice = getattr(obj, "practice", obj)
         if not hasattr(practice, "subject"):
-            return False  # H-PRAC-1: No subject link → cannot verify department → deny
+            return False  # No subject link → cannot verify department → deny
         subject = practice.subject
         if subject is None:
-            return False  # H-PRAC-1: Null subject → cannot verify department → deny
+            return False  # Null subject → cannot verify department → deny
         # Check department match
         user_dept = getattr(user, "department", None)
         user_dept_id = getattr(user, "department_id", None)
@@ -143,7 +159,7 @@ class IsStagAdmin(permissions.BasePermission):
     """
     Allows access only to STAG admins (STAG role 'vk') or department heads.
 
-    Ref: N12 — rozšířeno o DepartmentRole.HEAD (WP3.3).
+    Rozšířeno o DepartmentRole.HEAD.
     """
 
     def has_permission(self, request, view):
@@ -236,7 +252,7 @@ class CanViewStudentProfile(permissions.BasePermission):
 
 
 # ========================================================================
-# WP3 — Nové permission třídy pro state machine
+# Nové permission třídy pro state machine
 # ========================================================================
 
 
@@ -246,8 +262,6 @@ class IsNotCancelled(permissions.BasePermission):
 
     Používá se jako base check pro všechny mutation views.
     Vrací HTTP 403, pokud je objekt stornován (is_cancelled=True).
-
-    Ref: WP3.1, THESIS_ARCHITECTURE_PLAN.md 5.2
     """
 
     def has_permission(self, request, view):
@@ -265,8 +279,6 @@ class CanCancelPractice(permissions.BasePermission):
     - Admin / superuser
     - Vedoucí katedry (DepartmentRole.HEAD) daného subjectu
     - Garant Praxe (is_garant_praxe flag)
-
-    Ref: WP3.2, OQ4, THESIS_ARCHITECTURE_PLAN.md sekce 3.4
     """
 
     def has_permission(self, request, view):
@@ -286,7 +298,7 @@ class CanCancelPractice(permissions.BasePermission):
             if subject and user.department == subject.department:
                 return True
 
-        # Garant Praxe — must match practice's department (H-PRAC-3)
+        # Garant Praxe — must match practice's department
         if isinstance(user, ProfessorUser) and user.is_garant_praxe:
             subject = getattr(obj, "subject", None)
             if subject and hasattr(user, "department_id") and subject.department_id == user.department_id:
@@ -306,7 +318,6 @@ class CanCancelStudentPractice(permissions.BasePermission):
     - Zaměstnavatel (OrganizationUser) — vlastník praxe
     - Student (vlastník přihlášky) — POUZE do stavu PRELIMINARY_APPROVED (včetně)
 
-    Ref: WP3.2, WP3.5 (N10), OQ4
     """
 
     def has_permission(self, request, view):
@@ -403,9 +414,7 @@ class IsGarantPraxe(permissions.BasePermission):
     """
     Povolí přístup pouze uživatelům s příznakem Garant Praxe.
 
-    Varianta C dle THESIS_ARCHITECTURE_PLAN.md sekce 2.2.6.
-
-    Ref: CR-PRAC-1 — added has_object_permission to prevent horizontal
+    Added has_object_permission to prevent horizontal
     privilege escalation (garant could mutate any practice in the system).
     """
 
@@ -469,8 +478,6 @@ class IsGarantOrReadOnly(permissions.BasePermission):
     """
     Povolí write (POST, PUT, PATCH, DELETE) pouze garantovi / vedoucímu katedry
     (uživatel s rolí VY nebo VK). Pro ostatní pouze read (GET, HEAD, OPTIONS).
-
-    Ref: Task 1.10
     """
 
     def has_permission(self, request, view):
@@ -486,12 +493,15 @@ class IsGarantOrReadOnly(permissions.BasePermission):
         return stag_role.role.lower() in (StagRoleEnum.VY, StagRoleEnum.VK)
 
 
-class IsOrganizationOrReadOnly(permissions.BasePermission):
+class IsApprovedOrganization(permissions.BasePermission):
     """
-    Povolí write (POST, PUT, PATCH, DELETE) pouze organizaci (employer).
-    Pro ostatní pouze read (GET, HEAD, OPTIONS).
+    Write metody (POST, PUT, PATCH, DELETE) povolí pouze organizaci, jejíž
+    EmployerProfile má ``approval_status == APPROVED``.
 
-    Ref: Task 1.10
+    - read metody: povoleny všem autentizovaným uživatelům
+    - neautentizovaný / bez employer_profile: 403 (plain PermissionDenied)
+    - employer_profile ve stavu PENDING/REJECTED: 403 s error_code
+      ``EMPLOYER_NOT_APPROVED`` (viz ``EmployerNotApproved``)
     """
 
     def has_permission(self, request, view):
@@ -499,15 +509,35 @@ class IsOrganizationOrReadOnly(permissions.BasePermission):
             return False
         if request.method in permissions.SAFE_METHODS:
             return True
-        return bool(getattr(request.user, "employer_profile", None))
+        employer_profile = getattr(request.user, "employer_profile", None)
+        if not employer_profile:
+            return False
+        if employer_profile.approval_status != ApprovalStatus.APPROVED:
+            raise EmployerNotApproved()
+        return True
+
+
+class IsOrganizationOrReadOnly(permissions.BasePermission):
+    """
+    Povolí write (POST, PUT, PATCH, DELETE) pouze organizaci (employer) se
+    schváleným profilem (ApprovalStatus.APPROVED).
+    Pro ostatní pouze read (GET, HEAD, OPTIONS).
+
+    Rozšířeno o kontrolu approval_status.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return IsApprovedOrganization().has_permission(request, view)
 
 
 class IsStudentOwner(permissions.BasePermission):
     """
     Povolí přístup pouze studentovi, který je vlastníkem objektu.
     Implementuje has_object_permission ověřující obj.user == request.user.
-
-    Ref: Task 1.10
     """
 
     def has_permission(self, request, view):

@@ -42,7 +42,7 @@ migrate: ## Runs Django migrations inside the backend container
 	docker container exec internhub-backend python manage.py migrate
 
 seed: ## Seeds the database with demo data inside the backend container
-	docker container exec internhub-backend python manage.py seed --settings=app.settings
+	docker container exec internhub-backend python manage.py seed_db --settings=app.settings
 
 lint-frontend: ## Runs ESLint on the frontend source
 	docker container exec internhub-frontend npx eslint src --ext .js,.jsx

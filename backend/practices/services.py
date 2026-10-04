@@ -16,6 +16,7 @@ from practices.models import (
     ProgressStatus,
 )
 from student_practices.models import (
+    DocumentHelper,
     EmployerInvitation,
     EmployerInvitationStatus,
     StudentPractice,
@@ -105,16 +106,16 @@ class PracticeService:
         """
         from users.models import StudentUser
 
-        # C3.5 guard: only students can apply
+        # Guard: only students can apply
         if not isinstance(user, StudentUser):
             raise ValueError("ONLY_STUDENTS_CAN_APPLY")
 
-        # C3.3: lock the practice row to prevent race conditions on capacity
+        # Lock the practice row to prevent race conditions on capacity
         practice = Practice.objects.select_for_update().filter(practice_id=practice_id, is_active=True).first()
         if not practice:
             raise ValueError(PracticeMessages.NOT_FOUND)
 
-        # C3.3: guard — practice must be open for applications (None = backward compat)
+        # Guard — practice must be open for applications (None = backward compat)
         if practice.workflow_state is not None and practice.workflow_state != PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
             raise ValueError("PRACTICE_NOT_OPEN_FOR_APPLICATIONS")
 
@@ -125,7 +126,7 @@ class PracticeService:
         if practice.is_cancelled:
             raise ValueError("PRACTICE_IS_CANCELLED")
 
-        # C3.3: capacity guard — available_positions > 0 and not already full
+        # Capacity guard — available_positions > 0 and not already full
         if practice.available_positions is not None and practice.available_positions <= 0:
             raise ValueError("NO_CAPACITY_AVAILABLE")
         if practice.available_positions is not None:
@@ -151,9 +152,11 @@ class PracticeService:
             cancellation_resolved_at__isnull=True,
         ).exists()
         if unresolved_cancellation:
-            raise ValueError("Máte nevyřešené storno")
+            # Kanonická hláška — stejná jako v reapply_to_practice
+            # (student_practices/services.py).
+            raise ValueError("Nelze podat novou žádost, dokud není storno vyřešeno")
 
-        # C3.4: allow re-application only if previous was rejected or cancelled
+        # Allow re-application only if previous was rejected or cancelled
         existing_active = StudentPractice.objects.filter(
             practice_id=practice_id,
             user=user,
@@ -189,11 +192,23 @@ class PracticeService:
             except IntegrityError:
                 raise ValueError(PracticeMessages.ALREADY_APPLIED)
 
-            # C3.1: set workflow_state directly — serializer drops it (field not in Meta.fields)
-            student_practice.workflow_state = StudentPracticeWorkflowState.APPLIED
+            # Set workflow_state directly — serializer drops it (field not in Meta.fields)
+            # External/individual practices start in AWAITING_CONTENT_APPROVAL (manual cycle),
+            # catalog practices start in APPLIED (standard cycle).
+            if practice.is_external:
+                student_practice.workflow_state = StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
+                # Assign default documents so student has a document_id for upload
+                DocumentHelper.assign_default_documents(student_practice)
+            else:
+                student_practice.workflow_state = StudentPracticeWorkflowState.APPLIED
             student_practice.save(update_fields=["workflow_state"])
 
             EmailService.notify_org_new_application(student_practice)
+
+            # Notifikace garantovi (subject_manager / garant praxe katedry /
+            # fallback profesoři) o nové žádosti — in-app (NEW_APPLICATION_GARANT)
+            # + e-mail přes EmailService.
+            NotificationService.notify_garant_new_application(student_practice)
 
             if practice.contact_user:
                 NotificationService.create_notification(
@@ -301,7 +316,7 @@ class PracticeService:
                 raise ValueError("OTEVRENI_VYHRADUJE_SCHVALENEMU_OBSAHU")
             practice.is_active = True
 
-        # C3.6: CLOSED_FOR_APPLICATIONS must set closure metadata (was bypassed)
+        # CLOSED_FOR_APPLICATIONS must set closure metadata (was bypassed)
         if target_state == PracticeWorkflowState.CLOSED_FOR_APPLICATIONS:
             practice.closed_for_applications_at = timezone.now()
             practice.closed_reason = ApplicationClosureReason.MANUAL

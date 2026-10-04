@@ -311,7 +311,7 @@ export default function NabidkaDetailPage() {
                                 variant={"primary"}
                                 icon={"edit"}
                                 property={"px-8"}
-                                onClick={() => navigate(`/formular?type=nabidka_form&action=edit&id=${entity.practice_id}`)}
+                                onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
                             >
                                 {t('offers.edit_offer')}
                             </Button>
@@ -334,7 +334,7 @@ export default function NabidkaDetailPage() {
                                 variant={"primary"}
                                 icon={"edit"}
                                 property={"px-8"}
-                                onClick={() => navigate(`/formular?type=nabidka_form&action=edit&id=${entity.practice_id}`)}
+                                onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
                             >
                                 {t('offers.edit_offer')}
                             </Button>

@@ -5,7 +5,11 @@ import { useTranslation } from "react-i18next";
  * Maps workflow_state / progress_status values to translation keys.
  * Central single source of truth — replaces ad-hoc statusToText/statusVariant patterns.
  *
- * Translations live in public/locales/{cs,en}/translation.json under "state_badge".
+ * Translations live in public/locales/cs/translation.json under "state_badge"
+ * (exists only for `cs`; no `en` file). Kanonické labely inzerce:
+ * OPEN_FOR_APPLICATIONS → "Aktivní", CLOSED_FOR_APPLICATIONS → "Uzavřeno".
+ * POZOR: Practice stavy (PENDING_CONTENT_APPROVAL..CLOSED_FOR_APPLICATIONS)
+ * ≠ StudentPractice stavy (APPLIED..CONTENT_APPROVED) — toto je pro Practice.
  */
 export function getStateLabelKey(status) {
   const keyMap = {

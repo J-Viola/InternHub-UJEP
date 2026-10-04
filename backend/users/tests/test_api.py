@@ -14,6 +14,7 @@ from users.serializers import (
     LogoutSerializer,
     OrganizationRegisterSerializer,
 )
+from users.services import AresUnavailableError
 
 User = get_user_model()
 
@@ -313,7 +314,7 @@ class OrganizationUserListTests(APITestCase):
 
 
 class UserManagerTests(TestCase):
-    """C2.1: Verify UserManager is not destroyed by migration 0005."""
+    """Verify UserManager is not destroyed by migration 0005."""
 
     def test_create_user_works(self):
         """create_user must succeed after all migrations."""
@@ -340,7 +341,7 @@ class UserManagerTests(TestCase):
 
 
 class DeactivatedUserLoginTests(TestCase):
-    """C2.3: Deactivated STAG users must not be able to login."""
+    """Deactivated STAG users must not be able to login."""
 
     def setUp(self):
         from users.models import StudentUser
@@ -378,3 +379,183 @@ class DeactivatedUserLoginTests(TestCase):
         )
         self.assertIn("refresh", result)
         self.assertIn("access", result)
+
+
+class AresJusticeViewTests(APITestCase):
+    """
+    Rozlišení chyb ARES.
+    """
+
+    def setUp(self):
+        self.url = "/api/users/ares-justice/"
+
+    @patch("users.views.fetch_ares_data")
+    def test_success_returns_found_source_and_legal_form(self, mock_fetch):
+        mock_fetch.return_value = EkonomickySubjektDTO(
+            ico=12345678,
+            obchodniJmeno="Test Company",
+            sidlo=Adresa(textovaAdresa="Test Address", psc=12345),
+            dic="CZ12345678",
+            pravniForma="Akciová společnost",
+        )
+        resp = self.client.post(self.url, {"ico": "12345678"}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(resp.data["found"])
+        self.assertEqual(resp.data["source"], "ares")
+        self.assertEqual(resp.data["legal_form"], "Akciová společnost")
+
+    @patch("users.views.fetch_ares_data")
+    def test_not_found_returns_404_ares_not_found(self, mock_fetch):
+        mock_fetch.return_value = None
+        resp = self.client.post(self.url, {"ico": "99999999"}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(resp.data["error_code"], "ARES_NOT_FOUND")
+        self.assertEqual(resp.data["detail"], "Subjekt s tímto IČO nebyl v registru ARES nalezen")
+
+    @patch("users.views.fetch_ares_data")
+    def test_outage_returns_503_ares_unavailable(self, mock_fetch):
+        mock_fetch.side_effect = AresUnavailableError("timeout")
+        resp = self.client.post(self.url, {"ico": "12345678"}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(resp.data["error_code"], "ARES_UNAVAILABLE")
+        self.assertTrue(resp.data["manual_input"])
+
+    @patch("users.views.fetch_ares_data")
+    def test_outage_with_db_cache_returns_cache(self, mock_fetch):
+        from users.models import ApprovalStatus, EmployerProfile
+
+        EmployerProfile.objects.create(
+            ico="12345678",
+            company_name="Cached Co",
+            legal_form="s.r.o.",
+            approval_status=ApprovalStatus.APPROVED,
+        )
+        mock_fetch.side_effect = AresUnavailableError("timeout")
+        resp = self.client.post(self.url, {"ico": "12345678"}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(resp.data["found"])
+        self.assertEqual(resp.data["source"], "cache")
+        self.assertEqual(resp.data["legal_form"], "s.r.o.")
+
+    @patch("users.views.fetch_ares_data")
+    def test_not_found_with_db_cache_returns_cache(self, mock_fetch):
+        from users.models import ApprovalStatus, EmployerProfile
+
+        EmployerProfile.objects.create(
+            ico="12345678",
+            company_name="Cached Co",
+            approval_status=ApprovalStatus.APPROVED,
+        )
+        mock_fetch.return_value = None
+        resp = self.client.post(self.url, {"ico": "12345678"}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["source"], "cache")
+
+
+class OrganizationApprovalTests(APITestCase):
+    """
+    Firmy schvaluje garant praxe; student/org nemohou; admin zůstává.
+    """
+
+    def setUp(self):
+        from department.models import Department
+        from users.models import (
+            ApprovalStatus,
+            EmployerProfile,
+            OrganizationRole,
+            OrganizationUser,
+            ProfessorUser,
+            StagRole,
+            StagRoleEnum,
+            StudentUser,
+        )
+
+        dept, _ = Department.objects.get_or_create(department_name="Informatika", department_code="KI")
+        stag_role, _ = StagRole.objects.get_or_create(
+            role=StagRoleEnum.VY,
+            defaults={"role_name": "Vyučující"},
+        )
+        self.garant = ProfessorUser.objects.create(
+            email="garant@test.com",
+            first_name="Gar",
+            last_name="Ant",
+            is_active=True,
+            department=dept,
+            stag_role=stag_role,
+            is_garant_praxe=True,
+        )
+        self.student = StudentUser.objects.create(email="stud@test.com", first_name="S", last_name="T", is_active=True)
+        self.org = OrganizationUser.objects.create(
+            email="org@test.com",
+            first_name="O",
+            last_name="U",
+            is_active=True,
+            organization_role=OrganizationRole.OWNER,
+        )
+        self.profile = EmployerProfile.objects.create(
+            company_name="Pending Co",
+            approval_status=ApprovalStatus.PENDING,
+        )
+        self.org.employer_profile = self.profile
+        self.org.save()
+        self.url = f"/api/users/companies/{self.profile.employer_id}/"
+
+    def test_garant_can_approve_company(self):
+        from users.models import ApprovalStatus
+
+        self.client.force_authenticate(user=self.garant)
+        # AdminOrganizationViewSet používá FormParser/MultiPartParser → form data
+        resp = self.client.patch(
+            self.url,
+            {"approval_status": str(ApprovalStatus.APPROVED.value)},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.approval_status, ApprovalStatus.APPROVED)
+
+    def test_garant_can_reject_company(self):
+        from users.models import ApprovalStatus
+
+        self.client.force_authenticate(user=self.garant)
+        resp = self.client.patch(
+            self.url,
+            {"approval_status": str(ApprovalStatus.REJECTED.value)},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.approval_status, ApprovalStatus.REJECTED)
+
+    def test_student_cannot_approve_company(self):
+        self.client.force_authenticate(user=self.student)
+        resp = self.client.patch(
+            self.url,
+            {"approval_status": "1"},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_org_user_cannot_approve_company(self):
+        self.client.force_authenticate(user=self.org)
+        resp = self.client.patch(
+            self.url,
+            {"approval_status": "1"},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_garant_cannot_destroy_company(self):
+        """Destroy zůstává admin-only (garant jen schvaluje)."""
+        self.client.force_authenticate(user=self.garant)
+        resp = self.client.delete(self.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_still_approve_company(self):
+        from users.models import ApprovalStatus
+
+        admin_user = User.objects.create_superuser(email="admin@test.com", password="AdminPass123!")
+        self.client.force_authenticate(user=admin_user)
+        resp = self.client.patch(
+            self.url,
+            {"approval_status": str(ApprovalStatus.APPROVED.value)},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.approval_status, ApprovalStatus.APPROVED)

@@ -4,6 +4,7 @@ import SearchBar from "@components/Filter/SearchBar";
 import Button from "@core/Button/Button";
 import DropDown from "@core/Form/DropDown";
 import { useTranslation } from "react-i18next";
+import { REGION_OPTIONS } from "@components/Nabidka/regions";
 
 export default function FilterNabidka({
     filterValue,
@@ -78,6 +79,60 @@ export default function FilterNabidka({
                     onChange={(dict) => handleFilterChange(null, "subject", dict.subject, true)}
                     property="w-32"
                 />
+
+                {/* FILTR KRAJE */}
+                <Container property="w-full mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('offers.filter.region')}:
+                    </label>
+                    <select
+                        id="region"
+                        value={filterValue?.region || ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) {
+                                onSearchClear("region");
+                            } else {
+                                handleFilterChange(null, "region", val, true);
+                            }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">{t('offers.filter.all')}</option>
+                        {REGION_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                </Container>
+
+                {/* FILTR LOKALITY */}
+                <Container property="w-full mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('offers.filter.city')}:
+                    </label>
+                    <select
+                        id="city"
+                        value={filterValue?.city || ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) {
+                                onSearchClear("city");
+                            } else {
+                                handleFilterChange(null, "city", val, true);
+                            }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">{t('offers.filter.all')}</option>
+                        {(locations || []).map((loc) => (
+                            <option key={loc} value={loc}>
+                                {loc}
+                            </option>
+                        ))}
+                    </select>
+                </Container>
 
                 {/* FILTR DÉLKY */}
                 <Container property="w-full mt-6">

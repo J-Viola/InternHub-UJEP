@@ -2,8 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import NabidkaForm from '@components/Forms/NabidkaForm';
 
-// Mock react-i18next
+// Mock react-i18next — spread the actual module so initReactI18next
+// (used by src/i18n.js in the import chain) stays available
 jest.mock('react-i18next', () => ({
+  ...jest.requireActual('react-i18next'),
   useTranslation: () => ({ t: (key) => key }),
 }));
 

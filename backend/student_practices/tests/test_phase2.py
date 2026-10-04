@@ -66,6 +66,8 @@ class Phase2Tests(APITestCase):
         self.assertIn("ID prihlasky", csv_content)
 
     def test_evaluation_submission(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
         self.client.force_authenticate(user=self.student)
         payload = {
             "student_practice_id": self.sp.student_practice_id,
@@ -77,7 +79,8 @@ class Phase2Tests(APITestCase):
             "initiative_comment": "High initiative",
             "overall_comment": "Overall great student",
         }
-        res = self.client.post("/api/student-practices/evaluations/", payload)
+        pdf_file = SimpleUploadedFile("test.pdf", b"%PDF-1.4 test content", content_type="application/pdf")
+        res = self.client.post("/api/student-practices/evaluations/", {**payload, "pdf_file": pdf_file})
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertTrue(Evaluation.objects.filter(student_practice=self.sp).exists())
 

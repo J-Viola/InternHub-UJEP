@@ -30,7 +30,7 @@ urlpatterns = [
     path("get-end-date/", GetEndDateView.as_view(), name="get-end-date"),
     # Admin
     path("admin-practices/", AdminPracticesListView.as_view(), name="admin-practices"),
-    # WP4 — State machine endpoints
+    # State machine endpoints
     path("<int:pk>/transition/", TransitionPracticeView.as_view(), name="practice-transition"),
     path("<int:pk>/cancel/", CancelPracticeView.as_view(), name="practice-cancel"),
     path("<int:pk>/close-applications/", CloseApplicationsView.as_view(), name="practice-close-applications"),

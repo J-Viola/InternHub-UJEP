@@ -68,7 +68,11 @@ export default function UpravitNabidku() {
                         subject_id: practiceRes.subject?.subject_id,
                         contact_user: contactUserId,
                         contact_user_info: practiceRes.contact_user_info,
-                        image_base64: practiceRes.image_base64
+                        image_base64: practiceRes.image_base64,
+                        mentor_name: practiceRes.mentor_name,
+                        contact_email: practiceRes.contact_email,
+                        region: practiceRes.region,
+                        city: practiceRes.city
                     };
                     setFormData(transformedData);
                 }

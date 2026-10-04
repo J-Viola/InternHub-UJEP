@@ -1,5 +1,5 @@
 """
-Tests for UC-03 — StudentPractice detail, history timeline, withdraw.
+Tests for StudentPractice detail, history timeline, withdraw.
 
 Covers:
 - GET history endpoint returns ActionLog entries
@@ -31,7 +31,7 @@ from users.models import (
 
 
 class StudentPracticeDetailTests(TestCase):
-    """UC-03: Detail přihlášky, timeline historie, withdraw."""
+    """Detail přihlášky, timeline historie, withdraw."""
 
     def setUp(self):
         self.client = APIClient()

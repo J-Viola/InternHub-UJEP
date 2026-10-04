@@ -1,5 +1,5 @@
 """
-Tests for UC-04/06 — Document upload and rejection reason validation.
+Tests for Document upload and rejection reason validation.
 
 Covers:
 - Upload PDF (allowed format)
@@ -39,7 +39,7 @@ from users.models import (
 
 
 class UploadDocumentTests(TestCase):
-    """UC-04/06: Nahrávání dokumentů — formáty, velikost, late_submission."""
+    """Nahrávání dokumentů — formáty, velikost, late_submission."""
 
     def setUp(self):
         self.client = APIClient()
@@ -169,7 +169,7 @@ class UploadDocumentTests(TestCase):
 
 
 class RejectionReasonTests(TestCase):
-    """UC-04/06: Validace rejection_reason (min 10 znaků) a ActionLog."""
+    """Validace rejection_reason (min 10 znaků) a ActionLog."""
 
     def setUp(self):
         self.client = APIClient()

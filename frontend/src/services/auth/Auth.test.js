@@ -40,7 +40,7 @@ jest.mock('@hooks/MessageContext', () => ({
 
 const { createApiClient, setAccessToken } = require('@api/apiClient');
 
-describe('AuthProvider - concurrent 401 race (C6.3)', () => {
+describe('AuthProvider - concurrent 401 race', () => {
     let mockApiClient;
     let responseInterceptors;
 

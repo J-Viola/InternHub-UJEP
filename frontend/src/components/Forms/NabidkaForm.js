@@ -9,6 +9,7 @@ import CustomDatePicker from "@core/Form/DatePicker";
 import Button from "@components/core/Button/Button";
 import Headings from "@core/Text/Headings";
 import { useTranslation } from "react-i18next";
+import { REGION_OPTIONS } from "@components/Nabidka/regions";
 
 export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false, errors = {}}) {
     const { t } = useTranslation();
@@ -121,6 +122,49 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         options={availablePositions}
                         onChange={handleChange}
                         error={errors.available_positions}
+                    />
+                </Container>
+
+                {/* Mentor, kontaktní e-mail, kraj, lokalita */}
+                <Container property={"grid gap-2 grid-cols-2 mt-4"}>
+                    <TextField
+                        id={"mentor_name"}
+                        value={formData?.mentor_name}
+                        required={true}
+                        label={t('offers.mentor_name')}
+                        placeholder={t('offers.mentor_name')}
+                        onChange={handleChange}
+                        error={errors.mentor_name}
+                    />
+
+                    <TextField
+                        id={"contact_email"}
+                        value={formData?.contact_email}
+                        required={true}
+                        type="email"
+                        label={t('offers.contact_email')}
+                        placeholder={t('offers.contact_email')}
+                        onChange={handleChange}
+                        error={errors.contact_email}
+                    />
+
+                    <DropDown
+                        id={"region"}
+                        value={formData?.region}
+                        label={t('offers.region')}
+                        placeholder={t('offers.filter.all')}
+                        options={REGION_OPTIONS}
+                        onChange={handleChange}
+                        error={errors.region}
+                    />
+
+                    <TextField
+                        id={"city"}
+                        value={formData?.city}
+                        label={t('offers.city')}
+                        placeholder={t('offers.city')}
+                        onChange={handleChange}
+                        error={errors.city}
                     />
                 </Container>
 

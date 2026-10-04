@@ -11,7 +11,7 @@ from users.constants import ActionLogType
 
 
 class Command(BaseCommand):
-    help = "Auto-starts and auto-ends student practices based on start/end dates (Item 2.10 / WP2.7)."
+    help = "Auto-starts and auto-ends student practices based on start/end dates."
 
     def handle(self, *args, **options):
         today = date.today()

@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 
 from api.helpers import FormattedDateField
@@ -119,7 +120,7 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source="practice.title", read_only=True)
     logo = serializers.CharField(source="practice.image_base64", read_only=True)
 
-    # cancelled_by z CancellationMixin (task 1.11 — přejmenování cancelled_by_user)
+    # cancelled_by z CancellationMixin (přejmenování cancelled_by_user)
     cancelled_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, required=False)
     cancelled_by_info = serializers.SerializerMethodField(read_only=True)
 
@@ -212,6 +213,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     workflow_state = serializers.SerializerMethodField()
     contract_received_date = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
+    contract_overdue = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = StudentPractice
@@ -231,6 +233,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "workflow_state",
             "contract_received_date",
             "updated_at",
+            "contract_overdue",
             "hours_completed",
             "employer_id",
             "employer_name",
@@ -238,6 +241,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "is_cancelled",
             "cancelled_at",
             "cancellation_reason",
+            "rejection_reason",
             "cancelled_by_info",
         ]
         read_only_fields = [
@@ -250,6 +254,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "is_cancelled",
             "cancelled_at",
             "cancellation_reason",
+            "rejection_reason",
             "cancelled_by_info",
         ]
 
@@ -298,6 +303,7 @@ class StudentPracticeStatusSerializer(serializers.ModelSerializer):
             "progress_status",
             "workflow_status",
             "workflow_status_label",
+            "rejection_reason",
             "hours_completed",
             "student_info",
             "school_approved",
@@ -367,6 +373,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "is_cancelled",
             "cancelled_at",
             "cancellation_reason",
+            "rejection_reason",
             "contract_received_date",
             "updated_at",
         ]
@@ -406,39 +413,28 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
 
     # TODO ME-2: Ensure calling views select_related contract_document, content_document, feedback_document
     def get_student_practice_documents(self, obj):
+        def _doc_payload(doc, doc_type):
+            return {
+                "id": doc.document_id,
+                "type": doc_type,
+                "status": doc.status,
+                "review_note": doc.review_note,
+                "uploaded_at": doc.uploaded_at.isoformat() if doc.uploaded_at else None,
+                "late_submission": doc.late_submission,
+            }
+
         student_practice_documents = []
         if obj.contract_document:
-            student_practice_documents.append(
-                {
-                    "id": obj.contract_document.document_id,
-                    "type": "contract",
-                    "status": obj.contract_document.status,
-                    "review_note": obj.contract_document.review_note,
-                }
-            )
+            student_practice_documents.append(_doc_payload(obj.contract_document, "contract"))
         if obj.content_document:
-            student_practice_documents.append(
-                {
-                    "id": obj.content_document.document_id,
-                    "type": "content",
-                    "status": obj.content_document.status,
-                    "review_note": obj.content_document.review_note,
-                }
-            )
+            student_practice_documents.append(_doc_payload(obj.content_document, "content"))
         if obj.feedback_document:
-            student_practice_documents.append(
-                {
-                    "id": obj.feedback_document.document_id,
-                    "type": "feedback",
-                    "status": obj.feedback_document.status,
-                    "review_note": obj.feedback_document.review_note,
-                }
-            )
+            student_practice_documents.append(_doc_payload(obj.feedback_document, "feedback"))
         return student_practice_documents
 
 
 # ========================================================================
-# WP4 — Nové serializery pro state machine endpointy
+# Nové serializery pro state machine endpointy
 # ========================================================================
 
 
@@ -452,6 +448,13 @@ class TransitionStudentPracticeSerializer(serializers.Serializer):
         help_text="Cílový stav workflow (číselná hodnota enumu).",
     )
     reason = serializers.CharField(required=False, allow_blank=True, help_text="Důvod přechodu (nepovinný).")
+
+    def validate(self, data):
+        target_state = data.get("target_state")
+        if target_state in ("REJECTED", "CONTENT_REJECTED", "DOCUMENTS_REJECTED"):
+            if not data.get("reason", "").strip():
+                raise serializers.ValidationError({"reason": "Důvod je povinný při zamítnutí nebo vrácení."})
+        return data
 
 
 class CancelStudentPracticeSerializer(serializers.Serializer):
@@ -479,6 +482,7 @@ class ActionLogSerializer(serializers.ModelSerializer):
 class EvaluationSerializer(serializers.ModelSerializer):
     student_practice_id = serializers.IntegerField(write_only=True)
     evaluated_by_name = serializers.CharField(source="evaluated_by.full_name", read_only=True)
+    pdf_file = serializers.FileField(required=False, allow_null=True, validators=[FileExtensionValidator(allowed_extensions=["pdf"])])
 
     class Meta:
         model = Evaluation
@@ -499,6 +503,26 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "evaluated_at",
         ]
         read_only_fields = ["evaluation_id", "evaluated_by", "evaluated_by_name", "evaluated_at", "pdf_protokol"]
+
+    def validate(self, data):
+        # PDF is required when SP is in ENDED or COMPLETED state
+        sp_id = data.get("student_practice_id") or (self.instance.student_practice_id if self.instance else None)
+        if sp_id:
+            from student_practices.models import StudentPractice, StudentPracticeWorkflowState
+
+            try:
+                sp = StudentPractice.objects.get(pk=sp_id)
+                if sp.workflow_state in (
+                    StudentPracticeWorkflowState.ENDED,
+                    StudentPracticeWorkflowState.COMPLETED,
+                ):
+                    request = self.context.get("request")
+                    has_file = bool(data.get("pdf_file")) or (request and request.FILES.get("pdf_file"))
+                    if not has_file:
+                        raise serializers.ValidationError({"pdf_file": "PDF je povinný pro ukončené praxe."})
+            except StudentPractice.DoesNotExist:
+                pass
+        return data
 
     def validate_expertise_rating(self, val):
         if not (1 <= val <= 5):

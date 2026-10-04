@@ -25,13 +25,34 @@ class GDPRService:
         user.email = f"anonymized_{user_id}@anonymized.local"
         user.is_active = False
 
-        if hasattr(user, "phone_number"):
-            user.phone_number = ""
-        if hasattr(user, "address"):
-            user.address = ""
+        if hasattr(user, "phone"):
+            user.phone = ""
         if hasattr(user, "cv_file") and user.cv_file:
             user.cv_file.delete(save=False)
             user.cv_file = None
+
+        # StudentUser-specific PII fields
+        from users.models import StudentUser
+
+        if isinstance(user, StudentUser):
+            user.date_of_birth = None
+            user.place_of_birth = ""
+            user.street = ""
+            user.street_number = ""
+            user.zip_code = ""
+            user.city = ""
+            user.skills = []
+            if user.profile_picture:
+                user.profile_picture.delete(save=False)
+                user.profile_picture = None
+            user.resume = ""
+            user.additional_info = ""
+
+        # EmployerProfile PII fields
+        if hasattr(user, "employer_profile") and user.employer_profile:
+            user.employer_profile.address = ""
+            user.employer_profile.zip_code = ""
+            user.employer_profile.save()
 
         user.save()
 

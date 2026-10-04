@@ -36,7 +36,7 @@ class Phase4FullTestSuite(APITestCase):
         )
 
     def test_all_13_states_enum_and_transitions(self):
-        """Item 4.1: Test 13-state enum representation and transitions matrix router."""
+        """Test 13-state enum representation and transitions matrix router."""
         self.assertEqual(len(list(StudentPracticeWorkflowState)), 13)
         sp = StudentPractice.objects.create(
             user=self.student,
@@ -51,21 +51,21 @@ class Phase4FullTestSuite(APITestCase):
         self.assertIn(StudentPracticeWorkflowState.PRELIMINARY_APPROVED, matrix[StudentPracticeWorkflowState.APPLIED])
 
     def test_ares_fallback_cached_and_miss(self):
-        """Item 4.2: Test ARES API DB fallback on error / timeout."""
+        """Test ARES API DB fallback on error / timeout."""
         self.client.force_authenticate(user=self.student)
         res = self.client.get(f"/api/users/ares-justice/?ico={self.employer.ico}")
         self.assertIn(res.status_code, [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND, status.HTTP_405_METHOD_NOT_ALLOWED])
 
     def test_auto_close_practices_management_command(self):
-        """Item 4.3: Test auto_close_practices management command."""
-        self.practice.start_date = date.today() + timedelta(days=5)  # < 14 days
+        """auto_close_practices uzavírá v den zahájení (start_date <= today)."""
+        self.practice.start_date = date.today()  # v den zahájení
         self.practice.save()
         call_command("auto_close_practices")
         self.practice.refresh_from_db()
         self.assertEqual(self.practice.workflow_state, PracticeWorkflowState.CLOSED_FOR_APPLICATIONS)
 
     def test_auto_start_end_practices_management_command(self):
-        """Item 4.3: Test auto_start_end_practices management command."""
+        """Test auto_start_end_practices management command."""
         self.practice.start_date = date.today() - timedelta(days=1)
         self.practice.save()
         sp = StudentPractice.objects.create(
@@ -82,21 +82,21 @@ class Phase4FullTestSuite(APITestCase):
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.STARTED)
 
     # ===========================================================================
-    # 4.8: UC-14 — auto-close & content reject
+    # 4.8: auto-close & content reject
     # ===========================================================================
 
-    def test_auto_close_14_days_before_start(self):
-        """Item 4.8: Auto-close closes practices within the 14-day window."""
-        self.practice.start_date = date.today() + timedelta(days=5)
+    def test_auto_close_on_start_date(self):
+        """Auto-close uzavírá praxi V DEN zahájení (start_date <= today)."""
+        self.practice.start_date = date.today()
         self.practice.workflow_state = PracticeWorkflowState.OPEN_FOR_APPLICATIONS
         self.practice.save()
         call_command("auto_close_practices")
         self.practice.refresh_from_db()
         self.assertEqual(self.practice.workflow_state, PracticeWorkflowState.CLOSED_FOR_APPLICATIONS)
 
-    def test_auto_close_outside_14_day_window(self):
-        """Item 4.8: Auto-close does NOT affect practices outside the 14-day window."""
-        self.practice.start_date = date.today() + timedelta(days=30)
+    def test_auto_close_outside_trigger_window(self):
+        """Auto-close NEuzavírá praxi, která ještě nezačala (start_date > today)."""
+        self.practice.start_date = date.today() + timedelta(days=5)
         self.practice.workflow_state = PracticeWorkflowState.OPEN_FOR_APPLICATIONS
         self.practice.save()
         call_command("auto_close_practices")
@@ -104,7 +104,7 @@ class Phase4FullTestSuite(APITestCase):
         self.assertEqual(self.practice.workflow_state, PracticeWorkflowState.OPEN_FOR_APPLICATIONS)
 
     def test_content_reject_transition(self):
-        """Item 4.8: Content reject transition via state machine (UC-14)."""
+        """Content reject transition via state machine."""
         # Content transitions require external practice (MANUAL_SP_TRANSITIONS)
         self.practice.is_external = True
         self.practice.save()
@@ -117,7 +117,7 @@ class Phase4FullTestSuite(APITestCase):
             start_date=date.today(),
             end_date=date.today() + timedelta(days=30),
         )
-        # Transition AWAITING_CONTENT_APPROVAL -> CONTENT_REJECTED (UC-14)
+        # Transition AWAITING_CONTENT_APPROVAL -> CONTENT_REJECTED
         # Content reject is a professor action, not a student action
         dept = Department.objects.create(department_name="Informatika", department_code="KI")
         stag_role = StagRole.objects.create(role="vy", role_name="Vyučující")
@@ -141,7 +141,7 @@ class Phase4FullTestSuite(APITestCase):
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.CONTENT_REJECTED)
 
     def test_student_edit_and_resubmit_content(self):
-        """Item 4.8: Student edit → resubmit content (CONTENT_REJECTED → AWAITING_CONTENT_APPROVAL)."""
+        """Student edit → resubmit content (CONTENT_REJECTED → AWAITING_CONTENT_APPROVAL)."""
         # Content transitions require external practice (MANUAL_SP_TRANSITIONS)
         self.practice.is_external = True
         self.practice.save()

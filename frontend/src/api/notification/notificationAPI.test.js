@@ -1,3 +1,4 @@
+import { renderHook } from '@testing-library/react';
 import { useNotificationAPI } from './notificationAPI';
 
 // Mock useApi hook
@@ -20,7 +21,14 @@ describe('notificationAPI', () => {
         useApi.mockReturnValue(api);
     });
 
-    describe('getNotifications (C6.5)', () => {
+    // useNotificationAPI is a hook — call it through renderHook so it runs
+    // inside a React component (hooks cannot be invoked outside render).
+    const renderNotificationAPI = () => {
+        const { result } = renderHook(() => useNotificationAPI());
+        return result.current;
+    };
+
+    describe('getNotifications', () => {
         test('returns response.data, not full Axios response', async () => {
             const mockData = {
                 results: [{ id: 1, title: 'Test notification' }],
@@ -28,7 +36,7 @@ describe('notificationAPI', () => {
             };
             api.get.mockResolvedValue({ data: mockData });
 
-            const { getNotifications } = useNotificationAPI();
+            const { getNotifications } = renderNotificationAPI();
             const result = await getNotifications({ limit: 5 });
 
             // Should return the data, not the Axios wrapper
@@ -42,7 +50,7 @@ describe('notificationAPI', () => {
         test('passes params to api.get', async () => {
             api.get.mockResolvedValue({ data: [] });
 
-            const { getNotifications } = useNotificationAPI();
+            const { getNotifications } = renderNotificationAPI();
             await getNotifications({ page: 2, limit: 10 });
 
             expect(api.get).toHaveBeenCalledWith('/notifications/', {
@@ -51,11 +59,11 @@ describe('notificationAPI', () => {
         });
     });
 
-    describe('getUnreadCount (C6.4)', () => {
+    describe('getUnreadCount', () => {
         test('returns unread_count number, not undefined', async () => {
             api.get.mockResolvedValue({ data: { unread_count: 5 } });
 
-            const { getUnreadCount } = useNotificationAPI();
+            const { getUnreadCount } = renderNotificationAPI();
             const result = await getUnreadCount();
 
             // Should return the number, not undefined
@@ -66,7 +74,7 @@ describe('notificationAPI', () => {
         test('returns 0 when unread_count is missing', async () => {
             api.get.mockResolvedValue({ data: {} });
 
-            const { getUnreadCount } = useNotificationAPI();
+            const { getUnreadCount } = renderNotificationAPI();
             const result = await getUnreadCount();
 
             expect(result).toBe(0);
@@ -75,19 +83,19 @@ describe('notificationAPI', () => {
         test('returns 0 when data is null', async () => {
             api.get.mockResolvedValue({ data: null });
 
-            const { getUnreadCount } = useNotificationAPI();
+            const { getUnreadCount } = renderNotificationAPI();
             const result = await getUnreadCount();
 
             expect(result).toBe(0);
         });
     });
 
-    describe('markAsRead (C6.5)', () => {
+    describe('markAsRead', () => {
         test('returns response.data, not full Axios response', async () => {
             const mockData = { id: 42, is_read: true };
             api.patch.mockResolvedValue({ data: mockData });
 
-            const { markAsRead } = useNotificationAPI();
+            const { markAsRead } = renderNotificationAPI();
             const result = await markAsRead(42);
 
             expect(result).toBe(mockData);
@@ -96,12 +104,12 @@ describe('notificationAPI', () => {
         });
     });
 
-    describe('markAllAsRead (C6.5)', () => {
+    describe('markAllAsRead', () => {
         test('returns response.data, not full Axios response', async () => {
             const mockData = { message: 'All marked as read' };
             api.post.mockResolvedValue({ data: mockData });
 
-            const { markAllAsRead } = useNotificationAPI();
+            const { markAllAsRead } = renderNotificationAPI();
             const result = await markAllAsRead();
 
             expect(result).toBe(mockData);

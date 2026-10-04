@@ -9,16 +9,18 @@ from django.core import management
 from django.db import connection
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import generics
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.test_scenarios import ScenarioBuilder
 from student_practices.models import UploadedDocument
 from users.models import (
+    ActionLog,
     DepartmentRole,
     EmployerProfile,
     OrganizationUser,
@@ -382,7 +384,7 @@ class HealthCheckView(APIView):
 
 class DashboardStatsView(APIView):
     """
-    Monitoring dashboard stats endpoint (Item 2.5).
+    Monitoring dashboard stats endpoint.
     """
 
     permission_classes = [IsAuthenticated]
@@ -396,11 +398,22 @@ class DashboardStatsView(APIView):
 
 class DataExportView(APIView):
     """
-    Bulk data export endpoint for practices (Item 2.3).
+    Bulk data export endpoint for practices.
     Pro >500 záznamů spouští asynchronní Celery task.
     """
 
     permission_classes = [IsAuthenticated]
+
+    def perform_content_negotiation(self, request, force=False):
+        """
+        Export si řídí formát sám přes ``?format=csv|xlsx`` (vrací raw HttpResponse).
+
+        DRF by jinak pro ``?format=csv`` hledal renderer s formátem 'csv' a vracel
+        Http404 (žádný takový renderer není registrovaný). Vracíme výchozí renderer,
+        aby DRF nenegocioval — formát zpracuje samotný view.
+        """
+        renderers = self.get_renderers()
+        return (renderers[0], renderers[0].media_type)
 
     def get(self, request):
         from api.export_service import ExportService
@@ -419,25 +432,30 @@ class DataExportView(APIView):
                 "subject_id": subject_id,
             }
 
-            # Department scoping for count (same as sync query below)
+            # Role-based scoping: garant/profesor katedry → jen vlastní
+            # department; superuser → vše; organizace → vlastní praxe.
             user = request.user
-            dept_ids = None
-            if not user.is_superuser and hasattr(user, "user_subjects"):
-                dept_ids = list(user.user_subjects.values_list("subject__department_id", flat=True))
-            org_employer = getattr(user, "employer_profile", None)
+            dept_ids, org_employer = ExportService.get_scope_filters(user)
 
             # Zjisti počet záznamů
             count = ExportService.get_count(filters, dept_ids=dept_ids, employer=org_employer)
 
-            # Pokud >500, deleguj na Celery task (NOTE: async export may lack user-level
-            # scoping — consider admin-only async or passing scoped filters).
+            # Pokud >500, deleguj na Celery task — scoping se aplikuje uvnitř tasku
+            # (předává se user_id; viz api/tasks.py export_data_async).
             if count > 500:
                 import uuid
 
                 from api.tasks import export_data_async
 
                 export_id = str(uuid.uuid4())
-                export_data_async.delay(export_id, filters, fmt)
+                export_data_async.delay(export_id, filters, fmt, user.pk)
+                from django.core.cache import cache
+
+                # TTL 7200: user_id cache musí přežít data cache (3600), jinak by
+                # legitimní vlastník dostal 404 při zpožděném exportu (review A2).
+                cache.set(f"export_{export_id}_user_id", user.pk, timeout=7200)
+                # stavový marker pro DataExportStatusView (PENDING/SUCCESS/FAILURE)
+                cache.set(f"export_{export_id}_status", "pending", timeout=3600)
                 return Response(
                     {
                         "export_id": export_id,
@@ -449,16 +467,12 @@ class DataExportView(APIView):
             # Synchronní export pro ≤500 záznamů
             qs = StudentPractice.objects.filter(is_cancelled=False)
 
-            # Department scoping: non-superusers see only their own department's practices
-            user = request.user
-            if not user.is_superuser and hasattr(user, "user_subjects"):
-                dept_ids = user.user_subjects.values_list("subject__department_id", flat=True)
-                if dept_ids:
-                    qs = qs.filter(practice__subject__department_id__in=dept_ids)
+            if dept_ids:
+                qs = qs.filter(practice__subject__department_id__in=dept_ids)
 
             # For organization users, scope to their own employer's practices
-            if hasattr(user, "employer_profile") and user.employer_profile:
-                qs = qs.filter(practice__employer=user.employer_profile)
+            if org_employer is not None:
+                qs = qs.filter(practice__employer=org_employer)
 
             if year:
                 qs = qs.filter(year=year)
@@ -487,6 +501,10 @@ class DataExportView(APIView):
 class DataExportStatusView(APIView):
     """
     Endpoint pro kontrolu stavu asynchronního exportu (polling).
+
+    odpověď ``{"state": "PENDING|SUCCESS|FAILURE",
+    "download_url": ...}`` — download_url je naplněna cestou
+    ``/api/export/download/{export_id}/`` při SUCCESS, jinak ``null``.
     """
 
     permission_classes = [IsAuthenticated]
@@ -494,10 +512,36 @@ class DataExportStatusView(APIView):
     def get(self, request, export_id):
         from django.core.cache import cache
 
-        status = cache.get(f"export_{export_id}_status")
-        if status is None:
-            return Response({"export_id": export_id, "status": "not_found"}, status=404)
-        return Response({"export_id": export_id, "status": status})
+        cached = cache.get(f"export_{export_id}_status")
+
+        if cached is None:
+            # Neznámý / neexistující export — FE by takové id neměl pollovat.
+            return Response(
+                {"export_id": export_id, "state": "PENDING", "download_url": None},
+                status=404,
+            )
+
+        if cached == "completed":
+            return Response(
+                {
+                    "export_id": export_id,
+                    "state": "SUCCESS",
+                    "download_url": f"/api/export/download/{export_id}/",
+                }
+            )
+
+        if isinstance(cached, str) and cached.startswith("error:"):
+            return Response(
+                {
+                    "export_id": export_id,
+                    "state": "FAILURE",
+                    "download_url": None,
+                    "detail": cached[len("error:") :].strip(),
+                }
+            )
+
+        # Jakýkoli jiný stav (např. "pending") → export se stále zpracovává.
+        return Response({"export_id": export_id, "state": "PENDING", "download_url": None})
 
 
 class DataExportDownloadView(APIView):
@@ -520,6 +564,16 @@ class DataExportDownloadView(APIView):
                 status=404 if status is None else 400,
             )
 
+        # ownership check — jen žádající uživatel nebo staff si smí stáhnout
+        # hotový export (jiné entity nedostanou cizí data → 403/404).
+        owner_id = cache.get(f"export_{export_id}_user_id")
+        is_owner = owner_id is not None and owner_id == request.user.pk
+        if not (is_owner or request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {"export_id": export_id, "status": "not_found"},
+                status=404,
+            )
+
         data = cache.get(f"export_{export_id}")
         fmt = cache.get(f"export_{export_id}_fmt", "xlsx")
 
@@ -533,3 +587,15 @@ class DataExportDownloadView(APIView):
             )
             response["Content-Disposition"] = 'attachment; filename="praxe_export.xlsx"'
         return response
+
+
+class ActionLogListView(generics.ListAPIView):
+    """Global audit log API — admin only."""
+
+    permission_classes = [IsAdminUser]
+    queryset = ActionLog.objects.all().order_by("-action_date")
+
+    def get_serializer_class(self):
+        from student_practices.serializers import ActionLogSerializer
+
+        return ActionLogSerializer

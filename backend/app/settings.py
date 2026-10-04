@@ -180,7 +180,7 @@ DEMO_DEPARTMENT_CODE = os.environ.get("DEMO_DEPARTMENT_CODE", "DEMO")
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
 STAG_MOCK = os.environ.get("STAG_MOCK", "False") == "True"
 
-# University info for document generation (WP7)
+# University info for document generation
 UNIVERSITY_NAME = "Univerzita Jana Evangelisty Purkyně v Ústí nad Labem"
 UNIVERSITY_ADDRESS = "Pasteurova 3544/1, 400 96 Ústí nad Labem"
 UNIVERSITY_ICO = "44555601"
@@ -245,6 +245,14 @@ else:
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
+
+# ---------------------------------------------------------------------------
+# Prahové konstanty procesů praxí (číselníky z DB jsou post-MVP;
+# krátkodobě settings konstanty s prefixem PRACTICE_* — TODO: převést na DB číselníky).
+# ---------------------------------------------------------------------------
+PRACTICE_CONTRACT_OVERDUE_DAYS = 7  # prodlení se zasmluvněním (AWAITING_CONTRACT)
+PRACTICE_URGENCY_DAYS = [14, 7, 2]  # urgence před start_date
+PRACTICE_CREDIT_ALERT_DAYS = 14  # alert po ENDED bez zápočtu
 
 ARES_API_URL = os.environ.get(
     "ARES_API_URL",
@@ -406,6 +414,12 @@ CORS_ALLOW_HEADERS = [
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "https://localhost:3000",
+    os.environ.get("FRONTEND_URL", "http://localhost:3000"),
+]
 
 # Sentry / error tracking
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")

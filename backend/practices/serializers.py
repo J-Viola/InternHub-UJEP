@@ -1,16 +1,26 @@
 from datetime import date
 
+from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 
 from api.helpers import FormattedDateField
+from api.validators import validate_file_size
 from practices.messages import PracticeMessages
-from practices.models import ApplicationClosureReason, Practice, PracticeWorkflowState, ProgressStatus
+from practices.models import (
+    REGION_CHOICES,
+    ApplicationClosureReason,
+    Practice,
+    PracticeWorkflowState,
+    ProgressStatus,
+)
 from practices.utils import calculate_end_date
 from student_practices.serializers import StudentPracticeStatusSerializer
 from subject.models import Subject
 from subject.serializers import SubjectSerializer
 from users.models import ApprovalStatus, EmployerProfile, User
 from users.serializers import EmployerProfileSerializer
+
+EXTERNAL_DETAILS_REQUIRED = "Nahrání dokumentu s detaily praxe je povinné"
 
 
 class OrganizationPracticeSerializer(serializers.ModelSerializer):
@@ -35,7 +45,11 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
             "pending_count",
             "approval_status",
             "workflow_state",
+            "workflow_status_label",
             "progress_status",
+            "mentor_name",
+            "contact_email",
+            "region",
         ]
 
     def get_approved_count(self, obj):
@@ -77,6 +91,29 @@ class PracticeSerializer(serializers.ModelSerializer):
     coefficient = serializers.FloatField(
         read_only=True, help_text="TODO: DEPRECATED — field bude odstraněn v budoucí verzi. Použijte Subject.min_hours (480 default)."
     )
+    title = serializers.CharField(required=True, allow_blank=False)
+    description = serializers.CharField(required=True, allow_blank=False)
+    responsibilities = serializers.CharField(required=True, allow_blank=False)
+    # povinná pole nabídky — mentor + kontaktní e-mail.
+    mentor_name = serializers.CharField(required=True, allow_blank=False, help_text="Jméno mentora praxe")
+    contact_email = serializers.EmailField(required=True, allow_blank=False, help_text="Kontaktní e-mail nabídky")
+    region = serializers.ChoiceField(
+        choices=REGION_CHOICES, required=False, allow_blank=True, default="", help_text="Kraj, kde se praxe koná"
+    )
+    workflow_status_label = serializers.CharField(read_only=True)
+    # počty schválených / čekajících přihlášek (z anotací querysetu).
+    approved_applications = serializers.SerializerMethodField()
+    pending_applications = serializers.SerializerMethodField()
+
+    def get_approved_applications(self, obj):
+        if hasattr(obj, "approved_count"):
+            return obj.approved_count
+        return obj.student_practices.filter(approval_status=ApprovalStatus.APPROVED).count()
+
+    def get_pending_applications(self, obj):
+        if hasattr(obj, "pending_count"):
+            return obj.pending_count
+        return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
 
     def get_contact_user_info(self, obj):
         if obj.contact_user:
@@ -116,13 +153,23 @@ class PracticeSerializer(serializers.ModelSerializer):
             if sp.approval_status != ApprovalStatus.APPROVED:
                 continue
             if sp.contract_document_id:
-                student_practice_documents.append({"id": sp.contract_document_id, "type": "contract"})
+                student_practice_documents.append(self._document_payload(sp.contract_document, "contract"))
             if sp.content_document_id:
-                student_practice_documents.append({"id": sp.content_document_id, "type": "content"})
+                student_practice_documents.append(self._document_payload(sp.content_document, "content"))
             if sp.feedback_document_id:
-                student_practice_documents.append({"id": sp.feedback_document_id, "type": "feedback"})
+                student_practice_documents.append(self._document_payload(sp.feedback_document, "feedback"))
 
         return student_practice_documents
+
+    @staticmethod
+    def _document_payload(document, doc_type):
+        """dokument payload doplněn o uploaded_at (ISO) a late_submission ."""
+        return {
+            "id": document.document_id,
+            "type": doc_type,
+            "uploaded_at": document.uploaded_at.isoformat() if document.uploaded_at else None,
+            "late_submission": bool(document.late_submission),
+        }
 
     def get_student_practice_status(self, obj):
         request = self.context.get("request")
@@ -173,6 +220,13 @@ class PracticeSerializer(serializers.ModelSerializer):
             "external_employer",
             "external_employer_info",
             "skills",
+            "city",
+            "mentor_name",
+            "contact_email",
+            "region",
+            "workflow_status_label",
+            "approved_applications",
+            "pending_applications",
         ]
         read_only_fields = ["practice_id", "is_active", "workflow_state", "approval_status", "progress_status"]
 
@@ -353,6 +407,13 @@ class TransitionPracticeSerializer(serializers.Serializer):
     )
     reason = serializers.CharField(required=False, allow_blank=True, help_text="Důvod přechodu (nepovinný).")
 
+    def validate(self, data):
+        target_state = data.get("target_state")
+        if target_state in ("REJECTED", "CONTENT_REJECTED", "DOCUMENTS_REJECTED"):
+            if not data.get("reason", "").strip():
+                raise serializers.ValidationError({"reason": "Důvod je povinný při zamítnutí nebo vrácení."})
+        return data
+
 
 class CancelPracticeSerializer(serializers.Serializer):
     """Request serializer pro POST /api/practices/{id}/cancel."""
@@ -361,11 +422,18 @@ class CancelPracticeSerializer(serializers.Serializer):
 
 
 class CloseApplicationsSerializer(serializers.Serializer):
-    """Request serializer pro POST /api/practices/{id}/close-applications."""
+    """
+    Request serializer pro POST /api/practices/{id}/close-applications.
+
+    důvod je nepovinný — manuální uzavření vždy zapisuje
+    ``closed_reason=ApplicationClosureReason.MANUAL``, hodnota z requestu
+    se nebere.
+    """
 
     reason = serializers.ChoiceField(
         choices=[(r.value, r.name) for r in list(ApplicationClosureReason)],
-        help_text="Důvod uzávěrky přihlášek.",
+        required=False,
+        help_text="Důvod uzávěrky přihlášek (nepovinné — vždy se zapíše MANUAL).",
     )
 
 
@@ -380,6 +448,13 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
     contact_phone = serializers.CharField(required=False, allow_blank=True, help_text="Telefonní kontakt externí organizace.")
     start_date = FormattedDateField()
     end_date = FormattedDateField(required=False)
+    # povinná příloha s detaily praxe (PDF/DOCX, <= MAX_UPLOAD_SIZE).
+    external_details_file = serializers.FileField(
+        required=False,
+        allow_null=True,
+        validators=[FileExtensionValidator(["pdf", "docx"]), validate_file_size],
+        help_text="Soubor s detaily mimosystémové praxe (PDF/DOCX, max 10 MB) — povinné.",
+    )
 
     class Meta:
         model = Practice
@@ -390,6 +465,7 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
             "ico",
             "address",
             "contact_phone",
+            "external_details_file",
             "subject_id",
             "title",
             "description",
@@ -402,15 +478,16 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        """Check start_date is not in the past and end_date ≥ start_date."""
-        from datetime import date
-
+        """Check start_date is not in the past, end_date ≥ start_date and file present."""
         start = data.get("start_date")
         end = data.get("end_date")
         if start and start < date.today():
             raise serializers.ValidationError(PracticeMessages.DATE_IN_PAST)
         if start and end and end < start:
             raise serializers.ValidationError(PracticeMessages.END_DATE_BEFORE_START)
+        # externí praxe vyžaduje dokument s detaily praxe.
+        if not data.get("external_details_file"):
+            raise serializers.ValidationError({"external_details_file": EXTERNAL_DETAILS_REQUIRED})
         return data
 
     def create(self, validated_data):
@@ -422,6 +499,18 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
         ico = validated_data.pop("ico", "")
         address = validated_data.pop("address", "")
         contact_phone = validated_data.pop("contact_phone", "")
+
+        # ARES lock enforcement — pokud je profil vytvářející organizace
+        # uzamčený (ares_locked=True), přepíšeme employer_name/address hodnotami
+        # z ARES (zamčená data profilu) a hodnoty z clientu se ignorují.
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+        employer_profile = getattr(user, "employer_profile", None) if user else None
+        if employer_profile and employer_profile.ares_locked:
+            if employer_profile.company_name:
+                employer_name = employer_profile.company_name
+            if employer_profile.address:
+                address = employer_profile.address
 
         created_by = self.context["request"].user
 

@@ -117,8 +117,13 @@ export default function EvaluationForm() {
       addMessage(t("evaluation.success"), "S");
       navigate(`/praxe/${id}`);
     } catch (err) {
-      const msg = err.response?.data?.detail || t("evaluation.error");
-      addMessage(msg, "E");
+      // 403 EVALUATION_NOT_ENDED → i18n klíč.
+      if (err.code === "EVALUATION_NOT_ENDED") {
+        addMessage(t("evaluation.not_ended"), "E");
+      } else {
+        const msg = err.response?.data?.detail || t("evaluation.error");
+        addMessage(msg, "E");
+      }
     } finally {
       setSubmitting(false);
     }

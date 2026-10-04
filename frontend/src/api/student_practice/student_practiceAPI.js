@@ -175,7 +175,7 @@ export const useStudentPracticeAPI = () => {
         }
     };
 
-    // WP7 — Document generation (stahování vygenerovaných .docx šablon)
+    // Document generation (stahování vygenerovaných .docx šablon)
     const downloadGeneratedDocument = async (studentPracticeId, docType) => {
         try {
             const res = await api.get(

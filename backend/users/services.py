@@ -32,10 +32,24 @@ from users.stag_api.exceptions import StagUnreachableError
 logger = logging.getLogger(__name__)
 
 
+class AresUnavailableError(Exception):
+    """
+    ARES služba je nedostupná (timeout / síťová chyba / HTTP 5xx / 4xx kromě 404).
+
+    odlišuje „výpadek ARES" od „subjekt v ARES neexistuje"
+    (None z fetch_ares_data). Výpadek → 503 ARES_UNAVAILABLE;
+    nenalezen → 404 ARES_NOT_FOUND; registrace při výpadku nesmí být blokována.
+    """
+
+
 def register_organization(validated_data):
     """
     Registers a new organization user and their employer profile.
     Fetches additional data from ARES.
+
+    (fallback): pokud je ARES nedostupný (AresUnavailableError),
+    registrace NENÍ blokována — profil se vytvoří v manuálním režimu
+    (manual_ares_entry=True, ares_locked=False) a garanti obdrží varování.
     """
     ico = validated_data.pop("ico")
     company_name = validated_data.pop("companyName", "")
@@ -46,8 +60,15 @@ def register_organization(validated_data):
 
     validated_data.pop("password2", None)
 
-    ares_data = fetch_ares_data(ico)
-    if not ares_data:
+    ares_outage = False
+    try:
+        ares_data = fetch_ares_data(ico)
+    except AresUnavailableError:
+        ares_data = None
+        ares_outage = True
+
+    if not ares_data and not ares_outage:
+        # Subjekt v ARES neexistuje (a není v cache) — registrace zůstává blokovaná
         raise ValueError(UserMessages.ARES_FETCH_FAILED)
 
     try:
@@ -63,7 +84,7 @@ def register_organization(validated_data):
                 is_active=True,
             )
 
-            if hasattr(ares_data, "sidlo") and ares_data.sidlo:
+            if ares_data and hasattr(ares_data, "sidlo") and ares_data.sidlo:
                 sidlo = ares_data.sidlo
                 address_ares = sidlo.textovaAdresa or ""
                 zip_code_ares = sidlo.psc
@@ -73,10 +94,13 @@ def register_organization(validated_data):
 
             employer_profile = EmployerProfile.objects.create(
                 ico=ico,
-                dic=dic if dic else (ares_data.dic or ""),
-                company_name=(company_name if company_name else (ares_data.obchodniJmeno or "")),
+                dic=dic if dic else ((ares_data.dic or "") if ares_data else ""),
+                company_name=(company_name if company_name else ((ares_data.obchodniJmeno or "") if ares_data else "")),
                 address=address if address else address_ares,
                 zip_code=zip_code_ares,
+                legal_form=(ares_data.pravniForma or "") if ares_data else "",
+                manual_ares_entry=ares_outage,
+                ares_locked=not ares_outage,
                 approval_status=ApprovalStatus.PENDING,
                 logo=logo,
             )
@@ -94,10 +118,23 @@ def register_organization(validated_data):
             )
 
             # Notify user via email only after successful transaction commit
-            from notifications.services import EmailService
+            from notifications.services import EmailService, NotificationService
 
             transaction.on_commit(lambda: EmailService.notify_org_welcome(user))
+            # Doplňková notifikace adminům (nadřazená role)
             transaction.on_commit(lambda: EmailService.notify_admins_new_org_registration(user))
+            # Schvalovatelé firem = garanti → in-app + e-mail o nové registraci
+            transaction.on_commit(lambda: NotificationService.notify_garants_new_org_registration(user))
+
+            # Varování při ručně zadaných údajích (ARES výpadek NEBO ruční přepis ARES dat)
+            manual_data = ares_outage
+            if ares_data:
+                manual_company = bool(company_name) and company_name != (getattr(ares_data, "obchodniJmeno", None) or "")
+                ares_sidlo = getattr(ares_data, "sidlo", None)
+                manual_address = bool(address) and ares_sidlo is not None and address != (getattr(ares_sidlo, "textovaAdresa", None) or "")
+                manual_data = manual_company or manual_address
+            if manual_data:
+                transaction.on_commit(lambda: NotificationService.notify_garants_manual_registration(employer_profile))
 
             return user
     except IntegrityError:
@@ -109,7 +146,10 @@ def update_organization_from_ares(user, ico: str):
     Updates the organization's profile with data from ARES based on the provided ICO.
     Creates an EmployerProfile if it doesn't exist.
     """
-    ares_data = fetch_ares_data(ico)
+    try:
+        ares_data = fetch_ares_data(ico)
+    except AresUnavailableError:
+        raise ValueError(UserMessages.ARES_FETCH_FAILED)
     if not ares_data:
         raise ValueError(UserMessages.ARES_FETCH_FAILED)
 
@@ -173,7 +213,15 @@ def get_user_department_ids(user) -> list[int]:
 def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
     """
     Fetches company data from ARES API by ICO.
-    Handles caching.
+    Handles caching (lokální cache je první volba).
+
+    Returns:
+        EkonomickySubjektDTO — subjekt v ARES nalezen (resp. z cache)
+        None — subjekt v ARES neexistuje (HTTP 404 / 200 s chybovým kódem)
+
+    Raises:
+        AresUnavailableError — výpadek ARES (timeout / síťová chyba /
+            HTTP 5xx nebo jiné 4xx než 404).
     """
     ico = str(ico).zfill(8)
     cache_key = f"ares_{ico}"
@@ -191,17 +239,25 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
         if response.status_code == 200:
             response_data = response.json()
             if "kod" in response_data and response_data["kod"] is not None:
-                # ARES returned a business error code inside 200 OK
+                # ARES returned a business error code inside 200 OK → subjekt nenalezen
                 return None
 
             ares_dto = EkonomickySubjektDTO.model_validate(response_data)
             cache.set(cache_key, ares_dto.model_dump(), timeout=3600)
             return ares_dto
+
+        if response.status_code == 404:
+            # Subjekt v ARES neexistuje (ale může být v lokální cache/profily)
+            return None
+
+        # 5xx (a jiná 4xx než 404) = výpadek/odmítnutí služby
+        logger.warning("ARES lookup failed for IČO %s: HTTP %s", ico, response.status_code)
+        raise AresUnavailableError(f"ARES returned HTTP {response.status_code}")
     except requests.RequestException as e:
         logger.warning("ARES lookup failed for IČO %s: %s", ico, e)
-        return None
+        raise AresUnavailableError(str(e)) from e
 
-    return None
+    return None  # pragma: no cover — unreachable
 
 
 STAG_CIRCUIT_BREAKER_KEY = "stag_unreachable_since"

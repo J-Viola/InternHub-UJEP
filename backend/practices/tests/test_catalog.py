@@ -1,5 +1,5 @@
 """
-Tests for UC-01 — Practice catalog listing and filtering.
+Tests for Practice catalog listing and filtering.
 
 Covers:
 - Filter by subject + location (address)
@@ -28,7 +28,7 @@ from users.models import (
 
 
 class CatalogFilterTests(TestCase):
-    """UC-01: Katalog praxí — filtrování a výpis."""
+    """Katalog praxí — filtrování a výpis."""
 
     def setUp(self):
         self.client = APIClient()
@@ -380,6 +380,145 @@ class CatalogFilterTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"] if "results" in response.data else response.data
         self.assertEqual(len(results), 2)
+
+    # ------------------------------------------------------------------
+    # Katalog: pouze schválené (OPEN_FOR_APPLICATIONS) + nestornované
+    # ------------------------------------------------------------------
+
+    def _create_catalog_practice(self, title, workflow_state, is_active=True, is_cancelled=False, **kwargs):
+        today = date.today()
+        return Practice.objects.create(
+            title=title,
+            description="popis",
+            employer=self.employer,
+            subject=self.subject,
+            start_date=today + timedelta(days=10),
+            end_date=today + timedelta(days=100),
+            is_active=is_active,
+            is_cancelled=is_cancelled,
+            approval_status=ApprovalStatus.APPROVED,
+            progress_status=ProgressStatus.NOT_STARTED,
+            workflow_state=workflow_state,
+            **kwargs,
+        )
+
+    def test_catalog_excludes_pending_content_approval(self):
+        """PENDING_CONTENT_APPROVAL nabídka není v katalogu."""
+        self._create_catalog_practice("Čeká na schválení obsahu", PracticeWorkflowState.PENDING_CONTENT_APPROVAL)
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        titles = [r["title"] for r in results]
+        self.assertNotIn("Čeká na schválení obsahu", titles)
+        self.assertIn("Vývojář v Praze", titles)
+
+    def test_catalog_excludes_content_rejected(self):
+        """CONTENT_REJECTED nabídka není v katalogu."""
+        self._create_catalog_practice("Zamítnutý obsah", PracticeWorkflowState.CONTENT_REJECTED)
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        titles = [r["title"] for r in results]
+        self.assertNotIn("Zamítnutý obsah", titles)
+
+    def test_catalog_excludes_cancelled_practice(self):
+        """stornovaná nabídka není v katalogu ani když je aktivní."""
+        self._create_catalog_practice("Stornovaná stáž", PracticeWorkflowState.OPEN_FOR_APPLICATIONS, is_cancelled=True)
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        titles = [r["title"] for r in results]
+        self.assertNotIn("Stornovaná stáž", titles)
+
+    def test_catalog_includes_open_for_applications(self):
+        """OPEN_FOR_APPLICATIONS nabídka v katalogu je."""
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        titles = [r["title"] for r in results]
+        self.assertIn("Vývojář v Praze", titles)
+        self.assertIn("Java vývojář v Brně", titles)
+
+    # ------------------------------------------------------------------
+    # kraj (region) filtr + workflow_status_label + čítače
+    # ------------------------------------------------------------------
+
+    def test_filter_by_region(self):
+        """filtr ?region=<kraj> (exact)."""
+        self.practice_prague.region = "PHA"
+        self.practice_prague.save(update_fields=["region"])
+        self.practice_brno.region = "JHM"
+        self.practice_brno.save(update_fields=["region"])
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url, {"region": "PHA"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["title"], "Vývojář v Praze")
+
+    def test_workflow_status_label_in_payload(self):
+        """workflow_status_label pro OPEN_FOR_APPLICATIONS = „Aktivní"."""
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        self.assertEqual(results[0]["workflow_status_label"], "Aktivní")
+
+    def test_approved_and_pending_applications_in_payload(self):
+        """katalogový payload obsahuje approved_applications/pending_applications."""
+        from student_practices.models import StudentPractice, StudentPracticeWorkflowState
+
+        # UniqueConstraint(practice, user, is_cancelled=False) — proto dva různé právy.
+        StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice_prague,
+            approval_status=ApprovalStatus.APPROVED,
+            progress_status=ProgressStatus.IN_PROGRESS,
+            workflow_state=StudentPracticeWorkflowState.CONTRACTED,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=30),
+        )
+        StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice_brno,
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            workflow_state=StudentPracticeWorkflowState.APPLIED,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=30),
+        )
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        prague = next(r for r in results if r["title"] == "Vývojář v Praze")
+        brno = next(r for r in results if r["title"] == "Java vývojář v Brně")
+        self.assertEqual(prague["approved_applications"], 1)
+        self.assertEqual(prague["pending_applications"], 0)
+        self.assertEqual(brno["approved_applications"], 0)
+        self.assertEqual(brno["pending_applications"], 1)
+
+    def test_mentor_contact_region_in_payload(self):
+        """katalogový payload obsahuje mentor_name, contact_email, region."""
+        self.practice_prague.mentor_name = "Ing. Petr Vedoucí"
+        self.practice_prague.contact_email = "praxe@katalog.cz"
+        self.practice_prague.region = "PHA"
+        self.practice_prague.save(update_fields=["mentor_name", "contact_email", "region"])
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self.catalog_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"] if "results" in response.data else response.data
+        prague = next(r for r in results if r["title"] == "Vývojář v Praze")
+        self.assertEqual(prague["mentor_name"], "Ing. Petr Vedoucí")
+        self.assertEqual(prague["contact_email"], "praxe@katalog.cz")
+        self.assertEqual(prague["region"], "PHA")
 
     # ------------------------------------------------------------------
     # Pagination

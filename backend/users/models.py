@@ -87,6 +87,19 @@ class EmployerProfile(models.Model):
     address = models.TextField(blank=True, default="")
     zip_code = models.CharField(max_length=10, blank=True, null=True)  # noqa: DJ001
     company_profile = models.TextField(blank=True, default="")
+    ares_locked = models.BooleanField(
+        default=False, help_text="True pokud byla data předvyplněna z ARES a jsou uzamčena proti ruční editaci"
+    )
+    legal_form = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Právní forma organizace z ARES (pravniForma)",
+    )
+    manual_ares_entry = models.BooleanField(
+        default=False,
+        help_text="True pokud byl profil vytvořen bez ověření v ARES (výpadek ARES) — údaje zadány ručně (fallback)",
+    )
     approval_status = enum.EnumField(ApprovalStatus)
     logo = models.ImageField(upload_to=settings.STORAGE_URL + "images/logos", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -310,8 +323,7 @@ class ProfessorUser(StagUser):
     department_role = enum.EnumField(DepartmentRole, blank=True, null=True)
     is_garant_praxe = models.BooleanField(
         default=False,
-        help_text="Garant Praxe — oprávnění spravovat stavy praxí napříč katedrou. "
-        "Varianta C dle THESIS_ARCHITECTURE_PLAN.md sekce 2.2.6.",
+        help_text="Garant Praxe — oprávnění spravovat stavy praxí napříč katedrou.",
     )
 
     class Meta:

@@ -19,6 +19,20 @@ services:
     networks:
       - internhub
 
+  redis:
+    image: redis:7-alpine
+    container_name: internhub-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - internhub
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   django:
     build:
       context: .
@@ -38,8 +52,54 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - internhub
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: .docker/Backend/Dockerfile
+      args:
+        - PY_VERSION=${PY_VERSION}
+    container_name: internhub-celery-worker
+    command: celery -A app worker --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - storage_data:/app/backend/storage
+      - logs_data:/app/backend/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internhub
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: .docker/Backend/Dockerfile
+      args:
+        - PY_VERSION=${PY_VERSION}
+    container_name: internhub-celery-beat
+    command: celery -A app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    volumes:
+      - storage_data:/app/backend/storage
+      - logs_data:/app/backend/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internhub
+    restart: unless-stopped
 
   frontend:
     build:
@@ -66,5 +126,6 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:
   storage_data:
   logs_data:

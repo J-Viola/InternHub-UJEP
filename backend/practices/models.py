@@ -1,8 +1,29 @@
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django_enumfield import enum
 
 from api.mixins import CancellationMixin
+from api.validators import validate_file_size
 from users.models import ApprovalStatus
+
+# Číselník krajů ČR. DB číselníky jsou post-MVP,
+# krátkodobě řešeno module-level konstantou v practices.models.
+REGION_CHOICES = [
+    ("PHA", "Hlavní město Praha"),
+    ("STC", "Středočeský kraj"),
+    ("JHC", "Jihočeský kraj"),
+    ("PLK", "Plzeňský kraj"),
+    ("KVK", "Karlovarský kraj"),
+    ("ULK", "Ústecký kraj"),
+    ("LBK", "Liberecký kraj"),
+    ("HKK", "Královéhradecký kraj"),
+    ("PAK", "Pardubický kraj"),
+    ("OLK", "Olomoucký kraj"),
+    ("MSK", "Moravskoslezský kraj"),
+    ("JHM", "Jihomoravský kraj"),
+    ("ZLK", "Zlínský kraj"),
+    ("VYS", "Kraj Vysočina"),
+]
 
 
 class ProgressStatus(enum.Enum):
@@ -14,10 +35,9 @@ class ProgressStatus(enum.Enum):
 
 class ApplicationClosureReason(enum.Enum):
     """
-    Důvod uzavření sběru přihlášek (task 1.5).
+    Důvod uzavření sběru přihlášek.
 
-    Ref: THESIS_ARCHITECTURE_PLAN.md sekce 3.2, Ministr 5
-    OQ5: 2 týdny před start_date / naplněna kapacita / manuální uzavření katedrou.
+    Triggery: 2 týdny před start_date / naplněna kapacita / manuální uzavření katedrou.
     """
 
     TIME = 0  # Automaticky X dní před start_date
@@ -29,8 +49,7 @@ class PracticeWorkflowState(enum.Enum):
     """
     Stavový automat nabídky praxe (Practice).
 
-    Ref: THESIS_ARCHITECTURE_PLAN.md sekce 3.2
-    Implementováno dle doporučení autora (OQ3: CONTENT_REJECTED netreminální).
+    Implementováno (CONTENT_REJECTED netreminální).
 
     Přechody:
       PENDING_CONTENT_APPROVAL → CONTENT_APPROVED   (katedra schválí obsah)
@@ -40,7 +59,7 @@ class PracticeWorkflowState(enum.Enum):
       OPEN_FOR_APPLICATIONS    → CLOSED_FOR_APPLICATIONS   (čas/kapacita/manuál)
 
     Stará pole progress_status + approval_status zůstávají pro backward compat
-    (jsou derivována/mapována v task 1.10 + 4.8).
+    (jsou derivována/mapována v rámci data migrace).
     """
 
     PENDING_CONTENT_APPROVAL = 0  # Výchozí — čeká na schválení obsahu katedrou
@@ -52,14 +71,13 @@ class PracticeWorkflowState(enum.Enum):
 
 class ExternalEmployerInfo(models.Model):
     """
-    Textová reprezentace firmy pro mimosystémové praxe (task 1.8).
+    Textová reprezentace firmy pro mimosystémové praxe.
 
     Firma se neregistruje v systému — data se ukládají sem.
     Volitelně lze povýšit na EmployerProfile (pole promoted_to) pokud se firma
     později rozhodne zaregistrovat.
 
-    Ref: THESIS_ARCHITECTURE_PLAN.md sekce 2.2.8, OQ8
-    Doporučení autora: samostatná tabulka (DRY, možné re-použití pro víc praxí).
+    Samostatná tabulka (DRY, možné re-použití pro víc praxí).
     """
 
     name = models.CharField(max_length=200)
@@ -94,8 +112,8 @@ class ExternalEmployerInfo(models.Model):
 class Practice(CancellationMixin, models.Model):
     practice_id = models.AutoField(primary_key=True)
     # employer je nullable: pro mimosystémové praxe (is_external=True) bude NULL,
-    # data firmy jsou v ExternalEmployerInfo (FK external_employer, task 1.8).
-    # on_delete změněn CASCADE → SET_NULL (task 1.5 / N5 fix).
+    # data firmy jsou v ExternalEmployerInfo (FK external_employer).
+    # on_delete změněn CASCADE → SET_NULL.
     employer = models.ForeignKey(
         "users.EmployerProfile",
         models.SET_NULL,
@@ -103,7 +121,7 @@ class Practice(CancellationMixin, models.Model):
         null=True,
         related_name="practices",
     )
-    # FK na ExternalEmployerInfo pro mimosystémové praxe (task 1.8).
+    # FK na ExternalEmployerInfo pro mimosystémové praxe.
     # Definováno po vytvoření modelu ExternalEmployerInfo — zatím jako string ref.
     external_employer = models.ForeignKey(
         "practices.ExternalEmployerInfo",
@@ -113,7 +131,7 @@ class Practice(CancellationMixin, models.Model):
         related_name="practices",
         help_text="Textová reprezentace firmy pro mimosystémové praxe (is_external=True).",
     )
-    # is_external: příznak mimosystémové praxe (Zadavatel 1.1, Ministr 6)
+    # is_external: příznak mimosystémové praxe
     is_external = models.BooleanField(
         default=False,
         db_index=True,
@@ -132,8 +150,8 @@ class Practice(CancellationMixin, models.Model):
     available_positions = models.IntegerField(blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
-    # Nový stavový automat (task 1.3) — bude jediným zdrojem pravdy po data migraci (1.10)
-    # a po odstranění starých polí (task 2.1+). Zatím nullable pro backward compat.
+    # Nový stavový automat — bude jediným zdrojem pravdy po data migraci
+    # a po odstranění starých polí. Zatím nullable pro backward compat.
     workflow_state = enum.EnumField(
         PracticeWorkflowState,
         null=True,
@@ -141,7 +159,7 @@ class Practice(CancellationMixin, models.Model):
         db_index=True,
         help_text="Stavový automat nabídky. Po data migraci (1.10) nenullable.",
     )
-    # Stará pole — zachována pro backward compat, budou odstraněna po FE migraci (task 4.8)
+    # Stará pole — zachována pro backward compat, budou odstraněna po FE migraci
     progress_status = enum.EnumField(ProgressStatus, db_index=True)
     approval_status = enum.EnumField(ApprovalStatus, db_index=True)
     contact_user = models.ForeignKey(
@@ -152,13 +170,39 @@ class Practice(CancellationMixin, models.Model):
         related_name="practices",
     )
     skills = models.JSONField(default=list, blank=True)
+    city = models.CharField(max_length=100, blank=True, default="", help_text="Město, kde se praxe koná")
+    mentor_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Jméno mentora praxe",
+    )
+    contact_email = models.EmailField(
+        blank=True,
+        default="",
+        help_text="Kontaktní e-mail nabídky",
+    )
+    region = models.CharField(
+        max_length=32,
+        choices=REGION_CHOICES,
+        blank=True,
+        default="",
+        help_text="Kraj, kde se praxe koná",
+    )
+    external_details_file = models.FileField(
+        upload_to="external_details/",
+        null=True,
+        blank=True,
+        validators=[FileExtensionValidator(["pdf", "docx"]), validate_file_size],
+        help_text="Soubor s detaily mimosystémové praxe (povinné při is_external=True)",
+    )
     is_active = models.BooleanField(blank=True, null=True, db_index=True)
     image_base64 = models.TextField(blank=True, default="")
-    # DEPRECATED (task 1.7 → 3.9): coefficient je nahrazen Subject.min_hours.
+    # DEPRECATED: coefficient je nahrazen Subject.min_hours.
     # Už se nepoužívá pro výpočet end_date. Zachováno pro backward compat,
     # null=True, blank=True pro migraci.
     coefficient = models.FloatField(default=1.0, null=True, blank=True)
-    # Uzavření sběru přihlášek (task 1.5, Ministr 5)
+    # Uzavření sběru přihlášek
     closed_for_applications_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -179,3 +223,20 @@ class Practice(CancellationMixin, models.Model):
 
     def __str__(self):
         return self.title or super().__str__()
+
+    @property
+    def workflow_status_label(self):
+        """Kanonický český label inzerce.
+
+        Vzor: ``student_practices.models.StudentPractice.workflow_status_label``.
+        """
+        if self.is_cancelled:
+            return "Stornováno"
+        labels = {
+            "PENDING_CONTENT_APPROVAL": "Čeká na schválení obsahu",
+            "CONTENT_APPROVED": "Čeká na aktivaci",
+            "OPEN_FOR_APPLICATIONS": "Aktivní",
+            "CLOSED_FOR_APPLICATIONS": "Uzavřeno",
+            "CONTENT_REJECTED": "Zamítnutí obsahu",
+        }
+        return labels.get(self.workflow_state.name if self.workflow_state else "", "Neznámý")

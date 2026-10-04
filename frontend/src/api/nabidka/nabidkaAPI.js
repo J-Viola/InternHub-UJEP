@@ -207,9 +207,20 @@ export const useNabidkaAPI = () => {
 
     const createExternalPractice = useCallback(async (data) => {
         try {
-            const response = await api.post('/practices/external/', data, {
+            // externí praxe nese povinnou přílohu external_details_file
+            // (PDF/DOCX ≤ 10 MB) → payload se posílá jako multipart/FormData.
+            // Detekujeme File (i uvnitř polí) a payload převedeme přes buildFormData;
+            // bez přílohy posíláme JSON (zpětná kompatibilita).
+            const hasFile = data instanceof FormData ||
+                (data && Object.values(data).some(v =>
+                    v instanceof File || (Array.isArray(v) && v.some(item => item instanceof File))
+                ));
+
+            const payload = hasFile && !(data instanceof FormData) ? buildFormData(data) : data;
+
+            const response = await api.post('/practices/external/', payload, {
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': hasFile ? 'multipart/form-data' : 'application/json',
                 },
             });
 

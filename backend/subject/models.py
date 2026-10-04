@@ -14,9 +14,10 @@ class Subject(models.Model):
         related_name="subjects",
     )
     hours_required = models.IntegerField(blank=True, null=True)
-    # min_hours: minimální počet hodin pro splnění praxe v rámci předmětu (task 1.6).
-    # Přesun koeficientu z Practice.coefficient dle Ministr 8 + KI_BOP 480h pravidlo.
-    # OQ12 (doporučení autora): 480 jako hard default, override per předmět možný.
+    # TODO: CONF vs min_hours
+    # min_hours: minimální počet hodin pro splnění praxe v rámci předmětu.
+    # Přesun koeficientu z Practice.coefficient — pravidlo: min. 480 h praxe.
+    # 480 jako hard default, override per předmět možný.
     # hours_required zůstává pro backward compat (seed data, serializer, admin).
     min_hours = models.IntegerField(
         default=480,

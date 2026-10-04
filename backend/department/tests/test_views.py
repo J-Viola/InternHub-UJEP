@@ -106,7 +106,7 @@ class DepartmentViewTests(TestCase):
 
 
 class DepartmentProfessorDetailPermissionTests(TestCase):
-    """C5.1: Verify DepartmentProfessorDetailView restricts update/destroy to teachers and admins."""
+    """Verify DepartmentProfessorDetailView restricts update/destroy to teachers and admins."""
 
     def setUp(self):
         self.client = APIClient()

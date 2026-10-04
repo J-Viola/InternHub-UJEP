@@ -41,8 +41,23 @@ class NotificationServiceTest(TestCase):
         self.assertEqual(mail.outbox[0].subject, "InternHub: Test Verb")
         self.assertIn("Test zpráva", mail.outbox[0].body)
 
-    def test_create_notification_no_email_by_default(self):
-        """Per WP5 5.4a: default send_email=False, no email sent."""
+    def test_create_notification_sends_email_by_default(self):
+        """Default send_email=True → e-mail je odeslán (genericky)."""
+        mail.outbox = []
+
+        notification = NotificationService.create_notification(
+            recipient=self.user,
+            verb="TEST_DEFAULT_EMAIL",
+            message="Test s emailem",
+            notification_type=NotificationType.INFO,
+        )
+
+        self.assertIsNotNone(notification)
+        self.assertEqual(Notification.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_create_notification_no_email_with_send_email_false(self):
+        """send_email=False → žádný e-mail (jen in-app notifikace)."""
         mail.outbox = []
 
         notification = NotificationService.create_notification(
@@ -50,6 +65,7 @@ class NotificationServiceTest(TestCase):
             verb="TEST_NO_EMAIL",
             message="Test bez emailu",
             notification_type=NotificationType.INFO,
+            send_email=False,
         )
 
         self.assertIsNotNone(notification)

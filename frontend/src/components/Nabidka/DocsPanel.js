@@ -35,15 +35,35 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
 
     const statusInfo = getStatusLabel(doc_info.status);
 
+    const formatUploadedAt = (isoString) => {
+        if (!isoString) return null;
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return null;
+        return date.toLocaleDateString('cs-CZ');
+    };
+
     return(
         <ContainerForEntity property={"mb-2 hover:shadow-md transition-shadow duration-200"}>
             <Container property={`flex flex-col w-full gap-4 p-5 rounded-lg border-l-4 ${statusInfo.bg} ${statusInfo.color.replace('text', 'border')}`}>
                 <Container property="flex justify-between items-start">
                     <Headings sizeTag={"h4"} property="text-gray-800 font-bold">{renderTitle()}</Headings>
-                    <Container property={`${statusInfo.bg.replace('50', '200')} ${statusInfo.color} px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider`}>
-                        {statusInfo.label}
+                    <Container property="flex items-center gap-2 flex-wrap justify-end">
+                        {doc_info.late_submission && (
+                            <Container property="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
+                                {t('documents.late')}
+                            </Container>
+                        )}
+                        <Container property={`${statusInfo.bg.replace('50', '200')} ${statusInfo.color} px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider`}>
+                            {statusInfo.label}
+                        </Container>
                     </Container>
                 </Container>
+
+                {doc_info.uploaded_at && (
+                    <Paragraph property="text-sm text-gray-500">
+                        {t('docs.uploaded_at')}: {formatUploadedAt(doc_info.uploaded_at)}
+                    </Paragraph>
+                )}
 
                 {doc_info.review_note && (
                     <Container property="p-3 bg-white bg-opacity-60 rounded-md text-sm border border-gray-100">

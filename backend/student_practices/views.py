@@ -26,6 +26,7 @@ from practices.models import Practice
 from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
+    DocumentType,
     EmployerInvitation,
     Evaluation,
     StudentPractice,
@@ -34,7 +35,8 @@ from student_practices.models import (
 )
 from student_practices.permissions import (
     HasDocumentAccess,
-    IsPracticeOrganizationOwner,
+    IsGarantForStudentPractice,
+    IsOrganizationApproverForStudentPractice,
     IsSubjectTeacherOrHeadForPractice,
 )
 from student_practices.services import StudentPracticeService
@@ -47,7 +49,6 @@ from users.permissions import (
     IsGarantPraxe,
     IsNotCancelled,
     IsOrganizationOwner,
-    IsOrganizationUser,
     IsStagStudent,
     IsStagTeacher,
     IsStudentOwner,
@@ -199,7 +200,7 @@ class AdminPracticeListView(generics.ListAPIView):
     """
     Lists pending student practice applications.
 
-    Ref: CR-ARCH-3 — tightened permissions from IsAuthenticated to
+    Tightened permissions from IsAuthenticated to
     IsStagTeacher | IsGarantPraxe | IsAdminUser, and added department-scoped
     filtering so teachers/garents only see applications from their own department.
     """
@@ -216,7 +217,7 @@ class AdminPracticeListView(generics.ListAPIView):
             "practice__employer",
         )
 
-        # CR-ARCH-3: Non-admin professors see only applications from their own department
+        # Non-admin professors see only applications from their own department
         from users.models import ProfessorUser
 
         if not user.is_superuser and isinstance(user, ProfessorUser):
@@ -363,65 +364,26 @@ class OrganizationApplicationsView(generics.ListAPIView):
         )
 
 
-class StudentPracticeStatusUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StudentPractice
-        fields = ["approval_status", "progress_status"]
-        extra_kwargs = {
-            "approval_status": {"required": False},
-            "progress_status": {"required": False},
-        }
-
-
-class StudentPracticeStatusUpdateView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-        IsPracticeOrganizationOwner | IsSubjectTeacherOrHeadForPractice | IsAdminUser,
-    ]
-
-    @extend_schema(
-        summary="Update student practice status",
-        description=(
-            "Updates the approval or progress status of a student practice. "
-            "**Permissions: Practice Organization Owner, Subject Teacher, or Admin**"
-        ),
-        tags=["Student Practices"],
-        request=StudentPracticeStatusUpdateSerializer,
-        responses={200: StudentPracticeStatusUpdateSerializer},
-    )
-    def patch(self, request, student_practice_id):
-        try:
-            student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
-            student_practice = StudentPracticeService.update_student_practice_status(
-                user=request.user,
-                student_practice_id=student_practice_id,
-                data=request.data,
-            )
-            serializer = StudentPracticeStatusUpdateSerializer(student_practice)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            logger.exception("Chyba při aktualizaci stavu přihlášky")
-            raise
-
-
 class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = UploadedDocument
         fields = ("document",)
 
     def validate_document(self, uploaded_file):
-        from django.conf import settings
-
         ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
         allowed_exts = ("doc", "docx", "pdf", "xlsx")
         if ext not in allowed_exts:
             raise serializers.ValidationError(StudentPracticeMessages.INVALID_EXTENSION)
 
-        if uploaded_file.size > settings.MAX_UPLOAD_SIZE:
-            mb_limit = settings.MAX_UPLOAD_SIZE / (1024 * 1024)
-            raise serializers.ValidationError(StudentPracticeMessages.FILE_TOO_LARGE.format(size=mb_limit))
+        # Sdílený validátor velikosti (backend/api/validators.py — settings.MAX_UPLOAD_SIZE)
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        from api.validators import validate_file_size
+
+        try:
+            validate_file_size(uploaded_file)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError("; ".join(e.messages))
 
         if ext == "docx":
             import zipfile
@@ -549,10 +511,17 @@ class StudentPracticeUploadDocumentView(APIView):
 
         file_obj = request.FILES.get("document") or request.FILES.get("file")
         if file_obj:
-            # Max 10 MB limit check (Item 3.7)
-            if file_obj.size > 10 * 1024 * 1024:
+            # Max velikost souboru dle settings.MAX_UPLOAD_SIZE (sdílený validátor
+            # z backend/api/validators.py — sjednocení duplicitního limitu).
+            from django.core.exceptions import ValidationError as DjangoValidationError
+
+            from api.validators import validate_file_size
+
+            try:
+                validate_file_size(file_obj)
+            except DjangoValidationError as e:
                 return Response(
-                    {"detail": "Velikost souboru nesmí přesáhnout 10 MB."},
+                    {"detail": "; ".join(e.messages)},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -589,6 +558,12 @@ class StudentPracticeUploadDocumentView(APIView):
             object_id=document.pk,
             description=f"Nahrání dokumentu {document.document_type} (ID: {document.pk}) uživatelem {request.user.email}",
         )
+
+        # po nahrání smluvního dokumentu (CONTRACT) ze stavu
+        # AWAITING_CONTRACT automatický přechod do AWAITING_DOCUMENTS (atomicky + ActionLog).
+        sp = document.student_practice
+        if sp and document.document_type == DocumentType.CONTRACT:
+            StudentPracticeService.transition_to_awaiting_documents_after_contract_upload(sp, request.user)
 
         return Response(
             {"detail": StudentPracticeMessages.DOCUMENT_UPLOAD_SUCCESS},
@@ -640,7 +615,7 @@ class StudentPracticeCardView(APIView):
     """
     Returns detailed information about a specific StudentPractice.
 
-    Ref: CR-ARCH-2 — added IsStudentPracticeAccessible permission to prevent
+    Added IsStudentPracticeAccessible permission to prevent
     any authenticated user from viewing another student's personal data,
     documents, and evaluations (IDOR vulnerability).
     """
@@ -680,7 +655,7 @@ class StudentPracticeCardView(APIView):
             ),
             pk=student_practice_id,
         )
-        # CR-ARCH-2: enforce object-level permission (student owner, professor, admin, etc.)
+        # enforce object-level permission (student owner, professor, admin, etc.)
         self.check_object_permissions(request, student_practice)
 
         serializer = StudentPracticeCardSerializer(student_practice, context={"request": request})
@@ -697,7 +672,7 @@ class StudentPracticeCardView(APIView):
 
 
 # ========================================================================
-# WP4 — State Machine Endpoints pro StudentPractice
+# State Machine Endpoints pro StudentPractice
 # ========================================================================
 
 
@@ -711,7 +686,7 @@ class TransitionStudentPracticeView(APIView):
     permission_classes = [
         IsAuthenticated,
         IsNotCancelled,
-        IsStagTeacher | IsGarantPraxe | IsAdminUser | IsStagStudent | IsOrganizationUser,
+        IsStagTeacher | IsGarantPraxe | IsAdminUser | IsStagStudent | IsOrganizationApproverForStudentPractice,
     ]
 
     @extend_schema(
@@ -742,6 +717,12 @@ class TransitionStudentPracticeView(APIView):
                 reason=reason,
             )
         except ValueError as e:
+            # kapacitní omezení se vrací standardním chybovým kódem pro FE mapping
+            if str(e) == "CAPACITY_FULL":
+                return Response(
+                    {"error_code": "CAPACITY_FULL", "detail": "Kapacita partnera je plně obsazena"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ListStudentPracticeSerializer(sp, context={"request": request}).data)
@@ -821,9 +802,47 @@ class CancelStudentPracticeView(APIView):
 
         reason = serializer.validated_data["reason"]
         try:
-            from student_practices.services import cancel_student_practice
+            sp = StudentPracticeService.cancel_student_practice(sp=student_practice, actor=request.user, reason=reason)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            sp = cancel_student_practice(sp=student_practice, actor=request.user, reason=reason)
+        return Response(ListStudentPracticeSerializer(sp, context={"request": request}).data)
+
+
+class ResolveCancellationView(APIView):
+    """
+        POST /api/student-practices/{student_practice_id}/resolve-cancellation/
+        Garant vyřeší storno přihlášky — odblokuje studentovi podání nové žádosti
+    Permissions: garant (profesor VY/VK nebo is_garant_praxe)
+        dané katedry nebo admin.
+    """
+
+    permission_classes = [IsAuthenticated, IsGarantForStudentPractice]
+
+    @extend_schema(
+        summary="Resolve a cancelled student practice",
+        description=(
+            "Garant vyřeší storno přihlášky studenta (nastaví cancellation_resolved_at). "
+            "Po vyřešení může student podat novou žádost. "
+            "**Permissions: Garant praxe (VY/VK profesor nebo is_garant_praxe) dané katedry, Admin**"
+        ),
+        tags=["Student Practices"],
+        responses={
+            200: ListStudentPracticeSerializer,
+            400: OpenApiResponse(description="Storno neexistuje nebo je již vyřešeno"),
+            403: OpenApiResponse(description="Permission denied"),
+            404: OpenApiResponse(description="StudentPractice not found"),
+        },
+    )
+    def post(self, request, student_practice_id):
+        student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
+        self.check_object_permissions(request, student_practice)
+
+        try:
+            sp = StudentPracticeService.resolve_cancellation(
+                sp=student_practice,
+                actor=request.user,
+            )
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -831,7 +850,7 @@ class CancelStudentPracticeView(APIView):
 
 
 # ===================================================================
-# WP7: Document generation views (contract, content, report, feedback)
+# Document generation views (contract, content, report, feedback)
 # ===================================================================
 
 
@@ -1043,7 +1062,7 @@ class ReapplyToPracticeView(APIView):
 
 class EvaluationViewSet(ModelViewSet):
     """
-    API ViewSet for mentor evaluations (Item 2.1 & 2.12).
+    API ViewSet for mentor evaluations.
     """
 
     queryset = Evaluation.objects.select_related("student_practice", "evaluated_by")
@@ -1063,7 +1082,10 @@ class EvaluationViewSet(ModelViewSet):
 
         if sp.workflow_state != StudentPracticeWorkflowState.ENDED:
             return Response(
-                {"detail": "Evaluaci lze podat pouze u praxe ve stavu ENDED."},
+                {
+                    "error_code": "EVALUATION_NOT_ENDED",
+                    "detail": "Evaluaci lze podat pouze u praxe ve stavu ENDED.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -1075,7 +1097,7 @@ class EvaluationViewSet(ModelViewSet):
 
         evaluation = serializer.save(evaluated_by=request.user)
 
-        # Auto-generate PDF protocol (RF-10 / Item 2.12)
+        # Auto-generate PDF protocol
         try:
             pdf_bytes = PDFEvaluationProtocolGenerator.generate_pdf(evaluation)
             filename = f"eval_protocol_sp_{sp.student_practice_id}.pdf"
@@ -1129,15 +1151,52 @@ class StudentPracticeHistoryView(APIView):
 
 class ConfirmContractView(APIView):
     """
-    Confirms contract receipt and updates contract status (Item 2.7).
+    Confirms contract receipt and updates contract status.
+
+    při potvrzení se ověřuje kapacita praxe
+    (approved_count < available_positions) se select_for_update —
+    plná kapacita → 400 CAPACITY_FULL. Po úspěchu se posílá notifikace
+    organizaci o alokaci (verb ALLOCATION_ORG).
     """
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Confirm contract receipt",
+        description="Potvrdí přijetí smlouvy a přepne praxi do stavu CONTRACTED (s kapacitní kontrolou).",
+        tags=["Student Practices"],
+        responses={
+            200: OpenApiResponse(description="Contract confirmed"),
+            400: OpenApiResponse(description="CAPACITY_FULL — kapacita partnera je plně obsazena"),
+        },
+    )
+    @transaction.atomic
     def post(self, request, pk):
-        sp = get_object_or_404(StudentPractice, pk=pk)
+        from notifications.services import NotificationService
+
+        from student_practices.services import _check_contract_capacity
+
+        sp = get_object_or_404(StudentPractice.objects.select_for_update(), pk=pk)
+
+        # Kapacitní kontrola při alokaci (select_for_update na praxi uvnitř transakce)
+        practice = sp.practice
+        if practice is not None:
+            practice = Practice.objects.select_for_update().get(pk=practice.pk)
+            try:
+                _check_contract_capacity(practice)
+            except ValueError as e:
+                if str(e) == "CAPACITY_FULL":
+                    return Response(
+                        {"error_code": "CAPACITY_FULL", "detail": "Kapacita partnera je plně obsazena"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                raise
+
         sp.contract_received_date = timezone.now()
         sp.workflow_state = StudentPracticeWorkflowState.CONTRACTED
+        sp.approval_status = ApprovalStatus.APPROVED
+        sp.school_approved = True
+        sp.employer_approved = True
         sp.save()
 
         ActionLogService.log(
@@ -1147,6 +1206,9 @@ class ConfirmContractView(APIView):
             object_id=sp.student_practice_id,
             description=f"Potvrzení přijetí smlouvy u SP #{sp.student_practice_id}",
         )
+
+        # notifikace organizaci o alokaci studenta (in-app + e-mail)
+        NotificationService.notify_org_allocation(sp)
 
         return Response(
             {"detail": "Přijetí smlouvy bylo úspěšně potvrzeno.", "contract_received_date": sp.contract_received_date},

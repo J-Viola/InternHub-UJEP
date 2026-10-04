@@ -32,7 +32,7 @@ def can_approve_practice(user: User, student_practice) -> bool:
             if user.department_id == practice_subject.department_id:
                 return True
 
-        # 1a. Garant Praxe — oprávnění napříč katedrou (WP3.4)
+        # 1a. Garant Praxe — oprávnění napříč katedrou
         if user.is_garant_praxe:
             if user.department_id == practice_subject.department_id:
                 return True

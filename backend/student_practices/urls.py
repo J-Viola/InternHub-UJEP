@@ -1,8 +1,6 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from api.views import DataExportView
-
 from .views import (
     AdminPracticeListView,
     CancelStudentPracticeView,
@@ -15,6 +13,7 @@ from .views import (
     OrganizationApplicationsView,
     ProfessorApplicationsView,
     ReapplyToPracticeView,
+    ResolveCancellationView,
     StudentPracticeCardView,
     StudentPracticeContentDownloadView,
     StudentPracticeContractDownloadView,
@@ -23,7 +22,6 @@ from .views import (
     StudentPracticeHistoryView,
     StudentPracticeListView,
     StudentPracticeReportDownloadView,
-    StudentPracticeStatusUpdateView,
     StudentPracticeUploadDocumentView,
     TransitionStudentPracticeView,
     WithdrawStudentPracticeView,
@@ -36,7 +34,6 @@ router.register(r"invitations", EmployerInvitationViewSet, basename="invitations
 router.register(r"evaluations", EvaluationViewSet, basename="evaluations")
 
 urlpatterns = [
-    path("export-data/", DataExportView.as_view(), name="export-data"),
     path("", include(router.urls)),
     # Admin
     path(
@@ -50,7 +47,6 @@ urlpatterns = [
         name="professor-applications",
     ),
     # Zbytek API
-    path("export-data/", DataExportView.as_view(), name="export-data"),
     path(
         "by-practice/<int:practice_id>",
         StudentPracticeListView.as_view(),
@@ -72,11 +68,6 @@ urlpatterns = [
         name="organization-applications",
     ),
     path(
-        "<int:student_practice_id>/status/",
-        StudentPracticeStatusUpdateView.as_view(),
-        name="student-practice-status-update",
-    ),
-    path(
         "<int:student_practice_id>",
         StudentPracticeCardView.as_view(),
         name="student-practice-card",
@@ -96,7 +87,7 @@ urlpatterns = [
         DocumentReviewView.as_view(),
         name="document-review",
     ),
-    # WP4 — State machine endpoints
+    # State machine endpoints
     path(
         "<int:student_practice_id>/transition/",
         TransitionStudentPracticeView.as_view(),
@@ -112,7 +103,12 @@ urlpatterns = [
         CancelStudentPracticeView.as_view(),
         name="student-practice-cancel",
     ),
-    # WP7 — Document generation endpoints
+    path(
+        "<int:student_practice_id>/resolve-cancellation/",
+        ResolveCancellationView.as_view(),
+        name="student-practice-resolve-cancellation",
+    ),
+    # Document generation endpoints
     path(
         "<int:student_practice_id>/contract/",
         StudentPracticeContractDownloadView.as_view(),
@@ -139,7 +135,7 @@ urlpatterns = [
         StudentPracticeHistoryView.as_view(),
         name="student-practice-history",
     ),
-    # WP8 — Re-apply endpoint
+    # Re-apply endpoint
     path(
         "reapply/<int:practice_id>/",
         ReapplyToPracticeView.as_view(),
@@ -149,10 +145,5 @@ urlpatterns = [
         "<int:pk>/confirm-contract/",
         ConfirmContractView.as_view(),
         name="student-practice-confirm-contract",
-    ),
-    path(
-        "export/",
-        DataExportView.as_view(),
-        name="student-practice-export",
     ),
 ]

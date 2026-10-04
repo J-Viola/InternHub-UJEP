@@ -10,7 +10,7 @@ describe('apiClient', () => {
         setAccessToken(null);
     });
 
-    describe('Authorization header (C6.6)', () => {
+    describe('Authorization header', () => {
         test('does not set Authorization header when token is null', async () => {
             // Arrange
             const mockAxiosInstance = {
@@ -104,7 +104,7 @@ describe('apiClient', () => {
         });
     });
 
-    describe('Error normalization preserves response (C6.2)', () => {
+    describe('Error normalization preserves response', () => {
         test('standardError includes error.response property', async () => {
             const mockAxiosInstance = {
                 interceptors: {

@@ -29,6 +29,8 @@ import { MessageProvider } from '@hooks/MessageContext';
 import { NotificationProvider } from '@hooks/NotificationProvider';
 import InvitationPage from '@pages/PozvankyPage';
 import PozvankyListPage from '@pages/PozvankyListPage';
+import StudentApplicationsPage from '@pages/StudentApplicationsPage';
+import NotificationsPage from '@pages/NotificationsPage';
 import DepartmentsPage from '@pages/DepartmentsPage';
 import CompaniesPage from '@pages/CompaniesPage';
 import ChangePasswordPage from '@pages/ChangePasswordPage';
@@ -81,6 +83,8 @@ const SubjectPageW        = w(SubjectPage);
 const FormPageW           = w(FormPage);
 const InvitationPageW     = w(InvitationPage);
 const PozvankyListPageW   = w(PozvankyListPage);
+const StudentApplicationsPageW = w(StudentApplicationsPage);
+const NotificationsPageW       = w(NotificationsPage);
 const DepartmentsPageW    = w(DepartmentsPage);
 const CompaniesPageW      = w(CompaniesPage);
 const ChangePasswordPageW = w(ChangePasswordPage);
@@ -130,6 +134,8 @@ const AppRoutes = () => {
         <Route path="/formular" element={<ProtectedRoute><FormPageW /></ProtectedRoute>} />
         <Route path="/pozvanka" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><InvitationPageW /></ProtectedRoute>} />
         <Route path="/pozvanky-list" element={<ProtectedRoute allowedRoles={['OWNER', 'INSERTER', 'admin']}><PozvankyListPageW /></ProtectedRoute>} />
+        <Route path="/moje-prihlasky" element={<ProtectedRoute allowedRoles={['ST']}><StudentApplicationsPageW /></ProtectedRoute>} />
+        <Route path="/notifikace" element={<ProtectedRoute><NotificationsPageW /></ProtectedRoute>} />
         <Route path="/departments" element={<ProtectedRoute allowedRoles={['admin']}><DepartmentsPageW /></ProtectedRoute>} />
         <Route path="/companies" element={<ProtectedRoute allowedRoles={['admin']}><CompaniesPageW /></ProtectedRoute>} />
         <Route path="/forbidden" element={<ForbiddenPageW />} />
@@ -138,6 +144,23 @@ const AppRoutes = () => {
     </Routes>
   );
 };
+
+function ErrorFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="text-center p-8">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Nastala chyba</h1>
+        <p className="text-gray-600 mb-4">Došlo k neočekávané chybě. Zkuste prosím obnovit stránku.</p>
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+          onClick={() => window.location.reload()}
+        >
+          Obnovit stránku
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -148,7 +171,9 @@ root.render(
           <AuthProvider>
             <NotificationProvider>
               <MessageToast />
-              <AppRoutes />
+              <Sentry.ErrorBoundary fallback={<ErrorFallback />} showDialog>
+                <AppRoutes />
+              </Sentry.ErrorBoundary>
             </NotificationProvider>
           </AuthProvider>
         </BrowserRouter>

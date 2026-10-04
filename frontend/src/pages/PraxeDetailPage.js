@@ -113,7 +113,7 @@ export default function PraxeDetailPage() {
     }
   };
 
-  // WP7 — Generate and download a contract/content/report/feedback .docx
+  // Generate and download a contract/content/report/feedback .docx
   const handleGenerateDocument = async (docType, displayName) => {
     try {
       const blob = await studentpraticeAPI.downloadGeneratedDocument(
@@ -313,8 +313,11 @@ export default function PraxeDetailPage() {
             </Container>
           </ContainerForEntity>
 
-          {/* REJECTED BANNER - Show rejection reason */}
-          {entity?.student_practice_status?.workflow_status === "REJECTED" &&
+          {/* REJECTED / DOCUMENTS_REJECTED BANNER - Show rejection reason */}
+          {entity?.student_practice_status?.workflow_status &&
+            ["REJECTED", "DOCUMENTS_REJECTED"].includes(
+              entity.student_practice_status.workflow_status,
+            ) &&
             entity?.student_practice_status?.rejection_reason && (
               <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
                 <Container property="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
@@ -365,7 +368,7 @@ export default function PraxeDetailPage() {
               />
             )}
 
-          {/* WP7: Document generation buttons — Professor/Admin/Employer */}
+          {/* Document generation buttons — Professor/Admin/Employer */}
           {entity?.student_practice_status?.workflow_status &&
             !["PENDING", "REJECTED"].includes(
               entity.student_practice_status.workflow_status,

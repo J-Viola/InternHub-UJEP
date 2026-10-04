@@ -15,6 +15,10 @@ import EmptyState from "@core/Feedback/EmptyState";
 import { useMessage } from "@hooks/MessageContext";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 
+// Stavy, ve kterých smí organizace nabídku upravovat.
+// Backend 403 zůstává enforcement; zde jen FE blokuje UI.
+const EDITABLE_OFFER_STATES = ["PENDING_CONTENT_APPROVAL", "CONTENT_REJECTED"];
+
 function ApplicationCard({ entity }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -149,6 +153,8 @@ export default function PraxePage() {
         fetchData();
     }, [user]);
 
+    const canEditOffer = (entity) => EDITABLE_OFFER_STATES.includes(entity?.workflow_state);
+
     const renderLoading = () => (
         <Paragraph property="text-center text-gray-500 py-8">{t('internships.loading')}</Paragraph>
     );
@@ -224,7 +230,7 @@ export default function PraxePage() {
                                                     {t('internships.submitted_applications')}
                                                 </Paragraph>
                                                 <Paragraph property={"font-medium"}>
-                                                    {entity.approved_applications}/{entity.pending_applications}/{entity.available_positions || 0}
+                                                    {entity.approved_applications ?? entity.approved_count ?? 0}/{entity.pending_applications ?? entity.pending_count ?? 0}/{entity.available_positions || 0}
                                                 </Paragraph>
                                             </Container>
                                         </Container>
@@ -246,6 +252,7 @@ export default function PraxePage() {
                                                         icon={"edit"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
+                                                        disabled={!canEditOffer(entity)}
                                                     />
                                                 </>
                                             ) : (
@@ -265,6 +272,7 @@ export default function PraxePage() {
                                                         icon={"edit"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
+                                                        disabled={!canEditOffer(entity)}
                                                     />
                                                 </>
                                             )}

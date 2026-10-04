@@ -10,6 +10,8 @@ class PracticeFilter(django_filters.FilterSet):
     address = django_filters.CharFilter(field_name="employer__address", lookup_expr="icontains")
     company_name = django_filters.CharFilter(field_name="employer__company_name", lookup_expr="icontains")
     skills = django_filters.CharFilter(method="filter_skills")
+    city = django_filters.CharFilter(field_name="city", lookup_expr="icontains")
+    region = django_filters.CharFilter(field_name="region", lookup_expr="exact")
     active_only = django_filters.BooleanFilter(field_name="is_active")
     favorites = django_filters.BooleanFilter(method="filter_favorites")
     min_duration = django_filters.NumberFilter(method="filter_min_duration")
@@ -24,6 +26,7 @@ class PracticeFilter(django_filters.FilterSet):
             "address",
             "company_name",
             "skills",
+            "region",
             "approval_status",
             "progress_status",
             "active_only",

@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='professoruser',
             name='is_garant_praxe',
-            field=models.BooleanField(default=False, help_text='Garant Praxe — oprávnění spravovat stavy praxí napříč katedrou. Varianta C dle THESIS_ARCHITECTURE_PLAN.md sekce 2.2.6.'),
+            field=models.BooleanField(default=False, help_text='Garant Praxe — oprávnění spravovat stavy praxí napříč katedrou.'),
         ),
     ]

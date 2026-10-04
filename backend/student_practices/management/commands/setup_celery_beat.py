@@ -41,3 +41,39 @@ class Command(BaseCommand):
             },
         )
         self.stdout.write(self.style.SUCCESS("Auto-start/end practice task created."))
+
+        # Notify contract overdue — daily at 4:00 AM
+        schedule3, _ = CrontabSchedule.objects.get_or_create(
+            minute="0",
+            hour="4",
+            day_of_week="*",
+            day_of_month="*",
+            month_of_year="*",
+        )
+        PeriodicTask.objects.get_or_create(
+            name="Notify contract overdue",
+            defaults={
+                "task": "notify_contract_overdue",
+                "crontab": schedule3,
+                "enabled": True,
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("Notify contract overdue task created."))
+
+        # Notify practice deadlines daily at 5:00 AM
+        schedule4, _ = CrontabSchedule.objects.get_or_create(
+            minute="0",
+            hour="5",
+            day_of_week="*",
+            day_of_month="*",
+            month_of_year="*",
+        )
+        PeriodicTask.objects.get_or_create(
+            name="Notify practice deadlines",
+            defaults={
+                "task": "notify_practice_deadlines",
+                "crontab": schedule4,
+                "enabled": True,
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("Notify practice deadlines task created."))

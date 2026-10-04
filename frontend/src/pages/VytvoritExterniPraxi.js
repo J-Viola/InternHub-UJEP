@@ -71,6 +71,11 @@ export default function VytvoritExterniPraxi() {
             }
         });
 
+        // dokument s detaily praxe je povinný (accept.pdf/.docx)
+        if (!formData.external_details_file) {
+            newErrors.external_details_file = t('external.details_required');
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -83,6 +88,8 @@ export default function VytvoritExterniPraxi() {
 
         setErrors({});
         try {
+            // Externí praxe nese povinnou přílohu external_details_file → nabidkaAPI
+            // interně přepne payload na multipart/FormData.
             const res = await nabidkaAPI.createExternalPractice(formData);
             if (res) {
                 addMessage(t('external_practice.create_success'), "S");

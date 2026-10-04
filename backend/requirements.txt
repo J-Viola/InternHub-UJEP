@@ -26,5 +26,6 @@ reportlab
 openpyxl
 django-redis
 celery
+pytest-bdd
 django-celery-beat
 sentry-sdk[django]>=2.0,<3.0

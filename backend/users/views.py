@@ -31,11 +31,12 @@ from users.models import (
 from users.permissions import (
     CanViewStudentProfile,
     IsAdminUser,
+    IsGarantPraxe,
     IsOrganizationOwner,
     IsOrganizationUser,
     IsStagTeacher,
 )
-from users.services import fetch_ares_data, update_organization_from_ares
+from users.services import AresUnavailableError, fetch_ares_data, update_organization_from_ares
 from users.throttling import AresThrottle, LoginThrottle, PasswordResetThrottle, StagTicketThrottle
 
 from .serializers import (
@@ -305,7 +306,13 @@ class AresJusticeView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         ico = str(serializer.validated_data.get("ico")).zfill(8)
 
-        ares_data = fetch_ares_data(ico)
+        try:
+            ares_data = fetch_ares_data(ico)
+            ares_unavailable = False
+        except AresUnavailableError:
+            # Výpadek ARES (timeout / 5xx) — rozlišení chyb ARES
+            ares_data = None
+            ares_unavailable = True
 
         ActionLogService.log(
             user=request.user if request.user.is_authenticated else None,
@@ -316,52 +323,57 @@ class AresJusticeView(generics.GenericAPIView):
 
         if ares_data:
             data = ares_data.model_dump()
+            data["found"] = True
             data["source"] = "ares"
+            data["legal_form"] = ares_data.pravniForma or ""
             return Response(data, status=status.HTTP_200_OK)
 
-        # Fallback to DB cache lookup if ARES fails/times out
-        from users.models import EmployerProfile, OrganizationUser
+        # Fallback na lokální (DB) cache — první volba při výpadku i nenalezení
+        cached = self._db_cache_lookup(ico)
+        if cached:
+            return Response(cached, status=status.HTTP_200_OK)
 
-        employer = EmployerProfile.objects.filter(ico=ico).first()
-        if employer and employer.company_name:
+        if ares_unavailable:
+            # Výpadek ARES + nenalezeno v cache → 503, manuální vstup
             return Response(
                 {
-                    "ico": employer.ico,
-                    "obchodniJmeno": employer.company_name,
-                    "dic": employer.dic or "",
-                    "sidlo": {
-                        "textovaAdresa": employer.address or "",
-                        "psc": employer.zip_code or None,
-                    },
-                    "source": "cache",
+                    "error_code": "ARES_UNAVAILABLE",
+                    "manual_input": True,
                 },
-                status=status.HTTP_200_OK,
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-        org_user = OrganizationUser.objects.filter(ico=ico).first()
-        if org_user and org_user.company_name:
-            return Response(
-                {
-                    "ico": org_user.ico,
-                    "obchodniJmeno": org_user.company_name,
-                    "dic": org_user.dic or "",
-                    "sidlo": {
-                        "textovaAdresa": org_user.address or "",
-                        "psc": org_user.zip_code or None,
-                    },
-                    "source": "cache",
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        # DB miss -> 404 with manual input flag
+        # Subjekt v ARES neexistuje a není v cache → 404
         return Response(
             {
-                "error": "ARES API je momentálně nedostupné a záznam nebyl nalezen v databázi.",
-                "manual_input": True,
+                "error_code": "ARES_NOT_FOUND",
+                "detail": "Subjekt s tímto IČO nebyl v registru ARES nalezen",
             },
             status=status.HTTP_404_NOT_FOUND,
         )
+
+    def _db_cache_lookup(self, ico: str) -> dict | None:
+        """
+        Lokální DB cache (již registrované firmy) — dle seq. diagramu 4.6
+        („Je organizace v databázi?" → 200 s data + source='cache').
+        """
+        from users.models import EmployerProfile
+
+        employer = EmployerProfile.objects.filter(ico=ico).first()
+        if employer and employer.company_name:
+            return {
+                "ico": employer.ico,
+                "obchodniJmeno": employer.company_name,
+                "dic": employer.dic or "",
+                "sidlo": {
+                    "textovaAdresa": employer.address or "",
+                    "psc": employer.zip_code or None,
+                },
+                "legal_form": employer.legal_form or "",
+                "found": True,
+                "source": "cache",
+            }
+        return None
 
 
 class UpdateAresSubjectView(APIView):
@@ -565,6 +577,23 @@ class AllStudentsListView(generics.ListAPIView):
         return StudentUser.objects.filter(is_active=True).select_related("stag_role").prefetch_related("user_subjects__subject__department")
 
 
+class CanApproveOrganization(permissions.BasePermission):
+    """
+    Schválení registrace firmy: garant praxe nebo admin.
+
+    EmployerProfile nemá vazbu na katedru/předmět (firma slouží napříč
+    katedrami), proto není možná objektová kontrola dle departmentu —
+    použijeme view-level kontrolu IsGarantPraxe (is_garant_praxe=True)
+    napříč katedrami. Admin zůstává nadřazenou rolí.
+    """
+
+    def has_permission(self, request, view):
+        return IsGarantPraxe().has_permission(request, view) or IsAdminUser().has_permission(request, view)
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
 @extend_schema_view(
     list=extend_schema(summary="List all organizations (Admin)"),
     retrieve=extend_schema(summary="Get organization detail (Admin)"),
@@ -572,8 +601,8 @@ class AllStudentsListView(generics.ListAPIView):
         summary="Register a new organization (Admin)",
         request=OrganizationRegisterSerializer,
     ),
-    update=extend_schema(summary="Update organization detail (Admin)"),
-    partial_update=extend_schema(summary="Partial update organization detail (Admin)"),
+    update=extend_schema(summary="Update organization detail (Admin/Garant)"),
+    partial_update=extend_schema(summary="Update organization detail (Admin/Garant)"),
     destroy=extend_schema(summary="Delete an organization (Admin)"),
 )
 class AdminOrganizationViewSet(ModelViewSet):
@@ -585,12 +614,10 @@ class AdminOrganizationViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
-            return [permissions.IsAdminUser()]
-        if self.action == "create":
-            return [permissions.IsAdminUser()]
-        if self.action in ["update", "partial_update", "destroy"]:
-            return [permissions.IsAdminUser()]
+        # Schválení (změna approval_status) může provést garant nebo admin;
+        # ostatní akce (list/create/destroy) zůstávají admin-only.
+        if self.action in ["update", "partial_update"]:
+            return [CanApproveOrganization()]
         return [permissions.IsAdminUser()]
 
     def create(self, request, *args, **kwargs):

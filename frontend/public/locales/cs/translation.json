@@ -104,6 +104,12 @@
     "responsibilities": "Popis pozice",
     "requirements": "Náplň práce",
     "contact_person": "Kontaktní osoba",
+    "mentor_name": "Jméno mentora",
+    "contact_email": "Kontaktní e-mail",
+    "region": "Kraj",
+    "city": "Lokalita",
+    "occupied": "obsazeno",
+    "full": "plná",
       "filter": {
         "placeholder": "Hledat v nabídkách...",
         "location": "Lokalita",
@@ -111,7 +117,14 @@
         "name": "Název",
         "address": "Adresa",
         "all": "Všechny",
-        "clear_all": "Zrušit všechny filtry"
+        "clear_all": "Zrušit všechny filtry",
+        "duration": "Délka",
+        "duration_1": "1 semestr",
+        "duration_3": "3 měsíce",
+        "duration_6": "6 měsíců",
+        "has_capacity": "Pouze s volnou kapacitou",
+        "region": "Kraj",
+        "city": "Lokalita"
       }
   },
   "form": {
@@ -137,7 +150,8 @@
     "role_edit_warning": "Editace nabídky nefunguje pro Vaší roli správně..",
     "unknown_type": "Neznámý typ formuláře",
     "field_required": "Toto pole je povinné.",
-    "validation_error": "Zkontrolujte prosím chyby ve formuláři."
+    "validation_error": "Zkontrolujte prosím chyby ve formuláři.",
+    "save_error": "Chyba při ukládání"
   },
   "status": {
     "PENDING": "Čeká na schválení",
@@ -208,6 +222,8 @@
     "current_photo": "Aktuální profilový obrázek",
     "upload_photo": "Nahrát nový profilový obrázek",
     "upload_cv_pdf": "Nahrát CV/Životopis (PDF)",
+    "department": "Katedra",
+    "faculty": "Fakulta",
     "roles": {
       "ST": "Student",
       "VY": "Vyučující",
@@ -352,7 +368,8 @@
     "review_error": "Chyba při kontrole dokumentu",
     "waiting_for_approval_banner": "Vaše praxe byla schválena, ale může začít až po nahrání a schválení smlouvy a náplně praxe.",
     "no_documents_title": "Žádné dokumenty k dispozici",
-    "no_documents_desc": "Pro tuto praxi zatím nebyly vygenerovány nebo nahrány žádné dokumenty."
+    "no_documents_desc": "Pro tuto praxi zatím nebyly vygenerovány nebo nahrány žádné dokumenty.",
+    "uploaded_at": "Nahráno"
   },
   "applications": {
     "title": "Nevyřízené přihlášky",
@@ -363,7 +380,12 @@
     "change_status_title": "Změnit stav přihlášky",
     "change_status_text": "Opravdu si přejete změnit stav přihlášky studenta {{name}}?",
     "load_error": "Chyba při načítání přihlášek",
-    "manage_app": "Spravovat přihlášku"
+    "manage_app": "Spravovat přihlášku",
+    "approve_success_full": "Přihláška byla plně schválena",
+    "approve_success_partial": "Přihláška byla částečně schválena",
+    "approve_error": "Chyba při schvalování přihlášky",
+    "reject_success": "Přihláška byla zamítnuta",
+    "reject_error": "Chyba při zamítnutí přihlášky"
   },
   "invitations": {
     "sent_title": "Zaslané pozvánky",
@@ -438,7 +460,8 @@
     "password_mismatch": "Hesla se neshodují",
     "missing_fields": "Chybí povinné údaje: {{fields}}",
     "upload_logo": "Nahrát logo organizace",
-    "create_button": "Vytvořit zaměstnavatele"
+    "create_button": "Vytvořit zaměstnavatele",
+    "not_approved": "Organizace čeká na schválení. Vytváření nabídek není povoleno."
   },
   "company": {
     "edit_title": "Upravit společnost",
@@ -450,6 +473,7 @@
     "prefilled_success": "Údaje firmy byly předvyplněny",
     "create_button": "Vytvořit společnost",
     "ico_placeholder": "Zadejte IČO firmy",
+    "invalid_ico": "Neplatné IČO",
     "is_required": "{{field}} je povinné."
   },
   "professor": {
@@ -551,7 +575,18 @@
     "content_rejected_banner": "Obsah praxe byl zamítnut. Důvod: {{reason}}",
     "resubmit_button": "Upravit a znovu odeslat",
     "resubmit_success": "Praxe byla znovu odeslána ke schválení",
-    "resubmit_error": "Chyba při opětovném odesílání praxe"
+    "resubmit_error": "Chyba při opětovném odesílání praxe",
+    "rejected_banner": "Přihláška na praxi byla zamítnuta",
+    "timeline_title": "Historie praxe",
+    "view_card": "Zobrazit kartu praxe",
+    "withdraw_button": "Odhlásit se z praxe",
+    "withdraw_title": "Odhlášení z praxe",
+    "withdraw_text": "Opravdu si přejete odstoupit z praxe?",
+    "withdraw_confirm": "Odstoupit",
+    "withdraw_success": "Úspěšně jste se odhlásili z praxe",
+    "withdraw_error": "Chyba při odhlašování z praxe",
+    "timeline_loading": "Načítání historie praxe...",
+    "timeline_empty": "Žádná historie praxe k zobrazení"
   },
   "errors": {
     "page_not_found": "Stránka nenalezena",
@@ -603,6 +638,7 @@
     "DATE_IN_PAST": "Datum nesmí být v minulosti.",
     "ICO_ALREADY_EXISTS": "Společnost s tímto IČO již v systému existuje.",
     "ARES_FETCH_FAILED": "Nepodařilo se načíst data z registru ARES.",
+    "CAPACITY_FULL": "Kapacita partnera je plně obsazena.",
     "DEPARTMENT_ALREADY_EXISTS": "Oddělení s tímto názvem již existuje.",
     "SUBJECT_ALREADY_EXISTS": "Předmět s tímto kódem již existuje.",
     "INVALID_DATE_FORMAT": "Neplatný formát data. Použijte DD.MM.YYYY",
@@ -677,24 +713,73 @@
   "state_badge": {
     "DRAFT": "Koncept",
     "PENDING_CONTENT_APPROVAL": "Čeká na schválení obsahu",
-    "CONTENT_APPROVED": "Obsah schválen",
-    "CONTENT_REJECTED": "Obsah zamítnut",
-    "OPEN_FOR_APPLICATIONS": "Otevřeno pro přihlášky",
-    "CLOSED_FOR_APPLICATIONS": "Uzavřeno pro přihlášky",
-    "APPLIED": "Přihlášeno",
-    "PRELIMINARY_APPROVED": "Předběžně schváleno",
-    "REJECTED": "Zamítnuto",
-    "CONTRACTED": "Sjednána smlouva",
-    "STARTED": "Probíhá",
+    "CONTENT_APPROVED": "Obsah praxe schválen",
+    "CONTENT_REJECTED": "Zamítnutí obsahu",
+    "OPEN_FOR_APPLICATIONS": "Aktivní",
+    "CLOSED_FOR_APPLICATIONS": "Uzavřeno",
+    "APPLIED": "Čeká na schválení garanta",
+    "PRELIMINARY_APPROVED": "Čeká na schválení organizací",
+    "REJECTED": "Přihláška na praxi odmítnuta",
+    "CONTRACTED": "Zasmluvněno",
+    "STARTED": "Zahájeno",
     "ENDED": "Ukončeno",
-    "COMPLETED": "Dokončeno",
-    "CANCELLED": "Zrušeno",
-    "AWAITING_CONTRACT": "Čeká na smlouvu",
-    "AWAITING_DOCUMENTS": "Čeká na dokumenty",
+    "COMPLETED": "Splněno",
+    "CANCELLED": "Stornováno",
+    "AWAITING_CONTRACT": "Čeká na zasmluvnění",
+    "AWAITING_DOCUMENTS": "Čeká na schválení dokumentů",
     "DOCUMENTS_REJECTED": "Dokumenty zamítnuty",
     "PENDING": "Čeká na schválení",
     "APPROVED": "Schváleno",
     "IN_PROGRESS": "Probíhá",
     "UNKNOWN": "Neznámý"
+  },
+  "ares": {
+    "not_found": "Subjekt s tímto IČO nebyl v registru ARES nalezen",
+    "locked": "Údaje jsou uzamčeny z registru ARES",
+    "loading": "Ověřuji IČO v ARES...",
+    "unavailable": "ARES je nedostupný. Vyplňte údaje ručně.",
+    "verify_error": "Nepodařilo se ověřit IČO v ARES. Zkontrolujte IČO.",
+    "found_ares": "Údaje firmy načteny z ARES",
+    "found_cache": "Údaje firmy načteny z databáze (cache)"
+  },
+  "capacity": {
+    "full": "Kapacita partnera je plně obsazena"
+  },
+  "application": {
+    "blocked_cancellation": "Nelze podat novou žádost, dokud není storno vyřešeno"
+  },
+  "documents": {
+    "late": "Odevzdáno po termínu"
+  },
+  "export": {
+    "processing": "Export se zpracovává. Budete notifikováni po dokončení.",
+    "success": "Export {{format}} byl úspěšně vygenerován."
+  },
+  "external": {
+    "details_required": "Nahrání dokumentu s detaily praxe je povinné",
+    "details_label": "Dokument s detaily praxe",
+    "file_selected": "Vybrán soubor",
+    "file_type_error": "Povolené formáty jsou pouze PDF a DOCX"
+  },
+  "evaluation": {
+    "title": "Hodnocení praxe",
+    "not_ended": "Evaluace je dostupná až po ukončení praxe",
+    "pdf_required": "Nahrání podepsaného hodnotícího archu je povinné",
+    "pdf_only_error": "Povolený formát je pouze PDF",
+    "mentor_only": "Evaluace je dostupná pouze mentorovi.",
+    "success": "Evaluace byla úspěšně odeslána",
+    "error": "Chyba při odesílání evaluace",
+    "expertise_label": "Odbornost",
+    "expertise_placeholder": "Komentář k odbornosti",
+    "communication_label": "Komunikace",
+    "communication_placeholder": "Komentář ke komunikaci",
+    "initiative_label": "Iniciativa",
+    "initiative_placeholder": "Komentář k iniciativě",
+    "overall_label": "Celkové hodnocení",
+    "overall_placeholder": "Celkový komentář",
+    "pdf_upload_label": "Podepsaný hodnotící arch (PDF)",
+    "selected_file": "Vybrán soubor",
+    "submitting": "Odesílám...",
+    "submit": "Odeslat"
   }
 }

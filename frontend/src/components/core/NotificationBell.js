@@ -32,10 +32,24 @@ const NotificationBell = () => {
         if (!notification.is_read) {
             markAsRead(notification.id);
         }
+
+        // Navigace na target odkaz notifikace (např. EXPORT_READY nese URL
+        // downloadu). Interní cesty → SPA navigate, externí URL → window.open.
+        const targetUrl = notification.target_url || notification.url || '';
+        if (targetUrl) {
+            if (/^https?:\/\//i.test(targetUrl)) {
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            } else {
+                navigate(targetUrl);
+            }
+        }
+
         setIsOpen(false);
     };
 
-    const getMessage = (n) => i18n.language === 'en' ? (n.message_en || n.message_cz) : n.message_cz;
+    const getMessage = (n) => i18n.language === 'en'
+        ? (n.message_en || n.message)
+        : (n.message_cz || n.message);
 
     return (
         <div className="relative" ref={dropdownRef}>

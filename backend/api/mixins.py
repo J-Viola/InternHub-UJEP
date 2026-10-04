@@ -13,8 +13,6 @@ class CancellationMixin(models.Model):
     - Zadavatel explicitně vyžaduje auditní stopu storna (kdy, kdo, proč).
     - „Stornováno" je flag, nikoli stav — zamrazí záznam mimo standardní stavový automat.
     - Konzistentní pojmenování na obou entitách (DRY).
-
-    Ref: THESIS_ARCHITECTURE_PLAN.md sekce 2.2.10, 3.4
     """
 
     is_cancelled = models.BooleanField(

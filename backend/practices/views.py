@@ -19,7 +19,12 @@ from api.views import StandardResultsSetPagination
 from department.models import Department
 from practices.filters import PracticeFilter
 from practices.messages import PracticeMessages
-from practices.models import Practice, PracticeWorkflowState, ProgressStatus
+from practices.models import (
+    ApplicationClosureReason,
+    Practice,
+    PracticeWorkflowState,
+    ProgressStatus,
+)
 from practices.serializers import (
     CancelPracticeSerializer,
     CloseApplicationsSerializer,
@@ -42,6 +47,7 @@ from users.models import ApprovalStatus, ProfessorUser, StagRoleEnum, StudentUse
 from users.permissions import (
     CanCancelPractice,
     IsAdminUser,
+    IsApprovedOrganization,
     IsGarantPraxe,
     IsNotCancelled,
     IsOrganizationOrReadOnly,
@@ -74,8 +80,14 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ["start_date", "end_date", "title", "practice_id"]
 
     def get_queryset(self):
+        # Katalog zobrazuje pouze „Aktivní" nabídky — schválený obsah a otevřený sběr
+        # přihlášek; stornované nabídky se nezobrazují.
         qs = (
-            Practice.objects.filter(is_active=True)
+            Practice.objects.filter(
+                is_active=True,
+                workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+                is_cancelled=False,
+            )
             .select_related("employer", "subject", "subject__department", "contact_user")
             .annotate(
                 approved_count=Count(
@@ -127,7 +139,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
     def apply(self, request):
         user = request.user
 
-        # C3.5: Only students can apply
+        # Only students can apply
         if not isinstance(user, StudentUser):
             return Response(
                 {"detail": "Only students can apply for practices"},
@@ -248,7 +260,10 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["update", "partial_update", "destroy"]:
-            return [permissions.IsAuthenticated(), IsOrganizationOwner()]
+            # update/delete vyžadují vlastnictví (IsOrganizationOwner)
+            # i schválený profil organizace (IsApprovedOrganization → 403
+            # EMPLOYER_NOT_APPROVED pro PENDING/REJECTED).
+            return [permissions.IsAuthenticated(), IsOrganizationOwner(), IsApprovedOrganization()]
         return [permissions.IsAuthenticated(), IsOrganizationOrReadOnly()]
 
     def get_queryset(self):
@@ -354,6 +369,16 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Update an organization practice")
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        # 2.6: Explicitní blokace — aktivní inzeráty nelze editovat
+        blocked_states = [
+            PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+            PracticeWorkflowState.CLOSED_FOR_APPLICATIONS,
+        ]
+        if instance.workflow_state in blocked_states:
+            return Response(
+                {"detail": "Úprava není povolena pro aktivní inzerát."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         # 3.6: Blokace editace — pouze PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED
         if instance.workflow_state not in (
             PracticeWorkflowState.PENDING_CONTENT_APPROVAL,
@@ -377,6 +402,16 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Partially update an organization practice")
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
+        # 2.6: Explicitní blokace — aktivní inzeráty nelze editovat
+        blocked_states = [
+            PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+            PracticeWorkflowState.CLOSED_FOR_APPLICATIONS,
+        ]
+        if instance.workflow_state in blocked_states:
+            return Response(
+                {"detail": "Úprava není povolena pro aktivní inzerát."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         # 3.6: Blokace editace — pouze PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED
         if instance.workflow_state not in (
             PracticeWorkflowState.PENDING_CONTENT_APPROVAL,
@@ -401,14 +436,14 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        # C3.10: block deletion if practice has active (non-cancelled) applications
+        # Block deletion if practice has active (non-cancelled) applications
         if instance.student_practices.filter(is_cancelled=False).exists():
             return Response(
                 {"detail": "Cannot delete practice with active applications"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # C3.10: soft-delete via service layer for consistent audit trail + notifications
+        # Soft-delete via service layer for consistent audit trail + notifications
         with transaction.atomic():
             instance = PracticeService.cancel_practice(
                 practice=instance,
@@ -777,9 +812,14 @@ class CloseApplicationsView(APIView):
         serializer = CloseApplicationsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        reason = serializer.validated_data["reason"]
+        # Manuální uzavření záznamu — closed_reason=MANUAL.
+        # closed_for_applications_at + closed_reason zapisuje service.
         try:
-            practice = PracticeService.close_practice_for_applications(practice=practice, reason=reason, actor=request.user)
+            practice = PracticeService.close_practice_for_applications(
+                practice=practice,
+                reason=ApplicationClosureReason.MANUAL,
+                actor=request.user,
+            )
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -787,18 +827,30 @@ class CloseApplicationsView(APIView):
 
 
 class IsStudentOrStaff(permissions.BasePermission):
-    """Allows students, STAG teachers, garant praxe, and admins."""
+    """
+    Allows students, STAG teachers, garant praxe, and admins.
+
+    organizace (OrganizationUser s employer_profile) smí vytvářet
+    externí praxe pouze se schváleným profilem — jinak 403 EMPLOYER_NOT_APPROVED.
+    """
 
     def has_permission(self, request, view):
         from users.models import StudentUser
-        from users.permissions import IsGarantPraxe, IsStagTeacher
+        from users.permissions import IsApprovedOrganization, IsGarantPraxe, IsStagTeacher
 
-        return (
-            isinstance(request.user, StudentUser)
-            or IsStagTeacher().has_permission(request, view)
-            or IsGarantPraxe().has_permission(request, view)
-            or bool(request.user and request.user.is_superuser)
-        )
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if isinstance(user, StudentUser):
+            return True
+        if user.is_superuser:
+            return True
+        if IsStagTeacher().has_permission(request, view) or IsGarantPraxe().has_permission(request, view):
+            return True
+        # Organizace (např. pro pobočku/partnera bez registrace) — jen APPROVED.
+        if getattr(user, "employer_profile", None):
+            return IsApprovedOrganization().has_permission(request, view)
+        return False
 
 
 class ExternalPracticeView(APIView):

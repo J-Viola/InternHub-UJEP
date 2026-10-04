@@ -1,5 +1,5 @@
 """
-Tests for UC-03 — ActionLog / Timeline entries.
+Tests for ActionLog / Timeline entries.
 
 Covers:
 - ActionLog creation on state transitions
@@ -51,7 +51,7 @@ from users.models import (
 
 
 class StudentPracticeActionLogTests(TestCase):
-    """UC-03: Akční log / Timeline — tvorba záznamů a history endpoint."""
+    """Akční log / Timeline — tvorba záznamů a history endpoint."""
 
     def setUp(self):
         self.client = APIClient()

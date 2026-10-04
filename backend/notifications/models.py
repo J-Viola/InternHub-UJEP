@@ -79,6 +79,12 @@ class Notification(models.Model):
     message = models.TextField(
         help_text="Human-readable notification text (Czech).",
     )
+    url = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Cílová (navigační) URL notifikace — FE na ni přesměruje po kliku " "(např. download URL pro EXPORT_READY).",
+    )
     notification_type = enum.EnumField(NotificationType, default=NotificationType.INFO)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -13,10 +13,10 @@ jest.mock('@hooks/UserProvider');
 jest.mock('@hooks/MessageContext');
 
 // Mock child components
-jest.mock('@components/Prihlasky/PrihlaskaEntity', () => ({ entity, onPopup }) => (
+jest.mock('@components/Prihlasky/PrihlaskaEntity', () => ({ entity, onSettings }) => (
     <div data-testid="prihlaska-entity">
         {entity.student_full_name} - {entity.practice_title}
-        {entity.can_approve && <button onClick={() => onPopup(entity)}>Manage</button>}
+        {entity.can_approve && <button onClick={() => onSettings(entity)}>Manage</button>}
     </div>
 ));
 jest.mock('@components/Filter/SearchBar', () => ({ value, onChange }) => (

@@ -1,5 +1,5 @@
 import io
-import warnings
+import logging
 from datetime import date
 
 from django.db import IntegrityError, transaction
@@ -18,6 +18,7 @@ from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
     DocumentStatus,
+    DocumentType,
     EmployerInvitation,
     EmployerInvitationStatus,
     StudentPractice,
@@ -28,6 +29,8 @@ from users.constants import ActionLogType
 from users.models import ApprovalStatus, OrganizationUser, ProfessorUser, StagRoleEnum, StudentUser
 from users.services import fetch_student_data_from_stag
 
+logger = logging.getLogger(__name__)
+
 SP_TRANSITIONS = {
     StudentPracticeWorkflowState.APPLIED: [
         StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
@@ -35,7 +38,6 @@ SP_TRANSITIONS = {
     ],
     StudentPracticeWorkflowState.PRELIMINARY_APPROVED: [
         StudentPracticeWorkflowState.AWAITING_CONTRACT,
-        StudentPracticeWorkflowState.CONTRACTED,
         StudentPracticeWorkflowState.REJECTED,
     ],
     StudentPracticeWorkflowState.AWAITING_CONTRACT: [
@@ -46,11 +48,11 @@ SP_TRANSITIONS = {
     StudentPracticeWorkflowState.AWAITING_DOCUMENTS: [
         StudentPracticeWorkflowState.CONTRACTED,
         StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
-        StudentPracticeWorkflowState.COMPLETED,
     ],
     StudentPracticeWorkflowState.DOCUMENTS_REJECTED: [
         StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
         StudentPracticeWorkflowState.REJECTED,
+        StudentPracticeWorkflowState.ENDED,  # nahrání opravených dokumentů
     ],
     StudentPracticeWorkflowState.CONTRACTED: [
         StudentPracticeWorkflowState.STARTED,
@@ -61,6 +63,7 @@ SP_TRANSITIONS = {
     ],
     StudentPracticeWorkflowState.ENDED: [
         StudentPracticeWorkflowState.COMPLETED,
+        StudentPracticeWorkflowState.REJECTED,
         StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
     ],
     StudentPracticeWorkflowState.COMPLETED: [],
@@ -110,6 +113,62 @@ def get_transitions_matrix(sp: StudentPractice) -> dict:
     if sp.practice and getattr(sp.practice, "is_external", False):
         return MANUAL_SP_TRANSITIONS
     return SP_TRANSITIONS
+
+
+def _check_contract_capacity(practice: Practice) -> None:
+    """
+    Kapacitní kontrola při alokaci.
+
+    Přechod do CONTRACTED je povolen pouze pokud ``approved_count`` (počet
+    již alokovaných studentů — CONTRACTED/STARTED/ENDED/COMPLETED) je menší
+    než ``practice.available_positions``. Plno → ValueError("CAPACITY_FULL").
+
+    Pozor: pole kapacity je ``available_positions`` (NE ``capacity``).
+    """
+    if practice is None or practice.available_positions is None:
+        return
+    approved_count = StudentPractice.objects.filter(
+        practice=practice,
+        workflow_state__in=[
+            StudentPracticeWorkflowState.CONTRACTED,
+            StudentPracticeWorkflowState.STARTED,
+            StudentPracticeWorkflowState.ENDED,
+            StudentPracticeWorkflowState.COMPLETED,
+        ],
+    ).count()
+    if approved_count >= practice.available_positions:
+        raise ValueError("CAPACITY_FULL")
+
+
+def _generate_completion_protocol(sp: StudentPractice) -> None:
+    """
+    vygeneruje „Protokol o absolvování odborné praxe" (PDF) a uloží
+    ho do ``Evaluation.pdf_protokol``, pokud evaluace existuje a protokol je prázdný.
+
+    Download probíhá přes existující mechanismus (``EvaluationSerializer.pdf_protokol``
+    URL → servírování z MEDIA_ROOT/storage; dedikovaný endpoint může doplnit později).
+    Selhání generování NIKDY nezablokuje samotný přechod do COMPLETED.
+    """
+    from django.core.files.base import ContentFile
+
+    from student_practices.pdf_service import PDFCompletionProtocolGenerator
+
+    try:
+        pdf_bytes = PDFCompletionProtocolGenerator.generate_pdf(sp)
+    except Exception:
+        logger.exception("Failed to generate completion protocol PDF for SP %s", getattr(sp, "student_practice_id", None))
+        return
+
+    evaluation = getattr(sp, "evaluation", None)
+    if evaluation is None or evaluation.pdf_protokol:
+        # Bez evaluace nebo s již uloženým mentorským protokolem neukládáme (žádný přepis).
+        return
+
+    try:
+        filename = f"protokol_absolvovani_sp_{sp.student_practice_id}.pdf"
+        evaluation.pdf_protokol.save(filename, ContentFile(pdf_bytes), save=True)
+    except Exception:
+        logger.exception("Failed to store completion protocol PDF for SP %s", sp.student_practice_id)
 
 
 @transaction.atomic
@@ -192,6 +251,7 @@ def _check_transition_role(actor, from_state, to_state, sp) -> None:
     if isinstance(actor, StudentUser):
         allowed = [
             (StudentPracticeWorkflowState.DOCUMENTS_REJECTED, StudentPracticeWorkflowState.AWAITING_DOCUMENTS),
+            (StudentPracticeWorkflowState.DOCUMENTS_REJECTED, StudentPracticeWorkflowState.ENDED),  #
             (StudentPracticeWorkflowState.CONTENT_REJECTED, StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL),
         ]
         if (from_state, to_state) not in allowed:
@@ -370,16 +430,57 @@ class StudentPracticeService:
             sp.employer_approved = True
             sp.approval_status = ApprovalStatus.APPROVED
 
+        elif (
+            sp.workflow_state == StudentPracticeWorkflowState.AWAITING_CONTRACT and target_state == StudentPracticeWorkflowState.CONTRACTED
+        ):
+            # kapacitní kontrola při alokaci — plná kapacita blokuje
+            # přechod do CONTRACTED. select_for_update na praxi proti race condition.
+            practice = sp.practice
+            if practice is not None:
+                practice = Practice.objects.select_for_update().get(pk=practice.pk)
+                sp.practice = practice
+                _check_contract_capacity(practice)
+            sp.school_approved = True
+            sp.employer_approved = True
+            sp.approval_status = ApprovalStatus.APPROVED
+
         elif sp.workflow_state == StudentPracticeWorkflowState.CONTRACTED and target_state == StudentPracticeWorkflowState.STARTED:
             sp.progress_status = ProgressStatus.IN_PROGRESS
 
         elif sp.workflow_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.COMPLETED:
             sp.progress_status = ProgressStatus.COMPLETED
 
+        elif sp.workflow_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.REJECTED:
+            sp.approval_status = ApprovalStatus.REJECTED
+            ActionLogService.log(
+                user=actor,
+                action_type=ActionLogType.REJECT,
+                object_type="StudentPractice",
+                object_id=sp.student_practice_id,
+                description=(
+                    f"Praxe ID {sp.student_practice_id} nebyla úspěšně dokončena "
+                    f"(prechod {StudentPracticeWorkflowState.ENDED.name} -> "
+                    f"{StudentPracticeWorkflowState.REJECTED.name})"
+                ),
+            )
+
+        # ---: Document guard for external practice content approval ---
+        if (
+            sp.workflow_state == StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
+            and target_state == StudentPracticeWorkflowState.CONTENT_APPROVED
+        ):
+            if not sp.content_document or not sp.content_document.document:
+                raise ValueError("Pro schválení obsahu je nutné nejprve nahrát dokument.")
+
         # --- Apply new workflow state ---
         old_state = sp.workflow_state
         sp.workflow_state = target_state
         sp.save()
+
+        # ---: při přechodu do COMPLETED vygeneruj
+        # „Protokol o absolvování odborné praxe" (PDF) ---
+        if old_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.COMPLETED:
+            _generate_completion_protocol(sp)
 
         # --- Log state transition ---
         ActionLogService.log(
@@ -403,6 +504,7 @@ class StudentPracticeService:
             old_state == StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
             and target_state == StudentPracticeWorkflowState.CONTENT_APPROVED
         ):
+            EmailService.notify_student_content_approved(sp)
             NotificationService.create_notification(
                 recipient=student,
                 verb="CONTENT_APPROVED",
@@ -415,6 +517,7 @@ class StudentPracticeService:
             old_state == StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
             and target_state == StudentPracticeWorkflowState.CONTENT_REJECTED
         ):
+            EmailService.notify_student_content_rejected(sp, reason or "")
             NotificationService.create_notification(
                 recipient=student,
                 verb="CONTENT_REJECTED",
@@ -428,6 +531,7 @@ class StudentPracticeService:
             and target_state == StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL
         ):
             # Notify professor/garant that content was re-submitted for approval
+            EmailService.notify_professor_content_approval(sp)
             garant = sp.practice.subject.subject_manager if sp.practice and sp.practice.subject else None
             if garant:
                 NotificationService.create_notification(
@@ -442,6 +546,7 @@ class StudentPracticeService:
             old_state in (StudentPracticeWorkflowState.APPLIED, StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
             and target_state == StudentPracticeWorkflowState.AWAITING_CONTRACT
         ):
+            EmailService.notify_student_awaiting_contract(sp)
             NotificationService.create_notification(
                 recipient=student,
                 verb="AWAITING_CONTRACT",
@@ -453,6 +558,7 @@ class StudentPracticeService:
         elif (
             old_state == StudentPracticeWorkflowState.AWAITING_CONTRACT and target_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS
         ):
+            EmailService.notify_student_awaiting_documents(sp)
             NotificationService.create_notification(
                 recipient=student,
                 verb="AWAITING_DOCUMENTS",
@@ -464,6 +570,7 @@ class StudentPracticeService:
         elif (
             old_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS and target_state == StudentPracticeWorkflowState.DOCUMENTS_REJECTED
         ):
+            EmailService.notify_student_documents_rejected(sp, reason or "")
             NotificationService.create_notification(
                 recipient=student,
                 verb="DOCUMENTS_REJECTED",
@@ -490,16 +597,27 @@ class StudentPracticeService:
                 target=sp,
                 notification_type=NotificationType.SUCCESS,
             )
-        elif old_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS and target_state == StudentPracticeWorkflowState.COMPLETED:
+        elif old_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.REJECTED:
             NotificationService.create_notification(
                 recipient=student,
-                verb="PRACTICE_COMPLETED",
-                message=f"Vaše praxe '{practice_title}' byla dokončena!",
+                verb="PRACTICE_FAILED",
+                message=f"Praxe '{practice_title}' nebyla úspěšně dokončena (Nesplněno).",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.ERROR,
+            )
+        elif old_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS and target_state == StudentPracticeWorkflowState.CONTRACTED:
+            NotificationService.create_notification(
+                recipient=student,
+                verb="APPLICATION_CONTRACTED",
+                message=f"Smlouva k praxi '{practice_title}' byla potvrzena.",
                 actor=actor,
                 target=sp,
                 notification_type=NotificationType.SUCCESS,
             )
-        elif old_state == StudentPracticeWorkflowState.AWAITING_DOCUMENTS and target_state == StudentPracticeWorkflowState.CONTRACTED:
+        elif old_state == StudentPracticeWorkflowState.AWAITING_CONTRACT and target_state == StudentPracticeWorkflowState.CONTRACTED:
+            # notifikace organizaci o alokaci studenta (verb ALLOCATION_ORG)
+            NotificationService.notify_org_allocation(sp)
             NotificationService.create_notification(
                 recipient=student,
                 verb="APPLICATION_CONTRACTED",
@@ -678,6 +796,9 @@ class StudentPracticeService:
         if not reason or not reason.strip():
             raise ValueError(StudentPracticeMessages.CANCELLATION_REASON_REQUIRED)
 
+        # ulož původní název stavu do auditního záznamu
+        old_state_name = sp.workflow_state.name if sp.workflow_state else "None"
+
         sp.is_cancelled = True
         sp.cancelled_at = timezone.now()
         sp.cancelled_by = actor
@@ -697,7 +818,7 @@ class StudentPracticeService:
             action_type=ActionLogType.STORNO,
             object_type="StudentPractice",
             object_id=sp.student_practice_id,
-            description=(f"Stornovana prihlaska ID {sp.student_practice_id}: {reason.strip()}"),
+            description=(f"Stornovana prihlaska ID {sp.student_practice_id}: {reason.strip()} " f"(původní stav: {old_state_name})"),
         )
 
         # --- Notify student ---
@@ -733,6 +854,86 @@ class StudentPracticeService:
         if org_contact and practice and practice.employer:
             EmailService.notify_org_cancellation(practice.employer, sp, reason.strip())
 
+        # --- notifikace garantovi (verb CANCELLATION_GARANT) ---
+        NotificationService.notify_garant_cancellation(sp)
+
+        return sp
+
+    @staticmethod
+    @transaction.atomic
+    def transition_to_awaiting_documents_after_contract_upload(sp, actor):
+        """
+        po úspěšném nahrání smluvního dokumentu (typ CONTRACT)
+        ze stavu AWAITING_CONTRACT automaticky přechod do AWAITING_DOCUMENTS
+        (atomicky + ActionLog). Student nemá roli na state machine přechod —
+        proto se provádí zde, v upload endpointu.
+        """
+        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        if sp.is_cancelled or sp.workflow_state != StudentPracticeWorkflowState.AWAITING_CONTRACT:
+            return sp
+
+        old_state = sp.workflow_state
+        sp.workflow_state = StudentPracticeWorkflowState.AWAITING_DOCUMENTS
+        sp.save()
+
+        ActionLogService.log(
+            user=actor,
+            action_type=ActionLogType.STATE_TRANSITION,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=(
+                f"Automaticky prechod po uploadu smluvniho dokumentu ID "
+                f"{sp.student_practice_id}: {old_state.name} -> "
+                f"{StudentPracticeWorkflowState.AWAITING_DOCUMENTS.name}"
+            ),
+        )
+
+        student = sp.user
+        practice_title = sp.practice.title if sp.practice else "N/A"
+        EmailService.notify_student_awaiting_documents(sp)
+        if student:
+            NotificationService.create_notification(
+                recipient=student,
+                verb="AWAITING_DOCUMENTS",
+                message=f"Žádáme o nahrání dokumentů k praxi '{practice_title}'.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.INFO,
+            )
+
+        return sp
+
+    @staticmethod
+    @transaction.atomic
+    def resolve_cancellation(sp, actor):
+        """
+        Vyřeší nevyřešené storno StudentPractice.
+
+        Nastaví ``cancellation_resolved_at = now()`` + auditní ActionLog.
+        Garant tím odblokuje studentovi podání nové žádosti.
+        """
+        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+
+        if not sp.is_cancelled:
+            raise ValueError("Přihláška není stornovaná — není co řešit.")
+
+        if sp.cancellation_resolved_at is not None:
+            raise ValueError("Storno je již vyřešeno.")
+
+        sp.cancellation_resolved_at = timezone.now()
+        sp.save(update_fields=["cancellation_resolved_at"])
+
+        ActionLogService.log(
+            user=actor,
+            action_type=ActionLogType.STATUS_CHANGE,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=(
+                f"Vyřešení storna přihlášky ID {sp.student_practice_id} "
+                f"uživatelem {actor.email if getattr(actor, 'email', None) else actor}"
+            ),
+        )
+
         return sp
 
     @staticmethod
@@ -755,6 +956,16 @@ class StudentPracticeService:
 
         if practice.workflow_state is not None and practice.workflow_state != PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
             raise ValueError(StudentPracticeMessages.APPLICATIONS_CLOSED)
+
+        # nevyřešené storno blokuje opětovnou přihlášku
+        # (shodná kontrola jako v practices/services.py apply_student_practice).
+        unresolved_cancellation = StudentPractice.objects.filter(
+            user=student,
+            is_cancelled=True,
+            cancellation_resolved_at__isnull=True,
+        ).exists()
+        if unresolved_cancellation:
+            raise ValueError("Nelze podat novou žádost, dokud není storno vyřešeno")
 
         # Reject if an active (non-cancelled, non-rejected) StudentPractice already exists
         existing = (
@@ -815,172 +1026,6 @@ class StudentPracticeService:
 
     @staticmethod
     @transaction.atomic
-    def update_student_practice_status(user, student_practice_id: int, data: dict):
-        """
-        Updates the status of a StudentPractice with transaction safety (select_for_update)
-        to handle dual approval correctly.
-
-        .. deprecated::
-            Use transition_student_practice_state() instead for workflow state changes.
-            This function is kept for backward compatibility to handle dual-approval flags.
-        """
-        warnings.warn(
-            "update_student_practice_status is deprecated. " "Use transition_student_practice_state() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        try:
-            student_practice = StudentPractice.objects.select_for_update().get(pk=student_practice_id)
-        except StudentPractice.DoesNotExist:
-            raise ValueError(StudentPracticeMessages.NOT_FOUND)
-
-        if student_practice.is_cancelled:
-            raise ValueError(StudentPracticeMessages.CANCELLED_CANNOT_MODIFY)
-
-        old_status = student_practice.approval_status
-        old_workflow_state = student_practice.workflow_state
-
-        roles = can_manage_practice(user, student_practice)
-        is_professor = roles["is_professor"]
-        is_org = roles["is_org"]
-        is_admin = roles["is_admin"]
-
-        # 1. Handle dual approval_status update
-        if "approval_status" in data:
-            try:
-                new_val = int(data["approval_status"])
-            except (ValueError, TypeError):
-                raise ValueError(StudentPracticeMessages.INVALID_APPROVAL_VALUE)
-
-            if new_val == ApprovalStatus.APPROVED:
-                # Set flags based on authorized roles
-                if is_professor or is_admin:
-                    student_practice.school_approved = True
-                if is_org or is_admin:
-                    student_practice.employer_approved = True
-
-                # Fully approve only if BOTH parties approved
-                if student_practice.school_approved and student_practice.employer_approved:
-                    student_practice.approval_status = ApprovalStatus.APPROVED
-                    # WE REMOVED AUTO-START HERE.
-                    # The practice will only start when documents are also approved.
-                else:
-                    student_practice.approval_status = ApprovalStatus.PENDING
-
-            elif new_val == ApprovalStatus.REJECTED:
-                # Either party can reject immediately
-                if is_professor or is_org or is_admin:
-                    student_practice.approval_status = ApprovalStatus.REJECTED
-                    # Note: potentially reset flags? Usually REJECTED is final.
-                else:
-                    raise ValueError(StudentPracticeMessages.CANNOT_REJECT)
-
-            # --- Workflow state mapping from dual approval ---
-            # Determine the target workflow state
-            if student_practice.approval_status == ApprovalStatus.REJECTED:
-                target_wf = StudentPracticeWorkflowState.REJECTED
-            elif student_practice.school_approved and student_practice.employer_approved:
-                target_wf = StudentPracticeWorkflowState.CONTRACTED
-            elif student_practice.school_approved or student_practice.employer_approved:
-                target_wf = StudentPracticeWorkflowState.PRELIMINARY_APPROVED
-            else:
-                target_wf = StudentPracticeWorkflowState.APPLIED
-
-            # Don't regress workflow_state if already at a more advanced state
-            current_wf = student_practice.workflow_state
-            if current_wf is not None:
-                if target_wf.value < current_wf.value and target_wf != StudentPracticeWorkflowState.REJECTED:
-                    raise ValueError("Nelze vracet stav niz nez aktualni")
-
-            # Soft redirect: try state machine transition, fall back to direct assignment
-            try:
-                StudentPracticeService.transition_student_practice_state(
-                    sp=student_practice,
-                    target_state=target_wf,
-                    actor=user,
-                    reason="update_student_practice_status (dual approval)",
-                )
-                student_practice.refresh_from_db()
-            except ValueError:
-                student_practice.workflow_state = target_wf
-
-        # 2. Handle progress_status update (only after full approval)
-        if "progress_status" in data:
-            if student_practice.approval_status != ApprovalStatus.APPROVED and not is_admin:
-                raise ValueError(StudentPracticeMessages.PROGRESS_UPDATE_FORBIDDEN)
-
-            try:
-                student_practice.progress_status = int(data["progress_status"])
-            except (ValueError, TypeError):
-                raise ValueError(StudentPracticeMessages.INVALID_PROGRESS_VALUE)
-
-            # --- Workflow state mapping from progress_status ---
-            if student_practice.progress_status == ProgressStatus.IN_PROGRESS:
-                if student_practice.workflow_state == StudentPracticeWorkflowState.CONTRACTED:
-                    target_wf = StudentPracticeWorkflowState.STARTED
-                    try:
-                        StudentPracticeService.transition_student_practice_state(
-                            sp=student_practice,
-                            target_state=target_wf,
-                            actor=user,
-                            reason="update_student_practice_status (progress_status)",
-                        )
-                        student_practice.refresh_from_db()
-                    except ValueError:
-                        student_practice.workflow_state = target_wf
-            elif student_practice.progress_status == ProgressStatus.COMPLETED:
-                target_wf = StudentPracticeWorkflowState.COMPLETED
-                try:
-                    StudentPracticeService.transition_student_practice_state(
-                        sp=student_practice,
-                        target_state=target_wf,
-                        actor=user,
-                        reason="update_student_practice_status (progress_status)",
-                    )
-                    student_practice.refresh_from_db()
-                except ValueError:
-                    student_practice.workflow_state = target_wf
-
-        # 3. Handle other fields (hours_completed, notes, etc.)
-        if "hours_completed" in data:
-            hours = data.get("hours_completed")
-            if hours is not None:
-                if not isinstance(hours, int) or hours < 0:
-                    raise ValueError("Hodnota hours_completed musi byt nezaporne cele cislo")
-                student_practice.hours_completed = hours
-
-        student_practice.save()
-
-        if student_practice.approval_status != old_status:
-            EmailService.notify_student_application_status(student_practice)
-            NotificationService.create_notification(
-                recipient=student_practice.user,
-                verb="APPLICATION_STATUS_CHANGED",
-                message=f"Stav vaší přihlášky na praxi '{student_practice.practice.title}' "
-                f"byl změněn na '{student_practice.approval_status.name}'.",
-                actor=user,
-                target=student_practice,
-                notification_type=NotificationType.INFO,
-            )
-
-        ActionLogService.log(
-            user=user,
-            action_type=ActionLogType.STATUS_CHANGE,
-            object_type="StudentPractice",
-            object_id=student_practice.student_practice_id,
-            description=(
-                f"Změna stavu přihlášky ID {student_practice.student_practice_id} "
-                f"uživatelem {user.email} (data: {data}), "
-                f"workflow_state: {old_workflow_state.name if old_workflow_state else 'None'} -> "
-                f"{student_practice.workflow_state.name if student_practice.workflow_state else 'None'}"
-            ),
-        )
-
-        return student_practice
-
-    @staticmethod
-    @transaction.atomic
     def process_document_review(user, document_id: int, status_val: int, review_note: str = ""):
         """
         Allows a professor or admin to approve or reject a document.
@@ -1027,50 +1072,118 @@ class StudentPracticeService:
             description=f"Dokument {document.document_type} {status_label} uživatelem {user.email}",
         )
 
-        # Try to auto-start practice if everything is ready
-        StudentPracticeService.evaluate_practice_readiness(student_practice)
+        # CONTRACT dokumenty řídí stav StudentPractice.
+        #   - kterýkoli CONTRACT dokument REJECTED → DOCUMENTS_REJECTED (s rejection_reason)
+        #   - všechny CONTRACT dokumenty APPROVED → CONTRACTED (NE auto-STARTED —
+        #     STARTED řeší jen cron auto_start_end_practices dle data)
+        if document.document_type == DocumentType.CONTRACT:
+            if status_val == DocumentStatus.REJECTED:
+                StudentPracticeService._apply_document_rejection_state(student_practice, user, review_note)
+            elif status_val == DocumentStatus.APPROVED:
+                StudentPracticeService._apply_document_approval_state(student_practice, user)
 
         return document
 
     @staticmethod
-    def evaluate_practice_readiness(student_practice):
+    @transaction.atomic
+    def _apply_document_rejection_state(sp, actor, review_note: str):
+        """Kterýkoli CONTRACT dokument REJECTED → DOCUMENTS_REJECTED (s rejection_reason)."""
+        if sp.workflow_state not in (
+            StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+            StudentPracticeWorkflowState.ENDED,
+        ):
+            return
+
+        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        if sp.is_cancelled or sp.workflow_state not in (
+            StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+            StudentPracticeWorkflowState.ENDED,
+        ):
+            return
+
+        old_state = sp.workflow_state
+        sp.workflow_state = StudentPracticeWorkflowState.DOCUMENTS_REJECTED
+        if review_note:
+            sp.rejection_reason = review_note
+        sp.save()
+
+        ActionLogService.log(
+            user=actor,
+            action_type=ActionLogType.STATE_TRANSITION,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=(
+                f"Zamítnutí dokumentů převedlo praxi ID {sp.student_practice_id}: "
+                f"{old_state.name} -> {StudentPracticeWorkflowState.DOCUMENTS_REJECTED.name}"
+            ),
+        )
+
+        practice_title = sp.practice.title if sp.practice else "N/A"
+        EmailService.notify_student_documents_rejected(sp, review_note or "")
+        if sp.user:
+            NotificationService.create_notification(
+                recipient=sp.user,
+                verb="DOCUMENTS_REJECTED",
+                message=f"Dokumenty k praxi '{practice_title}' byly zamítnuty." + (f" Důvod: {review_note}" if review_note else ""),
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.ERROR,
+            )
+
+    @staticmethod
+    @transaction.atomic
+    def _apply_document_approval_state(sp, actor):
         """
-        Checks if the practice can transition to IN_PROGRESS.
-        Requires:
-        1. approval_status == APPROVED
-        2. contract_document.status == APPROVED
-        3. content_document.status == APPROVED
+        Všechny CONTRACT dokumenty APPROVED → CONTRACTED (z AWAITING_DOCUMENTS).
+
+        STARTED se zde NESPOUŠTÍ — přechod do zahájení řeší výhradně cron
+        ``auto_start_end_practices`` dle start_date.
         """
-        if student_practice.approval_status == ApprovalStatus.APPROVED and student_practice.progress_status == ProgressStatus.NOT_STARTED:
-            # Check mandatory documents
-            contract_ok = student_practice.contract_document and student_practice.contract_document.status == DocumentStatus.APPROVED
-            content_ok = student_practice.content_document and student_practice.content_document.status == DocumentStatus.APPROVED
+        if sp.workflow_state != StudentPracticeWorkflowState.AWAITING_DOCUMENTS:
+            return
+        if not (sp.contract_document and sp.contract_document.status == DocumentStatus.APPROVED):
+            return
 
-            if contract_ok and content_ok:
-                student_practice.progress_status = ProgressStatus.IN_PROGRESS
-                student_practice.workflow_state = StudentPracticeWorkflowState.STARTED
-                student_practice.save()
+        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        if sp.is_cancelled or sp.workflow_state != StudentPracticeWorkflowState.AWAITING_DOCUMENTS:
+            return
+        if not (sp.contract_document and sp.contract_document.status == DocumentStatus.APPROVED):
+            return
 
-                NotificationService.create_notification(
-                    recipient=student_practice.user,
-                    verb="PRACTICE_STARTED",
-                    message=f"Vaše praxe '{student_practice.practice.title}' byla automaticky spuštěna " f"po schválení všech dokumentů.",
-                    actor=None,
-                    target=student_practice,
-                    notification_type=NotificationType.SUCCESS,
-                )
+        old_state = sp.workflow_state
+        sp.workflow_state = StudentPracticeWorkflowState.CONTRACTED
+        sp.approval_status = ApprovalStatus.APPROVED
+        sp.school_approved = True
+        sp.employer_approved = True
+        sp.save()
 
-                ActionLogService.log(
-                    user=None,
-                    action_type=ActionLogType.STATUS_CHANGE,
-                    object_type="StudentPractice",
-                    object_id=student_practice.student_practice_id,
-                    description=f"Praxe automaticky spuštěna (ID: {student_practice.student_practice_id})",
-                )
+        ActionLogService.log(
+            user=actor,
+            action_type=ActionLogType.STATE_TRANSITION,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=(
+                f"Schválení smluvních dokumentů převedlo praxi ID {sp.student_practice_id}: "
+                f"{old_state.name} -> {StudentPracticeWorkflowState.CONTRACTED.name}"
+            ),
+        )
+
+        practice_title = sp.practice.title if sp.practice else "N/A"
+        if sp.user:
+            NotificationService.create_notification(
+                recipient=sp.user,
+                verb="APPLICATION_CONTRACTED",
+                message=f"Smlouva k praxi '{practice_title}' byla potvrzena.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.SUCCESS,
+            )
+        # alokace studenta → notifikace organizaci (in-app + e-mail)
+        NotificationService.notify_org_allocation(sp)
 
 
 # ===================================================================
-# WP7: Document generation services (STAG + template engine)
+# Document generation services (STAG + template engine)
 # ===================================================================
 
 

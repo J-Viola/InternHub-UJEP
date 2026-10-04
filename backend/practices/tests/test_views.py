@@ -139,6 +139,58 @@ class PracticeViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(StudentPractice.objects.filter(user=self.student, practice=self.practice).exists())
 
+    def test_apply_creates_garant_notification(self):
+        """po úspěšné žádosti vznikne in-app notifikace garantovi (NEW_APPLICATION_GARANT)."""
+        from unittest import mock
+
+        from notifications.models import Notification
+        from notifications.services import EmailService
+
+        # Primární rezoluce garanta = subject_manager.
+        self.subject.subject_manager = self.professor
+        self.subject.save(update_fields=["subject_manager"])
+
+        self.client.force_authenticate(user=self.student)
+        url = "/api/practices/student/apply/"
+
+        with mock.patch.object(EmailService, "notify_garant_new_application_email") as mocked_email:
+            response = self.client.post(url, {"practice": self.practice.practice_id}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        sp = StudentPractice.objects.get(user=self.student, practice=self.practice)
+
+        notif = Notification.objects.get(verb="NEW_APPLICATION_GARANT")
+        self.assertEqual(notif.recipient, self.professor)
+        self.assertEqual(notif.target, sp)
+        self.assertEqual(notif.actor, self.student)
+        self.assertIn(self.practice.title, notif.message)
+        mocked_email.assert_called_once_with(sp)
+
+    def test_apply_blocked_by_unresolved_cancellation(self):
+        """nevyřešené storno blokuje novou žádost kanonickou hláškou."""
+        from student_practices.models import StudentPractice, StudentPracticeWorkflowState
+
+        StudentPractice.objects.create(
+            user=self.student,
+            practice=self.practice,
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            workflow_state=StudentPracticeWorkflowState.APPLIED,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 1),
+            is_cancelled=True,
+            cancellation_reason="Zdravotní důvody",
+            cancellation_resolved_at=None,
+        )
+
+        self.client.force_authenticate(user=self.student)
+        url = "/api/practices/student/apply/"
+
+        response = self.client.post(url, {"practice": self.practice.practice_id}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Nelze podat novou žádost, dokud není storno vyřešeno", str(response.data))
+
     def test_apply_student_practice_duplicate_fail(self):
         StudentPractice.objects.create(
             user=self.student,
@@ -167,8 +219,10 @@ class PracticeViewTests(TestCase):
             "subject_id": self.subject.subject_id,
             "title": "New Practice",
             "description": "Desc",
+            "responsibilities": "Test responsibilities",
+            "mentor_name": "Jan Mentor",
+            "contact_email": "mentor@test.com",
             "start_date": datetime.today().strftime("%d.%m.%Y"),
-            "coefficient": 1.0,
         }
 
         response = self.client.post(url, data)
@@ -242,11 +296,11 @@ class PracticeViewTests(TestCase):
         self.assertNotEqual(self.practice.title, "Hacked Title")
 
     # ===========================================================================
-    # C3.1 + C3.2 — workflow_state is set on apply and practice creation
+    # + workflow_state is set on apply and practice creation
     # ===========================================================================
 
     def test_apply_student_practice_creates_with_workflow_state_applied(self):
-        """C3.1: Ensure StudentPractice gets workflow_state=APPLIED on creation."""
+        """Ensure StudentPractice gets workflow_state=APPLIED on creation."""
         self.client.force_authenticate(user=self.student)
         url = "/api/practices/student/apply/"
         data = {"practice": self.practice.practice_id}
@@ -256,15 +310,15 @@ class PracticeViewTests(TestCase):
 
         sp = StudentPractice.objects.filter(user=self.student, practice=self.practice).first()
         self.assertIsNotNone(sp)
-        # C3.1: workflow_state must be APPLIED, not None
+        # workflow_state must be APPLIED, not None
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.APPLIED, msg="workflow_state should be APPLIED after apply")
 
     # ===========================================================================
-    # C3.5 — Only students can apply
+    # Only students can apply
     # ===========================================================================
 
     def test_apply_student_practice_only_for_students(self):
-        """C3.5: Non-student users cannot apply for practices."""
+        """Non-student users cannot apply for practices."""
         # Organization user tries to apply
         self.client.force_authenticate(user=self.org_user)
         url = "/api/practices/student/apply/"
@@ -279,11 +333,11 @@ class PracticeViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     # ===========================================================================
-    # C3.3 — Capacity guard
+    # Capacity guard
     # ===========================================================================
 
     def test_apply_student_practice_respects_capacity(self):
-        """C3.3: Cannot apply when available_positions is full."""
+        """Cannot apply when available_positions is full."""
         # Set capacity to 1 and fill it
         self.practice.available_positions = 1
         self.practice.save()
@@ -330,11 +384,13 @@ class PracticeViewTests(TestCase):
         self.assertIn("PRACTICE_IS_CANCELLED", str(response.data.get("detail", "")))
 
     # ===========================================================================
-    # C3.7 — External practice preserves ico, address, contact_phone
+    # External practice preserves ico, address, contact_phone
     # ===========================================================================
 
     def test_external_practice_preserves_ico_address_phone(self):
-        """C3.7: External practice creation should persist ico, address, contact_phone."""
+        """External practice creation should persist ico, address, contact_phone."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
         from practices.models import ExternalEmployerInfo
 
         self.client.force_authenticate(user=self.student)
@@ -348,6 +404,11 @@ class PracticeViewTests(TestCase):
             "ico": "12345678",
             "address": "Náměstí 1, Praha",
             "contact_phone": "+420123456789",
+            "external_details_file": SimpleUploadedFile(
+                "details.pdf",
+                b"%PDF-1.4 fake pdf content",
+                content_type="application/pdf",
+            ),
             "subject_id": self.subject.subject_id,
             "title": "Externí praxe",
             "description": "Popis externí praxe",
@@ -367,12 +428,89 @@ class PracticeViewTests(TestCase):
         self.assertEqual(external.address, "Náměstí 1, Praha")
         self.assertEqual(external.contact_phone, "+420123456789")
 
+    def test_external_practice_missing_details_file_rejected(self):
+        """chybějící příloha s detaily praxe → 400."""
+        from datetime import date
+
+        self.client.force_authenticate(user=self.student)
+        url = "/api/practices/external/"
+
+        today = date.today()
+        data = {
+            "employer_name": "Externí Firma s.r.o.",
+            "subject_id": self.subject.subject_id,
+            "title": "Externí praxe",
+            "description": "Popis externí praxe",
+            "start_date": today.strftime("%d.%m.%Y"),
+        }
+
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Nahrání dokumentu s detaily praxe je povinné", str(response.data))
+
+    def test_external_practice_wrong_file_format_rejected(self):
+        """příloha mimo PDF/DOCX → 400."""
+        from datetime import date
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.student)
+        url = "/api/practices/external/"
+
+        today = date.today()
+        data = {
+            "employer_name": "Externí Firma s.r.o.",
+            "external_details_file": SimpleUploadedFile("detaily.txt", b"text", content_type="text/plain"),
+            "subject_id": self.subject.subject_id,
+            "title": "Externí praxe",
+            "description": "Popis externí praxe",
+            "start_date": today.strftime("%d.%m.%Y"),
+        }
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_external_practice_ares_locked_overrides_client_values(self):
+        """ares_locked=True → employer_name/address se přepíší ARES hodnotami profilu."""
+        from datetime import date
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from practices.models import ExternalEmployerInfo
+
+        # Organizace s ARES-locked profilem (schválená → může vytvářet externí praxe).
+        self.employer_profile.ares_locked = True
+        self.employer_profile.company_name = "ARES Corp s.r.o."
+        self.employer_profile.address = "ARES adresa 42, Ústí nad Labem"
+        self.employer_profile.save()
+
+        self.client.force_authenticate(user=self.org_user)
+        url = "/api/practices/external/"
+
+        today = date.today()
+        data = {
+            "employer_name": "Clientem zadaná firma",
+            "address": "Clientem zadaná adresa",
+            "external_details_file": SimpleUploadedFile("detaily.pdf", b"%PDF-1.4 content", content_type="application/pdf"),
+            "subject_id": self.subject.subject_id,
+            "title": "Externí praxe",
+            "description": "Popis externí praxe",
+            "start_date": today.strftime("%d.%m.%Y"),
+        }
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg=f"External response: {response.data}")
+        practice = Practice.objects.get(practice_id=response.data["practice_id"])
+        external = ExternalEmployerInfo.objects.get(pk=practice.external_employer.pk)
+        self.assertEqual(external.name, "ARES Corp s.r.o.")
+        self.assertEqual(external.address, "ARES adresa 42, Ústí nad Labem")
+
     # ===========================================================================
-    # C3.10 — Employer cannot delete practice with active applications
+    # Employer cannot delete practice with active applications
     # ===========================================================================
 
     def test_employer_cannot_delete_practice_with_active_applications(self):
-        """C3.10: Cannot delete a practice that has active student applications."""
+        """Cannot delete a practice that has active student applications."""
         # Create an active application on the practice
         StudentPractice.objects.create(
             user=self.student,
@@ -397,7 +535,7 @@ class PracticeViewTests(TestCase):
         self.assertTrue(Practice.objects.filter(pk=self.practice.practice_id).exists())
 
     def test_employer_can_soft_delete_empty_practice(self):
-        """C3.10: Employer can soft-delete a practice with no active applications."""
+        """Employer can soft-delete a practice with no active applications."""
         self.client.force_authenticate(user=self.org_user)
         url = f"/api/practices/employer/{self.practice.practice_id}/"
 
@@ -409,3 +547,25 @@ class PracticeViewTests(TestCase):
         self.assertFalse(self.practice.is_active)
         self.assertTrue(self.practice.is_cancelled)
         self.assertIsNotNone(self.practice.cancelled_at)
+
+    # ===========================================================================
+    # CloseApplicationsView: closed_reason=MANUAL + closed_for_applications_at
+    # ===========================================================================
+
+    def test_close_applications_records_manual_reason(self):
+        """Manuální uzavření zapíše closed_reason=MANUAL a timestamp."""
+        from practices.models import ApplicationClosureReason
+
+        # self.practice je OPEN_FOR_APPLICATIONS (setUp); profesor (vy) má oprávnění.
+        self.client.force_authenticate(user=self.professor)
+        url = f"/api/practices/{self.practice.practice_id}/close-applications/"
+
+        # Client posílá jiný reason (0=TIME) — backend ho ignoruje a zapíše MANUAL.
+        response = self.client.post(url, {"reason": 0}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.practice.refresh_from_db()
+        self.assertEqual(self.practice.workflow_state, PracticeWorkflowState.CLOSED_FOR_APPLICATIONS)
+        self.assertEqual(self.practice.closed_reason, ApplicationClosureReason.MANUAL)
+        self.assertIsNotNone(self.practice.closed_for_applications_at)
+        self.assertFalse(self.practice.is_active)

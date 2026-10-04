@@ -2,6 +2,7 @@ import requests
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import FileExtensionValidator
 from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
@@ -330,6 +331,8 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
             "zip_code",
             "approval_status",
             "logo",
+            "legal_form",
+            "manual_ares_entry",
         ]
         read_only_fields = ["employer_id"]
 
@@ -352,7 +355,7 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
 
 class StudentUserProfileSerializer(UserProfileSerializer):
     profile_picture = Base64ImageField(required=False, allow_null=True)
-    cv_file = serializers.FileField(required=False, allow_null=True)
+    cv_file = serializers.FileField(required=False, allow_null=True, validators=[FileExtensionValidator(allowed_extensions=["pdf"])])
     favorite_practices = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta(UserProfileSerializer.Meta):
@@ -418,6 +421,9 @@ class OrganizationUserProfileSerializer(UserProfileSerializer):
                 "address": obj.employer_profile.address,
                 "zip_code": obj.employer_profile.zip_code,
                 "logo": logo_url,
+                "ares_locked": obj.employer_profile.ares_locked,
+                "legal_form": obj.employer_profile.legal_form,
+                "manual_ares_entry": obj.employer_profile.manual_ares_entry,
             }
         return None
 
@@ -436,6 +442,8 @@ class AdminOrganizationSerializer(serializers.ModelSerializer):
             "zip_code",
             "approval_status",
             "logo",
+            "legal_form",
+            "manual_ares_entry",
             "owner",
         ]
 

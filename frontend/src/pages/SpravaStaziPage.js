@@ -61,6 +61,31 @@ export default function SpravaStaziPage() {
             const response = await api.get(`/export-data/?format=${format}`, {
                 responseType: 'blob',
             });
+
+            // HTTP 202 → async export se zpracovává.
+            // Nestahujeme blob, jen informujeme; download přijde notifikací EXPORT_READY.
+            if (response.status === 202) {
+                addMessage(t('export.processing'), 'I');
+                return;
+            }
+
+            // Obranná větev: někteří BE vrací 200 s JSON tělem pro async export
+            // (transitional stav). Nestahujme poškozený soubor — JSON detekujeme
+            // podle content-type a přítomnosti export_id/task_id.
+            const contentType = response.headers?.['content-type'] || '';
+            if (contentType.includes('application/json')) {
+                try {
+                    const text = await response.data.text();
+                    const payload = JSON.parse(text);
+                    if (payload && (payload.export_id || payload.task_id)) {
+                        addMessage(t('export.processing'), 'I');
+                        return;
+                    }
+                } catch {
+                    // Není validní JSON — pokračuj jako soubor
+                }
+            }
+
             // Create a download link from the blob response
             const blob = new Blob([response.data]);
             const url = window.URL.createObjectURL(blob);
@@ -71,7 +96,7 @@ export default function SpravaStaziPage() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            addMessage(`Export ve formátu ${format.toUpperCase()} byl stažen.`, 'S');
+            addMessage(t('export.success', { format: format.toUpperCase() }), 'S');
         } catch (err) {
             const msg = err?.response?.data?.error || t('common.error');
             addMessage(msg, 'E');
@@ -182,7 +207,7 @@ export default function SpravaStaziPage() {
         <>
             <BackButton/>
 
-            {/* Dashboard Stats & Export Toolbar (Item 2.4 & 2.6) */}
+            {/* Dashboard Stats & Export Toolbar */}
             <Container property={"flex flex-col md:flex-row items-center justify-between mb-6 mt-4 gap-4"}>
                 <Headings sizeTag={"h2"} property={"text-2xl font-bold"}>
                     {t('internships.ongoing_title')}

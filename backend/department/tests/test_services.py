@@ -1,5 +1,5 @@
 """
-Tests for department.services — C5.3: get_department_professors returns TEACHER and HEAD.
+Tests for department.services —: get_department_professors returns TEACHER and HEAD.
 """
 
 from django.test import TestCase
@@ -10,7 +10,7 @@ from users.models import DepartmentRole, ProfessorUser, StagRole, StagRoleEnum
 
 
 class DepartmentServicesTest(TestCase):
-    """C5.3: Verify get_department_professors includes both TEACHER and HEAD roles."""
+    """Verify get_department_professors includes both TEACHER and HEAD roles."""
 
     def setUp(self):
         self.department = Department.objects.create(department_name="Computer Science", department_code="KI")
@@ -38,17 +38,17 @@ class DepartmentServicesTest(TestCase):
         )
 
     def test_get_department_professors_returns_teacher(self):
-        """C5.3: TEACHER (department_role=0) must be included in results."""
+        """TEACHER (department_role=0) must be included in results."""
         professors = get_department_professors(self.teacher)
         self.assertIn(self.teacher, professors, "TEACHER must appear in department professors")
 
     def test_get_department_professors_returns_head(self):
-        """C5.3: HEAD (department_role=1) must be included in results."""
+        """HEAD (department_role=1) must be included in results."""
         professors = get_department_professors(self.head)
         self.assertIn(self.head, professors, "HEAD must appear in department professors")
 
     def test_get_department_professors_returns_both(self):
-        """C5.3: Both TEACHER and HEAD must be returned for the same department."""
+        """Both TEACHER and HEAD must be returned for the same department."""
         professors = get_department_professors(self.head)
         self.assertIn(self.teacher, professors)
         self.assertIn(self.head, professors)

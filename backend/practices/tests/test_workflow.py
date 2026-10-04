@@ -128,6 +128,8 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):
             "title": "New Practice Title",
             "description": "New Description",
             "responsibilities": "New responsibilities",
+            "mentor_name": "Jan Mentor",
+            "contact_email": "mentor@test.com",
             "available_positions": 3,
             "start_date": "01.07.2050",
             "end_date": "31.12.2050",
@@ -154,6 +156,11 @@ class PracticeAndStudentApplicationWorkflowTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_organization_user_can_update_own_practice(self):
+        # The practice must be in PENDING_CONTENT_APPROVAL or CONTENT_REJECTED state
+        # for editing (view controller blocks other states).
+        self.practice.workflow_state = PracticeWorkflowState.PENDING_CONTENT_APPROVAL
+        self.practice.save(update_fields=["workflow_state"])
+
         self.client.force_authenticate(user=self.employer_user)
         update_data = {"title": "Updated Title"}
         response = self.client.patch(

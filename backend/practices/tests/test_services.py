@@ -24,10 +24,11 @@ class PracticeServiceTests(TestCase):
         self.practice.contact_user = None
         self.practice.is_cancelled = False
 
+    @patch("practices.services.NotificationService.notify_garant_new_application")
     @patch("practices.services.StudentPracticeSerializer")
     @patch("practices.services.StudentPractice.objects.filter")
     @patch("practices.services.Practice.objects.select_for_update")
-    def test_apply_student_practice_success(self, mock_select_for_update, mock_sp_filter, mock_serializer):
+    def test_apply_student_practice_success(self, mock_select_for_update, mock_sp_filter, mock_serializer, mock_garant_notify):
         # Setup mocks — active-app check returns False (no existing application)
         mock_sp_filter.return_value.exists.return_value = False
         # Capacity count returns 0 (below available_positions)
@@ -49,8 +50,10 @@ class PracticeServiceTests(TestCase):
         # Assertions
         self.assertEqual(result, {"id": 1, "status": "pending"})
         mock_serializer.assert_called_once()
-        # C3.1: workflow_state should be set directly on the SP object
+        # workflow_state should be set directly on the SP object
         sp_mock.save.assert_called_with(update_fields=["workflow_state"])
+        # garant je notifikován o nové žádosti (in-app + e-mail metoda)
+        mock_garant_notify.assert_called_once_with(sp_mock)
 
     @patch("practices.services.StudentPractice.objects.filter")
     @patch("practices.services.Practice.objects.select_for_update")

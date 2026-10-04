@@ -63,6 +63,101 @@ class PracticeSerializerValidationTests(TestCase):
         self.assertNotIn("non_field_errors", s.errors)
 
 
+class PracticeSerializerRequiredFieldsTests(TestCase):
+    """mentor_name a contact_email jsou povinné při create/update nabídky."""
+
+    def test_mentor_and_contact_email_required_on_create(self):
+        s = PracticeSerializer(
+            data={
+                "title": "Nová stáž",
+                "description": "Popis",
+                "responsibilities": "Odpovědnosti",
+            }
+        )
+        self.assertFalse(s.is_valid())
+        self.assertIn("mentor_name", s.errors)
+        self.assertIn("contact_email", s.errors)
+
+    def test_mentor_and_contact_email_reject_blank_on_create(self):
+        s = PracticeSerializer(
+            data={
+                "title": "Nová stáž",
+                "description": "Popis",
+                "responsibilities": "Odpovědnosti",
+                "mentor_name": "",
+                "contact_email": "",
+            }
+        )
+        self.assertFalse(s.is_valid())
+        self.assertIn("mentor_name", s.errors)
+        self.assertIn("contact_email", s.errors)
+
+    def test_region_optional(self):
+        """Region není povinný — prázdná hodnota je povolená."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        s = PracticeSerializer(
+            data={
+                "title": "Nová stáž",
+                "description": "Popis",
+                "responsibilities": "Odpovědnosti",
+                "mentor_name": "Jan Mentor",
+                "contact_email": "mentor@firma.cz",
+                "start_date": (today + timedelta(days=10)).strftime("%d.%m.%Y"),
+            },
+            partial=True,
+        )
+        # partial=True → required pole se neenforcejí; region prázdný nesmí hodit chybu
+        s.is_valid()
+        self.assertNotIn("region", s.errors)
+
+
+class ExternalPracticeSerializerTests(TestCase):
+    """příloha s detaily praxe povinná a ve validním formátu."""
+
+    def _base_data(self):
+        from datetime import date, timedelta
+
+        today = date.today()
+        return {
+            "employer_name": "Firma s.r.o.",
+            "title": "Externí praxe",
+            "description": "Popis",
+            "start_date": (today + timedelta(days=10)).strftime("%d.%m.%Y"),
+        }
+
+    def test_external_details_file_required(self):
+        from practices.serializers import ExternalPracticeSerializer
+
+        s = ExternalPracticeSerializer(data=self._base_data())
+        self.assertFalse(s.is_valid())
+        self.assertIn("external_details_file", s.errors)
+
+    def test_external_details_file_rejects_wrong_extension(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from practices.serializers import ExternalPracticeSerializer
+
+        data = self._base_data()
+        data["external_details_file"] = SimpleUploadedFile("detaily.txt", b"text content", content_type="text/plain")
+        s = ExternalPracticeSerializer(data=data)
+        self.assertFalse(s.is_valid())
+        self.assertIn("external_details_file", s.errors)
+
+    def test_external_details_file_accepts_pdf(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from practices.serializers import ExternalPracticeSerializer
+
+        data = self._base_data()
+        data["external_details_file"] = SimpleUploadedFile("detaily.pdf", b"%PDF-1.4 content", content_type="application/pdf")
+        s = ExternalPracticeSerializer(data=data)
+        s.is_valid()
+        # Validace souboru projde (zbývající chyby jsou jen chybějící povinná pole jako subject_id)
+        self.assertNotIn("external_details_file", s.errors)
+
+
 # ===========================================================================
 # PracticeApprovalStatusSerializer
 # ===========================================================================
@@ -112,10 +207,10 @@ class EndDateRequestSerializerTests(TestCase):
         self.assertFalse(s.is_valid())
         self.assertIn("start_date", s.errors)
 
-    def test_missing_coefficient_rejected(self):
+    def test_missing_coefficient_accepted(self):
+        """Coefficient is deprecated and no longer required — use min_hours instead."""
         s = EndDateRequestSerializer(data={"start_date": date.today().strftime("%d.%m.%Y")})
-        self.assertFalse(s.is_valid())
-        self.assertIn("coefficient", s.errors)
+        self.assertTrue(s.is_valid(), "Coefficient is no longer required")
 
     def test_invalid_coefficient_type_rejected(self):
         s = EndDateRequestSerializer(

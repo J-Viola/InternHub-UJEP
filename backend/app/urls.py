@@ -4,6 +4,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from api.views import (
+    ActionLogListView,
     DashboardStatsView,
     DataExportDownloadView,
     DataExportStatusView,
@@ -34,6 +35,7 @@ urlpatterns = [
     path("api/auth/check/", StorageAuthCheckView.as_view()),
     path("api/health/", HealthCheckView.as_view(), name="health-check"),
     path("api/dashboard/stats/", DashboardStatsView.as_view(), name="dashboard-stats"),
+    path("api/audit-logs/", ActionLogListView.as_view(), name="audit-logs"),
     # OpenAPI schema and Swagger UI
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
