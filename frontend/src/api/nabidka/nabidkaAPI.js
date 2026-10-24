@@ -144,7 +144,7 @@ export const useNabidkaAPI = () => {
             if (response && response.data) {
                 return response.data;
             }
-            return { approved_practices: [], to_approve_practices: [] };
+            return { approved_practices: [], to_approve_practices: [], active_offers: [] };
         } catch (error) {
             console.error('Chyba při získávání nabídek podle katedry uživatele:', error);
             throw error;
@@ -159,6 +159,22 @@ export const useNabidkaAPI = () => {
             }
         } catch (error) {
             console.error('Chyba při změně stavu nabídky:', error);
+            throw error;
+        }
+    }, [api]);
+
+    // BL-07/PBUG-BL07-07: stornování aktivní nabídky — reálná UI akce.
+    // Backend: POST /api/practices/{id}/cancel/ (CanCancelPractice: admin /
+    // vedoucí katedry / garant); důvod je povinný.
+    const cancelPractice = useCallback(async (practiceId, reason) => {
+        try {
+            const response = await api.post(`/practices/${practiceId}/cancel/`, { reason });
+            if (response && response.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Chyba při stornování nabídky:', error);
             throw error;
         }
     }, [api]);
@@ -253,6 +269,7 @@ export const useNabidkaAPI = () => {
         getOrganizationPractices,
         getNabidkyByUserDepartment,
         changeStatus,
+        cancelPractice,
         calculateEndDate,
         updateNabidka,
         getAdminPractices,
@@ -260,6 +277,6 @@ export const useNabidkaAPI = () => {
         createExternalPractice
     }), [getNabidky, getNabidkaById, createNabidka, applyNabidka,
         getPracticeUserRelations, getOrganizationPractices, getNabidkyByUserDepartment,
-        changeStatus, calculateEndDate, updateNabidka,
+        changeStatus, cancelPractice, calculateEndDate, updateNabidka,
         getAdminPractices, toggleFavorite, createExternalPractice]);
 };

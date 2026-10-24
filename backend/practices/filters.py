@@ -1,7 +1,7 @@
 import django_filters
 from django.db.models import F, Q
 
-from practices.models import Practice
+from practices.models import EMPLOYMENT_TYPE_CHOICES, Practice
 
 
 class PracticeFilter(django_filters.FilterSet):
@@ -12,6 +12,16 @@ class PracticeFilter(django_filters.FilterSet):
     skills = django_filters.CharFilter(method="filter_skills")
     city = django_filters.CharFilter(field_name="city", lookup_expr="icontains")
     region = django_filters.CharFilter(field_name="region", lookup_expr="exact")
+    # BL-05 / RF-02a — explicitní filtr typu úvazku (employment type).
+    # Závazný číselník dle guarantor-values.md §1 (2026-10-11); neznámá
+    # hodnota → 400 (validate), prázdná hodnota → beze změny
+    # (Filter.filter → EMPTY_VALUES). Přesná shoda (exact) beze změny.
+    employment_type = django_filters.ChoiceFilter(
+        field_name="employment_type",
+        lookup_expr="exact",
+        choices=EMPLOYMENT_TYPE_CHOICES,
+        label="Typ úvazku",
+    )
     active_only = django_filters.BooleanFilter(field_name="is_active")
     favorites = django_filters.BooleanFilter(method="filter_favorites")
     min_duration = django_filters.NumberFilter(method="filter_min_duration")
@@ -27,6 +37,7 @@ class PracticeFilter(django_filters.FilterSet):
             "company_name",
             "skills",
             "region",
+            "employment_type",
             "approval_status",
             "progress_status",
             "active_only",

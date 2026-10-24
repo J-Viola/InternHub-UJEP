@@ -21,6 +21,7 @@ from student_practices.models import (
     DocumentType,
     EmployerInvitation,
     EmployerInvitationStatus,
+    PracticeRegistration,
     StudentPractice,
     StudentPracticeWorkflowState,
 )
@@ -50,9 +51,15 @@ SP_TRANSITIONS = {
         StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
     ],
     StudentPracticeWorkflowState.DOCUMENTS_REJECTED: [
-        StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
-        StudentPracticeWorkflowState.REJECTED,
-        StudentPracticeWorkflowState.ENDED,  # nahrání opravených dokumentů
+        StudentPracticeWorkflowState.REJECTED,  # T2c: výhradně admin + důvod (guard níže)
+        # C19-B/T2c: přímé hrany AWAITING_DOCUMENTS/ENDED odstraněny —
+        # oprava vede POUZE přes upload → DOCUMENTS_RESUBMITTED → review.
+    ],
+    StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED: [
+        StudentPracticeWorkflowState.AWAITING_DOCUMENTS,  # T2c: review schválilo (střední cyklus)
+        StudentPracticeWorkflowState.ENDED,  # T2c: review schválilo (konečné doklady)
+        StudentPracticeWorkflowState.DOCUMENTS_REJECTED,  # T2c: review zamítlo — smyčka
+        StudentPracticeWorkflowState.REJECTED,  # T2c: výhradně admin + důvod (guard níže)
     ],
     StudentPracticeWorkflowState.CONTRACTED: [
         StudentPracticeWorkflowState.STARTED,
@@ -100,6 +107,7 @@ for _state, _transitions in SP_TRANSITIONS.items():
         StudentPracticeWorkflowState.AWAITING_CONTRACT,
         StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
         StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+        StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
         StudentPracticeWorkflowState.CONTRACTED,
         StudentPracticeWorkflowState.STARTED,
         StudentPracticeWorkflowState.ENDED,
@@ -127,8 +135,11 @@ def _check_contract_capacity(practice: Practice) -> None:
     """
     if practice is None or practice.available_positions is None:
         return
+    # T2a: počítají se jen celková umístění (CONTRACTED/STARTED/ENDED/COMPLETED);
+    # stornované ani axis-pending přihlášky se NEPOČÍTAJÍ.
     approved_count = StudentPractice.objects.filter(
         practice=practice,
+        is_cancelled=False,
         workflow_state__in=[
             StudentPracticeWorkflowState.CONTRACTED,
             StudentPracticeWorkflowState.STARTED,
@@ -138,6 +149,85 @@ def _check_contract_capacity(practice: Practice) -> None:
     ).count()
     if approved_count >= practice.available_positions:
         raise ValueError("CAPACITY_FULL")
+
+
+class AxesIncompleteError(ValueError):
+    """T1/C06-A: pokus o přechod do CONTRACTED bez obou schvalovacích os.
+
+    Volání služby (přímé i HTTP) transakčně selže dřív, než cokoli uloží;
+    HTTP vrstva překládá na ``{"error_code": "AXES_INCOMPLETE"}`` (view).
+    """
+
+
+def record_own_approval_axis(sp, actor) -> bool:
+    """
+    T1/C06-A — centrální zápis VLASTNÍ approval osy aktéra.
+
+    - OrganizationUser → ``employer_approved`` (osa zaměstnavatele),
+    - StudentUser → žádná osa (T1: receipt-only),
+    - škola (ProfessorUser, garant/pedagog; admin = superuser/staff) →
+      ``school_approved``,
+    - NEZNÁMÁ role → žádná osa (helper NENÍ autorizační kontrola — kdo
+      smí přechod, řeší role/scope check; zde se jen nezapisuje cizí osa).
+
+    Nikdy nezapíše cizí osu. Vrací True, pokud jsou po zápisu obě nezávislé
+    osy schváleny. Neminí workflow_state ani approval_status — postup do
+    CONTRACTED řídí brána v ``transition_student_practice_state`` (služba),
+    confirm view a document-review, viz finding 1.
+    """
+    if isinstance(actor, OrganizationUser):
+        sp.employer_approved = True
+    elif isinstance(actor, StudentUser):
+        pass  # receipt-only (T1)
+    elif isinstance(actor, ProfessorUser) or getattr(actor, "is_superuser", False) or getattr(actor, "is_staff", False):
+        sp.school_approved = True
+    # jinak (neznámá role): žádná osa — helper se nespoléhá jako autorizace
+    return bool(sp.school_approved) and bool(sp.employer_approved)
+
+
+def ensure_practice_registration(student, subject_id, year) -> "PracticeRegistration | None":
+    """
+    BL-10/Q2-A: get_or_create registrace předmětu (student, subject, year).
+
+    N smluvních vztahů na registraci je neomezených; re-entry po stornu je
+    povolen (Q2-A). Vrací None, pokud student nebo subject chybí — řádek SP
+    pak zůstává ``registration=NULL`` (Q4-A: manuální triáž, migrace loguje).
+    """
+    if student is None or subject_id is None:
+        return None
+    registration, _created = PracticeRegistration.objects.get_or_create(
+        student_id=student.pk,
+        subject_id=subject_id,
+        year=year,
+    )
+    return registration
+
+
+def student_has_blocking_cancellation(user, practice) -> bool:
+    """
+    C03-A + BL-10: blok nové žádosti, dokud pro stejnou REGISTRACI
+    (student, subject, year — identita dle Q2-A) neexistuje nevyřízené
+    storno (legacy okamžité) ANEBO nevyřízená žádost o storno (C02-A).
+
+    Plná identita: pendingřádek napojený na registraci stejného
+    (student, subject, year) blokuje; registrace jiného roku je jiná
+    registrace → neblokuje. Legacy fallback: řádky BEZ registration FK
+    (před-backfillem / triáž) blokují předmětově (rok-agnosticky) — fail-closed.
+
+    JEDNO volání .filter() (žádný řetězený .filter) — bílé krabice testy
+    (practices/tests/test_services.py) mockují přesnou sekvenci volání.
+    """
+    from django.db.models import Q
+
+    return StudentPractice.objects.filter(
+        Q(user=user)
+        & Q(cancellation_resolved_at__isnull=True)
+        & (
+            Q(registration__isnull=False, registration__subject_id=practice.subject_id, registration__year=date.today().year)
+            | Q(registration__isnull=True, practice__subject_id=practice.subject_id)
+        )
+        & (Q(is_cancelled=True) | Q(cancellation_requested_at__isnull=False))
+    ).exists()
 
 
 def _generate_completion_protocol(sp: StudentPractice) -> None:
@@ -238,11 +328,14 @@ def _check_transition_role(actor, from_state, to_state, sp) -> None:
 
     Rules:
     - StudentUser:     only DOCUMENTS_REJECTED→AWAITING_DOCUMENTS, CONTENT_REJECTED→AWAITING_CONTENT_APPROVAL
+                       — a POUZE na vlastní přihlášce (ownership guard, BE-015)
     - OrganizationUser (employer): only from PRELIMINARY_APPROVED → AWAITING_CONTRACT / CONTRACTED / REJECTED
     - Garant/Professor (VY/VK role): all remaining transitions
     - Admin/superuser: any transition
 
     Raises ValueError if the actor is not authorized.
+    Raises PermissionDenied if a student attempts a repair transition on a
+    foreign (non-owned) StudentPractice — authorization, not workflow error.
     """
     # Admin / superuser — always allowed
     if getattr(actor, "is_superuser", False):
@@ -250,12 +343,17 @@ def _check_transition_role(actor, from_state, to_state, sp) -> None:
 
     if isinstance(actor, StudentUser):
         allowed = [
-            (StudentPracticeWorkflowState.DOCUMENTS_REJECTED, StudentPracticeWorkflowState.AWAITING_DOCUMENTS),
-            (StudentPracticeWorkflowState.DOCUMENTS_REJECTED, StudentPracticeWorkflowState.ENDED),  #
+            # C19-B/T2c: přímé opravné hrany DOCUMENTS_REJECTED → AWAITING_DOCUMENTS/ENDED
+            # ODSTRANĚNY — oprava dokumentů vede výhradně přes upload
+            # (DOCUMENTS_RESUBMITTED) a review rozhoduje o dalším stavu.
             (StudentPracticeWorkflowState.CONTENT_REJECTED, StudentPracticeWorkflowState.AWAITING_CONTENT_APPROVAL),
         ]
         if (from_state, to_state) not in allowed:
             raise ValueError("Student nemůže provést tento přechod.")
+        # Ownership guard (BE-015): opravné přechody jen na vlastní přihlášce.
+        # Cizí student je odmítnut dřív, než dojde k jakékoli mutaci.
+        if sp.user_id != actor.pk:
+            raise PermissionDenied("Přechod je povolen pouze na vlastní přihlášce.")
         return
 
     if isinstance(actor, OrganizationUser) and hasattr(actor, "employer_profile"):
@@ -374,6 +472,16 @@ class StudentPracticeService:
         if sp.workflow_state is None:
             if target_state != StudentPracticeWorkflowState.APPLIED:
                 raise ValueError(f"Neinicializovana prihlaska — povolen je pouze prechod do APPLIED, " f"ne do {target_state.name}")
+            # Finding 4: inicializace existujícího (null-state) záznamu
+            # vyžaduje scope (vlastník/rozsah) — cizí aktér → PermissionDenied
+            # (403) s nulovou mutací, dřív cokoli zapíšeme.
+            from student_practices.utils import user_can_access_student_practice
+
+            if not user_can_access_student_practice(actor, sp):
+                raise PermissionDenied("Inicializace cizí přihlášky není povolena.")
+            # action role: studenti (opravné páry) ani organizace null→APPLIED
+            # nesmí; škola/admin smí (vlastní scope ověřen výše).
+            _check_transition_role(actor, None, target_state, sp)
 
         allowed = get_transitions_matrix(sp).get(sp.workflow_state)
         if sp.workflow_state is not None and allowed is None:
@@ -384,6 +492,71 @@ class StudentPracticeService:
 
         if sp.workflow_state is not None and target_state not in allowed:
             raise ValueError(StudentPracticeMessages.TRANSITION_NOT_ALLOWED.format(sp.workflow_state, target_state))
+
+        # --- T2c: terminální REJECTED z opravného cyklu = výhradně admin + důvod ---
+        if (
+            sp.workflow_state
+            in (
+                StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+                StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
+            )
+            and target_state == StudentPracticeWorkflowState.REJECTED
+        ):
+            if not (getattr(actor, "is_superuser", False) or getattr(actor, "is_staff", False)):
+                raise PermissionDenied("Terminální zamítnutí opravného cyklu je vyhrazeno administrátorovi.")
+            if not (reason or "").strip():
+                raise ValueError("Pro terminální zamítnutí je povinný důvod.")
+
+        # --- BE-004 / BL-004 / BL-10 Q3: dokončení jen se schválenými hodnotícími podklady ---
+        if sp.workflow_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.COMPLETED:
+            evaluation = getattr(sp, "evaluation", None)  # OneToOne; chybí → None
+            if evaluation is None:
+                raise ValueError("Dokončení vyžaduje hodnotící podklady: evaluace nebyla vytvořena.")
+            feedback_doc = sp.feedback_document
+            if feedback_doc is None or feedback_doc.status != DocumentStatus.APPROVED:
+                raise ValueError("Dokončení vyžaduje schválené hodnotící podklady: dokument FEEDBACK není schválen.")
+            # BL-10/Q3-A (I5): dokončení vyžaduje evaluace VŠECH vztahů
+            # registrace; stornované vztahy se nepočítají (Q1-A). Řádky bez
+            # registration FK (legacy/triáž) mají jen per-SP gate výše.
+            # MAJOR-1 gate round: JEDNO SQL přes reverse-OneToOne isnull —
+            # žádný N+1 fetch per vztah (Q2-A povoluje neomezené N).
+            if sp.registration_id is not None:
+                missing = list(
+                    sp.registration.relationships.filter(
+                        is_cancelled=False,
+                        evaluation__isnull=True,
+                    ).values_list("pk", flat=True)
+                )
+                if missing:
+                    raise ValueError(
+                        "Dokončení vyžaduje schválené hodnotící podklady VŠECH vztahů registrace "
+                        f"(BL-10/Q3-A) — chybí evaluace vztahů: {missing}."
+                    )
+
+        # --- C19-B/T2c (finding 5): z DOCUMENTS_RESUBMITTED smí review
+        # posunout JEN se schváleným review dokumentu — žádné předčasné
+        # ENDED/AWAITING_DOCUMENTS bez schválení opraveného dokumentu. ---
+        if sp.workflow_state == StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED and target_state in (
+            StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+            StudentPracticeWorkflowState.ENDED,
+        ):
+            linked_docs = [doc for doc in (sp.contract_document, sp.content_document, sp.feedback_document) if doc is not None]
+            if not linked_docs:
+                raise ValueError("Opravný přechod vyžaduje dokumenty k review — žádný dokument není připojen.")
+            if any(doc.status == DocumentStatus.REJECTED for doc in linked_docs):
+                raise ValueError("Opravný přechod blokuje zamítnutý dokument — nejprve proveďte review dokumentů.")
+            # Finding 5 (round 3): PŘÍSNÁ varianta — postup vyžaduje, aby byl
+            # SCHVÁLEN každý připojený dokument (historický APPROVED stav
+            # opraveného dokladu se při re-uploadu resetuje na PENDING, takže
+            # staré schválení nemůže uspokojit precondition za opravu).
+            # Upload ≠ approval (C19-B); zbytkové PENDING doklady musí review
+            # explicitně schválit dřív, než smyčka popojede dál.
+            not_approved = [doc for doc in linked_docs if doc.status != DocumentStatus.APPROVED]
+            if not_approved:
+                pending_types = ", ".join(sorted({DocumentType(doc.document_type).name for doc in not_approved}))
+                raise ValueError(
+                    "Opravný přechod vyžaduje schválené review VŠECH připojených dokumentů " f"— neschválené: {pending_types}."
+                )
 
         # --- Side effects per transition ---
         if sp.workflow_state == StudentPracticeWorkflowState.APPLIED and target_state == StudentPracticeWorkflowState.PRELIMINARY_APPROVED:
@@ -426,8 +599,7 @@ class StudentPracticeService:
             if practice.is_external and practice.external_employer is None:
                 raise ValueError(StudentPracticeMessages.EXTERNAL_PRACTICE_REQUIRES_EMPLOYER)
 
-            sp.school_approved = True
-            sp.employer_approved = True
+            # T1/C06-A: žádné forcování obou os — viz jediná brána níže.
             sp.approval_status = ApprovalStatus.APPROVED
 
         elif (
@@ -440,8 +612,7 @@ class StudentPracticeService:
                 practice = Practice.objects.select_for_update().get(pk=practice.pk)
                 sp.practice = practice
                 _check_contract_capacity(practice)
-            sp.school_approved = True
-            sp.employer_approved = True
+            # T1/C06-A: žádné forcování obou os — viz jediná brána níže.
             sp.approval_status = ApprovalStatus.APPROVED
 
         elif sp.workflow_state == StudentPracticeWorkflowState.CONTRACTED and target_state == StudentPracticeWorkflowState.STARTED:
@@ -471,6 +642,29 @@ class StudentPracticeService:
         ):
             if not sp.content_document or not sp.content_document.document:
                 raise ValueError("Pro schválení obsahu je nutné nejprve nahrát dokument.")
+
+        # --- T1/C06-A (finding 1, round 3): JEDINÁ osa-zápis + postupová
+        # brána pro KAŽDOU generic cestu do CONTRACTED — zápis jen VLASTNÍ
+        # osy aktéra (nikdy cizí) a POSTUP JEN PŘI OBOU OSÁCH. Chybí-li
+        # druhá osa → AxesIncompleteError transakčně, dřív jakéhokoli
+        # save/ActionLog/notifikace (HTTP view překládá na AXES_INCOMPLETE).
+        # Kapacita pod stejným lockem níže. ---
+        if target_state == StudentPracticeWorkflowState.CONTRACTED and sp.workflow_state != StudentPracticeWorkflowState.CONTRACTED:
+            both_axes = record_own_approval_axis(sp, actor)
+            if not both_axes:
+                missing = [label for label, holds in (("school", sp.school_approved), ("employer", sp.employer_approved)) if not holds]
+                raise AxesIncompleteError(
+                    "AXES_INCOMPLETE: Přechod do CONTRACTED vyžaduje obě nezávislé "
+                    f"schvalovací osy (T1/C06-A) — chybí osa: {', '.join(missing)}."
+                )
+
+        # --- T2a/BE-005: jediná kapacitní brána pro KAŽDOU generic cestu
+        # do CONTRACTED (AWAITING_DOCUMENTS, CONTENT_APPROVED, externí větve…);
+        # AWAITING_CONTRACT větev výše kontroluje stejně (select_for_update). ---
+        if target_state == StudentPracticeWorkflowState.CONTRACTED and sp.workflow_state != StudentPracticeWorkflowState.CONTRACTED:
+            if sp.practice_id:
+                locked_practice = Practice.objects.select_for_update().get(pk=sp.practice_id)
+                _check_contract_capacity(locked_practice)
 
         # --- Apply new workflow state ---
         old_state = sp.workflow_state
@@ -588,6 +782,32 @@ class StudentPracticeService:
                 target=sp,
                 notification_type=NotificationType.ERROR,
             )
+        elif (
+            old_state == StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED
+            and target_state == StudentPracticeWorkflowState.DOCUMENTS_REJECTED
+        ):
+            # T2c: review zamítlo opravné dokumenty → smyčka pokračuje
+            NotificationService.create_notification(
+                recipient=student,
+                verb="DOCUMENTS_REJECTED",
+                message=f"Opravné dokumenty k praxi '{practice_title}' byly zamítnuty." + (f" Důvod: {reason}" if reason else ""),
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.ERROR,
+            )
+        elif old_state == StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED and target_state in (
+            StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+            StudentPracticeWorkflowState.ENDED,
+        ):
+            # T2c: review schválilo opravné dokumenty → pokračování cyklu
+            NotificationService.create_notification(
+                recipient=student,
+                verb="DOCUMENTS_RESUBMITTED_APPROVED",
+                message=f"Opravné dokumenty k praxi '{practice_title}' byly schváleny.",
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.SUCCESS,
+            )
         elif old_state == StudentPracticeWorkflowState.ENDED and target_state == StudentPracticeWorkflowState.COMPLETED:
             NotificationService.create_notification(
                 recipient=student,
@@ -691,10 +911,12 @@ class StudentPracticeService:
             raise ValueError(StudentPracticeMessages.INVITATION_PROCESSED)
 
         if action == "accept":
-            invitation.status = EmployerInvitationStatus.ACCEPTED
-            invitation.save()
-
             practice = invitation.practice
+
+            # Uzámknutí parent praxe (stejný vzor jako apply_student_practice)
+            # — všechny guardy běží PŘED označením pozvánky a vytvořením SP.
+            if practice is not None:
+                practice = Practice.objects.select_for_update().get(pk=practice.pk)
 
             # Validate practice is active and open for applications
             if not practice.is_active:
@@ -702,20 +924,26 @@ class StudentPracticeService:
             if practice.workflow_state is not None and practice.workflow_state != PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
                 raise ValueError(StudentPracticeMessages.APPLICATIONS_CLOSED)
 
-            # Capacity check
-            if practice.available_positions is not None and practice.available_positions > 0:
-                active_count = (
-                    StudentPractice.objects.filter(
-                        practice=practice,
-                        is_cancelled=False,
-                    )
-                    .exclude(
-                        approval_status=ApprovalStatus.REJECTED,
-                    )
-                    .count()
-                )
+            # Capacity check — T2a: počítají se jen celková umístění
+            if practice.available_positions is not None:
+                active_count = StudentPractice.objects.filter(
+                    practice=practice,
+                    is_cancelled=False,
+                    workflow_state__in=[
+                        StudentPracticeWorkflowState.CONTRACTED,
+                        StudentPracticeWorkflowState.STARTED,
+                        StudentPracticeWorkflowState.ENDED,
+                        StudentPracticeWorkflowState.COMPLETED,
+                    ],
+                ).count()
                 if active_count >= practice.available_positions:
                     raise ValueError(StudentPracticeMessages.CAPACITY_FULL)
+
+            # C03-A (finding 3): pending žádost/storno stejné registrace
+            # (student+subject) blokuje přijetí pozvánky — stejná kanonická
+            # hláška jako apply/reapply; žádná mutace při odmítnutí.
+            if student_has_blocking_cancellation(user, practice):
+                raise ValueError("Nelze podat novou žádost, dokud není storno vyřešeno")
 
             # Duplicate check
             if (
@@ -724,6 +952,9 @@ class StudentPracticeService:
                 .exists()
             ):
                 raise ValueError(StudentPracticeMessages.ALREADY_HAS_ACTIVE_APPLICATION)
+
+            invitation.status = EmployerInvitationStatus.ACCEPTED
+            invitation.save()
 
             try:
                 student_practice = StudentPractice.objects.create(
@@ -739,6 +970,8 @@ class StudentPracticeService:
                     year=date.today().year,
                     employer_approved=True,
                     school_approved=False,
+                    # BL-10/Q2-A: vazba na registraci předmětu (student, subject, year)
+                    registration=ensure_practice_registration(user, practice.subject_id, date.today().year),
                 )
             except IntegrityError:
                 raise ValueError(StudentPracticeMessages.ALREADY_HAS_ACTIVE_APPLICATION)
@@ -774,6 +1007,60 @@ class StudentPracticeService:
             return {"detail": StudentPracticeMessages.INVITATION_REJECTED}
 
         raise ValueError(StudentPracticeMessages.INVALID_ACTION)
+
+    @staticmethod
+    @transaction.atomic
+    def submit_cancellation_request(sp, actor, reason: str):
+        """
+        C02-A: student podává ŽÁDOST o storno — žádné okamžité storno.
+
+        Praxe zůstává v aktuálním stavu (workflow_state, approval_status i
+        is_cancelled beze změny). Důvod + ``cancellation_requested_at`` označí
+        pending žádost; rozhodne resolver přes ``resolve_cancellation`` —
+        okamžik rozhodnutí je okamžikem nevratnosti (C02-A/T2d).
+        """
+        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+
+        if sp.is_cancelled:
+            raise ValueError(StudentPracticeMessages.ALREADY_CANCELLED)
+        if sp.workflow_state == StudentPracticeWorkflowState.COMPLETED:
+            raise ValueError("Storno nelze požadovat u již dokončené praxe (COMPLETED).")
+        if not reason or not reason.strip():
+            raise ValueError(StudentPracticeMessages.CANCELLATION_REASON_REQUIRED)
+        if sp.cancellation_requested_at is not None and sp.cancellation_resolved_at is None:
+            raise ValueError("Žádost o storno již byla podána a čeká na rozhodnutí.")
+
+        old_state_name = sp.workflow_state.name if sp.workflow_state else "None"
+        sp.cancellation_reason = reason.strip()
+        sp.cancellation_requested_at = timezone.now()
+        sp.save(update_fields=["cancellation_reason", "cancellation_requested_at"])
+
+        ActionLogService.log(
+            user=actor,
+            action_type=ActionLogType.STATUS_CHANGE,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=(f"Žádost o storno přihlášky ID {sp.student_practice_id} (stav zůstává {old_state_name}): {reason.strip()}"),
+        )
+
+        # in-app rozhodovatelům (garanti katedry — resolve-cancellation)
+        recipients = NotificationService.resolve_garant_recipients(sp)
+        student_name = sp.user.full_name if sp.user else ""
+        practice_title = sp.practice.title if sp.practice else "N/A"
+        for recipient in recipients:
+            NotificationService.create_notification(
+                recipient=recipient,
+                verb="CANCELLATION_REQUESTED",
+                message=(
+                    f"Student {student_name} požádal o storno přihlášky na praxi "
+                    f"'{practice_title}' — čeká na rozhodnutí. Důvod: {reason.strip()}"
+                ),
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.WARNING,
+                send_email=False,
+            )
+        return sp
 
     @staticmethod
     @transaction.atomic
@@ -905,36 +1192,88 @@ class StudentPracticeService:
 
     @staticmethod
     @transaction.atomic
-    def resolve_cancellation(sp, actor):
+    def resolve_cancellation(sp, actor, decision: str | None = None):
         """
-        Vyřeší nevyřešené storno StudentPractice.
+        Rozhodnutí o stornu / žádosti o storno (T2d, C02-A, C03-A).
 
-        Nastaví ``cancellation_resolved_at = now()`` + auditní ActionLog.
-        Garant tím odblokuje studentovi podání nové žádosti.
+        - Legacy větev (``is_cancelled=True``, ještě nevyřešeno — např. kaskáda
+          zrušení praxe): jen ``cancellation_resolved_at`` — odblokování,
+          chování se nemění.
+        - C02-A pending žádost (``cancellation_requested_at`` + nevyřešeno):
+          rozhodnutí je OKAMŽIK NEVRATNOSTI. ``decision="approve"`` → storno
+          se provede nyní (nevratné) + resolved; ``decision="reject"`` →
+          žádost zamítnuta, praxe zůstává aktivní + resolved; bez/neplatný
+          decision → 400 (povinné rozhodnutí).
         """
         sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
 
-        if not sp.is_cancelled:
-            raise ValueError("Přihláška není stornovaná — není co řešit.")
+        # --- Legacy: již stornované (okamžité) — jen odblokovat ---
+        if sp.is_cancelled:
+            if sp.cancellation_resolved_at is not None:
+                raise ValueError("Storno je již vyřešeno.")
+            sp.cancellation_resolved_at = timezone.now()
+            sp.save(update_fields=["cancellation_resolved_at"])
+            ActionLogService.log(
+                user=actor,
+                action_type=ActionLogType.STATUS_CHANGE,
+                object_type="StudentPractice",
+                object_id=sp.student_practice_id,
+                description=(
+                    f"Vyřešení storna přihlášky ID {sp.student_practice_id} "
+                    f"uživatelem {actor.email if getattr(actor, 'email', None) else actor}"
+                ),
+            )
+            return sp
 
-        if sp.cancellation_resolved_at is not None:
-            raise ValueError("Storno je již vyřešeno.")
+        # --- C02-A: pending žádost o storno ---
+        pending_request = sp.cancellation_requested_at is not None and sp.cancellation_resolved_at is None
+        if pending_request and sp.cancellation_reason:
+            if decision not in ("approve", "reject"):
+                raise ValueError("Pro rozhodnutí o žádosti o storno je povinné pole decision=approve|reject.")
 
-        sp.cancellation_resolved_at = timezone.now()
-        sp.save(update_fields=["cancellation_resolved_at"])
+            if decision == "approve":
+                # Okamžik nevratnosti (C02-A): platí se storno.
+                sp = StudentPracticeService.cancel_student_practice(sp=sp, actor=actor, reason=sp.cancellation_reason)
+                sp.cancellation_resolved_at = timezone.now()
+                sp.save(update_fields=["cancellation_resolved_at"])
+                ActionLogService.log(
+                    user=actor,
+                    action_type=ActionLogType.STATUS_CHANGE,
+                    object_type="StudentPractice",
+                    object_id=sp.student_practice_id,
+                    description=(
+                        f"Schválení žádosti o storno přihlášky ID {sp.student_practice_id} "
+                        f"uživatelem {actor.email if getattr(actor, 'email', None) else actor} — storno provedeno"
+                    ),
+                )
+                return sp
 
-        ActionLogService.log(
-            user=actor,
-            action_type=ActionLogType.STATUS_CHANGE,
-            object_type="StudentPractice",
-            object_id=sp.student_practice_id,
-            description=(
-                f"Vyřešení storna přihlášky ID {sp.student_practice_id} "
-                f"uživatelem {actor.email if getattr(actor, 'email', None) else actor}"
-            ),
-        )
+            # decision == "reject" — žádost zamítnuta, praxe zůstává aktivní
+            sp.cancellation_resolved_at = timezone.now()
+            sp.save(update_fields=["cancellation_resolved_at"])
+            ActionLogService.log(
+                user=actor,
+                action_type=ActionLogType.STATUS_CHANGE,
+                object_type="StudentPractice",
+                object_id=sp.student_practice_id,
+                description=(
+                    f"Zamítnutí žádosti o storno přihlášky ID {sp.student_practice_id} "
+                    f"uživatelem {actor.email if getattr(actor, 'email', None) else actor} — praxe zůstává aktivní"
+                ),
+            )
+            if sp.user:
+                NotificationService.create_notification(
+                    recipient=sp.user,
+                    verb="CANCELLATION_REQUEST_REJECTED",
+                    message=(f"Vaše žádost o storno přihlášky na praxi '{sp.practice.title if sp.practice else 'N/A'}' byla zamítnuta."),
+                    actor=actor,
+                    target=sp,
+                    notification_type=NotificationType.INFO,
+                    send_email=False,
+                )
+            return sp
 
-        return sp
+        raise ValueError("Přihláška není stornovaná — není co řešit.")
 
     @staticmethod
     @transaction.atomic
@@ -957,14 +1296,11 @@ class StudentPracticeService:
         if practice.workflow_state is not None and practice.workflow_state != PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
             raise ValueError(StudentPracticeMessages.APPLICATIONS_CLOSED)
 
-        # nevyřešené storno blokuje opětovnou přihlášku
-        # (shodná kontrola jako v practices/services.py apply_student_practice).
-        unresolved_cancellation = StudentPractice.objects.filter(
-            user=student,
-            is_cancelled=True,
-            cancellation_resolved_at__isnull=True,
-        ).exists()
-        if unresolved_cancellation:
+        # nevyřešené storno NEBO pending žádost o storno blokuje novou žádost
+        # pro stejnou registraci (C03-A; shodná kontrola jako v
+        # practices/services.py apply_student_practice).
+        if student_has_blocking_cancellation(student, practice):
+            # Kanonická hláška — stejná jako v apply_student_practice.
             raise ValueError("Nelze podat novou žádost, dokud není storno vyřešeno")
 
         # Reject if an active (non-cancelled, non-rejected) StudentPractice already exists
@@ -982,18 +1318,18 @@ class StudentPracticeService:
         if existing is not None:
             raise ValueError(StudentPracticeMessages.ALREADY_HAS_ACTIVE_APPLICATION)
 
-        # Check capacity
+        # Check capacity — T2a: počítají se jen celková umístění
         if practice.available_positions is not None:
-            active_count = (
-                StudentPractice.objects.filter(
-                    practice=practice,
-                    is_cancelled=False,
-                )
-                .exclude(
-                    approval_status=ApprovalStatus.REJECTED,
-                )
-                .count()
-            )
+            active_count = StudentPractice.objects.filter(
+                practice=practice,
+                is_cancelled=False,
+                workflow_state__in=[
+                    StudentPracticeWorkflowState.CONTRACTED,
+                    StudentPracticeWorkflowState.STARTED,
+                    StudentPracticeWorkflowState.ENDED,
+                    StudentPracticeWorkflowState.COMPLETED,
+                ],
+            ).count()
             if active_count >= practice.available_positions:
                 raise ValueError(StudentPracticeMessages.CAPACITY_FULL)
 
@@ -1008,6 +1344,8 @@ class StudentPracticeService:
             year=date.today().year,
             start_date=practice.start_date,
             end_date=practice.end_date,
+            # BL-10/Q2-A: vazba na registraci předmětu (student, subject, year)
+            registration=ensure_practice_registration(student, practice.subject_id, date.today().year),
         )
 
         DocumentHelper.assign_default_documents(sp)
@@ -1081,16 +1419,29 @@ class StudentPracticeService:
                 StudentPracticeService._apply_document_rejection_state(student_practice, user, review_note)
             elif status_val == DocumentStatus.APPROVED:
                 StudentPracticeService._apply_document_approval_state(student_practice, user)
+        elif (
+            student_practice.workflow_state == StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED and status_val == DocumentStatus.REJECTED
+        ):
+            # C19-B/T2c (finding 5): review zamítne opravený (ne-smluvní)
+            # dokument → zpět do DOCUMENTS_RESUBMITTED→DOCUMENTS_REJECTED smyčky.
+            # APPROVED zde zůstává bez postupu — konečné rozhodnutí je výslovný
+            # transition s preconditionem schváleného dokumentu (explicit separation).
+            StudentPracticeService._apply_document_rejection_state(student_practice, user, review_note)
 
         return document
 
     @staticmethod
     @transaction.atomic
     def _apply_document_rejection_state(sp, actor, review_note: str):
-        """Kterýkoli CONTRACT dokument REJECTED → DOCUMENTS_REJECTED (s rejection_reason)."""
+        """Kterýkoli dokument REJECTED → DOCUMENTS_REJECTED (s rejection_reason).
+
+        Stavy: AWAITING_DOCUMENTS / ENDED (původní zamítnutí) a
+        DOCUMENTS_RESUBMITTED (C19-B/T2c: review zamítlo opravu → zpět do smyčky).
+        """
         if sp.workflow_state not in (
             StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
             StudentPracticeWorkflowState.ENDED,
+            StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
         ):
             return
 
@@ -1098,6 +1449,7 @@ class StudentPracticeService:
         if sp.is_cancelled or sp.workflow_state not in (
             StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
             StudentPracticeWorkflowState.ENDED,
+            StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
         ):
             return
 
@@ -1134,10 +1486,13 @@ class StudentPracticeService:
     @transaction.atomic
     def _apply_document_approval_state(sp, actor):
         """
-        Všechny CONTRACT dokumenty APPROVED → CONTRACTED (z AWAITING_DOCUMENTS).
+        Schválení CONTRACT dokumentu ve AWAITING_DOCUMENTS.
 
-        STARTED se zde NESPOUŠTÍ — přechod do zahájení řeší výhradně cron
-        ``auto_start_end_practices`` dle start_date.
+        T1/C06-A (finding 1): review zapisuje JEN vlastní (školní) osu
+        aktéra — do CONTRACTED postupuje POUZE pokud obě nezávislé osy
+        drží; jinak SP zůstává ve AWAITING_DOCUMENTS s vlastní osou
+        zapsanou (cizí osu tento review nikdy nenastaví). Kapacita (T2a)
+        běží pod stejným lockem. STARTED řeší jen cron auto_start_end_practices.
         """
         if sp.workflow_state != StudentPracticeWorkflowState.AWAITING_DOCUMENTS:
             return
@@ -1150,11 +1505,33 @@ class StudentPracticeService:
         if not (sp.contract_document and sp.contract_document.status == DocumentStatus.APPROVED):
             return
 
+        # T1: zápis jen vlastní osy; bez obou os → žádný postup, žádná notifikace.
+        both_axes = record_own_approval_axis(sp, actor)
+        if not both_axes:
+            sp.save(update_fields=["school_approved", "employer_approved"])
+            logger.info(
+                "T1: SP %s zůstává ve AWAITING_DOCUMENTS — chybí druhá schvalovací osa (review nepostupuje).",
+                sp.student_practice_id,
+            )
+            return
+
+        # T2a/BE-005: alokace MUSÍ projít kapacitní kontrolou (select_for_update
+        # na praxi uvnitř transakce). Při plné kapacitě se přechod NEPROVEDE —
+        # tichý skip: dokument zůstává schválen, SP čeká ve AWAITING_DOCUMENTS.
+        if sp.practice_id:
+            locked_practice = Practice.objects.select_for_update().get(pk=sp.practice_id)
+            try:
+                _check_contract_capacity(locked_practice)
+            except ValueError:
+                logger.warning(
+                    "CAPACITY_FULL: schválení smlouvy nepřevedlo SP %s na CONTRACTED (kapacita naplněna).",
+                    sp.student_practice_id,
+                )
+                return
+
         old_state = sp.workflow_state
         sp.workflow_state = StudentPracticeWorkflowState.CONTRACTED
         sp.approval_status = ApprovalStatus.APPROVED
-        sp.school_approved = True
-        sp.employer_approved = True
         sp.save()
 
         ActionLogService.log(
@@ -1180,6 +1557,68 @@ class StudentPracticeService:
             )
         # alokace studenta → notifikace organizaci (in-app + e-mail)
         NotificationService.notify_org_allocation(sp)
+
+    @staticmethod
+    @transaction.atomic
+    def mark_documents_resubmitted_for_review(sp, actor):
+        """
+        C19-B/T2c: po úspěšném nahrání opravených dokumentů ze stavu
+        DOCUMENTS_REJECTED → DOCUMENTS_RESUBMITTED (explicitní review-pending).
+
+        Upload NIKDY neznamená schválení — review (garant/škola) rozhodne
+        o dalším stavu přes transition endpoint; smyčka je neomezená.
+
+        Finding 2: hrana DOCUMENTS_REJECTED → DOCUMENTS_RESUBMITTED je
+        POUZE čin vlastníka-studenta (T2c „student resubmit") — ověřeno
+        znovu na uzamčeném SP; ostatní oprávnění uploadéři (organizace,
+        pedagog) doklad nahrají, ale stav se neposune.
+        """
+        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        if sp.is_cancelled or sp.workflow_state != StudentPracticeWorkflowState.DOCUMENTS_REJECTED:
+            return sp
+
+        # Ownership guard: jen vlastník SP (StudentUser, sp.user == actor)
+        # smí přepnout stav do review-pending; cizí/neroli aktér → žádná mutace.
+        if not (isinstance(actor, StudentUser) and sp.user_id == actor.pk):
+            # MINOR (round 3): jen necitlivý výsledek/role + opaque ID —
+            # žádný e-mail ani repr objektu do logu.
+            logger.info(
+                "Repair-resubmit přeskočen pro SP %s — aktér není vlastník-student (role=%s).",
+                sp.student_practice_id,
+                type(actor).__name__,
+            )
+            return sp
+
+        old_state = sp.workflow_state
+        sp.workflow_state = StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED
+        sp.save()
+
+        ActionLogService.log(
+            user=actor,
+            action_type=ActionLogType.STATE_TRANSITION,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=(
+                f"Nahrazení zamítnutých dokumentů — čeká na review: "
+                f"{old_state.name} -> {StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED.name}"
+            ),
+        )
+
+        # in-app: garanti/přiřazený vyučující = rozhodovatelé review
+        recipients = NotificationService.resolve_garant_recipients(sp)
+        student_name = sp.user.full_name if sp.user else ""
+        practice_title = sp.practice.title if sp.practice else "N/A"
+        for recipient in recipients:
+            NotificationService.create_notification(
+                recipient=recipient,
+                verb="DOCUMENTS_RESUBMITTED",
+                message=(f"Student {student_name} nahradil zamítnuté dokumenty k praxi '{practice_title}' a čeká na review."),
+                actor=actor,
+                target=sp,
+                notification_type=NotificationType.INFO,
+                send_email=False,
+            )
+        return sp
 
 
 # ===================================================================

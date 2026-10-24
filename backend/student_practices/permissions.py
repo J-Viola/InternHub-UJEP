@@ -99,6 +99,60 @@ class IsSubjectTeacherOrHeadForPractice(permissions.BasePermission):
         return can_approve_practice(request.user, obj)
 
 
+class CanConfirmContract(permissions.BasePermission):
+    """
+    Objektová autorizace potvrzení smlouvy (BE-001 / REQ-011 alias).
+
+    Povoleno jen aktérovi ve vlastním scope přihlášky: vlastník-student,
+    zaměstnavatel praxe, pedagogičtí pracovníci příslušného předmětu/katedry
+    (vedoucí, garant praxe, manažer předmětu, vyučující) a admin.
+    Cizí aktér → 403 bez jakékoli mutace. Stavové/one-shot guardy zůstávají
+    mimo scope (C04/C15/C06 — viz audit SPEC_CONFLICTS).
+
+    Object-level only — view musí volat ``check_object_permissions()``.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj):
+        from .utils import user_can_access_student_practice
+
+        return user_can_access_student_practice(request.user, obj)
+
+
+class CanAccessEvaluation(permissions.BasePermission):
+    """
+    Objektová autorizace evaluací — read vs write split (BE-002 / MAJOR-1).
+
+    - READ (safe metody): scope přes nadřazenou ``student_practice`` —
+      vlastník SP, pedagogové příslušného předmětu/katedry, zaměstnavatel,
+      admin (``student_practice_scope_q``).
+    - WRITE (POST/PATCH/PUT/DELETE): stejný scope, ALE studentská role
+      nesmí psát mentorské evaluace — ani vlastní. Hodnotitelem je mentor
+      (katedra/zaměstnavatel/admin), ne student.
+
+    Object-level část; queryset scoping řeší ``EvaluationViewSet.get_queryset``;
+    class-level zákaz studentského zápisu chytí create dřív než validaci.
+    """
+
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return not isinstance(request.user, StudentUser)
+
+    def has_object_permission(self, request, view, obj):
+        from .utils import user_can_access_student_practice
+
+        if not user_can_access_student_practice(request.user, getattr(obj, "student_practice", None)):
+            return False
+        if request.method not in permissions.SAFE_METHODS and isinstance(request.user, StudentUser):
+            return False
+        return True
+
+
 class HasDocumentAccess(permissions.BasePermission):
     """
     Umožní přístup k dokumentu pouze:

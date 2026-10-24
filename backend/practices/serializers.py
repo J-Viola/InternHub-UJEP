@@ -224,6 +224,9 @@ class PracticeSerializer(serializers.ModelSerializer):
             "mentor_name",
             "contact_email",
             "region",
+            # BL-05 / RF-02a — typ úvazku (závazný číselník, guarantor-values.md §1):
+            # čtení pro katalog + zápis při create/update nabídky.
+            "employment_type",
             "workflow_status_label",
             "approved_applications",
             "pending_applications",
@@ -446,6 +449,10 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
     ico = serializers.CharField(required=False, allow_blank=True, help_text="IČO externí organizace.")
     address = serializers.CharField(required=False, allow_blank=True, help_text="Adresa externí organizace.")
     contact_phone = serializers.CharField(required=False, allow_blank=True, help_text="Telefonní kontakt externí organizace.")
+    # BE-013: výchozí build dělá z modelového attname `subject_id` ReadOnlyField
+    # a vstup tiše odhodí (subject nebylo persistováno) — deklarujeme vstupní
+    # pole explicitně se source="subject".
+    subject_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), source="subject", required=False, allow_null=True)
     start_date = FormattedDateField()
     end_date = FormattedDateField(required=False)
     # povinná příloha s detaily praxe (PDF/DOCX, <= MAX_UPLOAD_SIZE).
@@ -531,5 +538,18 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
         validated_data.setdefault("workflow_state", PracticeWorkflowState.PENDING_CONTENT_APPROVAL)
         validated_data.setdefault("approval_status", ApprovalStatus.PENDING)
         validated_data.setdefault("progress_status", ProgressStatus.NOT_STARTED)
+
+        # BE-013: atomický create+apply vyžaduje kompletní datumový pár —
+        # chybí-li end_date (field je optional), dopočteme jej stejnou helper
+        # logikou jako běžný create (subject.min_hours; fallback coefficient).
+        # Uživatelem zadané end_date se zachovává; SLADĚNÍ preview↔uloženého
+        # konce = BL-05.
+        start_date = validated_data.get("start_date")
+        if start_date and not validated_data.get("end_date"):
+            subject = validated_data.get("subject")
+            if subject is not None:
+                validated_data["end_date"] = calculate_end_date(start_date, min_hours=getattr(subject, "min_hours", 480))
+            else:
+                validated_data["end_date"] = calculate_end_date(start_date, coefficient=validated_data.get("coefficient"))
 
         return super().create(validated_data)

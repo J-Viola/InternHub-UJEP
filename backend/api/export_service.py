@@ -41,24 +41,35 @@ class ExportService:
     @staticmethod
     def get_scope_filters(user):
         """
-        Vrátí (dept_ids, employer) pro role-based scoping exportu.
+        Vrátí trojici (dept_ids, employer, owner_user) pro role-based
+        scoping exportu.
 
-        - superuser → bez omezení (dept_ids=None, employer=None)
+        Fail-closed kontrakt (BE-003 / MAJOR-2):
+        - superuser → (None, None, None) — jediný neomezený rozsah
+        - user=None / neznámá role → ([], None, None) — prázdný rozsah
+        - StudentUser → ([], None, user) — PŘESNÁ množina vlastních
+          přihlášek; nikdy katedrní data vrstevníků (žádný department-wide)
+        - jinak je dept_ids VŽDY seznam (může být prázdný); prázdný seznam
+          bez employer a bez owner_user znamená prázdný rozsah — volající
+          musí vrátit 403, NIKDY neomezený queryset
+
         - garant / profesor katedry → jen praxe svého departmentu
           (practice.subject.department); primárně user.department,
           doplňkově departmenty z user_subjects
         - organizace → jen praxe vlastní employer_profile
         """
-        dept_ids = None
-        employer = None
-
-        if user is None or user.is_superuser:
-            return dept_ids, employer
+        if user is None:
+            return [], None, None
+        if user.is_superuser:
+            return None, None, None
 
         from users.models import ProfessorUser, StudentUser
 
+        dept_ids: list[int] = []
+        employer = None
+        owner_user = None
+
         if isinstance(user, ProfessorUser):
-            dept_ids = []
             if user.department_id:
                 dept_ids.append(user.department_id)
             # Fallback: departmenty, na kterých uživatel učí
@@ -66,23 +77,43 @@ class ExportService:
                 dept_ids.extend(user.user_subjects.values_list("subject__department_id", flat=True).distinct())
             dept_ids = list(dict.fromkeys(d for d in dept_ids if d))
         elif isinstance(user, StudentUser):
-            # Studenti vidí jen praxe svých předmětů (konzervativní výchozí chování)
-            if hasattr(user, "user_subjects"):
-                dept_ids = list(user.user_subjects.values_list("subject__department_id", flat=True).distinct())
+            # Přesná autorizovaná množina = jen vlastní přihlášky studenta.
+            # Katedra z jeho předmětů by zahrnula cizí vrstevníky (MAJOR-2).
+            owner_user = user
 
         if hasattr(user, "employer_profile") and user.employer_profile:
             employer = user.employer_profile
 
-        return dept_ids, employer
+        return dept_ids, employer, owner_user
 
     @staticmethod
-    def get_count(filters: dict, dept_ids: list[int] | None = None, employer=None) -> int:
-        """Vrátí počet záznamů pro dané filtry s volitelným department/employer scopingem."""
-        qs = StudentPractice.objects.filter(is_cancelled=False)
+    def apply_scope(qs, dept_ids: list[int] | None = None, employer=None, owner_user=None):
+        """
+        Aplikuje role scope na queryset exportu. Fail-closed (BE-003):
+
+        - (None, None, None) = superuser → queryset bez omezení
+        - prázdný rozsah (žádný department ani employer ani vlastník)
+          → ``qs.none()``
+        - owner_user (student) → přesně jeho vlastní přihlášky
+        - jinak filtr departmentu a/nebo employer
+        """
+        if dept_ids is None and employer is None and owner_user is None:
+            return qs
+        if not dept_ids and employer is None and owner_user is None:
+            return qs.none()
+        if owner_user is not None:
+            qs = qs.filter(user_id=owner_user.pk)
         if dept_ids:
             qs = qs.filter(practice__subject__department_id__in=dept_ids)
         if employer is not None:
             qs = qs.filter(practice__employer=employer)
+        return qs
+
+    @staticmethod
+    def get_count(filters: dict, dept_ids: list[int] | None = None, employer=None, owner_user=None) -> int:
+        """Vrátí počet záznamů pro dané filtry s role scopingem (prázdný rozsah = 0)."""
+        qs = StudentPractice.objects.filter(is_cancelled=False)
+        qs = ExportService.apply_scope(qs, dept_ids, employer, owner_user)
         if filters.get("year"):
             qs = qs.filter(year=filters["year"])
         if filters.get("workflow_state") is not None:

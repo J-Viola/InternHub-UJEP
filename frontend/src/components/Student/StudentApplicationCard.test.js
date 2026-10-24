@@ -78,4 +78,32 @@ describe('StudentApplicationCard', () => {
 
         expect(mockedUsedNavigate).toHaveBeenCalledWith('/nabidka/123');
     });
+
+    test('vlastní SP (student_practice_id) otevírá kartu praxes, ne katalog', () => {
+        render(
+            <MemoryRouter>
+                <StudentApplicationCard
+                    entity={{ ...mockEntity, student_practice_id: 77 }}
+                />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByText('Vývojář Reactu'));
+
+        expect(mockedUsedNavigate).toHaveBeenCalledWith('/karta-praxe/77');
+        expect(mockedUsedNavigate).not.toHaveBeenCalledWith('/nabidka/123');
+    });
+
+    test('bez workflow_status se badge nezobrazuje (žádný chybný Neznámý)', () => {
+        render(
+            <MemoryRouter>
+                <StudentApplicationCard
+                    entity={{ ...mockEntity, workflow_status: undefined }}
+                />
+            </MemoryRouter>
+        );
+
+        expect(screen.queryByText('state_badge.UNKNOWN')).not.toBeInTheDocument();
+        expect(screen.queryByText(/state_badge\./)).not.toBeInTheDocument();
+    });
 });

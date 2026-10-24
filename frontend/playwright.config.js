@@ -13,7 +13,9 @@ module.exports = defineConfig({
     timeout: 10000,
   },
   use: {
-    baseURL: 'http://localhost:3000',
+    // BL-07: E2E_BASE_URL umožní namířit běh na izolovaný stack (disposable DB),
+    // výchozí hodnota se nemění (CI/local default zůstává localhost:3000).
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
     locale: 'cs',                // Force Czech locale for i18n consistency
     timezoneId: 'Europe/Prague',
     trace: 'on-first-retry',
@@ -69,6 +71,9 @@ module.exports = defineConfig({
     {
       name: 'Cross-Role Flows',
       testMatch: /.*_flow\.spec\.js|search_filter\.spec\.js|scenario_.*\.spec\.js|.*-lifecycle\.spec\.js|auto-close\.spec\.js/,
+      // BL-07/PBUG-04: podadresářové specy vlastní projekt "… (Extended)" —
+      // bez ignore matchoval practice-lifecycle.spec.js oba projekty (2× běh).
+      testIgnore: /cross-role\//,
       use: {
         ...devices['Desktop Chrome'],
       },

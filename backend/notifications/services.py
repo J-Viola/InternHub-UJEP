@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db import transaction
 from django.template.loader import render_to_string
 
 from users.models import ApprovalStatus
@@ -844,7 +845,12 @@ class NotificationService:
 
     @staticmethod
     def notify_garant_new_application(student_practice):
-        """Nová žádost o praxi → notifikace garantů (verb NEW_APPLICATION_GARANT)."""
+        """Nová žádost o praxi → notifikace garantů (verb NEW_APPLICATION_GARANT).
+
+        In-app řádky vznikají transakčně (spolu s žádostí); odchozí e-mail je
+        odložen na ``transaction.on_commit()`` — při rollbacku transakce
+        žádná neodeslaná pošta (finding 7).
+        """
         recipients = NotificationService.resolve_garant_recipients(student_practice)
         if not recipients:
             logger.warning(
@@ -867,7 +873,7 @@ class NotificationService:
                 target=student_practice,
                 send_email=False,
             )
-        EmailService.notify_garant_new_application_email(student_practice)
+        transaction.on_commit(lambda: EmailService.notify_garant_new_application_email(student_practice))
 
     @staticmethod
     def notify_garant_cancellation(student_practice):

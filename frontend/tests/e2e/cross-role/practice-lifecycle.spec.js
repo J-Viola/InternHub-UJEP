@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { waitForAppLoad, clickNavLink, confirmPopup } from '../helpers';
+import { waitForAppLoad, clickNavLink, confirmPopup, safeClick } from '../helpers';
 
 test.describe('Practice cancellation cascade', () => {
   test.setTimeout(120000);
@@ -25,7 +25,12 @@ test.describe('Practice cancellation cascade', () => {
     // Fill the form
     await companyPage.getByLabel('Název').fill(practiceTitle);
     await companyPage.getByLabel('Popis stáže').fill('This is a test practice for E2E cancellation cascade.');
-    await companyPage.getByLabel('Odpovědnost stáže').fill('Testing cancellation flow.');
+    // BL-07: 'Odpovědnost stáže' je zastaralý label — formulář používá
+    // t('form.responsibilities') = 'Náplň práce' (jako ostatní specy).
+    await companyPage.getByLabel('Náplň práce').fill('Testing cancellation flow.');
+    // BL-07/PBUG-01: mentor_name + contact_email jsou povinné na serveru (PracticeSerializer)
+    await companyPage.locator('input[id="mentor_name"]').fill('Mentor E2E');
+    await companyPage.locator('input[id="contact_email"]').fill('mentor.e2e@example.com');
 
     // Wait for dropdowns to be populated
     await expect(companyPage.locator('select[id="contact_user"] option').nth(1)).toBeAttached({ timeout: 10000 });
@@ -102,9 +107,10 @@ test.describe('Practice cancellation cascade', () => {
     await clickNavLink(studentPage, null, 'Nabídka praxí');
 
     await studentPage.locator('input[id="title"]').fill(practiceTitle);
-    const practiceCardStudent = studentPage.locator('div').filter({ hasText: practiceTitle }).first();
-    await expect(practiceCardStudent).toBeVisible();
-    await practiceCardStudent.click();
+    // BL-07/FE-004 fix: klik přes heading karty (div.filter().first() = ancestor bez onClick).
+    await expect(studentPage.getByRole('heading', { name: practiceTitle })).toBeVisible();
+    await studentPage.getByRole('heading', { name: practiceTitle }).click();
+    await studentPage.waitForURL(/.*\/nabidka\/\d+/);
 
     await studentPage.getByRole('button', { name: 'Podat přihlášku' }).click();
     // In NabidkaDetailPage, the popup uses "Ano"
@@ -113,51 +119,39 @@ test.describe('Practice cancellation cascade', () => {
     await studentContext.close();
 
 
-    // --- STEP 4: PROFESSOR REJECTS PRACTICE (cancels the practice offer) ---
-    // Note: In the current UI, practice cancellation is performed by the professor
-    // via the detail page, since the company view does not expose a cancel/close button.
-    // The professor navigates to the practice offer detail and uses the manage (gear)
-    // button to reject the practice, which cascades to all applications.
-    console.log('--- Step 4: Professor cancelling practice ---');
-    const profContext2 = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
-    const profPage2 = await profContext2.newPage();
+    // --- STEP 4: STORNO NABÍDKY — reálná UI akce „Zrušit nabídku" ---
+    // Backend CanCancelPractice: admin / vedoucí katedry / garant. E2E profesor
+    // je záměrně „vy" (TestResetDBView._create_e2e_test_users) → storno tedy
+    // provádí admin. Stará cesta (professor popup „Spravovat" → Zamítnout)
+    // končila 400 PRACTICE_ALREADY_FINALIZED a žádné UI pro storno neexistovalo
+    // (PBUG-BL07-07).
+    console.log('--- Step 4: Admin cancelling the offer ---');
+    const adminContext = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
+    const adminPage = await adminContext.newPage();
 
-    await profPage2.goto('/');
-    await waitForAppLoad(profPage2);
+    await adminPage.goto('/');
+    await waitForAppLoad(adminPage);
+    // Admin končí po přihlášení rovnou v katalogu (viz index.js) a boční
+    // navigace na /nabidka nemusí obsahovat link — jdeme na route přímo.
+    await adminPage.goto('/nabidka');
+    await waitForAppLoad(adminPage);
 
-    // Go to NabidkaPage (offers for students) to find the practice
-    await clickNavLink(profPage2, null, 'Nabídka praxí');
-    await waitForAppLoad(profPage2);
+    // Najít nabídku v katalogu a otevřít detail
+    await adminPage.locator('input[id="title"]').fill(practiceTitle);
+    await expect(adminPage.getByText('Načítání nabídek...')).not.toBeVisible({ timeout: 15000 });
+    await expect(adminPage.getByRole('heading', { name: practiceTitle })).toBeVisible({ timeout: 15000 });
+    await adminPage.getByRole('heading', { name: practiceTitle }).click();
+    await adminPage.waitForURL(/.*\/nabidka\/\d+/);
+    await waitForAppLoad(adminPage);
 
-    // Search for the practice by title
-    await profPage2.locator('input[id="title"]').fill(practiceTitle);
+    // Reálná akce „Zrušit nabídku" (na detailu viditelná jen pro oprávněné roly)
+    await safeClick(adminPage.getByRole('button', { name: 'Zrušit nabídku' }));
+    await adminPage.locator('#cancel-reason').fill('E2E: storno nabídky pro ověření kaskády přihlášek.');
+    await safeClick(adminPage.locator('#popup-confirm-button'));
 
-    // Wait for debounced search to complete and result to appear
-    await expect(profPage2.getByText('Načítání nabídek...')).not.toBeVisible({ timeout: 15000 });
-
-    // Find and click the practice card to navigate to detail page
-    const profPracticeCard = profPage2.locator('div').filter({ hasText: practiceTitle }).first();
-    await expect(profPracticeCard).toBeVisible({ timeout: 15000 });
-    await profPracticeCard.click();
-
-    // Now on NabidkaDetailPage — wait for it to load
-    await profPage2.waitForURL(/.*\/nabidka\/\d+/);
-    await waitForAppLoad(profPage2);
-
-    // Click the "Spravovat" (gear/manage) button that professors see
-    const manageBtn = profPage2.getByRole('button', { name: 'Spravovat' });
-    await expect(manageBtn).toBeVisible({ timeout: 10000 });
-    await manageBtn.click();
-
-    // Wait for the popup to appear and click the reject button ("Zamítnout")
-    // The popup has id="popup-reject-button" for the reject action
-    await expect(profPage2.locator('#popup-reject-button')).toBeVisible({ timeout: 10000 });
-    console.log('Clicking reject button to cancel practice');
-    await profPage2.locator('#popup-reject-button').click();
-
-    // Wait for the popup to dismiss (backend processes, popup closes)
-    await expect(profPage2.locator('#popup-reject-button')).not.toBeVisible({ timeout: 15000 });
-    await profContext2.close();
+    // Úspěch = popup se zavře (při chybě zůstává otevřený a volá error resolver)
+    await expect(adminPage.locator('[data-testid="popup-con"]')).not.toBeVisible({ timeout: 15000 });
+    await adminContext.close();
 
 
     // --- STEP 5: VERIFY STUDENT SEES CANCELLED STATUS ---
@@ -174,10 +168,12 @@ test.describe('Practice cancellation cascade', () => {
     await expect(cancelledAppCard).toBeVisible({ timeout: 15000 });
 
     // Verify the status shows as cancelled or rejected
-    // Accepted status texts: "Zrušeno" (CANCELLED), "Zamítnuto" (REJECTED),
-    // or "Obsah zamítnut" (CONTENT_REJECTED)
+    // BL-07: po stornu nabídky má SP `workflow_status="CANCELLED"` (is_cancelled
+    // předchází workflow_state) → StateBadge/label = „Stornováno" (kanonický
+    // workflow_status_label). Ostatní texty ponechány pro ostatní cesty.
     await expect(
-        cancelledAppCard.getByText('Zrušeno')
+        cancelledAppCard.getByText('Stornováno')
+            .or(cancelledAppCard.getByText('Zrušeno'))
             .or(cancelledAppCard.getByText('Zamítnuto'))
             .or(cancelledAppCard.getByText('Obsah zamítnut'))
             .first()

@@ -1,10 +1,66 @@
+from django.db.models import Q
+
 from users.models import (
     DepartmentRole,
     OrganizationUser,
     ProfessorUser,
+    StudentUser,
     User,
     UserSubjectType,
 )
+
+
+def student_practice_scope_q(user) -> Q:
+    """
+    Vrátí ``Q`` filtr přihlášek (StudentPractice), k danému uživateli smí
+    přistupovat. Používá ho object-level guard (potvrzení smlouvy, evaluace)
+    i queryset scoping, aby obě vrstvy měly totožnou definici rozsahu.
+
+    Fail-closed kontrakt:
+    - superuser → ``Q()`` (celý rozsah),
+    - neautentizovaný / neznámá role → ``Q(pk__in=[])`` (žádné řádky),
+    - student → pouze vlastní přihlášky,
+    - organizace → pouze přihlášky praxe svého employer profilu,
+    - profesor → přihlášky praxí předmětů, které vyučuje / řídí, případně
+      celé své katedry (HEAD / garant praxe); praxe bez předmětu ani cizí
+      katedra neprocházejí.
+    """
+    if not user or not user.is_authenticated:
+        return Q(pk__in=[])
+    if user.is_superuser:
+        return Q()
+
+    scope = Q(pk__in=[])
+
+    if isinstance(user, StudentUser):
+        scope |= Q(user_id=user.pk)
+    elif isinstance(user, OrganizationUser):
+        employer = getattr(user, "employer_profile", None)
+        if employer is not None:
+            scope |= Q(practice__employer_id=employer.pk)
+    elif isinstance(user, ProfessorUser):
+        from subject.models import Subject
+
+        subject_ids = set(user.user_subjects.filter(role=UserSubjectType.Professor).values_list("subject_id", flat=True))
+        subject_ids.update(Subject.objects.filter(subject_manager_id=user.pk).values_list("subject_id", flat=True))
+        if user.department_id and (user.department_role == DepartmentRole.HEAD or user.is_garant_praxe):
+            subject_ids.update(Subject.objects.filter(department_id=user.department_id).values_list("subject_id", flat=True))
+        if subject_ids:
+            scope |= Q(practice__subject_id__in=list(subject_ids))
+
+    return scope
+
+
+def user_can_access_student_practice(user, student_practice) -> bool:
+    """
+    Object-level existence check nad ``student_practice_scope_q`` —
+    fail-closed: žádný vztah = přístup zamítnut.
+    """
+    if student_practice is None:
+        return False
+    from student_practices.models import StudentPractice
+
+    return StudentPractice.objects.filter(student_practice_scope_q(user)).filter(pk=student_practice.pk).exists()
 
 
 def can_approve_practice(user: User, student_practice) -> bool:

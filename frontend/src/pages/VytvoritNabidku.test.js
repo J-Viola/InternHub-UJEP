@@ -38,7 +38,10 @@ jest.mock('@components/Forms/NabidkaForm', () => ({ handleSubmit, handleChange, 
             available_positions: 5,
             title: 'Test Title',
             description: 'Test Desc',
-            responsibilities: 'Test Resp'
+            responsibilities: 'Test Resp',
+            // BL-07/PBUG-01: povinná pole dle PracticeSerializer (required=True)
+            mentor_name: 'Test Mentor',
+            contact_email: 'mentor@test.com'
         })}>
             Set All Data
         </button>

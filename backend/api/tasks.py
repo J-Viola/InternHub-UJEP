@@ -18,18 +18,22 @@ def export_data_async(export_id: str, filters: dict, fmt: str, user_id: int | No
             o dokončení (garant/profesor → jen praxe svého departmentu).
     """
     try:
+        # Ownership marker (MAJOR-3): založení exportu vždy doloží žadatele,
+        # aby status/download guard fail-closed fungoval i pro task volané
+        # mimo DataExportView. TTL > TTL dat (3600) jako ve view (A2).
+        if user_id is not None:
+            cache.set(f"export_{export_id}_user_id", user_id, timeout=7200)
+
         # Sestav queryset dle filtrů (shodně s DataExportView) + role-based scoping
         qs = StudentPractice.objects.filter(is_cancelled=False)
 
-        if user_id is not None:
-            from users.models import User
+        # Fail-closed (BE-003): scope se aplikuje VŽDY — neznámý/žádný
+        # žadatel ani prázdný rozsah nikdy neznamenají neomezený export.
+        from users.models import User
 
-            user = User.objects.filter(pk=user_id).first()
-            dept_ids, employer = ExportService.get_scope_filters(user)
-            if dept_ids:
-                qs = qs.filter(practice__subject__department_id__in=dept_ids)
-            if employer is not None:
-                qs = qs.filter(practice__employer=employer)
+        user = User.objects.filter(pk=user_id).first() if user_id is not None else None
+        dept_ids, employer, owner_user = ExportService.get_scope_filters(user)
+        qs = ExportService.apply_scope(qs, dept_ids, employer, owner_user)
 
         if filters.get("year"):
             qs = qs.filter(year=filters["year"])

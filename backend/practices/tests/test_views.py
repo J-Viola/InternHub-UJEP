@@ -153,8 +153,12 @@ class PracticeViewTests(TestCase):
         self.client.force_authenticate(user=self.student)
         url = "/api/practices/student/apply/"
 
+        # E-maily jsou odložené na transaction.on_commit (finding 7) —
+        # v TestCase se hooky nespustí samy; capture zachová oracle
+        # (při úspěchu je e-mail odeslán právě jednou).
         with mock.patch.object(EmailService, "notify_garant_new_application_email") as mocked_email:
-            response = self.client.post(url, {"practice": self.practice.practice_id}, format="json")
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(url, {"practice": self.practice.practice_id}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         sp = StudentPractice.objects.get(user=self.student, practice=self.practice)
@@ -337,35 +341,46 @@ class PracticeViewTests(TestCase):
     # ===========================================================================
 
     def test_apply_student_practice_respects_capacity(self):
-        """Cannot apply when available_positions is full."""
-        # Set capacity to 1 and fill it
+        """BL-06 oracle update (T2a; expected regression #8).
+
+        Korektní oracle: pending APPLIED žádosti NEkonzumují místo; k
+        zamítnutí (CAPACITY_FULL) dochází až když místo plní
+        CONTRACTED/STARTED/ENDED/COMPLETED; stornované umístění se nepočítá.
+        """
         self.practice.available_positions = 1
         self.practice.save()
 
-        StudentPractice.objects.create(
-            user=self.student,
-            practice=self.practice,
-            approval_status=ApprovalStatus.PENDING,
-            progress_status=ProgressStatus.NOT_STARTED,
-            workflow_state=StudentPracticeWorkflowState.APPLIED,
-            start_date=date(2024, 1, 1),
-            end_date=date(2024, 6, 1),
-        )
+        def apply_as(email):
+            user = StudentUser.objects.create(
+                email=email,
+                first_name="Capacity",
+                last_name=email.split("@")[0],
+                is_active=True,
+            )
+            self.client.force_authenticate(user=user)
+            return user, self.client.post("/api/practices/student/apply/", {"practice": self.practice.practice_id})
 
-        # Create a second student
-        student2 = StudentUser.objects.create(
-            email="student2@test.com",
-            first_name="Student",
-            last_name="Two",
-            is_active=True,
-        )
-        self.client.force_authenticate(user=student2)
-        url = "/api/practices/student/apply/"
-        data = {"practice": self.practice.practice_id}
+        # 1) první student jen žádá (APPLIED) → místo NEkonzumuje (T2a)
+        first_user, response = apply_as("cap1@test.com")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        response = self.client.post(url, data)
+        # 2) druhá pending žádost projde — pending nikdy neblokuje (T2a)
+        second_user, response = apply_as("cap2@test.com")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # 3) první SP se zaalokuje (CONTRACTED) → místo plné → další žádost 400
+        StudentPractice.objects.filter(user=first_user, practice=self.practice).update(
+            workflow_state=StudentPracticeWorkflowState.CONTRACTED
+        )
+        third_user, response = apply_as("cap3@test.com")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("CAPACITY_FULL", str(response.data.get("detail", "")))
+        self.assertFalse(StudentPractice.objects.filter(user=third_user, practice=self.practice).exists())
+
+        # 4) stornované umístění se NEpočítá (T2a) → žádost zase projde
+        StudentPractice.objects.filter(user=first_user, practice=self.practice).update(is_cancelled=True)
+        fourth_user, response = apply_as("cap4@test.com")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     # ===========================================================================
     # 3.7 — Blokace storna praxe

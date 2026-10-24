@@ -246,7 +246,10 @@ class DataExportTests(TestCase):
         self.client.force_authenticate(user=self.garant)
 
         # PENDING: marker nastavený bez dokončeného tasku
+        # (fixture musí obsahovat i owner marker, který DataExportView při
+        #  založení exportu vždy zapíše — MAJOR-3 fail-closed na statusu)
         cache.set("export_test-status-pending_status", "pending", timeout=3600)
+        cache.set("export_test-status-pending_user_id", self.garant.pk, timeout=3600)
         response = self.client.get("/api/export/status/test-status-pending/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["state"], "PENDING")
@@ -254,6 +257,7 @@ class DataExportTests(TestCase):
 
         # FAILURE: chybový stav z cache
         cache.set("export_test-status-failure_status", "error: boom", timeout=3600)
+        cache.set("export_test-status-failure_user_id", self.garant.pk, timeout=3600)
         response = self.client.get("/api/export/status/test-status-failure/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["state"], "FAILURE")

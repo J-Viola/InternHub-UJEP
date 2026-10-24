@@ -27,6 +27,7 @@ export function getStateLabelKey(status) {
     10: "state_badge.AWAITING_CONTENT_APPROVAL",
     11: "state_badge.CONTENT_REJECTED",
     12: "state_badge.CONTENT_APPROVED",
+    13: "state_badge.DOCUMENTS_RESUBMITTED",
 
     // String keys
     DRAFT: "state_badge.DRAFT",
@@ -48,6 +49,7 @@ export function getStateLabelKey(status) {
     AWAITING_CONTRACT: "state_badge.AWAITING_CONTRACT",
     AWAITING_DOCUMENTS: "state_badge.AWAITING_DOCUMENTS",
     DOCUMENTS_REJECTED: "state_badge.DOCUMENTS_REJECTED",
+    DOCUMENTS_RESUBMITTED: "state_badge.DOCUMENTS_RESUBMITTED",
     AWAITING_CONTENT_APPROVAL: "state_badge.AWAITING_CONTENT_APPROVAL",
 
     // Legacy / approval_status
@@ -71,11 +73,13 @@ export function getStateVariant(status) {
     "PRELIMINARY_APPROVED",
     "AWAITING_CONTRACT",
     "AWAITING_DOCUMENTS",
+    "DOCUMENTS_RESUBMITTED",
     "CLOSED_FOR_APPLICATIONS",
     1,
     7,
     8,
     10,
+    13,
   ];
   const success = [
     "APPROVED",

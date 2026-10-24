@@ -233,6 +233,14 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
             return EkonomickySubjektDTO.model_validate(cached_data)
         return cached_data
 
+    # BL-07: ARES mock/offline režim (obdoba STAG_MOCK) — žádné odchozí HTTP.
+    # Vynuceno v app/test_settings.py; explicitní opt-in ALLOW_LIVE_EXTERNAL=1.
+    # Vrací None = „v ARES nenalezeno" → volající dostane konzervativní
+    # fallback (manuální vstup), údaje subjektu se NIKDY nevymýšlí.
+    if getattr(settings, "ARES_MOCK", False):
+        logger.info("ARES mock mode — outbound lookup skipped for IČO %s", ico)
+        return None
+
     try:
         url = f"{settings.ARES_API_URL}/{ico}"
         response = requests.get(url, timeout=5)

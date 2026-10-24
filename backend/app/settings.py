@@ -253,11 +253,20 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
 PRACTICE_CONTRACT_OVERDUE_DAYS = 7  # prodlení se zasmluvněním (AWAITING_CONTRACT)
 PRACTICE_URGENCY_DAYS = [14, 7, 2]  # urgence před start_date
 PRACTICE_CREDIT_ALERT_DAYS = 14  # alert po ENDED bez zápočtu
+# C20-A: auto-close dle kapacity je NEschrálené rozšíření — uzavření je manuální.
+# Default False = kapacitní auto-close nikdy netrkne potichu; termínový
+# (TIME) auto-close je samostatný mechanismus a tímto se nemění.
+AUTO_CLOSE_AT_CAPACITY = False
 
 ARES_API_URL = os.environ.get(
     "ARES_API_URL",
     "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty",
 )
+# BL-07: guard externího ARES volání — obdoba STAG_MOCK.
+# Produkční výchozí hodnota je False → reálné ARES volání se NEMĚNÍ.
+# Vynutí se v app/test_settings.py (fail-closed pro testy/E2E); explicitní
+# povolení živého volání: ALLOW_LIVE_EXTERNAL=1.
+ARES_MOCK = os.environ.get("ARES_MOCK", "False") == "True"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),

@@ -545,6 +545,19 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
                 reason="Schváleno přes starý approve endpoint",
             )
 
+            if approval_status == ApprovalStatus.APPROVED:
+                # FE-004 / SRS oracle (Tests/SRS/extracted/analysis.txt:2248): „Garant může
+                # inzerát schválit (přechod do stavu „Aktivní", kdy je viditelný pro studenty)".
+                # Schválení garantem JE aktivace — řetěz CONTENT_APPROVED → OPEN_FOR_APPLICATIONS
+                # se provádí automaticky v téže akci (žádný manuální „otevřít sběr" krok).
+                # Mapa PRACTICE_TRANSITIONS ani sanovaný endpoint /transition/ se nemění.
+                practice_obj = PracticeService.transition_practice_state(
+                    practice_obj,
+                    PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+                    request.user,
+                    reason="Automatická aktivace po schválení obsahu (SRS analysis.txt:2248)",
+                )
+
         EmailService.notify_org_practice_status(practice_obj)
 
         status_name = "schválena" if approval_status == ApprovalStatus.APPROVED else "zamítnuta"
@@ -573,10 +586,16 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
 
         approved = result["approved"]
         to_approve = result["to_approve"]
+        active_offers = result["active"]
 
         approved_data = ListStudentPracticeSerializer(approved, many=True, context={"request": request}).data
         to_approve_data = PracticeSerializer(to_approve, many=True, context={"request": request}).data
         to_approve_data = PracticeService.enrich_contact_user_info(to_approve_data, to_approve)
+
+        # FE-004: aktivní (schválené) nabídky zůstávají v přehledu viditelné —
+        # viz analysis.txt:2248 (schválení = přechod do stavu „Aktivní").
+        active_offers_data = PracticeSerializer(active_offers, many=True, context={"request": request}).data
+        active_offers_data = PracticeService.enrich_contact_user_info(active_offers_data, active_offers)
 
         ActionLogService.log(
             user=request.user,
@@ -589,6 +608,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
             {
                 "approved_practices": approved_data,
                 "to_approve_practices": to_approve_data,
+                "active_offers": active_offers_data,
             }
         )
 
@@ -872,26 +892,27 @@ class ExternalPracticeView(APIView):
         serializer = ExternalPracticeSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        practice = serializer.save()
+        # BE-013: atomický create+apply — buď vznikne právě jeden Practice
+        # + jedna StudentPractice, nebo se vše rollbackne a vrací se čistá
+        # chyba. Nikdy 201-warning bez StudentPractice ani osiřelý Practice.
+        try:
+            with transaction.atomic():
+                practice = serializer.save()
 
-        ActionLogService.log(
-            user=request.user,
-            action_type=ActionLogType.CREATE,
-            object_type="Practice",
-            object_id=practice.pk,
-            description=f"Vytvoření mimosystémové praxe '{practice.title}' uživatelem {request.user.email}",
-        )
-
-        # If a student creates, automatically apply them
-        if isinstance(request.user, StudentUser):
-            from practices.services import PracticeService
-
-            try:
-                PracticeService.apply_student_practice(request.user, practice.pk)
-            except ValueError as e:
-                return Response(
-                    {**PracticeSerializer(practice).data, "warning": str(e)},
-                    status=status.HTTP_201_CREATED,
+                ActionLogService.log(
+                    user=request.user,
+                    action_type=ActionLogType.CREATE,
+                    object_type="Practice",
+                    object_id=practice.pk,
+                    description=f"Vytvoření mimosystémové praxe '{practice.title}' uživatelem {request.user.email}",
                 )
+
+                # If a student creates, automatically apply them
+                if isinstance(request.user, StudentUser):
+                    from practices.services import PracticeService
+
+                    PracticeService.apply_student_practice(request.user, practice.pk)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(PracticeSerializer(practice).data, status=status.HTTP_201_CREATED)

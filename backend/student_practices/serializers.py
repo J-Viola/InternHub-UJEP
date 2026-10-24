@@ -214,6 +214,9 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     contract_received_date = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
     contract_overdue = serializers.BooleanField(read_only=True)
+    # Additive (BL-04): pending-vs-rejected storno žádosti (C02-A) pro FE
+    cancellation_requested_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    cancellation_resolved_at = serializers.DateTimeField(read_only=True, allow_null=True)
 
     class Meta:
         model = StudentPractice
@@ -243,6 +246,8 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "cancellation_reason",
             "rejection_reason",
             "cancelled_by_info",
+            "cancellation_requested_at",
+            "cancellation_resolved_at",
         ]
         read_only_fields = [
             "student_practice_id",
@@ -348,6 +353,11 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     image_base64 = serializers.CharField(source="practice.image_base64", read_only=True)
     student_practice_documents = serializers.SerializerMethodField()
     can_approve = serializers.SerializerMethodField()
+    # Additive (BL-04): pending-vs-rejected storno žádosti (C02-A) + externí
+    # praxe (zdrojový stav confirm-contract T2b) pro FE.
+    cancellation_requested_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    cancellation_resolved_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    is_external = serializers.BooleanField(source="practice.is_external", read_only=True)
 
     class Meta:
         model = StudentPractice
@@ -376,6 +386,9 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "rejection_reason",
             "contract_received_date",
             "updated_at",
+            "cancellation_requested_at",
+            "cancellation_resolved_at",
+            "is_external",
         ]
 
     def get_can_approve(self, obj):
@@ -503,6 +516,14 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "evaluated_at",
         ]
         read_only_fields = ["evaluation_id", "evaluated_by", "evaluated_by_name", "evaluated_at", "pdf_protokol"]
+
+    def validate_student_practice_id(self, value):
+        # BLOCKER-2: relace je neměnná — update nesmí převalidovat evaluaci
+        # na cizí/převzatou přihlášku (autorizace probe probíhá jen pro
+        # stávající objekt, nikoli pro nový cílový SP).
+        if self.instance is not None and value != self.instance.student_practice_id:
+            raise serializers.ValidationError("StudentPractice u existující evaluace nelze měnit.")
+        return value
 
     def validate(self, data):
         # PDF is required when SP is in ENDED or COMPLETED state

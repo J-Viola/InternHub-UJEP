@@ -109,7 +109,10 @@ export const createApiClient = (navigate) => {
                 const data = error.response.data;
                 if (data.error_code) {
                     standardError.code = data.error_code;
-                    standardError.details = data.details;
+                    // additive: capacity/transition chyby vracejí text v `detail`
+                    // (např. CAPACITY_FULL) — podržet ho i v `details`, aby FE
+                    // mohl zobrazit konkrétní hlášku (BL-04).
+                    standardError.details = data.details ?? data.detail ?? null;
                 } else if (data.detail) {
                     standardError.code = "DRF_ERROR";
                     standardError.details = data.detail;

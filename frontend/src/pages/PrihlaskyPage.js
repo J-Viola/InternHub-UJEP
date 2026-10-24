@@ -13,6 +13,7 @@ import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@components/core/Form/DropDown";
 import { useTranslation } from "react-i18next";
 import { useMessage } from "@hooks/MessageContext";
+import { getApiErrorMessage } from "@utils/apiErrorUtils";
 import EmptyState from "@core/Feedback/EmptyState";
 
 export default function PrihlaskyPage() {
@@ -24,6 +25,7 @@ export default function PrihlaskyPage() {
 	const [selectedCompanies, setSelectedCompanies] = useState([]);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [companySelectValue, setCompanySelectValue] = useState("");
+	const [rejectReason, setRejectReason] = useState("");
 	const studentpracticeAPI = useStudentPracticeAPI();
 
 	const navigate = useNavigate();
@@ -37,6 +39,7 @@ export default function PrihlaskyPage() {
 	const handleClosePopup = () => {
 		setShowPopup(false);
 		setSelectedEntity(null);
+		setRejectReason("");
 	}
 
 	const onProfile = (en) => {
@@ -45,10 +48,16 @@ export default function PrihlaskyPage() {
 
 	const handleSubmit = async () => {
 		try {
-			const res = await studentpracticeAPI.updateStudentPracticeStatus(selectedEntity.student_practice_id, "approve");
+			// FE-002: žádný PATCH /status/ (neexistuje) — explicitní transition
+			// s cílem podle aktuální fáze přihlášky.
+			const res = await studentpracticeAPI.updateStudentPracticeStatus(
+				selectedEntity.student_practice_id,
+				"approve",
+				{ workflowStatus: selectedEntity.workflow_status }
+			);
 
 			// Show detailed message based on backend response
-			if (res.school_approved && res.employer_approved) {
+			if (res && res.workflow_status && res.workflow_status !== "APPLIED") {
 				addMessage(t('applications.approve_success_full'), "S");
 			} else {
 				addMessage(t('applications.approve_success_partial'), "S");
@@ -56,25 +65,33 @@ export default function PrihlaskyPage() {
 
 			setShowPopup(false);
 			setSelectedEntity(null);
+			setRejectReason("");
 			await fetchData();
 		} catch (error) {
 			console.error(error);
-			const errorCode = error.code || "UNKNOWN_ERROR";
-			addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('applications.approve_error') }), "E");
+			addMessage(getApiErrorMessage(error, t, 'applications.approve_error'), "E");
 		}
 	}
 
 	const handleReject = async () => {
+		if (rejectReason.trim().length < 10) {
+			addMessage(t('practice_detail.reject_reason_required'), "E");
+			return;
+		}
 		try {
-			await studentpracticeAPI.updateStudentPracticeStatus(selectedEntity.student_practice_id, "reject");
+			await studentpracticeAPI.updateStudentPracticeStatus(
+				selectedEntity.student_practice_id,
+				"reject",
+				{ reason: rejectReason.trim(), workflowStatus: selectedEntity.workflow_status }
+			);
 			addMessage(t('applications.reject_success'), "S");
 			setShowPopup(false);
 			setSelectedEntity(null);
+			setRejectReason("");
 			await fetchData();
 		} catch (error) {
 			console.error(error);
-			const errorCode = error.code || "UNKNOWN_ERROR";
-			addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('applications.reject_error') }), "E");
+			addMessage(getApiErrorMessage(error, t, 'applications.reject_error'), "E");
 		}
 	}
 
@@ -249,9 +266,27 @@ export default function PrihlaskyPage() {
 					onSubmit={handleSubmit}
 					onReject={handleReject}
 					variant="gray"
-					submitText={t('common.approve')}
-					rejectText={t('common.reject')}
-				/>
+					onSubmitText={t('common.approve')}
+					onRejectText={t('common.reject')}
+				>
+					<Container property="mt-4 mb-4 px-4">
+						<Paragraph property="text-sm font-medium mb-2">
+							{t('practice_detail.reject_reason_title')}
+						</Paragraph>
+						<textarea
+							value={rejectReason}
+							onChange={(e) => setRejectReason(e.target.value)}
+							placeholder={t('practice_detail.reject_reason_placeholder')}
+							aria-label={t('practice_detail.reject_reason_title')}
+							className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-none text-sm"
+						/>
+						{rejectReason.trim().length > 0 && rejectReason.trim().length < 10 && (
+							<Paragraph property="text-red-500 text-xs mt-2">
+								{t('practice_detail.reject_reason_required')}
+							</Paragraph>
+						)}
+					</Container>
+				</PopUpCon>
 			)}
 		</>
 	);

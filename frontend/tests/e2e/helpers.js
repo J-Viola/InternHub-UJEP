@@ -62,12 +62,18 @@ export async function confirmPopup(page, headingText) {
   // 1. Wait for the popup area to be visible
   await expect(page.getByText(headingText, { exact: false }).first()).toBeVisible({ timeout: 15000 });
 
-  // 2. Click the confirm button. Prefer the ID but fallback to text if needed.
-  const confirmBtn = page.locator('#popup-confirm-button').or(page.getByRole('button', { name: /Schválit|Ano|Potvrdit/i }));
+  // 2. Click the confirm button inside the open popup. Prefer the popup's own
+  // id — na kartě praxe jsou navíc „Schválit" tlačítky Dokumentů (PBUG-BL07-06
+  // oprava → výchozí dokumenty existují) a OR lokátor by narazil na strict-mode
+  // kolizi. Fallback na text jen pro popupy bez id.
+  let confirmBtn = page.locator('#popup-confirm-button');
+  if ((await confirmBtn.count()) === 0) {
+    confirmBtn = page.getByRole('button', { name: /Schválit|Ano|Potvrdit/i });
+  }
   await expect(confirmBtn.first()).toBeVisible({ timeout: 10000 });
 
   console.log('Clicking confirm button');
-  await confirmBtn.click();
+  await confirmBtn.first().click();
 
   // Wait a bit for the backend to process and frontend to react
   await page.waitForTimeout(1000);

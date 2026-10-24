@@ -24,9 +24,10 @@ jest.mock('@components/Filter/SearchBar', () => ({ value, onChange }) => (
 ));
 jest.mock('@components/core/Form/DropDown', () => () => <div data-testid="drop-down">DropDown</div>);
 jest.mock('@core/Button/BackButton', () => () => <button>Back</button>);
-jest.mock('@core/Container/PopUpCon', () => ({ onSubmit, onReject, title }) => (
+jest.mock('@core/Container/PopUpCon', () => ({ onSubmit, onReject, title, children }) => (
     <div data-testid="popup">
         {title}
+        {children}
         <button onClick={onSubmit}>Approve</button>
         <button onClick={onReject}>Reject</button>
     </div>
@@ -131,10 +132,53 @@ describe('PrihlaskyPage', () => {
         fireEvent.click(screen.getByText('Approve'));
 
         await waitFor(() => {
-            expect(mockUpdateStatus).toHaveBeenCalledWith(1, 'approve');
+            expect(mockUpdateStatus).toHaveBeenCalledWith(1, 'approve', {
+                workflowStatus: undefined,
+            });
         });
         await waitFor(() => {
             expect(mockGetProfessorApps).toHaveBeenCalledTimes(2); // Initial + Refresh
+        });
+    });
+
+    test('reject vyžaduje důvod a posílá ho s workflowStatus (FE-002)', async () => {
+        const mockData = [
+            {
+                student_practice_id: 2,
+                student_full_name: 'Petr Svoboda',
+                practice_title: 'Praxe 2',
+                employer_name: 'Firma A',
+                can_approve: true,
+                workflow_status: 'APPLIED',
+            }
+        ];
+        mockGetProfessorApps.mockResolvedValue(mockData);
+        mockUpdateStatus.mockResolvedValue({ workflow_status: 'REJECTED' });
+
+        render(
+            <MemoryRouter>
+                <PrihlaskyPage />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Petr Svoboda - Praxe 2')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByText('Manage'));
+        // bez důvodu se neodešle
+        fireEvent.click(screen.getByText('Reject'));
+        expect(mockUpdateStatus).not.toHaveBeenCalled();
+
+        const textarea = screen.getByPlaceholderText('practice_detail.reject_reason_placeholder');
+        fireEvent.change(textarea, { target: { value: 'Student nevyhovuje podmínkám' } });
+        fireEvent.click(screen.getByText('Reject'));
+
+        await waitFor(() => {
+            expect(mockUpdateStatus).toHaveBeenCalledWith(2, 'reject', {
+                reason: 'Student nevyhovuje podmínkám',
+                workflowStatus: 'APPLIED',
+            });
         });
     });
 });

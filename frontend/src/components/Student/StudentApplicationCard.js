@@ -13,11 +13,21 @@ export default function StudentApplicationCard({ entity }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
+    // Vlastní přihláška má jít na kartu praxes (SP detail), ne na katalog
+    // nabídek — uzavřené/čekající/vlastní SP by jinak skončily 404 (FE-003).
+    const handleOpen = () => {
+        if (entity.student_practice_id) {
+            navigate(`/karta-praxe/${entity.student_practice_id}`);
+        } else {
+            navigate(`/nabidka/${entity.practice_id}`);
+        }
+    };
+
     return (
         <ContainerForEntity
             variant={"white"}
             property="pl-8 pr-8 py-4 mt-2 border border-black rounded-[10px] shadow-none hover:shadow-sm transition-shadow duration-200"
-            onClick={() => navigate(`/nabidka/${entity.practice_id}`)}
+            onClick={handleOpen}
         >
             <Container property="grid grid-cols-[1.5fr,1.5fr,auto] gap-4 items-center w-full">
                 {/* Column 1: Title */}
@@ -36,7 +46,11 @@ export default function StudentApplicationCard({ entity }) {
 
                 {/* Column 3: Status Badge */}
                 <Container property="flex items-center gap-2 justify-end">
-                    <StateBadge status={entity.workflow_status} />
+                    {/* workflow_status dodává až backend (hlášeno v BL-04) —
+                        bez něj se badge nezobrazuje místo chybného "Neznámý" */}
+                    {entity.workflow_status && (
+                        <StateBadge status={entity.workflow_status} />
+                    )}
                 </Container>
             </Container>
         </ContainerForEntity>

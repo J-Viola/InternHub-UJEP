@@ -21,6 +21,46 @@ def pytest_configure(config):
     """Set DJANGO_SETTINGS_MODULE when running under pytest."""
     if not settings.configured:
         django.setup()
+    bl07_isolation_gates()
+
+
+def bl07_isolation_gates():
+    """BL-07 Gates 2c/3c/4 — runtime kontroly izolace před každou pytest session.
+
+    Fail-closed: bez schváleného testovacího nastavení (``app.test_settings`` /
+    audit wrapper) session ani nezačne. Živé externí služby jen při výslovném
+    opt-inu ``ALLOW_LIVE_EXTERNAL=1``; e-mail musí být locmem VŽDYCKY.
+    """
+    import os
+
+    from app.db_identity import assert_runner_db_identities
+
+    allow_live = os.environ.get("ALLOW_LIVE_EXTERNAL") == "1"
+
+    # Gate 2c — identita DB (stejná funkce jako settings check v test_settings).
+    assert_runner_db_identities(settings.DATABASES, operation="pytest session")
+
+    # Gate 3c — uvnitř runneru nesmí být SMTP.
+    if settings.EMAIL_BACKEND != "django.core.mail.backends.locmem.EmailBackend":
+        raise RuntimeError(
+            f"BL-07 gate: EMAIL_BACKEND={settings.EMAIL_BACKEND!r} není locmem — "
+            "testovací session by mohla odesílat reálný e-mail. Použij "
+            "app.test_settings / audit wrapper."
+        )
+
+    # Gate 4 — externí služby v mock režimu (STAG + ARES), jinak explicitní opt-in.
+    if not allow_live:
+        if not getattr(settings, "STAG_MOCK", False):
+            raise RuntimeError(
+                "BL-07 gate: STAG_MOCK=False — hrozí reálné volání STAG z testů. "
+                "Zapni STAG_MOCK nebo povol ALLOW_LIVE_EXTERNAL=1 (výslovný opt-in)."
+            )
+        if not getattr(settings, "ARES_MOCK", False):
+            raise RuntimeError(
+                "BL-07 gate: ARES_MOCK=False — hrozí reálné odchozí HTTP do ARES "
+                "z testů. Nech ARES_MOCK=True nebo povol ALLOW_LIVE_EXTERNAL=1 "
+                "(výslovný opt-in)."
+            )
 
 
 # ---------------------------------------------------------------------------

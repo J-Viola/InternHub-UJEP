@@ -73,11 +73,18 @@ test.describe('Auto-Close Practices (E2E)', () => {
     const practiceId = data.results?.[0]?.practice_id;
     if (!practiceId) throw new Error('Practice not found via API');
 
-    const transitionRes = await adminPage.request.post(
-      `http://localhost:8000/api/practices/${practiceId}/transition/`,
-      { data: { target_state: 3 } } // OPEN_FOR_APPLICATIONS = 3
-    );
-    expect(transitionRes.status()).toBe(200);
+    // BL-07/FE-004: schválení garantem nabídku automaticky aktivuje
+    // (SRS analysis.txt:2248 → OPEN_FOR_APPLICATIONS), takže pomocný přechod
+    // přes API už obvykle není potřeba; ponechán jen jako fallback.
+    if (Number(data.results?.[0]?.workflow_state) !== 3) {
+      const transitionRes = await adminPage.request.post(
+        `http://localhost:8000/api/practices/${practiceId}/transition/`,
+        { data: { target_state: 3 } } // OPEN_FOR_APPLICATIONS = 3
+      );
+      if (transitionRes.status() !== 200) {
+        throw new Error(`Fallback transition to OPEN_FOR_APPLICATIONS failed: ${transitionRes.status()}`);
+      }
+    }
     await adminContext.close();
 
     // --- STEP 4: Spustit auto_close management command ---

@@ -72,6 +72,8 @@ class PracticeService:
                 "company_logo": sp.practice.image_base64,
                 "application_date": sp.application_date,
                 "status": sp.approval_status,
+                # Additive (BL-04): autoritativní stav pro FE (pending vs rejected …)
+                "workflow_status": sp.workflow_status,
             }
             for sp in student_practices
         ]
@@ -115,9 +117,12 @@ class PracticeService:
         if not practice:
             raise ValueError(PracticeMessages.NOT_FOUND)
 
-        # Guard — practice must be open for applications (None = backward compat)
+        # Guard — practice must be open for applications (None = backward compat).
+        # BE-013: externí individuální cyklus — student smí přihlásit právě
+        # vytvořenou externí praxi ve stavu PENDING_CONTENT_APPROVAL.
         if practice.workflow_state is not None and practice.workflow_state != PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
-            raise ValueError("PRACTICE_NOT_OPEN_FOR_APPLICATIONS")
+            if not (practice.is_external and practice.workflow_state == PracticeWorkflowState.PENDING_CONTENT_APPROVAL):
+                raise ValueError("PRACTICE_NOT_OPEN_FOR_APPLICATIONS")
 
         if not practice.start_date or not practice.end_date:
             raise ValueError("MISSING_DATES")
@@ -126,7 +131,10 @@ class PracticeService:
         if practice.is_cancelled:
             raise ValueError("PRACTICE_IS_CANCELLED")
 
-        # Capacity guard — available_positions > 0 and not already full
+        # Capacity guard — T2a: počítají se jen celková umístění
+        # (CONTRACTED/STARTED/ENDED/COMPLETED); stornované ani axis-pending
+        # přihlášky se NEPOČÍTAJÍ. Samotná alokace do CONTRACTED je chráněna
+        # na všech cestách přes _check_contract_capacity (select_for_update).
         if practice.available_positions is not None and practice.available_positions <= 0:
             raise ValueError("NO_CAPACITY_AVAILABLE")
         if practice.available_positions is not None:
@@ -134,26 +142,21 @@ class PracticeService:
                 practice_id=practice_id,
                 is_cancelled=False,
                 workflow_state__in=[
-                    StudentPracticeWorkflowState.APPLIED,
-                    StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
                     StudentPracticeWorkflowState.CONTRACTED,
                     StudentPracticeWorkflowState.STARTED,
-                    StudentPracticeWorkflowState.COMPLETED,
                     StudentPracticeWorkflowState.ENDED,
+                    StudentPracticeWorkflowState.COMPLETED,
                 ],
             ).count()
             if active_count >= practice.available_positions:
                 raise ValueError("CAPACITY_FULL")
 
-        # 3.7: Blokace storna — pokud má student nevyřešené storno, blokovat přihlášku
-        unresolved_cancellation = StudentPractice.objects.filter(
-            user=user,
-            is_cancelled=True,
-            cancellation_resolved_at__isnull=True,
-        ).exists()
-        if unresolved_cancellation:
-            # Kanonická hláška — stejná jako v reapply_to_practice
-            # (student_practices/services.py).
+        # 3.7/C03-A + BL-10: nevyřešené storno NEBO pending žádost o storno
+        # stejné registrace (student, subject, year — Q2-A) blokuje novou žádost.
+        from student_practices.services import student_has_blocking_cancellation
+
+        if student_has_blocking_cancellation(user, practice):
+            # Kanonická hláška — stejná jako v reapply_to_practice.
             raise ValueError("Nelze podat novou žádost, dokud není storno vyřešeno")
 
         # Allow re-application only if previous was rejected or cancelled
@@ -201,24 +204,42 @@ class PracticeService:
                 DocumentHelper.assign_default_documents(student_practice)
             else:
                 student_practice.workflow_state = StudentPracticeWorkflowState.APPLIED
-            student_practice.save(update_fields=["workflow_state"])
+                # BL-07/PBUG-BL07-06: výchozí dokumenty MUSÍ vzniknout u KAŽDÉ
+                # cesty (katalogový apply dříve žádné nedostal → student nemohl
+                # nahrát smlouvu, blokováno S04 E2E). Stejný helper, stejná
+                # transakce (metoda je @transaction.atomic), stejná semantika
+                # jako u externí/inviti/reapply cesty.
+                DocumentHelper.assign_default_documents(student_practice)
+            # BL-10/Q2-A: vazba na registraci předmětu (student, subject, year);
+            # bez subjectu (triáž) zůstává registration=NULL.
+            from student_practices.services import ensure_practice_registration
 
-            EmailService.notify_org_new_application(student_practice)
+            student_practice.registration = ensure_practice_registration(user, practice.subject_id, date.today().year)
+            student_practice.save(update_fields=["workflow_state", "registration"])
+
+            # Odchozí e-maily až po potvrzení transakce (transaction.on_commit)
+            # — při rollbacku (např. pozdější chyba) žádná neodeslaná pošta;
+            # in-app řádky zůstávají uvnitř transakce (finding 7).
+            transaction.on_commit(lambda: EmailService.notify_org_new_application(student_practice))
 
             # Notifikace garantovi (subject_manager / garant praxe katedry /
             # fallback profesoři) o nové žádosti — in-app (NEW_APPLICATION_GARANT)
-            # + e-mail přes EmailService.
+            # + e-mail přes EmailService (odložený na on_commit uvnitř helperu).
             NotificationService.notify_garant_new_application(student_practice)
 
             if practice.contact_user:
+                contact_user = practice.contact_user
+                contact_message = f"Student {user.full_name} se přihlásil na vaši nabídku praxe '{practice.title}'."
                 NotificationService.create_notification(
-                    recipient=practice.contact_user,
+                    recipient=contact_user,
                     verb="NEW_APPLICATION",
-                    message=f"Student {user.full_name} se přihlásil na vaši nabídku praxe '{practice.title}'.",
+                    message=contact_message,
                     actor=user,
                     target=student_practice,
                     notification_type=NotificationType.INFO,
+                    send_email=False,  # e-mail odložen níže (finding 7)
                 )
+                transaction.on_commit(lambda: NotificationService._send_email(contact_user, "NEW_APPLICATION", contact_message))
 
             ActionLogService.log(
                 user=user,
@@ -261,9 +282,20 @@ class PracticeService:
             is_cancelled=False,
         ).select_related("subject", "subject__department", "contact_user", "employer")
 
+        # FE-004 / SRS oracle (analysis.txt:2248): schválené (nyní aktivní) nabídky
+        # musí zůstat viditelné a spravovatelné v přehledu katedry — nabídka po
+        # schválení nesmí z přehledu zmizet. Zahrnuje i uzavřené aktivní nabídky
+        # (approval=APPROVED), aby historie zůstala přístupná.
+        active_offers = Practice.objects.filter(
+            subject__department_id__in=dept_ids,
+            approval_status=ApprovalStatus.APPROVED,
+            is_cancelled=False,
+        ).select_related("subject", "subject__department", "contact_user", "employer")
+
         return {
             "approved": approved_student_practices,
             "to_approve": to_approve_offers,
+            "active": active_offers,
         }
 
     @staticmethod

@@ -22,11 +22,15 @@ import { buildFormData } from "@utils/formDataUtils";
 import Icon from "@components/core/Icon/Icon";
 import LoadingState from "@components/core/Feedback/LoadingState";
 import ErrorState from "@components/core/Feedback/ErrorState";
+import getApiErrorMessage from "@utils/apiErrorUtils";
 
 export default function NabidkaDetailPage() {
     const { t } = useTranslation();
     const { id } = useParams();
     const [ popUp, setPopUp ] = useState(false);
+    // BL-07/PBUG-BL07-07: stornování aktivní nabídky (oprávněné roly)
+    const [ cancelPopUp, setCancelPopUp ] = useState(false);
+    const [ cancelReason, setCancelReason ] = useState("");
     const [ entity, setEntity ] = useState(null);
     const nabidkaAPI = useNabidkaAPI();
     const studentPracticeAPI = useStudentPracticeAPI();
@@ -118,6 +122,26 @@ export default function NabidkaDetailPage() {
             fetchData();
         } catch (error) {
             addMessage(t('common.error'), "E");
+        }
+    };
+
+    // BL-07/PBUG-BL07-07: stornování AKTIVNÍ nabídky reálnou UI akcí.
+    // Backend: POST /api/practices/{id}/cancel/ (CanCancelPractice: admin /
+    // vedoucí katedry / garant); důvod je povinný. Chyby řeší existující
+    // error resolver (getApiErrorMessage).
+    const handleCancelOffer = async () => {
+        if (cancelReason.trim().length < 5) {
+            addMessage(t('offers.cancel_reason_required'), "E");
+            return;
+        }
+        try {
+            await nabidkaAPI.cancelPractice(id, cancelReason.trim());
+            addMessage(t('offers.cancel_offer_success'), "S");
+            setCancelPopUp(false);
+            setCancelReason("");
+            fetchData();
+        } catch (error) {
+            addMessage(getApiErrorMessage(error, t, 'offers.cancel_offer_error'), "E");
         }
     };
 
@@ -296,6 +320,20 @@ export default function NabidkaDetailPage() {
                         </>
                     )}
 
+                    {/* BL-07/PBUG-BL07-07: storno aktivní nabídky — jen pro
+                        oprávněné roly dle backend CanCancelPractice
+                        (admin / vedoucí katedry / garant); chyby řeší
+                        error resolver v handleCancelOffer. */}
+                    {entity && (user.isAdmin() || user.isDepartmentMg()) && entity?.approval_status === 1 && (
+                        <Button
+                            variant={"red"}
+                            property={"px-8"}
+                            onClick={() => { setCancelReason(""); setCancelPopUp(true); }}
+                        >
+                            {t('offers.cancel_offer')}
+                        </Button>
+                    )}
+
                     {user && user.isProfessor() && entity?.approval_status === 0 && (
                         <>
                             <Button
@@ -372,9 +410,35 @@ export default function NabidkaDetailPage() {
                     text={t('internships.change_status_text', { title: entity?.title })}
                     onSubmit={handleApprove}
                     onReject={handleReject}
-                    submitText={t('common.approve')}
-                    rejectText={t('common.reject')}
+                    onSubmitText={t('common.approve')}
+                    onRejectText={t('common.reject')}
                 />
+            )}
+
+            {/* BL-07/PBUG-BL07-07: popup storna nabídky s povinným důvodem */}
+            {cancelPopUp && (
+                <PopUpCon
+                    onClose={() => { setCancelPopUp(false); setCancelReason(""); }}
+                    title={t('offers.cancel_offer')}
+                    text={t('offers.cancel_offer_text')}
+                    onSubmit={handleCancelOffer}
+                    onSubmitText={t('offers.cancel_offer')}
+                    onReject={() => { setCancelPopUp(false); setCancelReason(""); }}
+                >
+                    <Container property={"mb-4"}>
+                        <label htmlFor="cancel-reason" className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('offers.cancel_reason')}
+                        </label>
+                        <textarea
+                            id="cancel-reason"
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder={t('offers.cancel_reason_placeholder')}
+                        />
+                    </Container>
+                </PopUpCon>
             )}
             </>
             )}

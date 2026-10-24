@@ -102,7 +102,10 @@ export default function EvaluationForm() {
         payload = buildFormData({
           student_practice_id: parseInt(id, 10),
           ...formData,
-          pdf_protocol: pdfFile,
+          // BL-07/PBUG: EvaluationSerializer přijímá soubor pod polem `pdf_file`
+          // (dříve se posílalo `pdf_protocol`, které backend ignoruje → validátor
+          // „PDF je povinný" vracel 400 INVALID a protokol se nikdy nenahrál).
+          pdf_file: pdfFile,
         });
         await api.post("/student-practices/evaluations/", payload, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -115,7 +118,9 @@ export default function EvaluationForm() {
         await api.post("/student-practices/evaluations/", payload);
       }
       addMessage(t("evaluation.success"), "S");
-      navigate(`/praxe/${id}`);
+      // FE-014: /praxe/:id neexistuje (vedlo na 404 stránku) — správně
+      // karta praxe (SP detail).
+      navigate(`/karta-praxe/${id}`);
     } catch (err) {
       // 403 EVALUATION_NOT_ENDED → i18n klíč.
       if (err.code === "EVALUATION_NOT_ENDED") {
@@ -265,8 +270,11 @@ export default function EvaluationForm() {
 
           {/* PDF Upload */}
           <div>
-            <label className="block font-semibold mb-2">{t("evaluation.pdf_upload_label")}</label>
+            <label htmlFor="evaluation-pdf-protocol" className="block font-semibold mb-2">
+              {t("evaluation.pdf_upload_label")}
+            </label>
             <input
+              id="evaluation-pdf-protocol"
               type="file"
               accept=".pdf"
               onChange={handleFileChange}

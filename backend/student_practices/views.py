@@ -34,15 +34,17 @@ from student_practices.models import (
     UploadedDocument,
 )
 from student_practices.permissions import (
+    CanAccessEvaluation,
+    CanConfirmContract,
     HasDocumentAccess,
     IsGarantForStudentPractice,
     IsOrganizationApproverForStudentPractice,
     IsSubjectTeacherOrHeadForPractice,
 )
-from student_practices.services import StudentPracticeService
+from student_practices.services import StudentPracticeService, record_own_approval_axis
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
-from users.models import ActionLog, ApprovalStatus
+from users.models import ActionLog, ApprovalStatus, OrganizationUser, StudentUser
 from users.permissions import (
     CanCancelStudentPractice,
     IsAdminUser,
@@ -564,6 +566,10 @@ class StudentPracticeUploadDocumentView(APIView):
         sp = document.student_practice
         if sp and document.document_type == DocumentType.CONTRACT:
             StudentPracticeService.transition_to_awaiting_documents_after_contract_upload(sp, request.user)
+        # C19-B/T2c: nahrazení zamítnutých dokumentů (ze DOCUMENTS_REJECTED)
+        # → explicitní review-pending DOCUMENTS_RESUBMITTED; upload ≠ approval.
+        if sp:
+            StudentPracticeService.mark_documents_resubmitted_for_review(sp, request.user)
 
         return Response(
             {"detail": StudentPracticeMessages.DOCUMENT_UPLOAD_SUCCESS},
@@ -707,6 +713,30 @@ class TransitionStudentPracticeView(APIView):
         target_state = StudentPracticeWorkflowState(serializer.validated_data["target_state"])
         reason = serializer.validated_data.get("reason", "")
 
+        # T1/C06-A (finding 1): centrální brána do CONTRACTED na API hranici —
+        # obě nezávislé osy musí držet (včetně vlastní osy aktéra). Bez obou
+        # os → 400 bez jediného zápisu; žádný aktér si nezapíše cizí osu
+        # (zápis vlastní osy dělá služba přes record_own_approval_axis).
+        if target_state == StudentPracticeWorkflowState.CONTRACTED and student_practice.workflow_state != (
+            StudentPracticeWorkflowState.CONTRACTED
+        ):
+            actor = request.user
+            would_school = bool(student_practice.school_approved) or not (
+                isinstance(actor, OrganizationUser) or isinstance(actor, StudentUser)
+            )
+            would_employer = bool(student_practice.employer_approved) or isinstance(actor, OrganizationUser)
+            if not (would_school and would_employer):
+                missing = [label for label, holds in (("school", would_school), ("employer", would_employer)) if not holds]
+                return Response(
+                    {
+                        "error_code": "AXES_INCOMPLETE",
+                        "detail": (
+                            "Přechod do CONTRACTED vyžaduje obě nezávislé schvalovací osy " f"(T1/C06-A) — chybí osa: {', '.join(missing)}."
+                        ),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         try:
             from student_practices.services import StudentPracticeService
 
@@ -802,7 +832,16 @@ class CancelStudentPracticeView(APIView):
 
         reason = serializer.validated_data["reason"]
         try:
-            sp = StudentPracticeService.cancel_student_practice(sp=student_practice, actor=request.user, reason=reason)
+            if isinstance(request.user, StudentUser):
+                # C02-A: student podává ŽÁDOST o storno — žádné okamžité
+                # storno; praxe zůstává v aktuálním stavu a rozhodne
+                # resolver přes resolve-cancellation (T2d).
+                sp = StudentPracticeService.submit_cancellation_request(sp=student_practice, actor=request.user, reason=reason)
+            else:
+                # Nestudentští aktéři (org/garant/admin dle CanCancelStudentPractice)
+                # zachovávají dosavadní chování — okamžité storno; C02-A se týká
+                # studentské žádosti a rozhodovací role zde není rozhodnutím měněna.
+                sp = StudentPracticeService.cancel_student_practice(sp=student_practice, actor=request.user, reason=reason)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -838,10 +877,14 @@ class ResolveCancellationView(APIView):
         student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
         self.check_object_permissions(request, student_practice)
 
+        # T2d: u pending žádosti o storno (C02-A) je povinné rozhodnutí
+        # decision=approve|reject; u legacy již stornovaného jen odblokování.
+        decision = request.data.get("decision") if hasattr(request, "data") else None
         try:
             sp = StudentPracticeService.resolve_cancellation(
                 sp=student_practice,
                 actor=request.user,
+                decision=decision,
             )
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1063,22 +1106,38 @@ class ReapplyToPracticeView(APIView):
 class EvaluationViewSet(ModelViewSet):
     """
     API ViewSet for mentor evaluations.
+
+    Autorizace (BE-002): queryset je scopovaný na přihlášky přístupné
+    žadateli + objektový ``CanAccessEvaluation`` — cizí aktér nečte ani
+    nemutuje cizí evaluace (žádná cizí identita v odpovědi, žádná mutace).
     """
 
     queryset = Evaluation.objects.select_related("student_practice", "evaluated_by")
     serializer_class = EvaluationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanAccessEvaluation]
+
+    def get_queryset(self):
+        from student_practices.utils import student_practice_scope_q
+
+        accessible_sp = StudentPractice.objects.filter(student_practice_scope_q(self.request.user)).values("pk")
+        return Evaluation.objects.select_related("student_practice", "evaluated_by").filter(student_practice_id__in=accessible_sp)
 
     def create(self, request, *args, **kwargs):
         from django.core.files.base import ContentFile
 
         from student_practices.pdf_service import PDFEvaluationProtocolGenerator
+        from student_practices.utils import user_can_access_student_practice
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         sp_id = serializer.validated_data.get("student_practice_id")
         sp = get_object_or_404(StudentPractice, pk=sp_id)
+
+        # Objektová autorizace i při create (žádný object ještě neexistuje) —
+        # cizí aktér nezakládá evaluaci na cizí přihlášce (BE-002).
+        if not user_can_access_student_practice(request.user, sp):
+            raise PermissionDenied("K této přihlášce nemáte oprávnění.")
 
         if sp.workflow_state != StudentPracticeWorkflowState.ENDED:
             return Response(
@@ -1157,13 +1216,28 @@ class ConfirmContractView(APIView):
     (approved_count < available_positions) se select_for_update —
     plná kapacita → 400 CAPACITY_FULL. Po úspěchu se posílá notifikace
     organizaci o alokaci (verb ALLOCATION_ORG).
+
+    Autorizace (BE-001/REQ-011): objektový guard — jen vlastní scope
+    (vlastník-student, zaměstnavatel, pedagog dané katedry/předmětu, admin)
+    + IsNotCancelled. Cizí aktér → 403 bez mutace, a to dřív než kapacita.
+    T1 (C06-A nezávislé osy, rozhodnutí 2026-10-09): aktér zapíše JEN svou
+    vlastní approval osu (OrganizationUser → employer; pedagog/admin →
+    school; owner-student → pouze potvrzení přijetí, žádná osa). CONTRACTED
+    + approval_status=APPROVED postupuje JEN při obou osách schválených
+    touto akcí (nebo již dříve); jinak stav i approval_status zůstávají
+    nezměněny. Kapacita počítá jen CONTRACTED (pending aplikace nekonzumují
+    místo). Jiné řádky tabulky (povolené zdrojové stavy, one-shot/C04 data,
+    C15 doklad podpisu) zůstávají BL-03/06.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsNotCancelled, CanConfirmContract]
 
     @extend_schema(
         summary="Confirm contract receipt",
-        description="Potvrdí přijetí smlouvy a přepne praxi do stavu CONTRACTED (s kapacitní kontrolou).",
+        description=(
+            "Zapíše vlastní approval osu aktéra; do stavu CONTRACTED s approval_status=APPROVED "
+            "přepne jen při obou schválených osách (s kapacitní kontrolou)."
+        ),
         tags=["Student Practices"],
         responses={
             200: OpenApiResponse(description="Contract confirmed"),
@@ -1177,6 +1251,43 @@ class ConfirmContractView(APIView):
         from student_practices.services import _check_contract_capacity
 
         sp = get_object_or_404(StudentPractice.objects.select_for_update(), pk=pk)
+
+        # Objektová autorizace — cizí aktér je odmítnut ještě před
+        # kapacitní kontrolou a jakýmkoli zápisem (fail-closed).
+        self.check_object_permissions(request, sp)
+
+        # T2b (finding 6): idempotence stejné osy — OPAKOVÁNÍ potvrzení je
+        # vždy 200 no-op bez zápisu/ActionLog/notifikace, NEZÁVISLE na tom,
+        # zda druhá osa už drží (žádný „re-write" data, žádná duplicitní
+        # ALLOCATION notifikace). Smír předem schválených, ale ne-CONTRACTED
+        # řádků patří do výslovně autorizovaného transition (T1 brána).
+        user = request.user
+        if isinstance(user, OrganizationUser):
+            own_axis_done = sp.employer_approved
+        elif isinstance(user, StudentUser):
+            own_axis_done = sp.contract_received_date is not None
+        else:
+            own_axis_done = sp.school_approved
+        if own_axis_done:
+            return Response(
+                {
+                    "detail": "Potvrzení již bylo zaznamenáno — opakované potvrzení je idempentní.",
+                    "contract_received_date": sp.contract_received_date,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # T2b: potvrzení jen z pre-kontrakčních stavů — AWAITING_CONTRACT,
+        # u externí praxe i APPLIED (externí cesta). Jinak 400 bez mutace.
+        allowed_source_states = {StudentPracticeWorkflowState.AWAITING_CONTRACT}
+        if sp.practice is not None and sp.practice.is_external:
+            allowed_source_states.add(StudentPracticeWorkflowState.APPLIED)
+        if sp.workflow_state not in allowed_source_states:
+            state_name = sp.workflow_state.name if sp.workflow_state else "None"
+            return Response(
+                {"detail": f"Potvrzení smlouvy je povoleno pouze z předkontrakčních stavů (aktuálně {state_name})."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Kapacitní kontrola při alokaci (select_for_update na praxi uvnitř transakce)
         practice = sp.practice
@@ -1193,10 +1304,20 @@ class ConfirmContractView(APIView):
                 raise
 
         sp.contract_received_date = timezone.now()
-        sp.workflow_state = StudentPracticeWorkflowState.CONTRACTED
-        sp.approval_status = ApprovalStatus.APPROVED
-        sp.school_approved = True
-        sp.employer_approved = True
+
+        # T1/C06-A (centrální helper): aktér zapíše JEN svou vlastní osu
+        # (OrganizationUser → employer; škola → school; student → receipt
+        # only, žádná osa); druhou osu může nastavit jen její vlastní role.
+        both_axes_approved = record_own_approval_axis(sp, request.user)
+
+        # T1: CONTRACTED + APPROVED jen při obou osách schválených touto
+        # akcí (nebo již dříve); jinak aplikace zůstává v aktuálním stavu
+        # s pending osami. Ostatní řádky tabulky (povolené zdrojové stavy,
+        # one-shot/C04, C15) zůstávají BL-03/06 — zde se nevymýšlí.
+        if both_axes_approved:
+            sp.workflow_state = StudentPracticeWorkflowState.CONTRACTED
+            sp.approval_status = ApprovalStatus.APPROVED
+
         sp.save()
 
         ActionLogService.log(
@@ -1207,8 +1328,10 @@ class ConfirmContractView(APIView):
             description=f"Potvrzení přijetí smlouvy u SP #{sp.student_practice_id}",
         )
 
-        # notifikace organizaci o alokaci studenta (in-app + e-mail)
-        NotificationService.notify_org_allocation(sp)
+        # Allokační notifikace (in-app + e-mail) jen při skutečném přechodu
+        # do CONTRACTED — pending akce nealokuje, nesmí tvrdit opak (T1).
+        if both_axes_approved:
+            NotificationService.notify_org_allocation(sp)
 
         return Response(
             {"detail": "Přijetí smlouvy bylo úspěšně potvrzeno.", "contract_received_date": sp.contract_received_date},

@@ -303,10 +303,18 @@ class TestNewNotificationServiceMethods:
     """Každá nová notify metoda: in-app notifikace + e-mail přes EmailService (mock)."""
 
     def test_notify_garant_new_application(self, garant_env):
+        from django.db import connection
+
         sp = garant_env["sp"]
         garant = garant_env["garant"]
+        # E-mail je odložen na transaction.on_commit (finding 7) — v testovací
+        # transakci se hooky nespustí samy; spustíme je ručně a zachováme
+        # oracle (při úspěchu je e-mail odeslán právě jednou).
+        start = len(connection.run_on_commit)
         with mock.patch.object(EmailService, "notify_garant_new_application_email") as mocked:
             NotificationService.notify_garant_new_application(sp)
+            for entry in connection.run_on_commit[start:]:
+                entry[1]()  # (sids, func, ...) → spustit odložený e-mail
             mocked.assert_called_once_with(sp)
 
         notif = Notification.objects.get(verb="NEW_APPLICATION_GARANT")

@@ -59,6 +59,7 @@ class StudentPracticeWorkflowState(enum.Enum):
     AWAITING_CONTENT_APPROVAL = 10  # Čeká na schválení obsahu garnatem u externí praxe
     CONTENT_REJECTED = 11  # Obsah zamítnut garantem, očekává se oprava
     CONTENT_APPROVED = 12  # Obsah externí praxe schválen garantem
+    DOCUMENTS_RESUBMITTED = 13  # Opravené dokumenty nahrány, čeká na review (C19-B/T2c — upload ≠ approval)
 
 
 class EmployerInvitation(models.Model):
@@ -293,6 +294,59 @@ def validate_content_document_type(value):
         raise ValidationError(StudentPracticeMessages.CONTENT_DOC_REQUIRED)
 
 
+class PracticeRegistration(models.Model):
+    """
+    BL-10 (Schema Option A, rozhodnutí Q2-A): registrace předmětu studenta.
+
+    Identita registrace = (student, subject, year); jedna registrace drží
+    N samostatných smluvních vztahů (``StudentPractice`` přes ``registration``
+    FK, related_name="relationships") — N je neomezené a re-entry po stornu
+    je povolen (Q2-A; ``unique_active_student_practice_per_user`` je podmíněný
+    ``is_cancelled=False`` a N neomezuje). Historie (ActionLog/Notification
+    řetězec přes ``StudentPractice`` PK) zůstává zachována beze změny (I6).
+    """
+
+    registration_id = models.AutoField(primary_key=True)
+    student = models.ForeignKey(
+        "users.StudentUser",
+        on_delete=models.CASCADE,
+        related_name="practice_registrations",
+    )
+    subject = models.ForeignKey(
+        "subject.Subject",
+        on_delete=models.PROTECT,
+        related_name="practice_registrations",
+    )
+    year = models.IntegerField(help_text="Akademický rok registrace (Q2-A identita).")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "practice_registrations"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["student", "subject", "year"],
+                name="unique_registration_student_subject_year",
+            )
+        ]
+
+    def __str__(self):
+        return f"Registrace {self.student} / {self.subject} / {self.year}"
+
+    def countable_hours(self) -> int:
+        """
+        Q1-A (I2): součet schváleně započitatelných hodin registrace.
+
+        Stornované smluvní vztahy se NEPOČÍTAJÍ (jejich hodiny směřují do
+        ničeho); jediná agregační cesta pro registraci. Porovnání s
+        ``Subject.min_hours`` ponecháno volajícímu (hodnoty KI/KMA
+        schvalují garanti — C21).
+        """
+        from django.db.models import Sum
+
+        total = self.relationships.filter(is_cancelled=False).aggregate(total=Sum("hours_completed"))["total"]
+        return total or 0
+
+
 class StudentPractice(CancellationMixin, models.Model):
     student_practice_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
@@ -337,7 +391,24 @@ class StudentPractice(CancellationMixin, models.Model):
     # cancellation_reason a cancelled_by pocházejí z CancellationMixin.
     # Původní cancelled_by_user (FK na StagUser) odstraněn — nahrazeno mixin polem
     # cancelled_by (FK na User, obecnější). Pole nikdy neplněno.
+    cancellation_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="C02-A: čas podání žádosti o storno — žádost je pending, dokud rozhodnutí neurčí jinak",
+    )
     year = models.IntegerField(blank=True, null=True)
+    # BL-10 (Schema Option A): registrace předmětu (student, subject, year).
+    # Nullable během přechodu — backfill datovou migrací (Q4-A); řádky bez
+    # možného zařazení (subject/user/year k nedovození) zůstávají NULL a jsou
+    # v migraci logovány jako manuální triáž. SET_NULL = historie se neztrácí.
+    registration = models.ForeignKey(
+        "PracticeRegistration",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="relationships",
+        help_text="BL-10: registrace předmětu (student, subject, year); NULL = čeká na backfill nebo manuální triáž (Q4-A).",
+    )
     contract_document = models.OneToOneField(
         UploadedDocument,
         models.CASCADE,

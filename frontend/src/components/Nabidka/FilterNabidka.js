@@ -5,6 +5,7 @@ import Button from "@core/Button/Button";
 import DropDown from "@core/Form/DropDown";
 import { useTranslation } from "react-i18next";
 import { REGION_OPTIONS } from "@components/Nabidka/regions";
+import { EMPLOYMENT_TYPE_OPTIONS } from "@components/Nabidka/employmentTypes";
 
 export default function FilterNabidka({
     filterValue,
@@ -25,6 +26,12 @@ export default function FilterNabidka({
         { value: "1", label: t('offers.filter.duration_1') },
         { value: "3", label: t('offers.filter.duration_3') },
         { value: "6", label: t('offers.filter.duration_6') },
+    ];
+
+    // BL-05 / RF-02a — typ úvazku (závazný číselník, guarantor-values.md §1).
+    const employmentTypeOptions = [
+        { value: "", label: t('offers.filter.all') },
+        ...EMPLOYMENT_TYPE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) })),
     ];
 
     return (
@@ -157,6 +164,32 @@ export default function FilterNabidka({
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         {durationOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                </Container>
+
+                {/* FILTR ÚVAZKU — BL-05 / RF-02a (závazný číselník, guarantor-values.md §1) */}
+                <Container property="w-full mt-6">
+                    <label htmlFor="employment_type" className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('offers.filter.employment_type')}:
+                    </label>
+                    <select
+                        id="employment_type"
+                        value={filterValue?.employment_type || ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) {
+                                onSearchClear("employment_type");
+                            } else {
+                                handleFilterChange(null, "employment_type", val, true);
+                            }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        {employmentTypeOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>
                                 {opt.label}
                             </option>

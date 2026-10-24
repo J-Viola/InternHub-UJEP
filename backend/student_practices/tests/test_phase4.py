@@ -36,8 +36,15 @@ class Phase4FullTestSuite(APITestCase):
         )
 
     def test_all_13_states_enum_and_transitions(self):
-        """Test 13-state enum representation and transitions matrix router."""
-        self.assertEqual(len(list(StudentPracticeWorkflowState)), 13)
+        """BL-06 oracle update (C19-B/T2c; expected regression #5).
+
+        Korektní oracle: enum má 14 stavů (13 + DOCUMENTS_RESUBMITTED=13,
+        review-pending po opravě dokumentů) a matrix drží T2c hrany:
+        DOCUMENTS_REJECTED → [REJECTED] jen (oprava VEDEN přes upload →
+        DOCUMENTS_RESUBMITTED); DOCUMENTS_RESUBMITTED → review rozhoduje.
+        """
+        self.assertEqual(len(list(StudentPracticeWorkflowState)), 14)
+        self.assertEqual(StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED.value, 13)
         sp = StudentPractice.objects.create(
             user=self.student,
             practice=self.practice,
@@ -49,6 +56,22 @@ class Phase4FullTestSuite(APITestCase):
         )
         matrix = StudentPracticeService.get_transitions_matrix(sp)
         self.assertIn(StudentPracticeWorkflowState.PRELIMINARY_APPROVED, matrix[StudentPracticeWorkflowState.APPLIED])
+
+        # T2c: z DOCUMENTS_REJECTED vede ven JEN terminální REJECTED (admin + důvod)
+        self.assertEqual(
+            set(matrix[StudentPracticeWorkflowState.DOCUMENTS_REJECTED]),
+            {StudentPracticeWorkflowState.REJECTED},
+        )
+        # T2c: review-pending stav rozhoduje review (postup / návrat do smyčky / terminál)
+        self.assertEqual(
+            set(matrix[StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED]),
+            {
+                StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+                StudentPracticeWorkflowState.ENDED,
+                StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+                StudentPracticeWorkflowState.REJECTED,
+            },
+        )
 
     def test_ares_fallback_cached_and_miss(self):
         """Test ARES API DB fallback on error / timeout."""

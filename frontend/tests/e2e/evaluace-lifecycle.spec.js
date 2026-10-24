@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForAppLoad, safeClick } from './helpers';
 import { execSync } from 'child_process';
+import path from 'path';
 
 test.describe('Evaluace Lifecycle (E2E)', () => {
   test.setTimeout(120000);
@@ -9,53 +10,32 @@ test.describe('Evaluace Lifecycle (E2E)', () => {
     const uniqueId = Date.now().toString();
     const practiceTitle = `E2E Eval ${uniqueId}`;
 
-    // --- SETUP: Vytvořit praxi a StudentPractice ve stavu ENDED přes Django shell ---
-    const setupScript = `
-import os, django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
-django.setup()
-from datetime import date, timedelta
-from practices.models import Practice, PracticeWorkflowState
-from student_practices.models import StudentPractice, StudentPracticeWorkflowState
-from users.models import StudentUser, OrganizationUser, EmployerProfile, ApprovalStatus, ProgressStatus
-from subject.models import Subject
-
-student = StudentUser.objects.first()
-company = OrganizationUser.objects.filter(organization_role='OWNER').first()
-profile = company.employer_profile if company and company.employer_profile else EmployerProfile.objects.first()
-subject = Subject.objects.first()
-
-practice = Practice.objects.create(
-    employer=profile, subject=subject, title='${practiceTitle}',
-    description='Eval test', responsibilities='Testing',
-    available_positions=2,
-    start_date=date.today()-timedelta(days=30),
-    end_date=date.today()-timedelta(days=5),
-    progress_status=ProgressStatus.NOT_STARTED,
-    approval_status=ApprovalStatus.APPROVED,
-    workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
-    contact_user=company, is_active=True, coefficient=1.0,
-)
-
-sp = StudentPractice.objects.create(
-    user=student, practice=practice,
-    application_date=date.today()-timedelta(days=25),
-    approval_status=ApprovalStatus.APPROVED,
-    progress_status=ProgressStatus.IN_PROGRESS,
-    school_approved=True, employer_approved=True,
-    workflow_state=StudentPracticeWorkflowState.ENDED,
-    start_date=practice.start_date, end_date=practice.end_date,
-    hours_completed=100,
-)
-print(sp.student_practice_id)
-`;
-    const shellOutput = execSync(
-      `cd /media/F/Github/InternHub-UJEP/backend && python manage.py shell -c "${setupScript.replace(/\n/g, ' ')}"`,
-      { encoding: 'utf-8' }
-    );
-    const spId = shellOutput.trim().split('\n').pop();
-    if (!spId || isNaN(parseInt(spId, 10))) {
-      throw new Error('Failed to create ENDED student practice via shell. Output: ' + shellOutput);
+    // --- SETUP: fixture přes validní Python soubor (BL-07/PBUG-03) ---
+    // Dřívější inline `shell -c` (nové řádky složené na jednu) byl neplatný
+    // a běžel s výchozím nastavením → hrozil zápis mimo disposable DB.
+    // Nyní: DJANGO_SETTINGS_MODULE + povinné E2E_DB_NAME + guard v helperu.
+    const backendDir = process.env.E2E_BACKEND_DIR || '/media/F/Github/InternHub-UJEP/backend';
+    const helperScript = path.join(__dirname, 'helpers', 'seed_ended_practice.py');
+    const fixtureEnv = {
+      ...process.env,
+      DJANGO_SETTINGS_MODULE: process.env.E2E_FIXTURE_SETTINGS || 'app.test_settings',
+      E2E_DB_NAME: process.env.E2E_DB_NAME || process.env.PG_DB || '',
+      E2E_PRACTICE_TITLE: practiceTitle,
+    };
+    const shellOutput = execSync(`python manage.py shell --no-startup < "${helperScript}"`, {
+      cwd: backendDir,
+      encoding: 'utf-8',
+      env: fixtureEnv,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const spId = shellOutput
+      .trim()
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => /^\d+$/.test(line))
+      .pop();
+    if (!spId) {
+      throw new Error('Failed to create ENDED student practice via fixture helper. Output: ' + shellOutput);
     }
 
     // --- STEP 1: Login jako mentor (professor) ---
@@ -83,8 +63,10 @@ print(sp.student_practice_id)
     // --- STEP 4: Odeslat formulář ---
     await safeClick(profPage.getByRole('button', { name: /Odeslat|Submit|Uložit/i }));
 
-    // --- STEP 5: Ověřit úspěch (redirect nebo success message) ---
-    await expect(profPage).toHaveURL(/.*\/praxe/, { timeout: 20000 });
+    // --- STEP 5: Ověřit úspěch ---
+    // FE-014: EvaluationForm úspěšně naviguje na kartu praxe (/karta-praxe/:id),
+    // dřívější očekávání /praxe po tomto přesunu neodpovídá chování formuláře.
+    await expect(profPage).toHaveURL(/.*\/karta-praxe\/\d+/, { timeout: 20000 });
 
     await profContext.close();
   });

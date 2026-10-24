@@ -14,8 +14,10 @@ from practices.models import Practice, ProgressStatus
 from student_practices.models import (
     DocumentHelper,
     DocumentStatus,
+    DocumentType,
     StudentPractice,
     StudentPracticeWorkflowState,
+    UploadedDocument,
 )
 from student_practices.pdf_service import PDFCompletionProtocolGenerator
 from student_practices.services import StudentPracticeService
@@ -153,9 +155,21 @@ class DocumentTransitionTests(TestCase):
 
 
 class ManualCycleEdgeTests(TestCase):
-    """hrana DOCUMENTS_REJECTED → ENDED."""
+    """BL-06 oracle update (C19-B/T2c; expected regressions #6–#8).
+
+    Korektní oracle opravné smyčky (T2c, reference:
+    test_bl03_workflow.py::Bl03RepairLoopTests):
+    - DOCUMENTS_REJECTED → ven vede JEN terminální REJECTED (admin + důvod);
+      přímé DOCUMENTS_REJECTED → ENDED NEEXISTUJE;
+    - oprava = OWNER upload → 201 + DOCUMENTS_RESUBMITTED (review-pending;
+      upload ≠ approval) → review schválí (postup) nebo zamítne (zpět DR);
+    - terminální REJECTED z opravného cyklu = výhradně admin + důvod.
+    """
 
     def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        self.client = APIClient()
         self.department = Department.objects.create(department_name="IT", department_code="IT")
         self.subject = Subject.objects.create(subject_name="Praxe", subject_code="PRX", department=self.department)
         self.student = StudentUser.objects.create(email="student@m.test", first_name="Jan", last_name="Novák", is_active=True)
@@ -167,6 +181,18 @@ class ManualCycleEdgeTests(TestCase):
         )
         self.org_user.employer_profile = self.employer
         self.org_user.save()
+        # reviewer (garant) + admin pro terminální zamítnutí (T2c/R44)
+        self.professor = ProfessorUser.objects.create_user(
+            email="prof@m.test",
+            password="password123",
+            first_name="Karel",
+            last_name="Prof",
+            is_active=True,
+            department=self.department,
+            department_role=DepartmentRole.HEAD,
+            is_garant_praxe=True,
+        )
+        self.admin = get_user_model().objects.create_superuser(email="admin@m.test", password="password123")
         self.practice = Practice.objects.create(
             title="Manuální praxe",
             employer=self.employer,
@@ -189,34 +215,136 @@ class ManualCycleEdgeTests(TestCase):
             workflow_state=state,
         )
 
+    def _attach_doc(self, sp, *, doc_status=DocumentStatus.REJECTED):
+        """Vytvoří zamítnutý dokument a připojí ho přes FK SP (manuálně,
+        aby test nezávisel na defaultních šablonách)."""
+        doc = UploadedDocument.objects.create(document_type=DocumentType.CONTRACT, status=doc_status)
+        sp.contract_document = doc
+        sp.save(update_fields=["contract_document"])
+        return doc
+
+    def _upload(self, doc):
+        self.client.force_authenticate(user=self.student)
+        return self.client.post(
+            f"/api/student-practices/upload-document/{doc.document_id}",
+            {"document": SimpleUploadedFile("repaired.pdf", b"%PDF-1.4 wp10 repair", content_type="application/pdf")},
+        )
+
+    def _transition(self, actor, sp, target_state, reason="wp10 oracle"):
+        return StudentPracticeService.transition_student_practice_state(sp, target_state, actor, reason=reason)
+
     def test_documents_rejected_to_ended_edge_standard(self):
-        """Hrana DOCUMENTS_REJECTED → ENDED existuje v SP_TRANSITIONS."""
+        """T2c: přímá hrana DOCUMENTS_REJECTED → ENDED NEEXISTUJE (ani v standardním matrix);
+        z DR vede jen terminální REJECTED; review-pending stav má vlastní hrany."""
         from student_practices.services import SP_TRANSITIONS
 
-        self.assertIn(
+        self.assertNotIn(
             StudentPracticeWorkflowState.ENDED,
             SP_TRANSITIONS[StudentPracticeWorkflowState.DOCUMENTS_REJECTED],
         )
+        self.assertEqual(
+            set(SP_TRANSITIONS[StudentPracticeWorkflowState.DOCUMENTS_REJECTED]),
+            {StudentPracticeWorkflowState.REJECTED},
+        )
+        self.assertEqual(
+            set(SP_TRANSITIONS[StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED]),
+            {
+                StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+                StudentPracticeWorkflowState.ENDED,
+                StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+                StudentPracticeWorkflowState.REJECTED,
+            },
+        )
 
     def test_documents_rejected_to_ended_edge_manual(self):
-        """Hrana DOCUMENTS_REJECTED → ENDED existuje i v MANUAL_SP_TRANSITIONS."""
+        """T2c: totéž v MANUAL_SP_TRANSITIONS (externí/manuální cyklus)."""
         from student_practices.services import MANUAL_SP_TRANSITIONS
 
-        self.assertIn(
+        self.assertNotIn(
             StudentPracticeWorkflowState.ENDED,
             MANUAL_SP_TRANSITIONS[StudentPracticeWorkflowState.DOCUMENTS_REJECTED],
         )
+        self.assertEqual(
+            set(MANUAL_SP_TRANSITIONS[StudentPracticeWorkflowState.DOCUMENTS_REJECTED]),
+            {StudentPracticeWorkflowState.REJECTED},
+        )
+        self.assertEqual(
+            set(MANUAL_SP_TRANSITIONS[StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED]),
+            {
+                StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
+                StudentPracticeWorkflowState.ENDED,
+                StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+                StudentPracticeWorkflowState.REJECTED,
+            },
+        )
 
     def test_student_can_transition_documents_rejected_to_ended(self):
-        """Student smí přejít DOCUMENTS_REJECTED → ENDED."""
+        """T2c: přímý studentův přechod DR → ENDED je zakázán; oprava vede
+        přes owner upload → DOCUMENTS_RESUBMITTED → review rozhoduje."""
+        from rest_framework.exceptions import PermissionDenied
+
         sp = self._sp(StudentPracticeWorkflowState.DOCUMENTS_REJECTED)
-        sp = StudentPracticeService.transition_student_practice_state(
-            sp,
-            StudentPracticeWorkflowState.ENDED,
-            self.student,
-            reason="Nahrání opravených závěrečných dokumentů",
+        doc = self._attach_doc(sp)
+
+        # 1) negativní: student DR → ENDED přímo → ValueError, stav beze změny
+        with self.assertRaises(ValueError):
+            self._transition(self.student, sp, StudentPracticeWorkflowState.ENDED)
+        sp.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_REJECTED)
+
+        # 2) kolo 1: owner upload → 201 + review-pending (upload ≠ approval)
+        response = self._upload(doc)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        sp.refresh_from_db()
+        doc.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
+        self.assertEqual(doc.status, DocumentStatus.PENDING)
+
+        # 3) předčasný postup bez review opraveného dokladu → 400, stav beze změny
+        with self.assertRaises(ValueError):
+            self._transition(self.professor, sp, StudentPracticeWorkflowState.ENDED)
+        sp.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
+
+        # 4) review ZAMÍTNE → zpět DOCUMENTS_REJECTED (smyčka pokračuje)
+        self._transition(self.professor, sp, StudentPracticeWorkflowState.DOCUMENTS_REJECTED)
+        sp.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_REJECTED)
+
+        # 5) kolo 2: owner upload → DOCUMENTS_RESUBMITTED; review SCHVÁLÍ doklad → postup
+        self.assertEqual(self._upload(doc).status_code, status.HTTP_201_CREATED)
+        sp.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
+        self.client.force_authenticate(user=self.professor)
+        reviewed = self.client.patch(
+            f"/api/student-practices/review-document/{doc.document_id}",
+            {"status": DocumentStatus.APPROVED.value},
+            format="json",
         )
+        self.assertEqual(reviewed.status_code, status.HTTP_200_OK)
+        self._transition(self.professor, sp, StudentPracticeWorkflowState.ENDED)
+        sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.ENDED)
+
+        # 6) terminální REJECTED z opravného cyklu = výhradně admin + důvod (T2c/R44)
+        other_student = StudentUser.objects.create(email="student2@m.test", first_name="Petr", last_name="Druhý", is_active=True)
+        sp2 = StudentPractice.objects.create(
+            user=other_student,
+            practice=self.practice,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=30),
+            approval_status=ApprovalStatus.PENDING,
+            progress_status=ProgressStatus.NOT_STARTED,
+            workflow_state=StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+        )
+        self._attach_doc(sp2)
+        with self.assertRaises(PermissionDenied):
+            self._transition(self.professor, sp2, StudentPracticeWorkflowState.REJECTED)
+        sp2.refresh_from_db()
+        self.assertEqual(sp2.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_REJECTED)
+        self._transition(self.admin, sp2, StudentPracticeWorkflowState.REJECTED, reason="T2c terminální důvod")
+        sp2.refresh_from_db()
+        self.assertEqual(sp2.workflow_state, StudentPracticeWorkflowState.REJECTED)
 
 
 class CompletionProtocolPdfTests(TestCase):

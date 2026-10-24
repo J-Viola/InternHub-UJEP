@@ -203,7 +203,9 @@ class TestResetDBView(APIView):
             return JsonResponse({"error": "Test endpoint requires STAG_MOCK=True"}, status=400)
 
         try:
-            management.call_command("flush", "--noinput", interactive=False)
+            from test_support.db_reset import reset_e2e_database
+
+            reset_e2e_database(using="default")
             management.call_command("seed_db")
             self._create_e2e_test_users()
 
@@ -417,7 +419,7 @@ class DataExportView(APIView):
 
     def get(self, request):
         from api.export_service import ExportService
-        from student_practices.models import StudentPractice
+        from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
         try:
             params = getattr(request, "query_params", request.GET)
@@ -426,6 +428,17 @@ class DataExportView(APIView):
             state = params.get("workflow_state")
             subject_id = params.get("subject_id")
 
+            # Fail-closed (BE-003): prázdný/neplatný stavový filtr se nikdy
+            # neodhodí ve prospěch neomezeného exportu → 400, ne globální řádky.
+            if state is not None:
+                try:
+                    state_value = int(str(state).strip())
+                except (TypeError, ValueError):
+                    state_value = None
+                if state_value is None or StudentPracticeWorkflowState.get(state_value) is None:
+                    return Response({"detail": "Neplatný filtr workflow_state."}, status=400)
+                state = state_value
+
             filters = {
                 "year": year,
                 "workflow_state": state,
@@ -433,12 +446,26 @@ class DataExportView(APIView):
             }
 
             # Role-based scoping: garant/profesor katedry → jen vlastní
-            # department; superuser → vše; organizace → vlastní praxe.
+            # department; organizace → vlastní praxe; student → PŘESNĚ jen
+            # vlastní přihlášky (MAJOR-2); superuser → vše.
             user = request.user
-            dept_ids, org_employer = ExportService.get_scope_filters(user)
+            dept_ids, org_employer, owner_user = ExportService.get_scope_filters(user)
+
+            # Fail-closed (BE-003): prázdný/žádný rozsah → 403, nikdy
+            # globální export. (None, None, None) = superuser — jediný
+            # neomezený rozsah.
+            if dept_ids is None and org_employer is None and owner_user is None:
+                pass  # superuser
+            elif not dept_ids and org_employer is None and owner_user is None:
+                return Response({"detail": "Pro váš účet neexistuje žádný exportní rozsah."}, status=403)
 
             # Zjisti počet záznamů
-            count = ExportService.get_count(filters, dept_ids=dept_ids, employer=org_employer)
+            count = ExportService.get_count(filters, dept_ids=dept_ids, employer=org_employer, owner_user=owner_user)
+
+            # Fail-closed (BE-003): žádné autorizované řádky → prázdná množina
+            # = deny (403), ne prázdný „úspěch" a nikdy globální export.
+            if count == 0:
+                return Response({"detail": "Pro váš účet neexistuje žádný exportní rozsah."}, status=403)
 
             # Pokud >500, deleguj na Celery task — scoping se aplikuje uvnitř tasku
             # (předává se user_id; viz api/tasks.py export_data_async).
@@ -464,15 +491,9 @@ class DataExportView(APIView):
                     }
                 )
 
-            # Synchronní export pro ≤500 záznamů
+            # Synchronní export pro ≤500 záznamů (scope = stejný guard jako count)
             qs = StudentPractice.objects.filter(is_cancelled=False)
-
-            if dept_ids:
-                qs = qs.filter(practice__subject__department_id__in=dept_ids)
-
-            # For organization users, scope to their own employer's practices
-            if org_employer is not None:
-                qs = qs.filter(practice__employer=org_employer)
+            qs = ExportService.apply_scope(qs, dept_ids, org_employer, owner_user)
 
             if year:
                 qs = qs.filter(year=year)
@@ -511,6 +532,25 @@ class DataExportStatusView(APIView):
 
     def get(self, request, export_id):
         from django.core.cache import cache
+
+        # Ownership guard (BE-003 / MAJOR-3): stav ani download_url nesmí
+        # uniknout bez doloženého vlastnictví — fail-closed. Povolen je jen
+        # doložený vlastník žadatele nebo explicitně privilegovaná role
+        # (staff/superuser); chybějící marker = vlastnictví nedoloženo → deny
+        # se stejnou odpovědí jako u neexistujícího exportu (anti-enumerace).
+        owner_id = cache.get(f"export_{export_id}_user_id")
+        is_privileged = bool(request.user.is_staff or request.user.is_superuser)
+        if owner_id is None:
+            if not is_privileged:
+                return Response(
+                    {"export_id": export_id, "state": "PENDING", "download_url": None},
+                    status=404,
+                )
+        elif owner_id != request.user.pk and not is_privileged:
+            return Response(
+                {"export_id": export_id, "state": "PENDING", "download_url": None},
+                status=404,
+            )
 
         cached = cache.get(f"export_{export_id}_status")
 

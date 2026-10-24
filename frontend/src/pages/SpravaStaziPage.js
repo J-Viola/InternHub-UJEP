@@ -18,6 +18,7 @@ export default function SpravaStaziPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [approved, setApproved] = useState([]);
     const [toApprove, setToApprove] = useState([]);
+    const [activeOffers, setActiveOffers] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -40,6 +41,8 @@ export default function SpravaStaziPage() {
                 : await nabidkaAPI.getNabidkyByUserDepartment();
             setApproved(res.approved_practices || []);
             setToApprove(res.to_approve_practices || []);
+            // FE-004: schválené (automaticky aktivované) nabídky zůstávají viditelné.
+            setActiveOffers(res.active_offers || []);
 
             try {
                 const statsRes = await api.get('/dashboard/stats/');
@@ -51,6 +54,7 @@ export default function SpravaStaziPage() {
             setError(t('internships.error'));
             setApproved([]);
             setToApprove([]);
+            setActiveOffers([]);
         } finally {
             setLoading(false);
         }
@@ -146,7 +150,7 @@ export default function SpravaStaziPage() {
         if (type === "approved_practices") {
             navigate(`/karta-praxe/${entity.student_practice_id}`)
         }
-        if (type === "to_approve_practices") {
+        if (type === "to_approve_practices" || type === "active_offers") {
             navigate(`/nabidka/${entity.practice_id}`)
         }
     }
@@ -374,6 +378,31 @@ export default function SpravaStaziPage() {
                                     onView={() => handleView("to_approve_practices", entity)}
                                     onClick={() => handleClick("to_approve_practices", entity)}
                                     type="to_approve"
+                                />
+                            ))
+                        )}
+                    </Container>
+
+                    {/* FE-004: schválené nabídky jsou po automatické aktivaci stále
+                        viditelné a spravovatelné (SRS analysis.txt:2248) */}
+                    <Container property={"flex items-center justify-between mb-6 mt-4"}>
+                        <Headings sizeTag={"h3"} property={"mt-2"}>
+                            {t('internships.active_offers')}
+                        </Headings>
+                    </Container>
+
+                    <Container property={"mt-4 mb-8 space-y-4"}>
+                        {activeOffers.length === 0 ? (
+                            <Paragraph property="text-center text-gray-500 py-8">
+                                {t('internships.no_active_offers')}
+                            </Paragraph>
+                        ) : (
+                            activeOffers.map((entity) => (
+                                <PraxeDepartmentEntity
+                                    key={entity.practice_id}
+                                    entity={entity}
+                                    onView={() => handleView("active_offers", entity)}
+                                    type="active_offers"
                                 />
                             ))
                         )}

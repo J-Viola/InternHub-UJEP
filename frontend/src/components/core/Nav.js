@@ -98,6 +98,8 @@ function Nav({}) {
   const studentDict = {
     [t("nav.internship_offers")]: "/nabidka",
     [t("nav.my_internships")]: "/praxe",
+    [t("nav.my_applications")]: "/moje-prihlasky",
+    [t("nav.create_external_practice")]: "/vytvorit-externi-praxi",
     [t("nav.profile")]: "/profil",
     [t("nav.logout")]: "/logout",
   };
@@ -135,6 +137,7 @@ function Nav({}) {
     [t("nav.students")]: "/students",
     [t("nav.subjects")]: "/subjects",
     [t("nav.internship_management")]: "/sprava-stazi",
+    [t("nav.applications")]: "/prihlasky",
     [t("nav.internship_offers")]: "/nabidka",
     [t("nav.logout")]: "/logout",
   };
@@ -144,6 +147,7 @@ function Nav({}) {
     [t("nav.subjects")]: "/subjects",
     [t("nav.internship_offers")]: "/nabidka",
     [t("nav.internship_management")]: "/sprava-stazi",
+    [t("nav.applications")]: "/prihlasky",
     [t("nav.logout")]: "/logout",
   };
 

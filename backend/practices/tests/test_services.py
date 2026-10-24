@@ -37,6 +37,10 @@ class PracticeServiceTests(TestCase):
         mock_queryset = MagicMock()
         mock_queryset.filter.return_value.first.return_value = self.practice
         mock_select_for_update.return_value = mock_queryset
+        # BL-10 (mechanická fixture): mocked practice bez předmětu →
+        # ensure_practice_registration(subject_id=None) vrací None dle svého
+        # kontraktu (žádný DB zápis, žádné MagicMock argenty v get_or_create).
+        self.practice.subject_id = None
 
         serializer_instance = mock_serializer.return_value
         serializer_instance.is_valid.return_value = True
@@ -50,8 +54,9 @@ class PracticeServiceTests(TestCase):
         # Assertions
         self.assertEqual(result, {"id": 1, "status": "pending"})
         mock_serializer.assert_called_once()
-        # workflow_state should be set directly on the SP object
-        sp_mock.save.assert_called_with(update_fields=["workflow_state"])
+        # workflow_state se nastavuje přímo na SP + BL-10 vazba na registraci
+        # (subject None → registration=None; orakulum „přímý zápis stavu" beze změny)
+        sp_mock.save.assert_called_with(update_fields=["workflow_state", "registration"])
         # garant je notifikován o nové žádosti (in-app + e-mail metoda)
         mock_garant_notify.assert_called_once_with(sp_mock)
 

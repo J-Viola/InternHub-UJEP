@@ -21,6 +21,28 @@ os.environ.setdefault("STAG_MOCK", "True")
 
 from .settings import *  # noqa: F403,E402
 
+# ---------------------------------------------------------------------------
+# BL-07 — izolační gardy (fail-closed). Aktivují se jen mimo schválený provoz;
+# produkce (app.settings, DEBUG=False) tyto přepisy nemá → chování se nemění.
+# ---------------------------------------------------------------------------
+
+# 1) E-mail: lokální outbox, žádný SMTP spoj (dříve záviselo jen na runneru).
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+# 2) DB identity guard: zapnout i mimo DEBUG a přezkoumat načtenou konfiguraci.
+DB_IDENTITY_GUARD = True
+E2E_RESET_ENABLED = True
+
+# 3) ARES: bez odchozího HTTP, pokud operátor výslovně nepovolí živý režim.
+if os.environ.get("ALLOW_LIVE_EXTERNAL") != "1":
+    ARES_MOCK = True
+
+# 4) Settings check — runner musí operovat jen na disposable test DB.
+#    Nesoulad = ImproperlyConfigured už při načtení nastavení (žádný běh nezačne).
+from .db_identity import assert_runner_db_identities  # noqa: E402
+
+assert_runner_db_identities(DATABASES, operation="app.test_settings")  # noqa: F405
+
 ALLOWED_HOSTS = ["*"]
 
 MIGRATION_MODULES = {

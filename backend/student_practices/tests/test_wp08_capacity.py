@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from department.models import Department
 from practices.models import Practice, ProgressStatus
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
-from student_practices.services import StudentPracticeService
+from student_practices.services import AxesIncompleteError, StudentPracticeService
 from subject.models import Subject
 from users.models import (
     ApprovalStatus,
@@ -129,8 +129,36 @@ class CapacityAllocationTests(TestCase):
         self.assertEqual(response.data.get("detail"), "Kapacita partnera je plně obsazena")
 
     def test_contracted_notifies_org(self):
-        """Po úspěšném CONTRACTED vzniká notifikace organizaci (verb ALLOCATION_ORG)."""
-        sp = self._sp()  # AWAITING_CONTRACT
+        """BL-06 oracle update (T1/C06-A + round-3 #10; expected regression #4).
+
+        Korektní oracle: ALLOCATION_ORG notifikace vzniká AŽ po CONTRACTED
+        postupu s oběma approval osami; samotná volná kapacita nestačí
+        (bez employer osy → AxesIncompleteError, žádná notifikace).
+        """
+        sp = self._sp()  # AWAITING_CONTRACT, kapacita 1 volná
+
+        # 1) negativní cesta (T1): bez employer osy žádný postup ani notifikace
+        with self.assertRaises(AxesIncompleteError):
+            StudentPracticeService.transition_student_practice_state(
+                sp,
+                StudentPracticeWorkflowState.CONTRACTED,
+                self.professor,
+                reason="test",
+            )
+        sp.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        self.assertEqual(Notification.objects.filter(recipient=self.org_user, verb="ALLOCATION_ORG").count(), 0)
+
+        # 2) employer osa se zapíše potvrzením organizace (T1 — jen vlastní osa)
+        self.client.force_authenticate(user=self.org_user)
+        response = self.client.post(f"/api/student-practices/{sp.student_practice_id}/confirm-contract/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sp.refresh_from_db()
+        self.assertTrue(sp.employer_approved)
+        # pending akce stále nealokuje
+        self.assertEqual(Notification.objects.filter(recipient=self.org_user, verb="ALLOCATION_ORG").count(), 0)
+
+        # 3) CONTRACTED s oběma osami → vzniká ALLOCATION_ORG
         StudentPracticeService.transition_student_practice_state(
             sp,
             StudentPracticeWorkflowState.CONTRACTED,
@@ -138,11 +166,32 @@ class CapacityAllocationTests(TestCase):
             reason="test",
         )
         notif = Notification.objects.filter(recipient=self.org_user, verb="ALLOCATION_ORG").first()
-        self.assertIsNotNone(notif, "ALLOCATION_ORG notifikace měla vzniknout")
+        self.assertIsNotNone(notif, "ALLOCATION_ORG notifikace měla vzniknout po CONTRACTED s oběma osami")
 
     def test_contracted_allowed_when_capacity_available(self):
-        """Volná kapacita → CONTRACTED projde."""
+        """BL-06 oracle update (T1/C06-A + T2a; round-3 #9; expected regression #3).
+
+        Korektní oracle: přímý AWAITING_CONTRACT→CONTRACTED vyžaduje obě
+        approval osy — samotná volná kapacita již nestačí. Fixture seeduje
+        employer osu (employer_approved=True); pak CONTRACTED projde.
+        """
         sp = self._sp()
+
+        # 1) negativní cesta (T1): bez employer osy → AxesIncompleteError, stav beze změny
+        with self.assertRaises(AxesIncompleteError):
+            StudentPracticeService.transition_student_practice_state(
+                sp,
+                StudentPracticeWorkflowState.CONTRACTED,
+                self.professor,
+                reason="test",
+            )
+        sp.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        self.assertFalse(sp.employer_approved)
+
+        # 2) seed employer osy + volná kapacita → CONTRACTED projde
+        StudentPractice.objects.filter(pk=sp.pk).update(employer_approved=True)
+        sp.refresh_from_db()
         sp = StudentPracticeService.transition_student_practice_state(
             sp,
             StudentPracticeWorkflowState.CONTRACTED,

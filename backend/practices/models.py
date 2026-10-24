@@ -25,6 +25,27 @@ REGION_CHOICES = [
     ("VYS", "Kraj Vysočina"),
 ]
 
+# BL-05 / RF-02a — „typ úvazku" (employment type) nabídky praxe.
+#
+# ZÁVAZNÝ číselník dle rozhodnutí vlastníka/garantů 2026-10-11
+# (audit/2026-10-04/lanes/guarantor-values.md §1, C21-A): numerická osa
+# „Úvazek 0,5" / „Úvazek 1,0". PLACEHOLDER s prefixem `placeholder_` je
+# stažen; uložené kódy se normalizují datovou migrací 0014
+# (placeholder_part_time → uvazek_0_5, placeholder_full_time → uvazek_1_0).
+# Osa zůstává numerická (stávající UI koeficientová osa); další hodnoty
+# (DPP/DPČ/HPP apod.) se NEPřidávají bez nového garantského rozhodnutí.
+EMPLOYMENT_TYPE_CHOICES = [
+    ("uvazek_0_5", "Úvazek 0,5"),
+    ("uvazek_1_0", "Úvazek 1,0"),
+]
+
+# Legacy (BL-05 placeholder) → autoritativní kódy. Používá datová migrace
+# 0014_practice_employment_type_codes a legacy mapping test.
+EMPLOYMENT_TYPE_LEGACY_CODE_MAP = {
+    "placeholder_part_time": "uvazek_0_5",
+    "placeholder_full_time": "uvazek_1_0",
+}
+
 
 class ProgressStatus(enum.Enum):
     NOT_STARTED = 0
@@ -188,6 +209,17 @@ class Practice(CancellationMixin, models.Model):
         blank=True,
         default="",
         help_text="Kraj, kde se praxe koná",
+    )
+    # BL-05 / RF-02a — filtr „typ úvazku" v katalogu nabídek.
+    # Závazný číselník dle guarantor-values.md §1 (2026-10-11, C21-A),
+    # viz EMPLOYMENT_TYPE_CHOICES; default="" pokrývá řádky bez úvazku.
+    employment_type = models.CharField(
+        max_length=64,
+        choices=EMPLOYMENT_TYPE_CHOICES,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text=("Typ úvazku nabídky. Závazný číselník dle rozhodnutí garantů/vlastníka (guarantor-values.md, 2026-10-11)."),
     )
     external_details_file = models.FileField(
         upload_to="external_details/",

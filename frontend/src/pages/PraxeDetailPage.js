@@ -18,6 +18,14 @@ import { useDocumentsAPI } from "@api/documents/documentsAPI";
 import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useTranslation } from "react-i18next";
 import { buildFormData } from "@utils/formDataUtils";
+import { getApiErrorMessage } from "@utils/apiErrorUtils";
+import {
+  isCancellationPending,
+  canRequestCancellation,
+  canResolveCancellation,
+  canReviewResubmittedDocuments,
+  canTerminalReject,
+} from "@utils/spWorkflowUtils";
 import LoadingState from "@components/core/Feedback/LoadingState";
 import ErrorState from "@components/core/Feedback/ErrorState";
 import Timeline from "@components/Student/Timeline";
@@ -30,6 +38,15 @@ export default function PraxeDetailPage() {
   const [rejectPopUp, setRejectPopUp] = useState(false);
   const [withdrawPopUp, setWithdrawPopUp] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  // C02-A/T2d: žádost o storno (student) + rozhodnutí (garant/admin)
+  const [cancelPopUp, setCancelPopUp] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [resolvePopUp, setResolvePopUp] = useState(false);
+  const [resolveDecision, setResolveDecision] = useState(null);
+  // C19-B/T2c: review-pending DOCUMENTS_RESUBMITTED — rozhodnutí review
+  const [repairPopUp, setRepairPopUp] = useState(false);
+  const [repairDecision, setRepairDecision] = useState(null);
+  const [repairReason, setRepairReason] = useState("");
   const [entity, setEntity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -154,24 +171,21 @@ export default function PraxeDetailPage() {
       }
     } catch (error) {
       console.error(error);
-      const errorCode = error.code || "UNKNOWN_ERROR";
-      addMessage(
-        t(`api_errors.${errorCode}`, {
-          defaultValue: t("practice_detail.apply_error"),
-        }),
-        "E",
-      );
+      // kapacita (CAPACITY_FULL) i ostatní serverové chyby se zobrazí čistě
+      addMessage(getApiErrorMessage(error, t, "practice_detail.apply_error"), "E");
     }
   };
 
   const handleApprove = async () => {
     try {
-      await studentpraticeAPI.updateStudentPracticeStatus(id, "approve");
+      await studentpraticeAPI.updateStudentPracticeStatus(id, "approve", {
+        workflowStatus: entity?.student_practice_status?.workflow_status,
+      });
       addMessage(t("practice_detail.approve_success"), "S");
       fetchData();
       setPopUp(false);
     } catch (error) {
-      addMessage(t("practice_detail.approve_error"), "E");
+      addMessage(getApiErrorMessage(error, t, "practice_detail.approve_error"), "E");
     }
   };
 
@@ -189,23 +203,26 @@ export default function PraxeDetailPage() {
     try {
       await studentpraticeAPI.updateStudentPracticeStatus(id, "reject", {
         reason: rejectReason.trim(),
+        workflowStatus: entity?.student_practice_status?.workflow_status,
       });
       addMessage(t("practice_detail.reject_success"), "S");
       fetchData();
       setRejectPopUp(false);
       setRejectReason("");
     } catch (error) {
-      addMessage(t("practice_detail.reject_error"), "E");
+      addMessage(getApiErrorMessage(error, t, "practice_detail.reject_error"), "E");
     }
   };
 
   const handleConfirmContract = async () => {
     try {
+      // T2b: potvrzení je idempotentní (opakování stejné osy = 200 no-op);
+      // UI nabízí akci jen ve stavu AWAITING_CONTRACT, kde by jinde 400.
       await studentpraticeAPI.confirmContract(id);
       addMessage(t("practice_detail.confirm_contract_success"), "S");
       fetchData();
     } catch (error) {
-      addMessage(t("practice_detail.confirm_contract_error"), "E");
+      addMessage(getApiErrorMessage(error, t, "practice_detail.confirm_contract_error"), "E");
     }
   };
 
@@ -215,7 +232,7 @@ export default function PraxeDetailPage() {
       addMessage(t("practice_detail.resubmit_success"), "S");
       fetchData();
     } catch (error) {
-      addMessage(t("practice_detail.resubmit_error"), "E");
+      addMessage(getApiErrorMessage(error, t, "practice_detail.resubmit_error"), "E");
     }
   };
 
@@ -226,13 +243,92 @@ export default function PraxeDetailPage() {
       setWithdrawPopUp(false);
       fetchData();
     } catch (error) {
-      const errorCode = error.code || "UNKNOWN_ERROR";
-      addMessage(
-        t(`api_errors.${errorCode}`, {
-          defaultValue: t("practice_detail.withdraw_error"),
-        }),
-        "E",
-      );
+      addMessage(getApiErrorMessage(error, t, "practice_detail.withdraw_error"), "E");
+    }
+  };
+
+  // --- C02-A: žádost o storno (student, vlastní přihláška) ---
+  const handleRequestCancellation = async () => {
+    if (!cancelReason.trim()) {
+      addMessage(t("practice_detail.cancel_request_reason_required"), "E");
+      return;
+    }
+    try {
+      await studentpraticeAPI.requestCancellation(id, cancelReason.trim());
+      addMessage(t("practice_detail.cancel_request_success"), "S");
+      setCancelPopUp(false);
+      setCancelReason("");
+      fetchData();
+    } catch (error) {
+      addMessage(getApiErrorMessage(error, t, "practice_detail.cancel_request_error"), "E");
+    }
+  };
+
+  const openResolvePopup = (decision) => {
+    setResolveDecision(decision);
+    setResolvePopUp(true);
+  };
+
+  // --- T2d: rozhodnutí garanta/admina o žádosti o storno ---
+  const handleResolveCancellation = async () => {
+    if (!resolveDecision) return;
+    try {
+      await studentpraticeAPI.resolveCancellation(id, resolveDecision);
+      addMessage(t("practice_detail.cancellation_resolve_success"), "S");
+      setResolvePopUp(false);
+      setResolveDecision(null);
+      fetchData();
+    } catch (error) {
+      addMessage(getApiErrorMessage(error, t, "practice_detail.cancellation_resolve_error"), "E");
+    }
+  };
+
+  // --- FE-007: dokončení ENDED → COMPLETED (server vynucuje Evaluation +
+  // schválený FEEDBACK dokument, jinak 400 s čitelnou hláškou) ---
+  const handleComplete = async () => {
+    try {
+      await studentpraticeAPI.transitionStudentPractice(id, 6, "");
+      addMessage(t("practice_detail.complete_success"), "S");
+      fetchData();
+    } catch (error) {
+      addMessage(getApiErrorMessage(error, t, "practice_detail.complete_error"), "E");
+    }
+  };
+
+  // --- C19-B/T2c: review rozhoduje o DOCUMENTS_RESUBMITTED ---
+  const handleRepairApprove = async (targetState) => {
+    try {
+      await studentpraticeAPI.transitionStudentPractice(id, targetState, "");
+      addMessage(t("practice_detail.repair_action_success"), "S");
+      fetchData();
+    } catch (error) {
+      addMessage(getApiErrorMessage(error, t, "practice_detail.repair_action_error"), "E");
+    }
+  };
+
+  const openRepairPopup = (decision) => {
+    setRepairDecision(decision);
+    setRepairReason("");
+    setRepairPopUp(true);
+  };
+
+  const handleRepairDecision = async () => {
+    if (repairReason.trim().length < 10) {
+      addMessage(t("practice_detail.reject_reason_required"), "E");
+      return;
+    }
+    // 'reject' → DOCUMENTS_REJECTED (smyčka pokračuje);
+    // 'terminal' → REJECTED (jen admin + důvod, T2c/R44)
+    const targetState = repairDecision === "terminal" ? 2 : 9;
+    try {
+      await studentpraticeAPI.transitionStudentPractice(id, targetState, repairReason.trim());
+      addMessage(t("practice_detail.repair_action_success"), "S");
+      setRepairPopUp(false);
+      setRepairDecision("");
+      setRepairReason("");
+      fetchData();
+    } catch (error) {
+      addMessage(getApiErrorMessage(error, t, "practice_detail.repair_action_error"), "E");
     }
   };
 
@@ -350,6 +446,35 @@ export default function PraxeDetailPage() {
                 </Container>
               </ContainerForEntity>
             )}
+
+          {/* DOCUMENTS_REJECTED BANNER - C19-B/T2c repair loop: student replaces documents */}
+          {user &&
+            user.isStudent() &&
+            entity?.student_practice_status?.workflow_status === "DOCUMENTS_REJECTED" && (
+              <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
+                <Container property="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg shadow-sm flex flex-col gap-2">
+                  <Paragraph property="text-red-800 font-medium">
+                    {t("practice_detail.documents_rejected_banner")}
+                  </Paragraph>
+                  {entity?.student_practice_status?.rejection_reason && (
+                    <Paragraph property="text-red-700 text-sm">
+                      {entity.student_practice_status.rejection_reason}
+                    </Paragraph>
+                  )}
+                </Container>
+              </ContainerForEntity>
+            )}
+
+          {/* DOCUMENTS_RESUBMITTED BANNER - C19-B: upload ≠ approval, čeká na review */}
+          {entity?.student_practice_status?.workflow_status === "DOCUMENTS_RESUBMITTED" && (
+            <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
+              <Container property="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm">
+                <Paragraph property="text-yellow-800 font-medium">
+                  {t("practice_detail.documents_resubmitted_banner")}
+                </Paragraph>
+              </Container>
+            </ContainerForEntity>
+          )}
 
           {/* DOCS PANEL - show for anyone except REJECTED, or show always for professors */}
           {entity?.student_practice_status?.workflow_status &&
@@ -564,6 +689,129 @@ export default function PraxeDetailPage() {
                   </Container>
                 )}
 
+              {/* ŽÁDOST O STORNO - vlastník-student ze stavu CONTRACTED (C02-A) */}
+              {canRequestCancellation(entity, user) && (
+                <Container property="flex justify-end">
+                  <Button
+                    variant="red"
+                    property="px-4 py-2 text-sm font-medium"
+                    onClick={() => {
+                      setCancelReason("");
+                      setCancelPopUp(true);
+                    }}
+                  >
+                    {t("practice_detail.cancel_request_button")}
+                  </Button>
+                </Container>
+              )}
+
+              {/* PENDING ŽÁDOST O STORNO - stav se nemění, dokud resolver nerozhodne */}
+              {entity?.student_practice_status && isCancellationPending(entity) && (
+                <Container property="flex flex-col gap-3 items-end">
+                  <Container property="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm w-full">
+                    <Paragraph property="text-yellow-800 font-medium text-sm">
+                      {canResolveCancellation(user)
+                        ? t("practice_detail.cancellation_pending_resolver")
+                        : t("practice_detail.cancellation_pending_student")}
+                    </Paragraph>
+                    {entity?.cancellation_reason && (
+                      <Paragraph property="text-yellow-700 text-sm mt-1">
+                        {`${t("practice_detail.cancellation_reason_label")}: ${entity.cancellation_reason}`}
+                      </Paragraph>
+                    )}
+                  </Container>
+                  {/* ROZHODNUTÍ RESOLVERA - jen garant (VY/VK) / admin (T2d) */}
+                  {canResolveCancellation(user) && (
+                    <Container property="flex gap-4 justify-end">
+                      <Button
+                        variant="greenSmall"
+                        onClick={() => openResolvePopup("approve")}
+                      >
+                        {t("practice_detail.cancellation_approve")}
+                      </Button>
+                      <Button
+                        variant="red"
+                        onClick={() => openResolvePopup("reject")}
+                      >
+                        {t("practice_detail.cancellation_reject")}
+                      </Button>
+                    </Container>
+                  )}
+                </Container>
+              )}
+
+              {/* REVIEW OPRAVNÝCH DOKUMENTŮ - DOCUMENTS_RESUBMITTED (C19-B/T2c) */}
+              {entity?.student_practice_status?.workflow_status ===
+                "DOCUMENTS_RESUBMITTED" &&
+                canReviewResubmittedDocuments(user) && (
+                  <Container property="flex flex-wrap gap-4 justify-end">
+                    <Button
+                      variant="greenSmall"
+                      onClick={() => handleRepairApprove(5)}
+                    >
+                      {t("practice_detail.repair_approve")}
+                    </Button>
+                    <Button
+                      variant="blueSmall"
+                      onClick={() => handleRepairApprove(8)}
+                    >
+                      {t("practice_detail.repair_approve_continue")}
+                    </Button>
+                    <Button
+                      variant="red"
+                      onClick={() => openRepairPopup("reject")}
+                    >
+                      {t("practice_detail.repair_reject")}
+                    </Button>
+                    {canTerminalReject(user) && (
+                      <Button
+                        variant="red"
+                        onClick={() => openRepairPopup("terminal")}
+                      >
+                        {t("practice_detail.terminal_reject")}
+                      </Button>
+                    )}
+                  </Container>
+                )}
+
+              {/* FEEDBACK REVIEW - garant/škola schvaluje hodnotící podklad (FE-007) */}
+              {canReviewResubmittedDocuments(user) &&
+                docs.find((d) => d.type === "feedback") && (
+                  <Container property="flex flex-wrap gap-4 justify-end items-center">
+                    <Paragraph property="text-sm font-medium">
+                      {t("docs.feedback")}
+                    </Paragraph>
+                    <Button
+                      variant="greenSmall"
+                      disabled={docs.find((d) => d.type === "feedback").status === 1}
+                      onClick={() =>
+                        handleReview(docs.find((d) => d.type === "feedback").id, 1)
+                      }
+                    >
+                      {t("common.approve")}
+                    </Button>
+                    <Button
+                      variant="red"
+                      disabled={docs.find((d) => d.type === "feedback").status === 2}
+                      onClick={() =>
+                        handleReview(docs.find((d) => d.type === "feedback").id, 2)
+                      }
+                    >
+                      {t("common.reject")}
+                    </Button>
+                  </Container>
+                )}
+
+              {/* DOKONČENÍ - ENDED → COMPLETED jen se schválenými podklady (FE-007/RF-15) */}
+              {entity?.student_practice_status?.workflow_status === "ENDED" &&
+                (user.isDepartmentUser() || user.isAdmin()) && (
+                  <Container property="flex justify-end">
+                    <Button variant="greenSmall" onClick={handleComplete}>
+                      {t("practice_detail.complete_button")}
+                    </Button>
+                  </Container>
+                )}
+
               {/* POTVRZENÍ SMLOUVY - garant/profesor ve stavu AWAITING_CONTRACT */}
               {user &&
                 (user.isProfessor() || user.isDepartmentUser() || user.isAdmin()) &&
@@ -622,10 +870,12 @@ export default function PraxeDetailPage() {
             />
           )}
 
-          {/* SCHVALOVÁNÍ PŘIHLÁŠKY - UČITEL/ORGANIZACE */}
+          {/* SCHVALOVÁNÍ PŘIHLÁŠKY - UČITEL/ORGANIZACE/ADMIN */}
           {popUp &&
             user &&
-            (user.isDepartmentUser() || user.isOrganizationUser()) && (
+            (user.isDepartmentUser() ||
+              user.isOrganizationUser() ||
+              user.isAdmin()) && (
               <PopUpCon
                 onClose={handlePopUp}
                 title={t("practice_detail.manage_app")}
@@ -694,6 +944,105 @@ export default function PraxeDetailPage() {
               onReject={() => setWithdrawPopUp(false)}
               onRejectText={t("common.cancel")}
             />
+          )}
+
+          {/* ŽÁDOST O STORNO MODAL (C02-A) */}
+          {cancelPopUp && (
+            <PopUpCon
+              onClose={() => {
+                setCancelPopUp(false);
+                setCancelReason("");
+              }}
+              title={t("practice_detail.cancel_request_title")}
+              text={t("practice_detail.cancel_request_text")}
+              onSubmit={handleRequestCancellation}
+              onSubmitText={t("practice_detail.cancel_request_confirm")}
+              onReject={() => {
+                setCancelPopUp(false);
+                setCancelReason("");
+              }}
+              onRejectText={t("common.cancel")}
+            >
+              <Container property="mt-4 mb-4 px-4">
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder={t("practice_detail.cancel_request_placeholder")}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none text-sm"
+                />
+                {cancelReason.trim().length === 0 && (
+                  <Paragraph property="text-red-500 text-xs mt-2">
+                    {t("practice_detail.cancel_request_reason_required")}
+                  </Paragraph>
+                )}
+              </Container>
+            </PopUpCon>
+          )}
+
+          {/* ROZHODNUTÍ O ŽÁDOSTI O STORNO MODAL (T2d) */}
+          {resolvePopUp && (
+            <PopUpCon
+              onClose={() => {
+                setResolvePopUp(false);
+                setResolveDecision(null);
+              }}
+              title={t("practice_detail.cancel_request_title")}
+              text={
+                resolveDecision === "approve"
+                  ? t("practice_detail.cancellation_approve")
+                  : t("practice_detail.cancellation_reject")
+              }
+              onSubmit={handleResolveCancellation}
+              onSubmitText={t("common.approve")}
+              onReject={() => {
+                setResolvePopUp(false);
+                setResolveDecision(null);
+              }}
+              onRejectText={t("common.cancel")}
+            />
+          )}
+
+          {/* REVIEW ROZHODNUTÍ O OPRAVNÝCH DOKUMENTECH MODAL (C19-B/T2c) */}
+          {repairPopUp && (
+            <PopUpCon
+              onClose={() => {
+                setRepairPopUp(false);
+                setRepairDecision(null);
+                setRepairReason("");
+              }}
+              title={
+                repairDecision === "terminal"
+                  ? t("practice_detail.terminal_reject_title")
+                  : t("practice_detail.repair_review_title")
+              }
+              text={
+                repairDecision === "terminal"
+                  ? t("practice_detail.terminal_reject_text")
+                  : t("practice_detail.repair_review_text")
+              }
+              onSubmit={handleRepairDecision}
+              onSubmitText={t("common.reject")}
+              onReject={() => {
+                setRepairPopUp(false);
+                setRepairDecision(null);
+                setRepairReason("");
+              }}
+              onRejectText={t("common.cancel")}
+            >
+              <Container property="mt-4 mb-4 px-4">
+                <textarea
+                  value={repairReason}
+                  onChange={(e) => setRepairReason(e.target.value)}
+                  placeholder={t("practice_detail.reject_reason_placeholder")}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none text-sm"
+                />
+                {repairReason.trim().length > 0 && repairReason.trim().length < 10 && (
+                  <Paragraph property="text-red-500 text-xs mt-2">
+                    {t("practice_detail.reject_reason_required")}
+                  </Paragraph>
+                )}
+              </Container>
+            </PopUpCon>
           )}
         </>
       )}

@@ -42,6 +42,9 @@ describe('NabidkaDetailPage', () => {
         isProfessor: jest.fn(),
         isOrganizationUser: jest.fn(),
         isAdmin: jest.fn(),
+        // BL-07/PBUG-BL07-07: nová akce „Zrušit nabídku" se podmíněna
+        // rolí (admin / vedoucí katedry) → mock musí metodu mít.
+        isDepartmentMg: jest.fn(),
     };
 
     const mockOffer = {

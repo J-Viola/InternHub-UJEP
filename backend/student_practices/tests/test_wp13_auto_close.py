@@ -66,7 +66,13 @@ class AutoCloseTriggerTests(TestCase):
         self.assertIsNone(practice.closed_reason)
 
     def test_capacity_auto_close_sets_capacity_reason(self):
-        """Kapacitní auto-close → closed_reason=CAPACITY."""
+        """BL-06 oracle update (C20-A; expected regression #10 — round-3).
+
+        Korektní oracle: kapacitní auto-close NESMÍ sám uzavírat
+        (AUTO_CLOSE_AT_CAPACITY=False — uzavření kapacity je manuální,
+        C20-A); termínový (TIME) auto-close zůstává beze změny a uzavírá
+        praxi v den zahájení, i když je kapacita naplněná.
+        """
         practice = self._practice(date.today() + timedelta(days=10), positions=1)
         StudentPractice.objects.create(
             user=self.student,
@@ -79,6 +85,16 @@ class AutoCloseTriggerTests(TestCase):
         )
         call_command("auto_close_practices")
         practice.refresh_from_db()
+        # C20-A: žádný automatický kapacitní auto-close — praxe zůstává otevřená
+        self.assertEqual(practice.workflow_state, PracticeWorkflowState.OPEN_FOR_APPLICATIONS)
+        self.assertIsNone(practice.closed_reason)
+        self.assertIsNone(practice.closed_for_applications_at)
+
+        # TIME cutoff funguje dál: v den zahájení se praxe uzavře s reason=TIME
+        practice.start_date = date.today()
+        practice.save(update_fields=["start_date"])
+        call_command("auto_close_practices")
+        practice.refresh_from_db()
         self.assertEqual(practice.workflow_state, PracticeWorkflowState.CLOSED_FOR_APPLICATIONS)
-        self.assertEqual(practice.closed_reason, ApplicationClosureReason.CAPACITY)
+        self.assertEqual(practice.closed_reason, ApplicationClosureReason.TIME)
         self.assertIsNotNone(practice.closed_for_applications_at)

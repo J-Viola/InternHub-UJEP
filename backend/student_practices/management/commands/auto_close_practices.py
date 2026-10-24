@@ -58,45 +58,55 @@ class Command(BaseCommand):
                             notification_type=NotificationType.INFO,
                         )
 
-        # Check capacity-based auto-close: closed_reason=CAPACITY
-        for practice in Practice.objects.filter(
-            workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
-            is_cancelled=False,
-        ):
-            approved_count = StudentPractice.objects.filter(
-                practice=practice,
-                workflow_state__in=[
-                    StudentPracticeWorkflowState.CONTRACTED,
-                    StudentPracticeWorkflowState.STARTED,
-                    StudentPracticeWorkflowState.ENDED,
-                    StudentPracticeWorkflowState.COMPLETED,
-                ],
-            ).count()
-            if practice.available_positions is not None and approved_count >= practice.available_positions:
-                with transaction.atomic():
-                    practice = Practice.objects.select_for_update().get(pk=practice.pk)
-                    if practice.workflow_state == PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
-                        practice.workflow_state = PracticeWorkflowState.CLOSED_FOR_APPLICATIONS
-                        practice.closed_reason = ApplicationClosureReason.CAPACITY
-                        practice.closed_for_applications_at = timezone.now()
-                        practice.save(update_fields=["workflow_state", "closed_reason", "closed_for_applications_at", "updated_at"])
-                        closed_count += 1
+        # C20-A: auto-close dle kapacity = NEschrálené rozšíření — CHRÁNĚN
+        # přes settings.AUTO_CLOSE_AT_CAPACITY (default False = vypnuto).
+        # Uzavření dle kapacity je manuální (transition_practice_state /
+        # close_practice_for_applications); termínový (TIME) auto-close výše
+        # je samostatný mechanismus a zůstává beze změny.
+        from django.conf import settings as django_settings
 
-                        ActionLogService.log(
-                            user=None,
-                            action_type=ActionLogType.STATE_TRANSITION,
-                            object_type="Practice",
-                            object_id=practice.practice_id,
-                            description=f"Auto-close inzerátu ID {practice.practice_id} (naplněna kapacita, CAPACITY)",
-                        )
+        if not getattr(django_settings, "AUTO_CLOSE_AT_CAPACITY", False):
+            self.stdout.write("Auto-close dle kapacity přeskočen (C20-A: manuální uzavření; AUTO_CLOSE_AT_CAPACITY=False).")
+        else:
+            for practice in Practice.objects.filter(
+                workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+                is_cancelled=False,
+            ):
+                approved_count = StudentPractice.objects.filter(
+                    practice=practice,
+                    is_cancelled=False,
+                    workflow_state__in=[
+                        StudentPracticeWorkflowState.CONTRACTED,
+                        StudentPracticeWorkflowState.STARTED,
+                        StudentPracticeWorkflowState.ENDED,
+                        StudentPracticeWorkflowState.COMPLETED,
+                    ],
+                ).count()
+                if practice.available_positions is not None and approved_count >= practice.available_positions:
+                    with transaction.atomic():
+                        practice = Practice.objects.select_for_update().get(pk=practice.pk)
+                        if practice.workflow_state == PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
+                            practice.workflow_state = PracticeWorkflowState.CLOSED_FOR_APPLICATIONS
+                            practice.closed_reason = ApplicationClosureReason.CAPACITY
+                            practice.closed_for_applications_at = timezone.now()
+                            practice.save(update_fields=["workflow_state", "closed_reason", "closed_for_applications_at", "updated_at"])
+                            closed_count += 1
 
-                        if practice.contact_user:
-                            NotificationService.create_notification(
-                                recipient=practice.contact_user,
-                                verb="PRACTICE_AUTO_CLOSED",
-                                message=f"Nabídka praxe '{practice.title}' byla automaticky uzavřena (naplněna kapacita).",
-                                target=practice,
-                                notification_type=NotificationType.INFO,
+                            ActionLogService.log(
+                                user=None,
+                                action_type=ActionLogType.STATE_TRANSITION,
+                                object_type="Practice",
+                                object_id=practice.practice_id,
+                                description=f"Auto-close inzerátu ID {practice.practice_id} (naplněna kapacita, CAPACITY)",
                             )
+
+                            if practice.contact_user:
+                                NotificationService.create_notification(
+                                    recipient=practice.contact_user,
+                                    verb="PRACTICE_AUTO_CLOSED",
+                                    message=f"Nabídka praxe '{practice.title}' byla automaticky uzavřena (naplněna kapacita).",
+                                    target=practice,
+                                    notification_type=NotificationType.INFO,
+                                )
 
         self.stdout.write(self.style.SUCCESS(f"Úspěšně uzavřeno {closed_count} inzerátů."))

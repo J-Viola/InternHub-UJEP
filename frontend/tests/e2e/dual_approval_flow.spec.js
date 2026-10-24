@@ -28,6 +28,9 @@ test.describe('Dual Approval Flow (E2E)', () => {
     await companyPage.getByLabel('Název').fill(practiceTitle);
     await companyPage.getByLabel('Popis stáže').fill('This is a test practice for E2E dual approval.');
     await companyPage.getByLabel('Náplň práce').fill('Testing, clicking, approving.');
+    // BL-07/PBUG-01: mentor_name + contact_email jsou povinné na serveru (PracticeSerializer)
+    await companyPage.locator('input[id="mentor_name"]').fill('Mentor E2E');
+    await companyPage.locator('input[id="contact_email"]').fill('mentor.e2e@example.com');
 
     // Wait for dropdowns to be populated
     await expect(companyPage.locator('select[id="contact_user"] option').nth(1)).toBeAttached({ timeout: 10000 });
@@ -105,9 +108,11 @@ test.describe('Dual Approval Flow (E2E)', () => {
     await clickNavLink(studentPage, null, 'Nabídka praxí');
 
     await studentPage.locator('input[id="title"]').fill(practiceTitle);
-    const practiceCardStudent = studentPage.locator('div').filter({ hasText: practiceTitle }).first();
-    await expect(practiceCardStudent).toBeVisible();
-    await practiceCardStudent.click();
+    // BL-07/FE-004 fix: `div.filter().first()` matchuje NEJVNITŘNĚJŠÍ ancestor
+    // (grid) bez onClick → klik ne naviguje. Klikáme kartu přes její heading
+    // (bubluje na onClick kořenového ContainerForEntity nabídky).
+    await studentPage.getByRole('heading', { name: practiceTitle }).click();
+    await studentPage.waitForURL(/.*\/nabidka\/\d+/);
 
     await safeClick(studentPage.getByRole('button', { name: 'Podat přihlášku' }));
     // In NabidkaDetailPage, the popup uses "Ano"
@@ -116,8 +121,53 @@ test.describe('Dual Approval Flow (E2E)', () => {
     await studentContext.close();
 
 
-    // --- STEP 4: COMPANY APPROVES APP ---
-    console.log('--- Step 4: Company approving application ---');
+    // --- STEP 4: KATEDRA (PROFESSOR) APPROVES APP — první osa ---
+    // Dvouosý model (BL-03): APPLIED → PRELIMINARY_APPROVED patří katedře
+    // (student_practices docstring + services.py:334); organizace může až
+    // z PRELIMINARY_APPROVED (→ AWAITING_CONTRACT).
+    console.log('--- Step 4: Professor (katedra) approving application ---');
+    const profContext2 = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profPage2 = await profContext2.newPage();
+
+    await profPage2.goto('/');
+    await waitForAppLoad(profPage2);
+    await clickNavLink(profPage2, null, 'Správa stáží');
+    await waitForAppLoad(profPage2);
+    await expect(profPage2.getByText('Načítání stáží...')).not.toBeVisible({ timeout: 15000 });
+
+    // Otevřít AKTIVNÍ nabídku z přehledu (očíčko „Zobrazit detail" → detail nabídky)
+    const activeOfferCard = profPage2.locator('div[id^="practice-offer-"]').filter({ hasText: practiceTitle }).first();
+    await expect(activeOfferCard).toBeVisible({ timeout: 15000 });
+    await activeOfferCard.getByTitle('Zobrazit detail').click();
+    await profPage2.waitForURL(/.*\/nabidka\/\d+/);
+    await waitForAppLoad(profPage2);
+
+    // → seznam přihlášených studentů (NabidkaDetailPage: 'Zobrazit přihlášené')
+    await safeClick(profPage2.getByRole('button', { name: 'Zobrazit přihlášené' }));
+    await profPage2.waitForURL(/.*\/students\/\d+/);
+
+    await profPage2.reload();
+    await waitForAppLoad(profPage2);
+    await expect(profPage2.getByText('Načítání studentů...')).not.toBeVisible({ timeout: 15000 });
+
+    const studentRow = profPage2.locator('div[id^="user-entity-"]').filter({ hasText: /tsedlacek|Ignác/i }).first();
+    await expect(studentRow).toBeVisible({ timeout: 15000 });
+    const appDocBtn = studentRow.getByTitle('Zobrazit kartu praxe');
+    await expect(appDocBtn).toBeVisible({ timeout: 15000 });
+    await appDocBtn.click();
+
+    await profPage2.waitForURL(/.*\/karta-praxe\/.*/);
+    await waitForAppLoad(profPage2);
+
+    await safeClick(profPage2.getByRole('button', { name: 'Spravovat' }));
+    // Popup na kartě praxe má titulek „Správa přihlášky" (practice_detail.manage_app);
+    // starý waypoint „Změnit stav přihlášky" patří PrihlaskyPage (org/osobní).
+    await confirmPopup(profPage2, 'Správa přihlášky');
+    await profContext2.close();
+
+
+    // --- STEP 5: ORGANIZACE (COMPANY) APPROVES APP — druhá osa ---
+    console.log('--- Step 5: Company approving application ---');
     const companyContext2 = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
     const companyPage2 = await companyContext2.newPage();
 
@@ -136,61 +186,6 @@ test.describe('Dual Approval Flow (E2E)', () => {
     await companyContext2.close();
 
 
-    // --- STEP 5: PROFESSOR APPROVES APP ---
-    console.log('--- Step 5: Professor approving application ---');
-    const profContext2 = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
-    const profPage2 = await profContext2.newPage();
-
-    await profPage2.goto('/');
-    await waitForAppLoad(profPage2);
-    await clickNavLink(profPage2, null, 'Správa stáží');
-    await waitForAppLoad(profPage2);
-
-    // Search globally for the practice card by title
-    const profAppCardPractice = profPage2.locator('div').filter({ hasText: practiceTitle }).filter({ visible: true }).first();
-    await expect(profAppCardPractice).toBeVisible({ timeout: 15000 });
-    await profAppCardPractice.click();
-
-    // Wait for the detail or students list to load
-    await expect(profPage2.getByText(/Přihlášení k praxi|Kontaktní osoba/i).first()).toBeVisible({ timeout: 15000 });
-
-    // Handle navigation to NabidkaDetailPage if needed
-    if (profPage2.url().includes('/nabidka/')) {
-        const studentsBtn = profPage2.getByRole('button', { name: 'Přihlášení studenti' });
-        await expect(studentsBtn).toBeVisible({ timeout: 10000 });
-        await studentsBtn.click();
-        await waitForAppLoad(profPage2);
-    }
-
-    // Now on StudentsPage. Force reload to ensure can_approve is latest.
-    await profPage2.reload();
-    await waitForAppLoad(profPage2);
-    await expect(profPage2.getByText('Načítání studentů...')).not.toBeVisible({ timeout: 15000 });
-
-    // Debug: List all student names/emails visible
-    const studentEntities = await profPage2.locator('div[id^="user-entity-"]').all();
-    console.log(`Found ${studentEntities.length} student rows.`);
-    for (const entity of studentEntities) {
-        console.log('Row text:', await entity.innerText());
-    }
-
-    // Find the row for our student and click the doc icon
-    const studentRow = profPage2.locator('div[id^="user-entity-"]').filter({ hasText: /tsedlacek|Ignác/i }).first();
-    await expect(studentRow).toBeVisible({ timeout: 15000 });
-    const appDocBtn = studentRow.getByTitle('Zobrazit kartu praxe');
-    await expect(appDocBtn).toBeVisible({ timeout: 15000 });
-    await appDocBtn.click();
-
-    // Wait for the specific student practice card to load and show the Spravovat button
-    await profPage2.waitForURL(/.*\/karta-praxe\/.*/);
-    await waitForAppLoad(profPage2);
-
-    await safeClick(profPage2.getByRole('button', { name: 'Spravovat' }));
-
-    await confirmPopup(profPage2, 'Změnit stav přihlášky');
-    await profContext2.close();
-
-
     // --- VERIFY: STUDENT SEES APPROVED STATE ---
     console.log('--- Verification: Student sees approved state ---');
     const studentContext2 = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
@@ -203,7 +198,13 @@ test.describe('Dual Approval Flow (E2E)', () => {
     const finalAppCard = studentPage2.locator('div').filter({ hasText: practiceTitle }).first();
     await expect(finalAppCard).toBeVisible();
 
-    await expect(finalAppCard.getByText('Probíhá').or(finalAppCard.getByText('Schváleno')).first()).toBeVisible();
+    // Po obou schváleních (katedra + organizace) je SP v AWAITING_CONTRACT
+    // (state_badge = „Čeká na zasmluvnění") — staré „Probíhá" je zastaralý waypoint.
+    await expect(finalAppCard.getByText('Čeká na zasmluvnění')
+        .or(finalAppCard.getByText('AWAITING_CONTRACT'))
+        .or(finalAppCard.getByText('Schváleno'))
+        .or(finalAppCard.getByText('Probíhá'))
+        .first()).toBeVisible();
     await studentContext2.close();
   });
 });

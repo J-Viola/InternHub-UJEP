@@ -38,7 +38,11 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!isInitializing && user?.isLoggedIn?.()) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 60000); // Poll every minute
+      // C08-B cadence (rozhodnutí vlastníka, guarantor-values.md §2,
+      // 2026-10-11): polling 30 s, end-to-end budget ≤ 5 min (Europe/Prague).
+      // Nejbližší strukturální ekvivalent UI-channel freshnesse v FE —
+      // STAG/ARES sync-status polling zatím neexistuje (budget zaznamenán).
+      const interval = setInterval(fetchNotifications, 30000);
       return () => clearInterval(interval);
     } else {
       setNotifications([]);

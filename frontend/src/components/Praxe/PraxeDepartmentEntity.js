@@ -143,6 +143,18 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             />
                         </>
                     )}
+                    {/* FE-004: aktivní (schválená) nabídka — žádný akce schvalování,
+                        jen pohled na detail; karta nesmí z přehledu zmizet. */}
+                    {type === "active_offers" && (
+                        <Button
+                            noVariant={true}
+                            onClick={(e) => { e.stopPropagation(); onView(); }}
+                            title={t('internships.view_detail')}
+                            icon="eye"
+                            iconColor={"gray"}
+                            iconSize={"24"}
+                        />
+                    )}
                 </Container>
             </Container>
         </ContainerForEntity>

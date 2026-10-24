@@ -187,6 +187,11 @@ class StudentPracticeServiceTests(TestCase):
         )
 
         # 1c. AWAITING_CONTRACT → CONTRACTED (capacity check: available_positions None → OK)
+        # T1 (C06-A): přechod do CONTRACTED vyžaduje obě schvalovací osy —
+        # employer osu nastavuje (svou vlastní rolí) organizace; seedujeme ji,
+        # aby tento capacity/orchestrace test měřil svůj předmět, ne T1 bránu.
+        sp.employer_approved = True
+        sp.save(update_fields=["employer_approved"])
         StudentPracticeService.transition_student_practice_state(
             sp,
             StudentPracticeWorkflowState.CONTRACTED,
