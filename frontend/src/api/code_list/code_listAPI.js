@@ -18,7 +18,7 @@ export const useCodeListAPI = () => {
             return [];
         } catch (error) {
             console.error("Chyba při získávání předmětů:", error);
-            return [];
+            throw error;
         }
     }, [api]);
 
@@ -48,7 +48,7 @@ export const useCodeListAPI = () => {
             return subjectOptions;
         } catch (error) {
             console.error("Chyba při získávání unikátních předmětů:", error);
-            return [];
+            throw error;
         }
     }, [api]);
 

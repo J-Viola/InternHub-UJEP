@@ -10,11 +10,26 @@ import Button from "@components/core/Button/Button";
 import Headings from "@core/Text/Headings";
 import { useTranslation } from "react-i18next";
 import { REGION_OPTIONS } from "@components/Nabidka/regions";
+import { normalizeSkills, SKILL_CATEGORIES } from "@utils/skills";
 
-export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false, errors = {}}) {
+export default function NabidkaForm({organizationUsers, subjects, formData, handleChange, handleSubmit, isEdit = false, errors = {}, submitting = false}) {
     const { t } = useTranslation();
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const skillCategories = SKILL_CATEGORIES;
+    const skills = normalizeSkills(formData?.skills);
+    const [skillTexts, setSkillTexts] = useState(() => Object.fromEntries(skillCategories.map(category => [category, skills[category].join(', ')])));
+    const parseSkillText = (text) => text.split(',').map(item => item.trim()).filter(Boolean);
+    const submitWithSkills = () => {
+        const parsedSkills = Object.fromEntries(skillCategories.map(category => [category, parseSkillText(skillTexts[category] || '')]));
+        handleChange({ skills: parsedSkills });
+        handleSubmit({ ...formData, skills: parsedSkills });
+    };
+    const semesterOptions = [
+        { label: t('form.semester_unspecified'), value: "" },
+        { label: t('form.semester_winter'), value: "ZS" },
+        { label: t('form.semester_summer'), value: "LS" },
+    ];
     const uvazek = [
         {"label": 0.5, "value" : "0.5"},
         {"label": 1, "value" : "1"}
@@ -71,6 +86,14 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                     />
 
 
+                    <DropDown
+                        id="semester"
+                        value={formData?.semester || ""}
+                        label={t('form.semester')}
+                        options={semesterOptions}
+                        onChange={handleChange}
+                        error={errors.semester}
+                    />
                     <DropDown
                         id={"coefficient"}
                         value={formData?.coefficient}
@@ -200,38 +223,20 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                         error={errors.responsibilities}
                     />
 
-                    {/* SKILLS SECTION */}
+                    {/* Dovednosti v kategoriích; payload zůstává v poli skills. */}
                     <Container property="mt-4">
-                        <Headings sizeTag="h5" property="mb-2 font-bold">{t('profile.skills_limit')}</Headings>
-                        <Container property="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {formData?.skills?.map((skill, index) => (
-                                <Container key={index} property="flex gap-2 items-center">
-                                    <TextField
-                                        id={`skill-${index}`}
-                                        placeholder={t('profile.skill_placeholder', { index: index + 1 })}
-                                        value={skill}
-                                        onChange={(e) => handleSkillChange(index, e.target.value)}
-                                        property="flex-grow"
-                                    />
-                                    <Button
-                                        variant="redSmall"
-                                        onClick={() => handleRemoveSkill(index)}
-                                        property="h-fit"
-                                    >
-                                        ✕
-                                    </Button>
-                                </Container>
-                            ))}
-                        </Container>
-                        {(!formData?.skills || formData.skills.length < 5) && (
-                            <Button
-                                variant="blueSmall"
-                                onClick={handleAddSkillRow}
-                                property="mt-2"
-                            >
-                                + {t('profile.add_skill')}
-                            </Button>
-                        )}
+                        {skillCategories.map(category => (
+                            <TextField key={category} id={`skills-${category}`}
+                                label={t(`form.skills_${category}`)}
+                                placeholder={t('form.skills_placeholder')}
+                                value={skillTexts[category] || ''}
+                                onChange={(changed) => {
+                                    const text = changed[`skills-${category}`] || '';
+                                    setSkillTexts(previous => ({ ...previous, [category]: text }));
+                                    handleChange({ skills: { ...skills, [category]: parseSkillText(text) } });
+                                }}
+                                onBlur={() => handleChange({ skills: { ...skills, [category]: parseSkillText(skillTexts[category] || '') } })} />
+                        ))}
                     </Container>
                 </Container>
 
@@ -240,7 +245,8 @@ export default function NabidkaForm({organizationUsers, subjects, formData, hand
                 <Container property={"flex w-full justify-end ml-auto"}>
                     <Button
                         property={"mt-2 px-16"}
-                        onClick={() => handleSubmit()}
+                        disabled={submitting}
+                        onClick={submitWithSkills}
                     >
                         {isEdit ? t('form.save_changes') : t('form.create')}
                     </Button>

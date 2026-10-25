@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Container from "@components/core/Container/Container";
 import Headings from "@components/core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
@@ -19,7 +19,10 @@ import EmptyState from "@core/Feedback/EmptyState";
 export default function PrihlaskyPage() {
 	const { t } = useTranslation();
 	const { addMessage } = useMessage();
-	const [data, setData] = useState([])
+ const [data, setData] = useState([])
+ const [loadError, setLoadError] = useState(false);
+ const requestSequence = useRef(0);
+ const submittingRef = useRef(false);
 	const [showPopup, setShowPopup] = useState(false);
 	const [selectedEntity, setSelectedEntity] = useState(null);
 	const [selectedCompanies, setSelectedCompanies] = useState([]);
@@ -47,6 +50,8 @@ export default function PrihlaskyPage() {
 	}
 
 	const handleSubmit = async () => {
+		if (submittingRef.current) return;
+		submittingRef.current = true;
 		try {
 			// FE-002: žádný PATCH /status/ (neexistuje) — explicitní transition
 			// s cílem podle aktuální fáze přihlášky.
@@ -70,6 +75,8 @@ export default function PrihlaskyPage() {
 		} catch (error) {
 			console.error(error);
 			addMessage(getApiErrorMessage(error, t, 'applications.approve_error'), "E");
+		} finally {
+			submittingRef.current = false;
 		}
 	}
 
@@ -96,6 +103,8 @@ export default function PrihlaskyPage() {
 	}
 
 	const fetchData = async () => {
+		const sequence = ++requestSequence.current;
+		setLoadError(false);
 		try {
 			let res = [];
 			if (user.isAdmin()) {
@@ -105,10 +114,11 @@ export default function PrihlaskyPage() {
 			} else if (user.isOrganizationUser()) {
 				res = await studentpracticeAPI.getOrganizationApplications();
 			}
-			setData(res || []);
+			if (sequence === requestSequence.current) setData(res || []);
 		} catch (error) {
+			if (sequence !== requestSequence.current) return;
 			console.error(t('applications.load_error'), error);
-			setData([]);
+			setLoadError(true);
 		}
 	};
 
@@ -166,7 +176,9 @@ export default function PrihlaskyPage() {
 				</Headings>
 			</Container>
 
-			{(user.isAdmin() || user.isDepartmentUser()) && (
+			{loadError ? (
+				<Container role="alert"><Paragraph>{t('applications.load_error')}</Paragraph></Container>
+			) : (user.isAdmin() || user.isDepartmentUser()) && (
 				<Container property={"flex flex-col gap-3 mb-6 mt-4"}>
 					<SearchBar
 						id="search"
@@ -200,7 +212,7 @@ export default function PrihlaskyPage() {
 			)}
 
 			<Container property={"mt-4 rounded-lg"}>
-				{!data ? (
+				{loadError ? null : !data ? (
 					<Paragraph>{t('common.loading')}</Paragraph>
 				) : (user.isAdmin() || user.isDepartmentUser()) ? (
 					displayCompanyNames.length === 0 ? (

@@ -1,5 +1,6 @@
 import { useApi } from "@hooks/useApi";
 import { buildFormData } from "@utils/formDataUtils";
+import { useCallback, useRef } from "react";
 
 export const useUserAPI = () => {
     const api = useApi();
@@ -77,7 +78,7 @@ export const useUserAPI = () => {
         }
     };
 
-    const getAllStudents = async ({ page = 1, pageSize = 10, search = '' } = {}) => {
+    const getAllStudents = useCallback(async ({ page = 1, pageSize = 10, search = '' } = {}) => {
         try {
             const params = { page, page_size: pageSize };
             if (search) params.search = search;
@@ -86,7 +87,7 @@ export const useUserAPI = () => {
         } catch (error) {
             throw error;
         }
-    };
+    }, [api]);
 
     const getAllDepartmentProfessors = async () => {
         try {
@@ -202,7 +203,8 @@ export const useUserAPI = () => {
         }
     };
 
-    return {
+    const apiMethodsRef = useRef(null);
+    if (!apiMethodsRef.current) apiMethodsRef.current = {
         postRegister,
         getOrganizationUsers,
         getCurrentUserProfile,
@@ -217,4 +219,5 @@ export const useUserAPI = () => {
         requestPasswordReset,
         confirmPasswordReset
     };
+    return apiMethodsRef.current;
 };

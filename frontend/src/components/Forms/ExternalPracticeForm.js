@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Container from "@core/Container/Container";
 import TextField from "@core/Form/TextField";
 import DropDown from "@core/Form/DropDown";
@@ -26,6 +26,7 @@ export default function ExternalPracticeForm({
   const [aresStatus, setAresStatus] = useState(null); // { type: 'success'|'warning'|'error', text: '' }
   const [aresLocked, setAresLocked] = useState(false);
   const [detailsFileError, setDetailsFileError] = useState("");
+  const aresSequence = useRef(0);
 
   const debouncedIco = useDebounce(formData?.ico, 500);
 
@@ -37,12 +38,14 @@ export default function ExternalPracticeForm({
     }
 
     const fetchAres = async () => {
+      const sequence = ++aresSequence.current;
       setAresLoading(true);
       setAresStatus(null);
       // Během lookupu jsou pole odemčená; zamknou se až po úspěšném prefillu.
       setAresLocked(false);
       try {
         const data = await aresAPI.getEntityByICO(debouncedIco);
+        if (sequence !== aresSequence.current) return;
         if (data && (data.obchodniJmeno || data.name)) {
           const companyName = data.obchodniJmeno || data.name;
           const address = data.sidlo?.textovaAdresa || data.address || "";
@@ -56,12 +59,12 @@ export default function ExternalPracticeForm({
             data.source === "cache" ? "ares.found_cache" : "ares.found_ares";
           setAresStatus({ type: "success", text: t(sourceKey) });
         } else if (data && data.found === false) {
-          // ARES odpověděl, ale subjekt s tímto IČO nenašel.
-          handleChange({ ares_locked: false });
+          handleChange({ employer_name: "", address: "", ares_locked: false });
           setAresStatus({ type: "warning", text: t("ares.not_found") });
         }
       } catch (err) {
-        handleChange({ ares_locked: false });
+        if (sequence !== aresSequence.current) return;
+        handleChange({ employer_name: "", address: "", ares_locked: false });
         const code = err.code || err.response?.data?.error_code;
         if (code === "ARES_NOT_FOUND") {
           // 404 → subjekt nenalezen v ARES, pole odemčená.
@@ -77,7 +80,7 @@ export default function ExternalPracticeForm({
           setAresStatus({ type: "warning", text: t("ares.verify_error") });
         }
       } finally {
-        setAresLoading(false);
+        if (sequence === aresSequence.current) setAresLoading(false);
       }
     };
 
@@ -93,16 +96,23 @@ export default function ExternalPracticeForm({
     }
     const isAllowed = /\.(pdf|docx)$/i.test(file.name);
     if (!isAllowed) {
+      handleChange({ external_details_file: null });
       setDetailsFileError(t("external.file_type_error"));
       e.target.value = "";
       return;
     }
     if (file.size > MAX_EXTERNAL_DETAILS_SIZE) {
+      handleChange({ external_details_file: null });
       setDetailsFileError(t("api_errors.FILE_TOO_LARGE"));
       e.target.value = "";
       return;
     }
     handleChange({ external_details_file: file });
+  };
+
+  const handleIcoChange = (value) => {
+    aresSequence.current += 1;
+    handleChange(value);
   };
 
   const coefficientOptions = [
@@ -127,7 +137,7 @@ export default function ExternalPracticeForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        handleSubmit();
+        if (!detailsFileError) handleSubmit();
       }}
     >
       {/* Section 1: External Organization */}
@@ -188,7 +198,7 @@ export default function ExternalPracticeForm({
             value={formData?.ico}
             label={t("external_practice.ico")}
             placeholder={t("external_practice.ico_placeholder")}
-            onChange={handleChange}
+            onChange={handleIcoChange}
             error={errors.ico}
           />
           {aresLoading && (
@@ -309,12 +319,13 @@ export default function ExternalPracticeForm({
       {/* Povinný dokument s detaily praxe */}
       <Container property="w-full gap-2 mt-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">
+          <label htmlFor="external_details_file" className="block text-base font-medium text-gray-700 mb-1">
             {t("external.details_label")}
             <span className="text-red-600 ml-1">*</span>
           </label>
           <input
             type="file"
+            id="external_details_file"
             accept=".pdf,.docx"
             onChange={handleFileChange}
             aria-required="true"

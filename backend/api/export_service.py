@@ -7,6 +7,13 @@ from openpyxl.styles import Font, PatternFill
 from student_practices.models import StudentPractice
 
 
+def _escape_formula_cell(value):
+    """Prefix spreadsheet formula-leading text with an apostrophe."""
+    if isinstance(value, str) and (value.startswith(("=", "+", "-", "@", "\t", "\r")) or value.lstrip().startswith(("=", "+", "-", "@"))):
+        return f"'{value}"
+    return value
+
+
 def _garant_names_for_practice(practice, memo=None):
     """
     Vrátí jména garantů dané praxe spojená čárkou.
@@ -120,6 +127,10 @@ class ExportService:
             qs = qs.filter(workflow_state=filters["workflow_state"])
         if filters.get("subject_id"):
             qs = qs.filter(practice__subject_id=filters["subject_id"])
+        if filters.get("employer_id"):
+            qs = qs.filter(practice__employer_id=filters["employer_id"])
+        if filters.get("institution"):
+            qs = qs.filter(practice__employer__company_name__icontains=filters["institution"])
         return qs.count()
 
     @staticmethod
@@ -132,6 +143,7 @@ class ExportService:
             "practice__employer",
             "practice__subject",
             "practice__subject__subject_manager",
+            "registration",
         ):
             subject_name = ""
             if sp.practice and sp.practice.subject_id:
@@ -141,18 +153,22 @@ class ExportService:
                     pass
 
             yield [
-                sp.student_practice_id,
-                sp.user.full_name if sp.user else "",
-                sp.user.email if sp.user else "",
-                sp.practice.title if sp.practice else "",
-                sp.practice.employer.company_name if sp.practice and sp.practice.employer else "",
-                subject_name,
-                sp.workflow_status_label,
-                str(sp.application_date) if sp.application_date else "",
-                str(sp.practice.start_date) if sp.practice and sp.practice.start_date else "",
-                str(sp.practice.end_date) if sp.practice and sp.practice.end_date else "",
-                sp.hours_completed or 0,
-                _garant_names_for_practice(sp.practice, memo),
+                _escape_formula_cell(value)
+                for value in [
+                    sp.student_practice_id,
+                    sp.user.full_name if sp.user else "",
+                    sp.user.email if sp.user else "",
+                    sp.practice.title if sp.practice else "",
+                    sp.practice.employer.company_name if sp.practice and sp.practice.employer else "",
+                    subject_name,
+                    sp.workflow_status_label,
+                    str(sp.application_date) if sp.application_date else "",
+                    str(sp.practice.start_date) if sp.practice and sp.practice.start_date else "",
+                    str(sp.practice.end_date) if sp.practice and sp.practice.end_date else "",
+                    sp.hours_completed or 0,
+                    _garant_names_for_practice(sp.practice, memo),
+                    sp.year or (sp.registration.year if sp.registration_id else "") or "",
+                ]
             ]
 
     @staticmethod
@@ -174,6 +190,7 @@ class ExportService:
             "Do",
             "Dokoncene hodiny",
             "Garant",
+            "Akademický rok",
         ]
 
         # Style header
@@ -217,6 +234,7 @@ class ExportService:
             "Do",
             "Dokoncene hodiny",
             "Garant",
+            "Akademický rok",
         ]
         writer.writerow(headers)
 

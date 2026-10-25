@@ -42,10 +42,22 @@ export const useStudentPracticeAPI = () => {
         AWAITING_CONTENT_APPROVAL: 12, // CONTENT_APPROVED — externí praxe
     };
     const REJECT_TARGETS = {
+        APPLIED: 2, // REJECTED
+        PRELIMINARY_APPROVED: 2,
+        AWAITING_CONTRACT: 2,
+        DOCUMENTS_REJECTED: 2,
+        DOCUMENTS_RESUBMITTED: 2,
+        CONTRACTED: 2,
+        ENDED: 2,
         AWAITING_CONTENT_APPROVAL: 11, // CONTENT_REJECTED — externí obsah
+        CONTENT_REJECTED: 2,
+        CONTENT_APPROVED: 2,
     };
-    const DEFAULT_APPROVE_TARGET = 1; // PRELIMINARY_APPROVED
-    const DEFAULT_REJECT_TARGET = 2; // REJECTED — terminální zamítnutí
+    const WORKFLOW_STATES = new Set([
+        "APPLIED", "PRELIMINARY_APPROVED", "REJECTED", "CONTRACTED", "STARTED", "ENDED",
+        "COMPLETED", "AWAITING_CONTRACT", "AWAITING_DOCUMENTS", "DOCUMENTS_REJECTED",
+        "AWAITING_CONTENT_APPROVAL", "CONTENT_REJECTED", "CONTENT_APPROVED", "DOCUMENTS_RESUBMITTED",
+    ]);
 
     // action: "approve" | "reject" | "resubmit"
     // options: { reason?: string, workflowStatus?: string }
@@ -56,14 +68,25 @@ export const useStudentPracticeAPI = () => {
         const { reason = "", workflowStatus } = options;
 
         if (action === "approve") {
-            const target = (workflowStatus && APPROVE_TARGETS[workflowStatus]) || DEFAULT_APPROVE_TARGET;
+            if (!workflowStatus || !WORKFLOW_STATES.has(workflowStatus)) {
+                throw new Error("Unknown or missing student practice workflow status");
+            }
+            const target = APPROVE_TARGETS[workflowStatus];
+            if (!target) throw new Error("Approval is not allowed from this workflow status");
             return transitionStudentPractice(studentPracticeId, target, reason);
         }
         if (action === "reject") {
-            const target = (workflowStatus && REJECT_TARGETS[workflowStatus]) || DEFAULT_REJECT_TARGET;
+            if (!workflowStatus || !WORKFLOW_STATES.has(workflowStatus)) {
+                throw new Error("Unknown or missing student practice workflow status");
+            }
+            const target = REJECT_TARGETS[workflowStatus];
+            if (!target) throw new Error("Rejection is not allowed from this workflow status");
             return transitionStudentPractice(studentPracticeId, target, reason);
         }
         if (action === "resubmit") {
+            if (workflowStatus !== "CONTENT_REJECTED") {
+                throw new Error("Resubmit is only allowed from CONTENT_REJECTED");
+            }
             return transitionStudentPractice(studentPracticeId, 10, reason); // AWAITING_CONTENT_APPROVAL
         }
         throw new Error("Invalid action");
@@ -164,7 +187,18 @@ export const useStudentPracticeAPI = () => {
     const getStudentPracticeCard = async (student_practiceId) => {
         try {
             const response = await api.get(`/student-practices/${student_practiceId}`);
-            return response.data;
+            const data = response.data;
+            const status = data?.student_practice_status?.workflow_status;
+            if (!status || !WORKFLOW_STATES.has(status)) {
+                return {
+                    ...data,
+                    student_practice_status: {
+                        ...data?.student_practice_status,
+                        workflow_status: "UNKNOWN",
+                    },
+                };
+            }
+            return data;
         } catch (error) {
             console.error('Chyba při získávání studentů pro praxi:', error);
             throw error;
@@ -189,11 +223,11 @@ export const useStudentPracticeAPI = () => {
     // POST /api/student-practices/<id>/resolve-cancellation/ — T2d:
     // decision: "approve" (nevratné storno) | "reject" (žádost zamítnuta,
     // praxe zůstává aktivní). Povinné pro pending žádost o storno.
-    const resolveCancellation = async (studentPracticeId, decision) => {
+    const resolveCancellation = async (studentPracticeId, decision, reason = "") => {
         try {
             const response = await api.post(
                 `/student-practices/${studentPracticeId}/resolve-cancellation/`,
-                { decision }
+                { decision, reason }
             );
             return response.data;
         } catch (error) {

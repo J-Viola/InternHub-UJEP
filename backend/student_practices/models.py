@@ -11,6 +11,7 @@ from django.db.models import OneToOneRel
 from django_enumfield import enum
 
 from api.mixins import CancellationMixin
+from api.parameter_service import get_param
 from practices.models import ProgressStatus
 from student_practices.messages import StudentPracticeMessages
 from users.models import ApprovalStatus
@@ -373,6 +374,7 @@ class StudentPractice(CancellationMixin, models.Model):
         db_index=True,
         help_text="Stavový automat přihlášky. Po data migraci (1.10) nenullable.",
     )
+    cancelled_from_state = enum.EnumField(StudentPracticeWorkflowState, null=True, blank=True)
     # Stará pole — zachována pro backward compat, budou odstraněna po FE migraci
     approval_status = enum.EnumField(ApprovalStatus)
     progress_status = enum.EnumField(ProgressStatus)
@@ -523,7 +525,7 @@ class StudentPractice(CancellationMixin, models.Model):
         if self.workflow_state != StudentPracticeWorkflowState.AWAITING_CONTRACT:
             return False
 
-        overdue_days = getattr(settings, "PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
+        overdue_days = get_param("PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
         entered_at = self._awaiting_contract_since()
         if entered_at is None:
             return False

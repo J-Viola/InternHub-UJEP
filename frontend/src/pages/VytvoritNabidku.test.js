@@ -148,6 +148,18 @@ describe('VytvoritNabidku', () => {
         });
     });
 
+    test('double submit makes one create request', async () => {
+        let finish;
+        mockCreateNabidka.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+        render(<MemoryRouter><VytvoritNabidku /></MemoryRouter>);
+        await screen.findByTestId('nabidka-form');
+        fireEvent.click(screen.getByText('Set All Data'));
+        fireEvent.click(screen.getByText('Create'));
+        fireEvent.click(screen.getByText('Create'));
+        await waitFor(() => expect(mockCreateNabidka).toHaveBeenCalledTimes(1));
+        finish({ id: 1 });
+    });
+
     test('handles creation failure', async () => {
         mockCreateNabidka.mockRejectedValue({
             response: { data: { detail: 'Title required' } }

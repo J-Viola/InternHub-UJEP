@@ -26,6 +26,7 @@ from practices.models import Practice
 from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
+    DocumentStatus,
     DocumentType,
     EmployerInvitation,
     Evaluation,
@@ -41,7 +42,7 @@ from student_practices.permissions import (
     IsOrganizationApproverForStudentPractice,
     IsSubjectTeacherOrHeadForPractice,
 )
-from student_practices.services import StudentPracticeService, record_own_approval_axis
+from student_practices.services import StudentPracticeService, _enter_contracted, record_own_approval_axis
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
 from users.models import ActionLog, ApprovalStatus, OrganizationUser, StudentUser
@@ -103,7 +104,7 @@ class EmployerInvitationViewSet(ModelViewSet):
             user=request.user,
             action_type=ActionLogType.CREATE,
             object_type="EmployerInvitation",
-            description=f"Vytvoření pozvánky zaměstnavatelem {request.user.email}",
+            description=f"Vytvoření pozvánky zaměstnavatelem (aktér #{request.user.pk})",
         )
         return response
 
@@ -413,8 +414,6 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         return uploaded_file
 
     def update(self, instance, validated_data):
-        from student_practices.models import DocumentStatus
-
         if instance.document:
             instance.document.delete(save=False)
 
@@ -424,7 +423,6 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         file.name = DocumentHelper.create_name_for_document(instance.document_type, user_id, file.name)
         instance.document = file
         instance.uploaded_at = timezone.now()  # Use timezone.now()
-        instance.status = DocumentStatus.PENDING  # Reset status on re-upload
         instance.save()
         return instance
 
@@ -508,7 +506,10 @@ class StudentPracticeUploadDocumentView(APIView):
     def post(self, request, document_id):
         import os
 
-        document = get_object_or_404(UploadedDocument, pk=document_id)
+        document = get_object_or_404(UploadedDocument.objects.select_for_update(), pk=document_id)
+        sp = document.student_practice
+        if sp is not None:
+            sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
         self.check_object_permissions(request, document)
 
         file_obj = request.FILES.get("document") or request.FILES.get("file")
@@ -535,12 +536,19 @@ class StudentPracticeUploadDocumentView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            if ext in (".pdf", ".docx"):
+                from api.validators import validate_file_content
+
+                try:
+                    validate_file_content(file_obj)
+                except DjangoValidationError as e:
+                    return Response({"detail": "; ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+
             # Filename sanitization against path traversal
             safe_name = os.path.basename(file_obj.name).replace("..", "").replace("/", "").replace("\\", "")
             file_obj.name = safe_name
 
             # late_submission flag: pokud je SP v ENDED a nahrává se po end_date
-            sp = document.student_practice
             if sp and sp.workflow_state == StudentPracticeWorkflowState.ENDED:
                 from django.utils import timezone
 
@@ -548,28 +556,37 @@ class StudentPracticeUploadDocumentView(APIView):
                     document.late_submission = True
 
         serializer = StudentPracticeUploadDocumentSerializer(document, data=request.data, partial=True)
+        previous_status = document.status
+        was_rejected = previous_status == DocumentStatus.REJECTED
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        # T2c: nový obsah musí znovu projít review. Zamítnutý dokument ale
+        # zůstává REJECTED až do opravy vlastníkem — jinak by jej neoprávněný
+        # uploadér „vyčistil" a stav DOCUMENTS_REJECTED by lhal. Reset řeší
+        # služba u vlastníka (spolu s přechodem do review-pending).
+        if not was_rejected and document.status != DocumentStatus.PENDING:
+            document.status = DocumentStatus.PENDING
+            document.review_note = ""
+            document.save(update_fields=["status", "review_note"])
 
-        EmailService.notify_professors_document_upload(document)
+        transaction.on_commit(lambda: EmailService.notify_professors_document_upload(document))
 
         ActionLogService.log(
             user=request.user,
             action_type=ActionLogType.DOCUMENT_UPLOAD,
             object_type="UploadedDocument",
             object_id=document.pk,
-            description=f"Nahrání dokumentu {document.document_type} (ID: {document.pk}) uživatelem {request.user.email}",
+            description=f"Nahrání dokumentu {document.document_type} (ID: {document.pk}) aktérem #{request.user.pk}",
         )
 
         # po nahrání smluvního dokumentu (CONTRACT) ze stavu
         # AWAITING_CONTRACT automatický přechod do AWAITING_DOCUMENTS (atomicky + ActionLog).
-        sp = document.student_practice
         if sp and document.document_type == DocumentType.CONTRACT:
             StudentPracticeService.transition_to_awaiting_documents_after_contract_upload(sp, request.user)
         # C19-B/T2c: nahrazení zamítnutých dokumentů (ze DOCUMENTS_REJECTED)
         # → explicitní review-pending DOCUMENTS_RESUBMITTED; upload ≠ approval.
-        if sp:
-            StudentPracticeService.mark_documents_resubmitted_for_review(sp, request.user)
+        if sp and was_rejected:
+            StudentPracticeService.mark_documents_resubmitted_for_review(sp, request.user, document, was_rejected)
 
         return Response(
             {"detail": StudentPracticeMessages.DOCUMENT_UPLOAD_SUCCESS},
@@ -780,6 +797,13 @@ class WithdrawStudentPracticeView(APIView):
 
         # Object-level permission: only the student-owner can withdraw
         self.check_object_permissions(request, sp)
+
+        from student_practices.services import _assert_no_pending_cancellation
+
+        try:
+            _assert_no_pending_cancellation(sp)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         if sp.is_cancelled:
             return Response(
@@ -1256,6 +1280,13 @@ class ConfirmContractView(APIView):
         # kapacitní kontrolou a jakýmkoli zápisem (fail-closed).
         self.check_object_permissions(request, sp)
 
+        from student_practices.services import _assert_no_pending_cancellation
+
+        try:
+            _assert_no_pending_cancellation(sp)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
         # T2b (finding 6): idempotence stejné osy — OPAKOVÁNÍ potvrzení je
         # vždy 200 no-op bez zápisu/ActionLog/notifikace, NEZÁVISLE na tom,
         # zda druhá osa už drží (žádný „re-write" data, žádná duplicitní
@@ -1268,7 +1299,9 @@ class ConfirmContractView(APIView):
             own_axis_done = sp.contract_received_date is not None
         else:
             own_axis_done = sp.school_approved
-        if own_axis_done:
+        if own_axis_done and not (
+            sp.workflow_state == StudentPracticeWorkflowState.AWAITING_CONTRACT and sp.employer_approved and sp.school_approved
+        ):
             return Response(
                 {
                     "detail": "Potvrzení již bylo zaznamenáno — opakované potvrzení je idempentní.",
@@ -1303,12 +1336,13 @@ class ConfirmContractView(APIView):
                     )
                 raise
 
-        sp.contract_received_date = timezone.now()
+        _enter_contracted(sp, request.user)
 
         # T1/C06-A (centrální helper): aktér zapíše JEN svou vlastní osu
         # (OrganizationUser → employer; škola → school; student → receipt
         # only, žádná osa); druhou osu může nastavit jen její vlastní role.
-        both_axes_approved = record_own_approval_axis(sp, request.user)
+        was_already_contract_approved = sp.employer_approved and sp.school_approved
+        both_axes_approved = record_own_approval_axis(sp, request.user) or was_already_contract_approved
 
         # T1: CONTRACTED + APPROVED jen při obou osách schválených touto
         # akcí (nebo již dříve); jinak aplikace zůstává v aktuálním stavu

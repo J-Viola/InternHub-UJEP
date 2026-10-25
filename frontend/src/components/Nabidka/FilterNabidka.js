@@ -197,6 +197,18 @@ export default function FilterNabidka({
                     </select>
                 </Container>
 
+                {['technologies', 'tools', 'methodologies', 'semester'].map((field) => (
+                    <Container key={field} property="w-full mt-4">
+                        <label htmlFor={field} className="block text-sm font-medium text-gray-700 mb-1">
+                            {t(`offers.filter.${field}`)}
+                        </label>
+                        <input id={field} type="text" value={filterValue?.[field] || ""}
+                            placeholder={field === 'semester' ? 'ZS, LS' : t('offers.filter.comma_separated')}
+                            onChange={(event) => handleFilterChange(null, field, event.target.value, true)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm" />
+                    </Container>
+                ))}
+
                 {/* FILTR KAPACITY */}
                 <Container property="w-full mt-6 flex items-center gap-2">
                     <input

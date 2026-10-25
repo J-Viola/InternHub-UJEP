@@ -133,6 +133,7 @@ describe('apiClient', () => {
             };
 
             await expect(errorHandlers.rejected(axiosError)).rejects.toMatchObject({
+                config: axiosError.config,
                 response: axiosError.response,
                 code: 'DRF_ERROR',
                 details: 'Not found',

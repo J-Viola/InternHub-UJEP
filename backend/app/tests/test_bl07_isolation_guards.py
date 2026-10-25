@@ -37,6 +37,35 @@ from app.db_identity import (
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
+def _flush_call_lines(tree):
+    call_command_names = set()
+    management_names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "django.core.management":
+            call_command_names.update(alias.asname or alias.name for alias in node.names if alias.name == "call_command")
+        elif isinstance(node, ast.ImportFrom) and node.module == "django.core":
+            management_names.update(alias.asname or alias.name for alias in node.names if alias.name == "management")
+        elif isinstance(node, ast.Import):
+            management_names.update(alias.asname or "management" for alias in node.names if alias.name == "django.core.management")
+
+    lines = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not node.args or not isinstance(node.args[0], ast.Constant):
+            continue
+        if node.args[0].value != "flush":
+            continue
+        func = node.func
+        is_call_command = (isinstance(func, ast.Name) and func.id in call_command_names) or (
+            isinstance(func, ast.Attribute)
+            and func.attr == "call_command"
+            and isinstance(func.value, ast.Name)
+            and func.value.id in management_names
+        )
+        if is_call_command:
+            lines.append(node.lineno)
+    return lines
+
+
 class DbIdentitySchemeTests(TestCase):
     """Schématu disposable jmen (BL-07 dossier §1.1, Gate 1)."""
 
@@ -225,33 +254,12 @@ class ResetEndpointGuardTests(TestCase):
             if rel.startswith(("app/tests/",)) or "/tests/" in rel or rel.endswith("_test.py"):
                 continue
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=rel)
-            call_command_names = set()
-            management_names = set()
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ImportFrom) and node.module == "django.core.management":
-                    for alias in node.names:
-                        if alias.name == "call_command":
-                            call_command_names.add(alias.asname or alias.name)
-                elif isinstance(node, ast.ImportFrom) and node.module == "django.core":
-                    management_names.update(alias.asname or alias.name for alias in node.names if alias.name == "management")
-                elif isinstance(node, ast.Import):
-                    for alias in node.names:
-                        if alias.name == "django.core.management":
-                            management_names.add(alias.asname or "management")
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Call) or not node.args or not isinstance(node.args[0], ast.Constant):
-                    continue
-                if node.args[0].value != "flush":
-                    continue
-                func = node.func
-                is_call_command = (isinstance(func, ast.Name) and func.id in call_command_names) or (
-                    isinstance(func, ast.Attribute)
-                    and func.attr == "call_command"
-                    and isinstance(func.value, ast.Name)
-                    and func.value.id in management_names
-                )
-                if is_call_command:
-                    self.assertIn(rel, allowed, f"unapproved flush callsite: {rel}:{node.lineno}")
+            for line in _flush_call_lines(tree):
+                self.assertIn(rel, allowed, f"unapproved flush callsite: {rel}:{line}")
+
+    def test_ast_flush_guard_detects_direct_call_command_import(self):
+        tree = ast.parse('from django.core.management import call_command\ncall_command("flush")')
+        self.assertEqual(_flush_call_lines(tree), [2])
 
     @override_settings(DEBUG=False, DB_IDENTITY_GUARD=False, E2E_RESET_ENABLED=True)
     @mock.patch.dict(os.environ, {"BL07_ALLOW_NON_TEST_DB": "1"})

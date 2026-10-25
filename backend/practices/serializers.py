@@ -4,10 +4,11 @@ from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 
 from api.helpers import FormattedDateField
-from api.validators import validate_file_size
+from api.validators import validate_file_content, validate_file_size
 from practices.messages import PracticeMessages
 from practices.models import (
     REGION_CHOICES,
+    SEMESTER_CHOICES,
     ApplicationClosureReason,
     Practice,
     PracticeWorkflowState,
@@ -21,6 +22,23 @@ from users.models import ApprovalStatus, EmployerProfile, User
 from users.serializers import EmployerProfileSerializer
 
 EXTERNAL_DETAILS_REQUIRED = "Nahrání dokumentu s detaily praxe je povinné"
+
+
+class PracticeSkillsSemesterMixin:
+    """Sdílená validace polí používaných běžnou i externí praxí."""
+
+    semester = serializers.ChoiceField(choices=SEMESTER_CHOICES, required=False, allow_null=True)
+
+    @staticmethod
+    def normalize_skills(data):
+        # Interně ukládáme kategorizovaný JSON; starý seznam se zachová jako technologie.
+        if "skills" in data:
+            skills = data["skills"]
+            if isinstance(skills, list):
+                data["skills"] = {"technologies": skills, "tools": [], "methodologies": []}
+            elif isinstance(skills, dict):
+                data["skills"] = {category: skills.get(category, []) for category in ("technologies", "tools", "methodologies")}
+        return data
 
 
 class OrganizationPracticeSerializer(serializers.ModelSerializer):
@@ -63,7 +81,7 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
         return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
 
 
-class PracticeSerializer(serializers.ModelSerializer):
+class PracticeSerializer(PracticeSkillsSemesterMixin, serializers.ModelSerializer):
     """
     Serializer pro model Practice
     """
@@ -220,6 +238,7 @@ class PracticeSerializer(serializers.ModelSerializer):
             "external_employer",
             "external_employer_info",
             "skills",
+            "semester",
             "city",
             "mentor_name",
             "contact_email",
@@ -246,7 +265,7 @@ class PracticeSerializer(serializers.ModelSerializer):
         if start and end and end < start:
             raise serializers.ValidationError(PracticeMessages.END_DATE_BEFORE_START)
 
-        return data
+        return self.normalize_skills(data)
 
     def create(self, validated_data):
         validated_data.setdefault("is_active", True)
@@ -440,7 +459,7 @@ class CloseApplicationsSerializer(serializers.Serializer):
     )
 
 
-class ExternalPracticeSerializer(serializers.ModelSerializer):
+class ExternalPracticeSerializer(PracticeSkillsSemesterMixin, serializers.ModelSerializer):
     """Serializer pro vytvoření mimosystémové praxe (studenti/škola bez registrované firmy)."""
 
     employer_name = serializers.CharField(required=True, help_text="Název externí organizace.")
@@ -459,7 +478,7 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
     external_details_file = serializers.FileField(
         required=False,
         allow_null=True,
-        validators=[FileExtensionValidator(["pdf", "docx"]), validate_file_size],
+        validators=[FileExtensionValidator(["pdf", "docx"]), validate_file_size, validate_file_content],
         help_text="Soubor s detaily mimosystémové praxe (PDF/DOCX, max 10 MB) — povinné.",
     )
 
@@ -481,6 +500,7 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "skills",
+            "semester",
             "coefficient",
         ]
 
@@ -495,7 +515,7 @@ class ExternalPracticeSerializer(serializers.ModelSerializer):
         # externí praxe vyžaduje dokument s detaily praxe.
         if not data.get("external_details_file"):
             raise serializers.ValidationError({"external_details_file": EXTERNAL_DETAILS_REQUIRED})
-        return data
+        return self.normalize_skills(data)
 
     def create(self, validated_data):
         from practices.models import ExternalEmployerInfo

@@ -132,10 +132,14 @@ function AuthProvider({ children }) {
     };
 
     const responseInterceptor = apiClient.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        (response) => response,
+        async (error) => {
+          const originalRequest = error.config;
+        const requestUrl = originalRequest?.url || "";
+        const isAuthEndpoint = ["/users/token/refresh/", "/users/login/"].some(
+          (endpoint) => requestUrl.includes(endpoint),
+        );
+        if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest?._retry) {
           // If a refresh is already in progress, queue this request
           if (isRefreshingRef.current) {
             return new Promise((resolve, reject) => {

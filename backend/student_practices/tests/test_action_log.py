@@ -13,12 +13,12 @@ Covers:
 """
 
 import io
-import zipfile
 from datetime import date, timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
+from docx import Document
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -156,8 +156,7 @@ class StudentPracticeActionLogTests(TestCase):
 
     def _make_docx(self):
         buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr("[Content_Types].xml", "<Types xmlns='http://schemas.openxmlformats.org/package/2006/content-types'/>")
+        Document().save(buf)
         buf.seek(0)
         return buf
 
@@ -254,7 +253,9 @@ class StudentPracticeActionLogTests(TestCase):
             action_type=ActionLogType.DOCUMENT_UPLOAD,
         )
         self.assertGreaterEqual(len(logs), 1)
-        self.assertIn(self.student.email, logs[0].action_description)
+        # ActionLog nese ID aktéra, nikdy jeho e-mail (bez osobních údajů v logu).
+        self.assertIn(f"#{self.student.pk}", logs[0].action_description)
+        self.assertNotIn(self.student.email, logs[0].action_description)
 
     # ------------------------------------------------------------------
     # 5) Document review (approve) → ActionLog

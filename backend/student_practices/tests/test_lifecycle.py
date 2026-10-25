@@ -1,9 +1,9 @@
 import io
-import zipfile
 from datetime import date
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from docx import Document
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -120,8 +120,7 @@ class StudentPracticeLifecycleTests(TestCase):
         contract_doc = student_practice.contract_document
         upload_url = f"/api/student-practices/upload-document/{contract_doc.document_id}"
         buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr("[Content_Types].xml", "<Types/>")
+        Document().save(buf)
         buf.seek(0)
         file = SimpleUploadedFile(
             "contract.docx",

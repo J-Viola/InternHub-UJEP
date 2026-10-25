@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import Container from "@core/Container/Container";
 import UserEntity from "@components/User/UserEntity";
 import Headings from "@core/Text/Headings";
@@ -6,10 +6,10 @@ import Paragraph from "@components/core/Text/Paragraph";
 import BackButton from "@core/Button/BackButton";
 import SearchBar from "@components/Filter/SearchBar";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
-import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
+import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
-import { useUserAPI } from "src/api/user/userAPI";
+import { useUserAPI } from "@api/user/userAPI";
 import { useMessage } from "@hooks/MessageContext";
 import Button from "@components/core/Button/Button";
 import {useNabidkaAPI} from "../api/nabidka/nabidkaAPI";
@@ -45,6 +45,10 @@ export default function StudentPage() {
     const [searchParams] = useSearchParams();
     const { user } = useUser();
     const { getAllStudents } = useUserAPI();
+    const getAllStudentsRef = useRef(getAllStudents);
+    const translationRef = useRef(t);
+    getAllStudentsRef.current = getAllStudents;
+    translationRef.current = t;
     const { addMessage } = useMessage();
 
 
@@ -103,15 +107,15 @@ export default function StudentPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await getAllStudents({ page, pageSize: PAGE_SIZE, search });
+            const res = await getAllStudentsRef.current({ page, pageSize: PAGE_SIZE, search });
             setEntities(res.results ?? []);
             setCount(res.count ?? 0);
         } catch {
-            setError(t('students.load_error'));
+            setError(translationRef.current('students.load_error'));
         } finally {
             setLoading(false);
         }
-    }, [getAllStudents, t]);
+    }, []);
 
     useEffect(() => {
         if (!isPaginated) return;

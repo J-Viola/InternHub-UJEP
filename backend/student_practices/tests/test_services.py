@@ -299,7 +299,9 @@ class StudentPracticeServiceTests(TestCase):
         sp = self._create_student_practice()
         reason = "Duplicita prihlasky"
 
-        StudentPracticeService.cancel_student_practice(sp, self.user, reason)
+        with self.captureOnCommitCallbacks(execute=True):
+            StudentPracticeService.cancel_student_practice(sp, self.user, reason)
+            self.assertEqual(len(mail.outbox), 0, "Cancellation emails must wait for transaction commit")
 
         self.assertEqual(len(mail.outbox), 2, f"Expected 2 emails, got {len(mail.outbox)}")
 

@@ -1,6 +1,5 @@
 from datetime import date, timedelta
 
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -8,6 +7,7 @@ from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from notifications.services import NotificationService
 
+from api.parameter_service import get_param
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
 
@@ -22,8 +22,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today = date.today()
-        urgency_days = getattr(settings, "PRACTICE_URGENCY_DAYS", [14, 7, 2])
-        credit_alert_days = getattr(settings, "PRACTICE_CREDIT_ALERT_DAYS", 14)
+        urgency_days = get_param("PRACTICE_URGENCY_DAYS", [14, 7, 2])
+        credit_alert_days = get_param("PRACTICE_CREDIT_ALERT_DAYS", 14)
 
         urgency_count = self._notify_start_urgent(today, urgency_days)
         credit_count = self._notify_credit_alert(credit_alert_days)

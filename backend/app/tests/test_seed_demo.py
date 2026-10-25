@@ -31,7 +31,7 @@ from subject.models import Subject
 from users.models import ActionLog, EmployerProfile
 
 SEED_ID = "BL08-SEED-v1"
-SPEC_PATH = Path(__file__).resolve().parents[3] / "audit" / "2026-10-04" / "demo" / "fixtures" / "demo_seed_spec.json"
+SPEC_PATH = Path(__file__).resolve().parent / "fixtures" / "demo_seed_spec.json"
 DEMO_PASSWORD = "bl08-demo-test-pw"
 DEMO_EMAILS = [
     "demo.student@test.local",
@@ -217,7 +217,7 @@ class SeedDemoCommandTests(TestCase):
             mock.patch("app.management.commands.seed_demo.Command._reset") as destructive_reset,
         ):
             with self.assertRaises(CommandError) as cm:
-                call_command("seed_demo", "--password", DEMO_PASSWORD, "--reset", stdout=io.StringIO())
+                call_command("seed_demo", "--password", DEMO_PASSWORD, "--spec", str(SPEC_PATH), "--reset", stdout=io.StringIO())
         destructive_reset.assert_not_called()
         self.assertIn("BL-07", str(cm.exception))
 

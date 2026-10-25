@@ -181,4 +181,29 @@ describe('PrihlaskyPage', () => {
             });
         });
     });
+
+    test('load failure is not presented as an empty list', async () => {
+        mockGetProfessorApps.mockRejectedValue(new Error('network unavailable'));
+        render(<MemoryRouter><PrihlaskyPage /></MemoryRouter>);
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
+        expect(screen.queryByText('applications.no_data')).not.toBeInTheDocument();
+    });
+
+    test('latest applications request wins', async () => {
+        let resolveOld;
+        let resolveNew;
+        mockGetProfessorApps
+            .mockImplementationOnce(() => new Promise((resolve) => { resolveOld = resolve; }))
+            .mockImplementationOnce(() => new Promise((resolve) => { resolveNew = resolve; }));
+        const { rerender } = render(<MemoryRouter><PrihlaskyPage /></MemoryRouter>);
+        const otherUser = new User();
+        otherUser.setUser({ role: 'VY', user_id: 2, username: 'other', email: 'other@test.cz' });
+        useUser.mockReturnValue({ user: otherUser });
+        rerender(<MemoryRouter><PrihlaskyPage /></MemoryRouter>);
+        resolveNew([{ student_practice_id: 2, student_full_name: 'Nový', practice_title: 'Praxe', employer_name: 'Firma' }]);
+        await screen.findByText('Nový - Praxe');
+        resolveOld([{ student_practice_id: 1, student_full_name: 'Starý', practice_title: 'Praxe', employer_name: 'Firma' }]);
+        await waitFor(() => expect(screen.queryByText('Starý - Praxe')).not.toBeInTheDocument());
+        expect(screen.getByText('Nový - Praxe')).toBeInTheDocument();
+    });
 });

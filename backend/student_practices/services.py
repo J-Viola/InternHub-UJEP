@@ -32,6 +32,20 @@ from users.services import fetch_student_data_from_stag
 
 logger = logging.getLogger(__name__)
 
+
+def _enter_contracted(sp, actor=None):
+    """Fixovat datum zasmluvnění při prvním vstupu do CONTRACTED."""
+    if sp.contract_received_date is None:
+        sp.contract_received_date = timezone.now()
+    return sp
+
+
+def _record_cancelled_from_state(sp):
+    """Uložit původní stav storna pouze při prvním zápisu."""
+    if sp.cancelled_from_state is None:
+        sp.cancelled_from_state = sp.workflow_state
+
+
 SP_TRANSITIONS = {
     StudentPracticeWorkflowState.APPLIED: [
         StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
@@ -121,6 +135,11 @@ def get_transitions_matrix(sp: StudentPractice) -> dict:
     if sp.practice and getattr(sp.practice, "is_external", False):
         return MANUAL_SP_TRANSITIONS
     return SP_TRANSITIONS
+
+
+def _assert_no_pending_cancellation(sp):
+    if sp.cancellation_requested_at is not None and sp.cancellation_resolved_at is None:
+        raise ValueError("Tato přihláška je zmrazena: žádost o storno čeká na rozhodnutí.")
 
 
 def _check_contract_capacity(practice: Practice) -> None:
@@ -357,6 +376,10 @@ def _check_transition_role(actor, from_state, to_state, sp) -> None:
         return
 
     if isinstance(actor, OrganizationUser) and hasattr(actor, "employer_profile"):
+        # Přímé volání služby musí stejně jako HTTP vrstva ověřit vlastnictví.
+        # Externí praxe bez EmployerProfile proto organizaci nepovolí.
+        if not actor.employer_profile or sp.practice is None or sp.practice.employer_id != actor.employer_profile.pk:
+            raise PermissionDenied("Organizace nemůže měnit přihlášku k cizí praxi.")
         # Organization can only transition from PRELIMINARY_APPROVED
         if from_state != StudentPracticeWorkflowState.PRELIMINARY_APPROVED:
             raise ValueError("Organizace nemůže provést tento přechod.")
@@ -460,6 +483,8 @@ class StudentPracticeService:
         """
         # Refetch with row lock to prevent race conditions
         sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+
+        _assert_no_pending_cancellation(sp)
 
         if sp.is_cancelled:
             raise ValueError(StudentPracticeMessages.CANCELLED_CANNOT_MODIFY)
@@ -574,6 +599,15 @@ class StudentPracticeService:
             )
 
         elif (
+            sp.workflow_state == StudentPracticeWorkflowState.PRELIMINARY_APPROVED
+            and target_state == StudentPracticeWorkflowState.AWAITING_CONTRACT
+        ):
+            # T1/C06-A: přijetí studenta organizací je souhlas osy zaměstnavatele
+            # (symetricky ke školní ose při APPLIED -> PRELIMINARY_APPROVED).
+            # Helper zapíše jen vlastní osu aktéra, nikdy cizí.
+            record_own_approval_axis(sp, actor)
+
+        elif (
             sp.workflow_state in (StudentPracticeWorkflowState.APPLIED, StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
             and target_state == StudentPracticeWorkflowState.REJECTED
         ):
@@ -668,6 +702,13 @@ class StudentPracticeService:
 
         # --- Apply new workflow state ---
         old_state = sp.workflow_state
+        if target_state == StudentPracticeWorkflowState.REJECTED and old_state in (
+            StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+            StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
+        ):
+            sp.rejection_reason = (reason or "").strip()
+        if target_state == StudentPracticeWorkflowState.CONTRACTED:
+            _enter_contracted(sp, actor)
         sp.workflow_state = target_state
         sp.save()
 
@@ -858,6 +899,11 @@ class StudentPracticeService:
                 notification_type=NotificationType.SUCCESS,
             )
         elif target_state == StudentPracticeWorkflowState.REJECTED:
+            if sp.workflow_state in (
+                StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
+                StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
+            ):
+                sp.rejection_reason = (reason or "").strip()
             NotificationService.create_notification(
                 recipient=student,
                 verb="APPLICATION_REJECTED",
@@ -984,7 +1030,7 @@ class StudentPracticeService:
                 action_type=ActionLogType.INVITATION_ACCEPT,
                 object_type="StudentPractice",
                 object_id=student_practice.student_practice_id,
-                description=f"Student {user.email} přijal pozvánku na praxi ID {invitation.practice_id}",
+                description=f"Student (aktér #{user.pk}) přijal pozvánku na praxi ID {invitation.practice_id}",
             )
 
             return {
@@ -1001,7 +1047,7 @@ class StudentPracticeService:
                 action_type=ActionLogType.INVITATION_REJECT,
                 object_type="EmployerInvitation",
                 object_id=invitation.invitation_id,
-                description=f"Student {user.email} odmítl pozvánku na praxi ID {invitation.practice_id}",
+                description=f"Student (aktér #{user.pk}) odmítl pozvánku na praxi ID {invitation.practice_id}",
             )
 
             return {"detail": StudentPracticeMessages.INVITATION_REJECTED}
@@ -1029,18 +1075,21 @@ class StudentPracticeService:
             raise ValueError(StudentPracticeMessages.CANCELLATION_REASON_REQUIRED)
         if sp.cancellation_requested_at is not None and sp.cancellation_resolved_at is None:
             raise ValueError("Žádost o storno již byla podána a čeká na rozhodnutí.")
+        if sp.cancellation_resolved_at is not None:
+            sp.cancellation_resolved_at = None
 
-        old_state_name = sp.workflow_state.name if sp.workflow_state else "None"
+        old_state_name = sp.workflow_state.name if sp.workflow_state is not None else "None"
+        sp.cancelled_from_state = None
         sp.cancellation_reason = reason.strip()
         sp.cancellation_requested_at = timezone.now()
-        sp.save(update_fields=["cancellation_reason", "cancellation_requested_at"])
+        sp.save(update_fields=["cancellation_reason", "cancellation_requested_at", "cancellation_resolved_at", "cancelled_from_state"])
 
         ActionLogService.log(
             user=actor,
             action_type=ActionLogType.STATUS_CHANGE,
             object_type="StudentPractice",
             object_id=sp.student_practice_id,
-            description=(f"Žádost o storno přihlášky ID {sp.student_practice_id} (stav zůstává {old_state_name}): {reason.strip()}"),
+            description=(f"Žádost o storno přihlášky ID {sp.student_practice_id} (stav zůstává {old_state_name})"),
         )
 
         # in-app rozhodovatelům (garanti katedry — resolve-cancellation)
@@ -1084,7 +1133,9 @@ class StudentPracticeService:
             raise ValueError(StudentPracticeMessages.CANCELLATION_REASON_REQUIRED)
 
         # ulož původní název stavu do auditního záznamu
-        old_state_name = sp.workflow_state.name if sp.workflow_state else "None"
+        old_state_name = sp.workflow_state.name if sp.workflow_state is not None else "None"
+        sp.cancelled_from_state = sp.workflow_state
+        _record_cancelled_from_state(sp)
 
         sp.is_cancelled = True
         sp.cancelled_at = timezone.now()
@@ -1105,7 +1156,7 @@ class StudentPracticeService:
             action_type=ActionLogType.STORNO,
             object_type="StudentPractice",
             object_id=sp.student_practice_id,
-            description=(f"Stornovana prihlaska ID {sp.student_practice_id}: {reason.strip()} " f"(původní stav: {old_state_name})"),
+            description=(f"Stornovana prihlaska ID {sp.student_practice_id} " f"(původní stav: {old_state_name})"),
         )
 
         # --- Notify student ---
@@ -1137,12 +1188,12 @@ class StudentPracticeService:
 
         # --- Send email notifications ---
         if sp.user:
-            EmailService.notify_student_cancellation(sp.user, sp, reason.strip())
+            transaction.on_commit(lambda: EmailService.notify_student_cancellation(sp.user, sp, reason.strip()))
         if org_contact and practice and practice.employer:
-            EmailService.notify_org_cancellation(practice.employer, sp, reason.strip())
+            transaction.on_commit(lambda: EmailService.notify_org_cancellation(practice.employer, sp, reason.strip()))
 
         # --- notifikace garantovi (verb CANCELLATION_GARANT) ---
-        NotificationService.notify_garant_cancellation(sp)
+        transaction.on_commit(lambda: NotificationService.notify_garant_cancellation(sp))
 
         return sp
 
@@ -1218,10 +1269,7 @@ class StudentPracticeService:
                 action_type=ActionLogType.STATUS_CHANGE,
                 object_type="StudentPractice",
                 object_id=sp.student_practice_id,
-                description=(
-                    f"Vyřešení storna přihlášky ID {sp.student_practice_id} "
-                    f"uživatelem {actor.email if getattr(actor, 'email', None) else actor}"
-                ),
+                description=(f"Vyřešení storna přihlášky ID {sp.student_practice_id} " f"aktérem #{actor.pk}"),
             )
             return sp
 
@@ -1242,23 +1290,22 @@ class StudentPracticeService:
                     object_type="StudentPractice",
                     object_id=sp.student_practice_id,
                     description=(
-                        f"Schválení žádosti o storno přihlášky ID {sp.student_practice_id} "
-                        f"uživatelem {actor.email if getattr(actor, 'email', None) else actor} — storno provedeno"
+                        f"Schválení žádosti o storno přihlášky ID {sp.student_practice_id} " f"aktérem #{actor.pk} — storno provedeno"
                     ),
                 )
                 return sp
 
             # decision == "reject" — žádost zamítnuta, praxe zůstává aktivní
             sp.cancellation_resolved_at = timezone.now()
-            sp.save(update_fields=["cancellation_resolved_at"])
+            sp.cancelled_from_state = None
+            sp.save(update_fields=["cancellation_resolved_at", "cancelled_from_state"])
             ActionLogService.log(
                 user=actor,
                 action_type=ActionLogType.STATUS_CHANGE,
                 object_type="StudentPractice",
                 object_id=sp.student_practice_id,
                 description=(
-                    f"Zamítnutí žádosti o storno přihlášky ID {sp.student_practice_id} "
-                    f"uživatelem {actor.email if getattr(actor, 'email', None) else actor} — praxe zůstává aktivní"
+                    f"Zamítnutí žádosti o storno přihlášky ID {sp.student_practice_id} " f"aktérem #{actor.pk} — praxe zůstává aktivní"
                 ),
             )
             if sp.user:
@@ -1356,7 +1403,8 @@ class StudentPracticeService:
             object_type="StudentPractice",
             object_id=sp.student_practice_id,
             description=(
-                f"Student {student.email} se znovu prihlasil na praxi ID {practice_id} " f"(nova prihlaska ID {sp.student_practice_id})"
+                f"Student (aktér #{student.pk}) se znovu prihlasil na praxi ID {practice_id} "
+                f"(nova prihlaska ID {sp.student_practice_id})"
             ),
         )
 
@@ -1376,6 +1424,10 @@ class StudentPracticeService:
         if not student_practice:
             raise ValueError(StudentPracticeMessages.NOT_FOUND)
 
+        student_practice = StudentPractice.objects.select_for_update().get(pk=student_practice.pk)
+
+        _assert_no_pending_cancellation(student_practice)
+
         roles = can_manage_practice(user, student_practice)
         if not (roles["is_professor"] or roles["is_admin"]):
             raise PermissionDenied()
@@ -1388,17 +1440,19 @@ class StudentPracticeService:
         document.review_note = review_note
         document.save()
 
-        EmailService.notify_student_document_review(document)
+        transaction.on_commit(lambda: EmailService.notify_student_document_review(document))
 
         status_label_cz = "schválen" if status_val == DocumentStatus.APPROVED else "zamítnut"
-        NotificationService.create_notification(
-            recipient=student_practice.user,
-            verb="DOCUMENT_REVIEWED",
-            message=f"Váš dokument '{document.document_type.name.lower()}' k praxi "
-            f"'{student_practice.practice.title}' byl {status_label_cz}." + (f" Důvod: {review_note}" if review_note else ""),
-            actor=user,
-            target=document,
-            notification_type=NotificationType.SUCCESS if status_val == DocumentStatus.APPROVED else NotificationType.ERROR,
+        transaction.on_commit(
+            lambda: NotificationService.create_notification(
+                recipient=student_practice.user,
+                verb="DOCUMENT_REVIEWED",
+                message=f"Váš dokument '{document.document_type.name.lower()}' k praxi "
+                f"'{student_practice.practice.title}' byl {status_label_cz}." + (f" Důvod: {review_note}" if review_note else ""),
+                actor=user,
+                target=document,
+                notification_type=NotificationType.SUCCESS if status_val == DocumentStatus.APPROVED else NotificationType.ERROR,
+            )
         )
 
         status_label = "schválen" if status_val == DocumentStatus.APPROVED else "zamítnut"
@@ -1407,7 +1461,7 @@ class StudentPracticeService:
             action_type=ActionLogType.DOCUMENT_REVIEW,
             object_type="UploadedDocument",
             object_id=document.pk,
-            description=f"Dokument {document.document_type} {status_label} uživatelem {user.email}",
+            description=f"Dokument {document.document_type} {status_label} aktérem #{user.pk}",
         )
 
         # CONTRACT dokumenty řídí stav StudentPractice.
@@ -1471,15 +1525,17 @@ class StudentPracticeService:
         )
 
         practice_title = sp.practice.title if sp.practice else "N/A"
-        EmailService.notify_student_documents_rejected(sp, review_note or "")
+        transaction.on_commit(lambda: EmailService.notify_student_documents_rejected(sp, review_note or ""))
         if sp.user:
-            NotificationService.create_notification(
-                recipient=sp.user,
-                verb="DOCUMENTS_REJECTED",
-                message=f"Dokumenty k praxi '{practice_title}' byly zamítnuty." + (f" Důvod: {review_note}" if review_note else ""),
-                actor=actor,
-                target=sp,
-                notification_type=NotificationType.ERROR,
+            transaction.on_commit(
+                lambda: NotificationService.create_notification(
+                    recipient=sp.user,
+                    verb="DOCUMENTS_REJECTED",
+                    message=f"Dokumenty k praxi '{practice_title}' byly zamítnuty." + (f" Důvod: {review_note}" if review_note else ""),
+                    actor=actor,
+                    target=sp,
+                    notification_type=NotificationType.ERROR,
+                )
             )
 
     @staticmethod
@@ -1532,6 +1588,7 @@ class StudentPracticeService:
         old_state = sp.workflow_state
         sp.workflow_state = StudentPracticeWorkflowState.CONTRACTED
         sp.approval_status = ApprovalStatus.APPROVED
+        _enter_contracted(sp, actor)
         sp.save()
 
         ActionLogService.log(
@@ -1560,7 +1617,7 @@ class StudentPracticeService:
 
     @staticmethod
     @transaction.atomic
-    def mark_documents_resubmitted_for_review(sp, actor):
+    def mark_documents_resubmitted_for_review(sp, actor, document, was_rejected):
         """
         C19-B/T2c: po úspěšném nahrání opravených dokumentů ze stavu
         DOCUMENTS_REJECTED → DOCUMENTS_RESUBMITTED (explicitní review-pending).
@@ -1574,11 +1631,21 @@ class StudentPracticeService:
         pedagog) doklad nahrají, ale stav se neposune.
         """
         sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
-        if sp.is_cancelled or sp.workflow_state != StudentPracticeWorkflowState.DOCUMENTS_REJECTED:
+        # UploadedDocument nemá `student_practice_id` (vazba je property nad
+        # OneToOneRel) — ověřujeme přes navázaný objekt, ne přes attname.
+        linked_sp = document.student_practice
+        if linked_sp is None or linked_sp.pk != sp.pk or not was_rejected:
+            logger.warning(
+                "Repair-resubmit přeskočen pro SP %s — dokument není nahrazením zamítnutého dokumentu této přihlášky.",
+                sp.student_practice_id,
+            )
+            return sp
+        if sp.is_cancelled:
             return sp
 
         # Ownership guard: jen vlastník SP (StudentUser, sp.user == actor)
-        # smí přepnout stav do review-pending; cizí/neroli aktér → žádná mutace.
+        # smí vrátit dokument do review a přepnout stav do review-pending;
+        # cizí/neroli aktér → žádná mutace.
         if not (isinstance(actor, StudentUser) and sp.user_id == actor.pk):
             # MINOR (round 3): jen necitlivý výsledek/role + opaque ID —
             # žádný e-mail ani repr objektu do logu.
@@ -1587,6 +1654,15 @@ class StudentPracticeService:
                 sp.student_practice_id,
                 type(actor).__name__,
             )
+            return sp
+
+        # Nahrazený zamítnutý dokument vlastníka se vždy vrací do PENDING review
+        # (i když už stav není DOCUMENTS_REJECTED — např. druhý dokument v opravě).
+        document.status = DocumentStatus.PENDING
+        document.review_note = ""
+        document.save(update_fields=["status", "review_note"])
+
+        if sp.workflow_state != StudentPracticeWorkflowState.DOCUMENTS_REJECTED:
             return sp
 
         old_state = sp.workflow_state

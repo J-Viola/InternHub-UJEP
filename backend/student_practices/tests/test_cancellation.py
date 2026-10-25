@@ -165,4 +165,4 @@ class CancellationResolutionTests(TestCase):
         )
         self.assertTrue(storno_logs.exists())
         self.assertIn("CONTRACTED", storno_logs.first().action_description)
-        self.assertIn("Zdravotní důvody", storno_logs.first().action_description)
+        self.assertNotIn("Zdravotní důvody", storno_logs.first().action_description)

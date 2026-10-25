@@ -1,5 +1,6 @@
 # Must set DEBUG before importing settings to avoid production safety checks
 import os
+import tempfile
 
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("DJANGO_SECRET_KEY", "test-secret-key")
@@ -19,7 +20,18 @@ os.environ.setdefault("EMAIL_PASSWORD", "")
 os.environ.setdefault("EMAIL_FROM", "test@example.com")
 os.environ.setdefault("STAG_MOCK", "True")
 
+# Test document templates live outside the repository and are available under
+# both pytest-django and Django's built-in ``manage.py test`` runner.
+from docx import Document  # noqa: E402
+
 from .settings import *  # noqa: F403,E402
+
+MEDIA_ROOT = tempfile.mkdtemp(prefix="internhub-test-media-")
+_default_documents = os.path.join(MEDIA_ROOT, "default_documents")
+os.makedirs(_default_documents, exist_ok=True)
+for _template_name in ("default_contract.docx", "default_content.docx", "default_feedback.docx"):
+    Document().save(os.path.join(_default_documents, _template_name))
+del _default_documents, _template_name
 
 # ---------------------------------------------------------------------------
 # BL-07 — izolační gardy (fail-closed). Aktivují se jen mimo schválený provoz;

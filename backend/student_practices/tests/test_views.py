@@ -2,6 +2,7 @@ from datetime import date
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from docx import Document
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -103,7 +104,6 @@ class StudentPracticeViewTests(TestCase):
 
     def test_upload_document_success_for_owner(self):
         import io
-        import zipfile
 
         sp = StudentPractice.objects.create(
             user=self.student,
@@ -121,8 +121,7 @@ class StudentPracticeViewTests(TestCase):
         url = f"/api/student-practices/upload-document/{contract_doc.document_id}"
 
         buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr("[Content_Types].xml", "<Types/>")
+        Document().save(buf)
         buf.seek(0)
 
         file = SimpleUploadedFile(

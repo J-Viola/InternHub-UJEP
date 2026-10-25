@@ -12,10 +12,22 @@ import { useMessage } from "@hooks/MessageContext";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@hooks/useApi";
 import { daysSinceCzechDate, isOlderThan } from "@utils/dateUtils";
+import { useSubjectAPI } from "@api/subject/subjectAPI";
+import { getStateLabelKey } from "@core/StateBadge/StateBadge";
+
+// Číselná mapa StateBadge obsahuje všech 14 stavů StudentPractice, nikoli stavy nabídek.
+const exportWorkflowStates = Array.from({ length: 14 }, (_, value) => value);
+
+const riskStyles = {
+    APPROVAL_STALLED: { label: 'approval_stalled', classes: 'bg-amber-100 text-amber-900 border-amber-300' },
+    ENDED_NO_CREDIT: { label: 'ended_no_credit', classes: 'bg-orange-100 text-orange-900 border-orange-300' },
+    OVERDUE_END: { label: 'overdue_end', classes: 'bg-red-100 text-red-900 border-red-300' },
+};
+const neutralRiskStyle = { label: 'unknown', classes: 'bg-gray-100 text-gray-800 border-gray-300' };
 
 export default function SpravaStaziPage() {
     const { t } = useTranslation();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const [approved, setApproved] = useState([]);
     const [toApprove, setToApprove] = useState([]);
     const [activeOffers, setActiveOffers] = useState([]);
@@ -29,6 +41,11 @@ export default function SpravaStaziPage() {
     const { user } = useUser();
     const { addMessage } = useMessage();
     const api = useApi();
+    const subjectAPI = useSubjectAPI();
+    const [exportFilters, setExportFilters] = useState({ year: '', workflow_state: '', subject_id: '', institution: '' });
+    const [subjects, setSubjects] = useState([]);
+    const [subjectsLoading, setSubjectsLoading] = useState(true);
+    const [subjectsError, setSubjectsError] = useState(false);
 
     const activeFilter = searchParams.get("state") || "ALL";
 
@@ -62,7 +79,13 @@ export default function SpravaStaziPage() {
 
     const handleExport = async (format) => {
         try {
-            const response = await api.get(`/export-data/?format=${format}`, {
+            const params = { format };
+            Object.entries(exportFilters).forEach(([key, value]) => {
+                const trimmed = value.trim();
+                if (trimmed) params[key] = trimmed;
+            });
+            const response = await api.get('/export-data/', {
+                params,
                 responseType: 'blob',
             });
 
@@ -144,6 +167,21 @@ export default function SpravaStaziPage() {
 
     useEffect(() => {
         fetchData();
+        let cancelled = false;
+        const loadSubjects = async () => {
+            try {
+                const result = user.isAdmin()
+                    ? await subjectAPI.getAllSubjects()
+                    : await subjectAPI.getDepartmentSubjects();
+                if (!cancelled) setSubjects(Array.isArray(result) ? result : result.results || []);
+            } catch {
+                if (!cancelled) setSubjectsError(true);
+            } finally {
+                if (!cancelled) setSubjectsLoading(false);
+            }
+        };
+        loadSubjects();
+        return () => { cancelled = true; };
     }, []);
 
     const handleView = (type, entity) => {
@@ -217,22 +255,68 @@ export default function SpravaStaziPage() {
                     {t('internships.ongoing_title')}
                 </Headings>
 
-                {/* Export Buttons */}
-                <div className="flex space-x-2">
+            </Container>
+
+            <form aria-label={t('export.filters.title')} onSubmit={(event) => {
+                event.preventDefault();
+                handleExport('xlsx');
+            }} className="mb-6 rounded-lg border border-gray-200 bg-white p-4">
+                <fieldset>
+                    <legend className="text-sm font-semibold text-gray-900">{t('export.filters.title')}</legend>
+                    <p className="mt-1 mb-3 text-xs text-gray-600">{t('export.filters.hint')}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <label className="text-xs font-medium text-gray-700" htmlFor="export-year">
+                            {t('export.filters.year')}
+                            <input id="export-year" name="year" type="number" min="1" max="9999" step="1" value={exportFilters.year}
+                                onChange={(event) => setExportFilters({ ...exportFilters, year: event.target.value })}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-sm focus-visible:outline-blue-600" />
+                        </label>
+                        <label className="text-xs font-medium text-gray-700" htmlFor="export-state">
+                            {t('export.filters.state')}
+                            <select id="export-state" name="workflow_state" value={exportFilters.workflow_state}
+                                onChange={(event) => setExportFilters({ ...exportFilters, workflow_state: event.target.value })}
+                                className="mt-1 block w-full rounded-md border border-gray-300 bg-white p-2 text-sm focus-visible:outline-blue-600">
+                                <option value="">{t('export.filters.all_states')}</option>
+                                {exportWorkflowStates.map((state) => <option key={state} value={state}>{t(getStateLabelKey(state))}</option>)}
+                            </select>
+                        </label>
+                        <label className="text-xs font-medium text-gray-700" htmlFor="export-subject">
+                            {t('export.filters.subject')}
+                            <select id="export-subject" name="subject_id" value={exportFilters.subject_id} disabled={subjectsLoading || subjectsError}
+                                aria-describedby={subjectsError ? 'export-subject-error' : undefined}
+                                onChange={(event) => setExportFilters({ ...exportFilters, subject_id: event.target.value })}
+                                className="mt-1 block w-full rounded-md border border-gray-300 bg-white p-2 text-sm focus-visible:outline-blue-600 disabled:bg-gray-100">
+                                <option value="">{t(subjectsLoading ? 'export.filters.subjects_loading' : 'export.filters.all_subjects')}</option>
+                                {subjects.map((subject) => <option key={subject.subject_id} value={subject.subject_id}>{subject.subject_name}</option>)}
+                            </select>
+                        </label>
+                        <label className="text-xs font-medium text-gray-700" htmlFor="export-institution">
+                            {t('export.filters.institution')}
+                            <input id="export-institution" name="institution" type="text" value={exportFilters.institution}
+                                placeholder={t('export.filters.institution_placeholder')}
+                                onChange={(event) => setExportFilters({ ...exportFilters, institution: event.target.value })}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-sm focus-visible:outline-blue-600" />
+                        </label>
+                    </div>
+                    {subjectsError && <p id="export-subject-error" role="status" className="mt-2 text-xs text-red-700">{t('export.filters.subjects_error')}</p>}
+                </fieldset>
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
                     <button
-                        onClick={() => handleExport('xlsx')}
+                        type="submit" value="xlsx"
                         className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-md font-medium transition-colors"
                     >
-                        Export XLSX
+                        {t('export.xlsx')}
                     </button>
                     <button
-                        onClick={() => handleExport('csv')}
+                        type="button" onClick={(event) => {
+                            if (event.currentTarget.form.reportValidity()) handleExport('csv');
+                        }}
                         className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-md font-medium transition-colors"
                     >
-                        Export CSV
+                        {t('export.csv')}
                     </button>
                 </div>
-            </Container>
+            </form>
 
             {/* Dashboard KPI Cards */}
             {stats && (
@@ -277,19 +361,36 @@ export default function SpravaStaziPage() {
 
             {/* At Risk Alert Panel */}
             {stats && stats.at_risk_items && stats.at_risk_items.length > 0 && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                    <h4 className="text-sm font-bold text-red-800 mb-2">⚠ Praxe vyžadující pozornost (Po termínu / Chybějící dokumenty):</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {stats.at_risk_items.map((item) => (
-                            <div key={item.student_practice_id} className="flex justify-between items-center bg-white p-2 rounded text-xs border border-red-100">
-                                <div>
-                                    <span className="font-semibold">{item.student_name}</span> — {item.practice_title} ({item.employer_name})
-                                </div>
-                                <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded font-medium">{item.risk_reason}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <section aria-labelledby="at-risk-heading" className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h3 id="at-risk-heading" className="text-sm font-bold text-red-900 mb-2">
+                        <span aria-hidden="true">⚠ </span>{t('internships.risk.title')}
+                    </h3>
+                    {stats.at_risk_count > stats.at_risk_items.length && (
+                        <p className="text-xs text-gray-700 mb-3">
+                            {t('internships.risk.shown_count', { shown: stats.at_risk_items.length, total: stats.at_risk_count })}
+                        </p>
+                    )}
+                    {/* Posuvná oblast musí být dostupná i z klávesnice. */}
+                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+                    <ul aria-label={t('internships.risk.title')} tabIndex={0} className="space-y-2 max-h-64 overflow-y-auto rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                        {stats.at_risk_items.map((item) => {
+                            const style = Object.prototype.hasOwnProperty.call(riskStyles, item.risk_type)
+                                ? riskStyles[item.risk_type] : neutralRiskStyle;
+                            return (
+                                <li key={item.student_practice_id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-white p-3 rounded text-sm text-gray-900 border border-gray-200">
+                                    <div className="min-w-0 break-words">
+                                        <span className="font-semibold">{item.student_name}</span> — {item.practice_title} ({item.employer_name})
+                                        <p className="text-xs text-gray-700 mt-1">{item.risk_reason}</p>
+                                    </div>
+                                    <span className={`self-start sm:self-center shrink-0 inline-flex items-center gap-1 px-2 py-1 border rounded text-xs font-semibold ${style.classes}`}>
+                                        <span aria-hidden="true">{style === neutralRiskStyle ? 'ⓘ' : '⚠'}</span>
+                                        {t(`internships.risk.${style.label}`)}
+                                    </span>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
             )}
 
             {/* Contract Pending Escalation Panel */}

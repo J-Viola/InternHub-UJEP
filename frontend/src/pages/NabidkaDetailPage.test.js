@@ -92,6 +92,19 @@ describe('NabidkaDetailPage', () => {
         expect(screen.getByText(/Test City/)).toBeInTheDocument();
     });
 
+    test.each([
+        [{ technologies: ['React'], tools: ['Jest'], methodologies: [] }, ['React', 'Jest']],
+        [['Legacy'], ['Legacy']],
+    ])('renders categorized and legacy skills without crashing', async (skills, expected) => {
+        mockUser.isStudent.mockReturnValue(false);
+        mockUser.isProfessor.mockReturnValue(false);
+        mockUser.isOrganizationUser.mockReturnValue(false);
+        mockUser.isAdmin.mockReturnValue(false);
+        mockGetNabidkaById.mockResolvedValue({ ...mockOffer, skills });
+        render(<MemoryRouter initialEntries={['/nabidka/1']}><Routes><Route path="/nabidka/:id" element={<NabidkaDetailPage />} /></Routes></MemoryRouter>);
+        for (const skill of expected) await screen.findByText(new RegExp(`#${skill}`));
+    });
+
     test('shows apply button for student and handles submission', async () => {
         mockUser.isStudent.mockReturnValue(true);
         mockUser.isProfessor.mockReturnValue(false);

@@ -90,7 +90,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             {type === "approved" ? t('common.status') : t('internships.submitted_applications')}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
-                            {type === "approved" ? (entity.workflow_status_label || "-") : (`${approved}/${pending}/${available}`)}
+                            {type === "approved" ? (entity.workflow_status_label ?? "-") : (`${approved}/${pending}/${available}`)}
                         </Paragraph>
                         {isContractPending && (
                             <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${isEscalated ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>

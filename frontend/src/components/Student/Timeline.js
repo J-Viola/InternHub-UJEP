@@ -16,16 +16,18 @@ function formatDate(isoString) {
   });
 }
 
-export default function Timeline({ studentPracticeId, currentStatus }) {
+export default function Timeline({ studentPracticeId, currentStatus, refreshKey = 0 }) {
   const { t } = useTranslation();
   const api = useApi();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const loadedPracticeId = React.useRef(null);
 
   useEffect(() => {
     let cancelled = false;
+    const isNewPractice = loadedPracticeId.current !== studentPracticeId;
     const fetchHistory = async () => {
-      setLoading(true);
+      if (isNewPractice) setLoading(true);
       try {
         // GET /api/student-practices/{id}/history/ (ActionLog záznamy).
         // baseURL apiClientu už obsahuje /api — voláme bez dvojitého /api.
@@ -34,9 +36,13 @@ export default function Timeline({ studentPracticeId, currentStatus }) {
         );
         if (!cancelled) {
           setHistory(response.data?.results || response.data || []);
+          loadedPracticeId.current = studentPracticeId;
         }
       } catch {
-        if (!cancelled) setHistory([]);
+        if (!cancelled) {
+          setHistory([]);
+          loadedPracticeId.current = studentPracticeId;
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -45,7 +51,7 @@ export default function Timeline({ studentPracticeId, currentStatus }) {
     return () => {
       cancelled = true;
     };
-  }, [studentPracticeId, api]);
+  }, [studentPracticeId, api, refreshKey]);
 
   if (loading) {
     return (

@@ -1,9 +1,11 @@
 import { test as setup, expect } from '@playwright/test';
+import path from 'node:path';
 
-const authFileAdmin = 'playwright/.auth/admin.json';
-const authFileProfessor = 'playwright/.auth/professor.json';
-const authFileCompany = 'playwright/.auth/company.json';
-const authFileStudent = 'playwright/.auth/student.json';
+const authDir = path.resolve(__dirname, '../..', process.env.E2E_AUTH_DIR || 'playwright/.auth');
+const authFileAdmin = path.join(authDir, 'admin.json');
+const authFileProfessor = path.join(authDir, 'professor.json');
+const authFileCompany = path.join(authDir, 'company.json');
+const authFileStudent = path.join(authDir, 'student.json');
 
 // Helper function to login
 async function loginAs(page, email, password, storageFile) {

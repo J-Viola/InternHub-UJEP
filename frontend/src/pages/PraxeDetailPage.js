@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import BackButton from "@core/Button/BackButton";
@@ -29,6 +29,7 @@ import {
 import LoadingState from "@components/core/Feedback/LoadingState";
 import ErrorState from "@components/core/Feedback/ErrorState";
 import Timeline from "@components/Student/Timeline";
+import usePolling, { POLLING_INTERVAL_MS } from "@hooks/usePolling";
 
 export default function PraxeDetailPage() {
   const { t } = useTranslation();
@@ -43,6 +44,7 @@ export default function PraxeDetailPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [resolvePopUp, setResolvePopUp] = useState(false);
   const [resolveDecision, setResolveDecision] = useState(null);
+  const [resolveReason, setResolveReason] = useState("");
   // C19-B/T2c: review-pending DOCUMENTS_RESUBMITTED — rozhodnutí review
   const [repairPopUp, setRepairPopUp] = useState(false);
   const [repairDecision, setRepairDecision] = useState(null);
@@ -50,6 +52,10 @@ export default function PraxeDetailPage() {
   const [entity, setEntity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [timelineRefreshKey, setTimelineRefreshKey] = useState(0);
+  const fetchSequence = useRef(0);
+  const inFlightFetch = useRef(null);
+  const loadingRequest = useRef(null);
   const nabidkaAPI = useNabidkaAPI();
   const studentpraticeAPI = useStudentPracticeAPI();
   const documentAPI = useDocumentsAPI();
@@ -58,25 +64,66 @@ export default function PraxeDetailPage() {
 
   const [docs, setDocs] = useState([]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setLoadError(false);
-    try {
-      const result = await studentpraticeAPI.getStudentPracticeCard(id);
-      setEntity(result);
-      setDocs(result.student_practice_documents || []);
-    } catch (error) {
-      addMessage(t("practice_detail.card_load_error"), "E");
-      setLoadError(true);
-    } finally {
-      setLoading(false);
+  const fetchData = async ({ silent = false } = {}) => {
+    const current = inFlightFetch.current;
+    if (current?.id === id && (silent || !current.silent)) {
+      // Refresh triggers (poll/focus/visibility) must not supersede foreground
+      // requests or each other. A foreground caller reuses only a foreground
+      // fetch: a silent one may have started before a mutation and carry stale data.
+      return current.promise;
     }
+
+    const sequence = ++fetchSequence.current;
+    const request = {};
+    inFlightFetch.current = { id, request, silent };
+    if (!silent) {
+      loadingRequest.current = request;
+      setLoading(true);
+      setLoadError(false);
+    }
+    const promise = (async () => {
+      try {
+        const result = await studentpraticeAPI.getStudentPracticeCard(id);
+        if (sequence !== fetchSequence.current) return;
+        setEntity(result);
+        setDocs(result.student_practice_documents || []);
+        setTimelineRefreshKey((key) => key + 1);
+      } catch (error) {
+        if (sequence !== fetchSequence.current) return;
+        if (!silent) {
+          addMessage(t("practice_detail.card_load_error"), "E");
+          setLoadError(true);
+        }
+      } finally {
+        if (inFlightFetch.current?.request === request) inFlightFetch.current = null;
+        if (loadingRequest.current === request) {
+          loadingRequest.current = null;
+          setLoading(false);
+        }
+      }
+    })();
+    inFlightFetch.current.promise = promise;
+    return promise;
   };
 
   useEffect(() => {
     if (id) {
       fetchData();
     }
+  }, [id]);
+
+  usePolling(() => fetchData({ silent: true }), POLLING_INTERVAL_MS);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") fetchData({ silent: true });
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [id]);
 
   const handleDownload = async (documentId) => {
@@ -228,7 +275,9 @@ export default function PraxeDetailPage() {
 
   const handleResubmit = async () => {
     try {
-      await studentpraticeAPI.updateStudentPracticeStatus(id, "resubmit");
+      await studentpraticeAPI.updateStudentPracticeStatus(id, "resubmit", {
+        workflowStatus: entity?.student_practice_status?.workflow_status,
+      });
       addMessage(t("practice_detail.resubmit_success"), "S");
       fetchData();
     } catch (error) {
@@ -266,17 +315,23 @@ export default function PraxeDetailPage() {
 
   const openResolvePopup = (decision) => {
     setResolveDecision(decision);
+    setResolveReason("");
     setResolvePopUp(true);
   };
 
   // --- T2d: rozhodnutí garanta/admina o žádosti o storno ---
   const handleResolveCancellation = async () => {
     if (!resolveDecision) return;
+    if (resolveReason.trim().length < 10) {
+      addMessage(t("practice_detail.reject_reason_required"), "E");
+      return;
+    }
     try {
-      await studentpraticeAPI.resolveCancellation(id, resolveDecision);
+      await studentpraticeAPI.resolveCancellation(id, resolveDecision, resolveReason.trim());
       addMessage(t("practice_detail.cancellation_resolve_success"), "S");
       setResolvePopUp(false);
       setResolveDecision(null);
+      setResolveReason("");
       fetchData();
     } catch (error) {
       addMessage(getApiErrorMessage(error, t, "practice_detail.cancellation_resolve_error"), "E");
@@ -659,7 +714,7 @@ export default function PraxeDetailPage() {
               )}
 
               {/* TLAČÍTKA PRO SPRÁVU */}
-              {user && entity?.can_approve && (
+              {user && entity?.can_approve && entity?.student_practice_status?.workflow_status !== "UNKNOWN" && (
                 <Container property="flex gap-4 justify-end">
                   <Button
                     variant={"primary"}
@@ -775,7 +830,8 @@ export default function PraxeDetailPage() {
                 )}
 
               {/* FEEDBACK REVIEW - garant/škola schvaluje hodnotící podklad (FE-007) */}
-              {canReviewResubmittedDocuments(user) &&
+              {["ENDED", "DOCUMENTS_REJECTED", "DOCUMENTS_RESUBMITTED"].includes(entity?.student_practice_status?.workflow_status) &&
+                canReviewResubmittedDocuments(user) &&
                 docs.find((d) => d.type === "feedback") && (
                   <Container property="flex flex-wrap gap-4 justify-end items-center">
                     <Paragraph property="text-sm font-medium">
@@ -812,9 +868,9 @@ export default function PraxeDetailPage() {
                   </Container>
                 )}
 
-              {/* POTVRZENÍ SMLOUVY - garant/profesor ve stavu AWAITING_CONTRACT */}
+              {/* Potvrzení smlouvy organizací nebo jejího přijetí studentem. */}
               {user &&
-                (user.isProfessor() || user.isDepartmentUser() || user.isAdmin()) &&
+                (user.isOrganizationUser() || user.isStudent() || user.isProfessor() || user.isDepartmentUser() || user.isAdmin()) &&
                 entity?.student_practice_status?.workflow_status === "AWAITING_CONTRACT" && (
                   <Container property="flex gap-4 justify-end">
                     <Button
@@ -837,6 +893,7 @@ export default function PraxeDetailPage() {
               <Timeline
                 studentPracticeId={id}
                 currentStatus={entity.student_practice_status.workflow_status}
+                refreshKey={timelineRefreshKey}
               />
             </ContainerForEntity>
           )}
@@ -985,6 +1042,7 @@ export default function PraxeDetailPage() {
               onClose={() => {
                 setResolvePopUp(false);
                 setResolveDecision(null);
+                setResolveReason("");
               }}
               title={t("practice_detail.cancel_request_title")}
               text={
@@ -997,9 +1055,20 @@ export default function PraxeDetailPage() {
               onReject={() => {
                 setResolvePopUp(false);
                 setResolveDecision(null);
+                setResolveReason("");
               }}
               onRejectText={t("common.cancel")}
-            />
+            >
+              <Container property="mt-4 mb-4 px-4">
+                <textarea
+                  value={resolveReason}
+                  onChange={(e) => setResolveReason(e.target.value)}
+                  placeholder={t("practice_detail.reject_reason_placeholder")}
+                  aria-label={t("practice_detail.reject_reason_title")}
+                  className="w-full p-3 border border-gray-300 rounded-lg min-h-[100px] resize-none text-sm"
+                />
+              </Container>
+            </PopUpCon>
           )}
 
           {/* REVIEW ROZHODNUTÍ O OPRAVNÝCH DOKUMENTECH MODAL (C19-B/T2c) */}

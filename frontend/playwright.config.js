@@ -1,4 +1,6 @@
 const { defineConfig, devices } = require('@playwright/test');
+const path = require('node:path');
+const authDir = path.resolve(__dirname, process.env.E2E_AUTH_DIR || 'playwright/.auth');
 
 module.exports = defineConfig({
   globalSetup: require.resolve('./playwright.global-setup.js'),
@@ -33,7 +35,7 @@ module.exports = defineConfig({
       testMatch: 'admin.spec.js',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/admin.json',
+        storageState: path.join(authDir, 'admin.json'),
       },
       dependencies: ['setup'],
     },
@@ -43,7 +45,7 @@ module.exports = defineConfig({
       testMatch: 'professor.spec.js',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/professor.json',
+        storageState: path.join(authDir, 'professor.json'),
       },
       dependencies: ['setup'],
     },
@@ -53,7 +55,7 @@ module.exports = defineConfig({
       testMatch: 'company.spec.js',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/company.json',
+        storageState: path.join(authDir, 'company.json'),
       },
       dependencies: ['setup'],
     },
@@ -63,7 +65,7 @@ module.exports = defineConfig({
       testMatch: ['student.spec.js', 'profile_management.spec.js'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/student.json',
+        storageState: path.join(authDir, 'student.json'),
       },
       dependencies: ['setup'],
     },
@@ -104,7 +106,7 @@ module.exports = defineConfig({
       testMatch: /student\/.*\.spec\.js/,
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/student.json',
+        storageState: path.join(authDir, 'student.json'),
       },
       dependencies: ['setup'],
     },
@@ -114,7 +116,7 @@ module.exports = defineConfig({
       testMatch: /company\/.*\.spec\.js/,
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/company.json',
+        storageState: path.join(authDir, 'company.json'),
       },
       dependencies: ['setup'],
     },
@@ -124,7 +126,7 @@ module.exports = defineConfig({
       testMatch: /professor\/.*\.spec\.js/,
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/professor.json',
+        storageState: path.join(authDir, 'professor.json'),
       },
       dependencies: ['setup'],
     },
@@ -134,7 +136,7 @@ module.exports = defineConfig({
       testMatch: /admin\/.*\.spec\.js/,
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/admin.json',
+        storageState: path.join(authDir, 'admin.json'),
       },
       dependencies: ['setup'],
     },

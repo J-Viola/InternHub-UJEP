@@ -795,7 +795,14 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
             self.assertEqual(self._upload(doc).status_code, 201)
             sp.refresh_from_db()
             self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
-            response = self.transition(self.garant, sp, StudentPracticeWorkflowState.DOCUMENTS_REJECTED, reason=f"kolo {round_no}")
+            # Rejection must come from review: a generic state transition does
+            # not mark the currently pending replacement document rejected.
+            self.client.force_authenticate(user=self.garant)
+            response = self.client.patch(
+                f"/api/student-practices/review-document/{doc.pk}",
+                {"status": DocumentStatus.REJECTED.value, "review_note": f"kolo {round_no}"},
+                format="json",
+            )
             self.assertEqual(response.status_code, 200)
             sp.refresh_from_db()
             self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_REJECTED)
@@ -1298,36 +1305,23 @@ class Bl03ConfirmT2bTests(BL03FixtureMixin, TestCase):
         self.assertEqual(sp.contract_received_date, advanced_date)
         self.assertEqual(Notification.objects.filter(verb="ALLOCATION_ORG", recipient=self.org_user).count(), 1)
 
-    def test_confirm_repeat_on_preapproved_pending_is_noop(self):
-        """F6 (finding 6): obě osy už drží na AWAITING_CONTRACT řádku →
-        opakování potvrzení je ČISTÝ no-op (žádný zápis data, ActionLog,
-        notifikace); smír jde výslovně autorizovaným transition."""
+    def test_confirm_repeat_on_preapproved_pending_reconciles_to_contracted(self):
+        """Obě předem schválené osy se při confirm rekoncilují do CONTRACTED."""
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         StudentPractice.objects.filter(pk=sp.pk).update(school_approved=True, employer_approved=True)
         sp.refresh_from_db()
         self.assertIsNone(sp.contract_received_date)
 
-        log_before = ActionLog.objects.count()
         alloc_before = Notification.objects.filter(verb="ALLOCATION_ORG").count()
 
-        # opakování oběma rolemi → vždy no-op, žádný re-write
-        for actor in (self.org_user, self.garant):
-            response = self._confirm(actor, sp)
-            self.assertEqual(response.status_code, 200)
-        sp.refresh_from_db()
-        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)  # NE posunuto
-        self.assertIsNone(sp.contract_received_date)  # datum NE přepsáno
-        self.assertTrue(sp.school_approved)
-        self.assertTrue(sp.employer_approved)
-        self.assertEqual(ActionLog.objects.count(), log_before)
-        self.assertEqual(Notification.objects.filter(verb="ALLOCATION_ORG").count(), alloc_before)
-
-        # smír přes výslovně autorizovaný transition (T1 brána obě osy splňuje)
-        reconcile = self.transition(self.garant, sp, StudentPracticeWorkflowState.CONTRACTED)
-        self.assertEqual(reconcile.status_code, 200)
+        response = self._confirm(self.garant, sp)
+        self.assertEqual(response.status_code, 200)
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.CONTRACTED)
         self.assertEqual(sp.approval_status, ApprovalStatus.APPROVED)
+        self.assertIsNotNone(sp.contract_received_date)
+        self.assertTrue(sp.school_approved)
+        self.assertTrue(sp.employer_approved)
         self.assertEqual(Notification.objects.filter(verb="ALLOCATION_ORG").count(), alloc_before + 1)
 
 

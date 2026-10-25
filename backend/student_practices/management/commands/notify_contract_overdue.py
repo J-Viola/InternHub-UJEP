@@ -1,11 +1,11 @@
 from datetime import timedelta
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 from notifications.services import NotificationService
 
+from api.parameter_service import get_param
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
 
@@ -17,7 +17,7 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        overdue_days = getattr(settings, "PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
+        overdue_days = get_param("PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
         notified_count = 0
 
         # Rychlá předfiltrace: AWAITING_CONTRACT + updated_at starší než práh.

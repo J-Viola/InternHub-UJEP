@@ -427,6 +427,8 @@ class DataExportView(APIView):
             year = params.get("year")
             state = params.get("workflow_state")
             subject_id = params.get("subject_id")
+            employer_id = params.get("employer_id")
+            institution = params.get("institution")
 
             # Fail-closed (BE-003): prázdný/neplatný stavový filtr se nikdy
             # neodhodí ve prospěch neomezeného exportu → 400, ne globální řádky.
@@ -443,6 +445,8 @@ class DataExportView(APIView):
                 "year": year,
                 "workflow_state": state,
                 "subject_id": subject_id,
+                "employer_id": employer_id,
+                "institution": institution,
             }
 
             # Role-based scoping: garant/profesor katedry → jen vlastní
@@ -501,6 +505,10 @@ class DataExportView(APIView):
                 qs = qs.filter(workflow_state=state)
             if subject_id:
                 qs = qs.filter(practice__subject_id=subject_id)
+            if employer_id:
+                qs = qs.filter(practice__employer_id=employer_id)
+            if institution:
+                qs = qs.filter(practice__employer__company_name__icontains=institution)
 
             if fmt == "csv":
                 csv_content = ExportService.generate_csv(qs)

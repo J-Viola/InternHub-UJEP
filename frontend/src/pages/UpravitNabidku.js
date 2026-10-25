@@ -64,6 +64,8 @@ export default function UpravitNabidku() {
                         responsibilities: practiceRes.responsibilities,
                         available_positions: practiceRes.available_positions,
                         start_date: practiceRes.start_date,
+                        semester: practiceRes.semester || "",
+                        skills: practiceRes.skills,
                         end_date: practiceRes.end_date,
                         coefficient: practiceRes.coefficient,
                         subject_id: practiceRes.subject?.subject_id,

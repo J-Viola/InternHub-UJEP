@@ -3,6 +3,7 @@ import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AuthProvider from './Auth';
 
+const mockCleanUser = jest.fn();
 // Mocks
 jest.mock('@api/apiClient', () => {
     const accessToken = { current: null };
@@ -21,7 +22,7 @@ jest.mock('@hooks/UserProvider', () => ({
     useUser: () => ({
         user: { isLoggedIn: () => false },
         setUser: jest.fn(),
-        cleanUser: jest.fn(),
+        cleanUser: mockCleanUser,
     }),
 }));
 
@@ -48,7 +49,7 @@ describe('AuthProvider - concurrent 401 race', () => {
         jest.clearAllMocks();
         responseInterceptors = { fulfilled: null, rejected: null };
 
-        mockApiClient = {
+        mockApiClient = Object.assign(jest.fn((config) => Promise.resolve({ data: {}, config })), {
             interceptors: {
                 request: { use: jest.fn(), eject: jest.fn() },
                 response: {
@@ -62,7 +63,8 @@ describe('AuthProvider - concurrent 401 race', () => {
             },
             post: jest.fn(),
             get: jest.fn(),
-        };
+        });
+        mockCleanUser.mockClear();
 
         createApiClient.mockReturnValue(mockApiClient);
     });
@@ -111,14 +113,15 @@ describe('AuthProvider - concurrent 401 race', () => {
         // Await both
         // The second one should NOT trigger another refresh call
         // (because ref is already true)
-        await Promise.all([
-            result1Promise.catch(() => {}),
-            result2Promise.catch(() => {}),
-        ]);
+        await Promise.all([result1Promise, result2Promise]);
 
         // Token refresh endpoint should be called EXACTLY ONCE
         // (not twice, which would happen with stale state closure)
         expect(mockApiClient.post).toHaveBeenCalledTimes(1);
+        expect(mockApiClient).toHaveBeenCalledTimes(2);
+        expect(mockApiClient.mock.calls.map(([config]) => config.headers.Authorization)).toEqual([
+            'Bearer new-token-xyz', 'Bearer new-token-xyz',
+        ]);
 
         // The Authorization header on the retry should have the new token
         // At least on the first request's retry
@@ -147,23 +150,25 @@ describe('AuthProvider - concurrent 401 race', () => {
             response: { status: 401 },
             config: { headers: {}, url: '/api/resource1' },
         };
-
-        await expect(responseInterceptors.rejected(err)).rejects.toBeDefined();
-
-        // Ref should be reset to false after failure
-        // Verify by triggering another 401 - it should attempt refresh again
-        mockApiClient.post.mockResolvedValue({
-            data: { access: 'recovery-token', user: null },
-        });
-
         const err2 = {
             response: { status: 401 },
             config: { headers: {}, url: '/api/resource2' },
         };
+        const results = await Promise.allSettled([
+            responseInterceptors.rejected(err),
+            responseInterceptors.rejected(err2),
+        ]);
+        expect(results.every(result => result.status === 'rejected')).toBe(true);
+        expect(mockApiClient.post).toHaveBeenCalledTimes(1);
+        expect(mockCleanUser).toHaveBeenCalledTimes(1);
+    });
 
-        await responseInterceptors.rejected(err2).catch(() => {});
-
-        // post should have been called again (ref was reset)
-        expect(mockApiClient.post).toHaveBeenCalledTimes(2);
+    test('does not refresh a 401 from refresh endpoint', async () => {
+        render(<MemoryRouter><AuthProvider><div>Children</div></AuthProvider></MemoryRouter>);
+        await waitFor(() => expect(responseInterceptors.rejected).not.toBeNull());
+        mockApiClient.post.mockClear();
+        const error = { response: { status: 401 }, config: { headers: {}, url: '/users/token/refresh/' } };
+        await expect(responseInterceptors.rejected(error)).rejects.toBe(error);
+        expect(mockApiClient.post).not.toHaveBeenCalled();
     });
 });

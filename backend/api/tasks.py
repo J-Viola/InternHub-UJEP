@@ -41,6 +41,10 @@ def export_data_async(export_id: str, filters: dict, fmt: str, user_id: int | No
             qs = qs.filter(workflow_state=filters["workflow_state"])
         if filters.get("subject_id"):
             qs = qs.filter(practice__subject_id=filters["subject_id"])
+        if filters.get("employer_id"):
+            qs = qs.filter(practice__employer_id=filters["employer_id"])
+        if filters.get("institution"):
+            qs = qs.filter(practice__employer__company_name__icontains=filters["institution"])
 
         if fmt == "csv":
             result = ExportService.generate_csv(qs)

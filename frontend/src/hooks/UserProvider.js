@@ -14,7 +14,7 @@ function UserProvider({children}) {
                 newUser.setUser(userData);
                 return newUser;
             } catch (error) {
-                console.error("Chyba při parsování dat uživatele z localStorage:", error);
+                if (process.env.NODE_ENV === "development") console.error("Chyba při parsování dat uživatele z localStorage");
                 localStorage.removeItem("user");
             }
         }
@@ -28,9 +28,9 @@ function UserProvider({children}) {
             setUserState(newUser);
             localStorage.setItem("user", JSON.stringify(data));
 
-            console.log("Data uživatele nastavena a uložena do localStorage:", newUser);
+            if (process.env.NODE_ENV === "development") console.log("Data uživatele nastavena a uložena do localStorage");
         } catch(err) {
-            console.error("Chyba při nastavování dat uživatele:", err);
+            if (process.env.NODE_ENV === "development") console.error("Chyba při nastavování dat uživatele");
             throw new Error(err.message);
         }
     }
@@ -39,14 +39,14 @@ function UserProvider({children}) {
         try {
             setUserState(new User());
             localStorage.removeItem("user");
-            console.log("Data uživatele vyčištěna z localStorage");
+            if (process.env.NODE_ENV === "development") console.log("Data uživatele vyčištěna z localStorage");
         } catch(err) {
-            console.error("Chyba při mazání dat uživatele:", err);
+            if (process.env.NODE_ENV === "development") console.error("Chyba při mazání dat uživatele");
         }
     }
 
     useEffect(() => {
-        console.log("UserProvider state:", user);
+        if (process.env.NODE_ENV === "development") console.log("UserProvider state updated");
     }, [user]);
 
     return (

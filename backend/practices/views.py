@@ -129,7 +129,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
             user=user,
             action_type=ActionLogType.VIEW,
             object_type="StudentPractice",
-            description=f"Student {user.email} zobrazení vlastních praxí a pozvánek",
+            description=f"Student (aktér #{user.pk}) zobrazení vlastních praxí a pozvánek",
         )
 
         return Response(result)
@@ -176,7 +176,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
                 action_type=ActionLogType.TOGGLE_FAVORITE,
                 object_type="Practice",
                 object_id=practice.pk,
-                description=f"Student {user.email} odebral praxi '{practice.title}' z oblíbených",
+                description=f"Student (aktér #{user.pk}) odebral praxi '{practice.title}' z oblíbených",
             )
 
             return Response({"detail": "REMOVED_FROM_FAVORITES", "is_favorite": False})
@@ -188,7 +188,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
                 action_type=ActionLogType.TOGGLE_FAVORITE,
                 object_type="Practice",
                 object_id=practice.pk,
-                description=f"Student {user.email} přidal praxi '{practice.title}' do oblíbených",
+                description=f"Student (aktér #{user.pk}) přidal praxi '{practice.title}' do oblíbených",
             )
 
             return Response({"detail": "ADDED_TO_FAVORITES", "is_favorite": True})
@@ -203,7 +203,7 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
             user=request.user,
             action_type=ActionLogType.VIEW,
             object_type="Practice",
-            description=f"Student {request.user.email} zobrazení nadcházejících praxí",
+            description=f"Student (aktér #{request.user.pk}) zobrazení nadcházejících praxí",
         )
 
         page = self.paginate_queryset(upcoming_practices)
@@ -496,7 +496,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
             user=request.user,
             action_type=ActionLogType.VIEW,
             object_type="Practice",
-            description=f"Profesor {request.user.email} zobrazení čekajících praxí na schválení",
+            description=f"Profesor (aktér #{request.user.pk}) zobrazení čekajících praxí na schválení",
         )
         page = self.paginate_queryset(practices)
         if page is not None:
@@ -558,7 +558,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
                     reason="Automatická aktivace po schválení obsahu (SRS analysis.txt:2248)",
                 )
 
-        EmailService.notify_org_practice_status(practice_obj)
+        transaction.on_commit(lambda: EmailService.notify_org_practice_status(practice_obj))
 
         status_name = "schválena" if approval_status == ApprovalStatus.APPROVED else "zamítnuta"
         action_type = ActionLogType.APPROVE if approval_status == ApprovalStatus.APPROVED else ActionLogType.REJECT
@@ -568,7 +568,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
             action_type=action_type,
             object_type="Practice",
             object_id=practice_obj.pk,
-            description=f"Praxe '{practice_obj.title}' (ID: {practice_obj.pk}) {status_name} uživatelem {request.user.email}",
+            description=f"Praxe '{practice_obj.title}' (ID: {practice_obj.pk}) {status_name} aktérem #{request.user.pk}",
         )
 
         return Response(PracticeSerializer(practice_obj).data)
@@ -601,7 +601,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
             user=request.user,
             action_type=ActionLogType.VIEW,
             object_type="Practice",
-            description=f"Profesor {request.user.email} zobrazení přehledu katedry",
+            description=f"Profesor (aktér #{request.user.pk}) zobrazení přehledu katedry",
         )
 
         return Response(
@@ -650,7 +650,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
             user=request.user,
             action_type=ActionLogType.VIEW,
             object_type="Practice",
-            description=f"Profesor {request.user.email} zobrazení běžících praxí",
+            description=f"Profesor (aktér #{request.user.pk}) zobrazení běžících praxí",
         )
 
         page = self.paginate_queryset(practices)
@@ -904,7 +904,7 @@ class ExternalPracticeView(APIView):
                     action_type=ActionLogType.CREATE,
                     object_type="Practice",
                     object_id=practice.pk,
-                    description=f"Vytvoření mimosystémové praxe '{practice.title}' uživatelem {request.user.email}",
+                    description=f"Vytvoření mimosystémové praxe '{practice.title}' aktérem #{request.user.pk}",
                 )
 
                 # If a student creates, automatically apply them

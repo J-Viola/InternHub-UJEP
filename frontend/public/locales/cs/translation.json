@@ -135,7 +135,12 @@
         "city": "Lokalita",
         "employment_type": "Typ úvazku",
         "employment_type_part_time": "Úvazek 0,5",
-        "employment_type_full_time": "Úvazek 1,0"
+      "employment_type_full_time": "Úvazek 1,0"
+      ,"technologies": "Technologie (oddělené čárkou)"
+      ,"tools": "Nástroje (oddělené čárkou)"
+      ,"methodologies": "Metodiky (oddělené čárkou)"
+      ,"semester": "Semestr (ZS, LS)"
+      ,"comma_separated": "Hodnoty oddělené čárkou"
       }
   },
   "form": {
@@ -143,6 +148,14 @@
     "start_date": "Čas období od",
     "end_date": "Čas období do",
     "coefficient": "Úvazek",
+    "semester": "Semestr",
+    "semester_unspecified": "Neuvedeno",
+    "semester_winter": "Zimní semestr (ZS)",
+    "semester_summer": "Letní semestr (LS)",
+    "skills_technologies": "Technologie",
+    "skills_tools": "Nástroje",
+    "skills_methodologies": "Metodiky",
+    "skills_placeholder": "Oddělte položky čárkou",
     "contact_user": "Správce inzerátu",
     "subject": "Přiřazený předmět",
     "available_positions": "Počet volných míst",
@@ -276,6 +289,14 @@
     "filter_started": "Probíhá",
     "filter_awaiting_documents": "Čeká na dokumenty",
     "filter_at_risk": "Rizikové",
+    "risk": {
+      "title": "Praxe vyžadující pozornost",
+      "approval_stalled": "Zdlouhavé schvalování",
+      "ended_no_credit": "Ukončeno bez zápočtu déle než 14 dní",
+      "overdue_end": "Po termínu ukončení",
+      "unknown": "Jiné upozornění",
+      "shown_count": "Zobrazeno {{shown}} z {{total}}"
+    },
     "filter_contract_pending": "Čeká na zasmluvnění",
     "contract_pending_badge": "Čeká na smlouvu — {{days}} dní",
     "contract_pending_escalation": "Tato praxe čeká na zasmluvnění déle než 7 dní. Doporučujeme urychleně kontaktovat studenta nebo zaměstnavatele.",
@@ -806,6 +827,21 @@
     "late": "Odevzdáno po termínu"
   },
   "export": {
+    "xlsx": "Export XLSX",
+    "csv": "Export CSV",
+    "filters": {
+      "title": "Filtry exportu",
+      "hint": "Filtry platí pouze pro export. Prázdná pole výběr neomezují.",
+      "year": "Rok",
+      "state": "Stav praxe",
+      "all_states": "Všechny stavy",
+      "subject": "Předmět",
+      "all_subjects": "Všechny předměty",
+      "subjects_loading": "Načítání předmětů…",
+      "subjects_error": "Předměty se nepodařilo načíst. Export je dostupný bez filtru předmětu.",
+      "institution": "Instituce",
+      "institution_placeholder": "Část názvu firmy"
+    },
     "processing": "Export se zpracovává. Budete notifikováni po dokončení.",
     "success": "Export {{format}} byl úspěšně vygenerován."
   },

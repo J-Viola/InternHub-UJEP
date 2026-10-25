@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Container from "@core/Container/Container";
 import BackButton from "@core/Button/BackButton";
 import NabidkaForm from "@components/Forms/NabidkaForm";
@@ -22,6 +22,8 @@ export default function VytvoritNabidku() {
     const [ errors, setErrors ] = useState({});
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const submittingRef = useRef(false);
     const codeList = useCodeListAPI();
     const userAPI = useUserAPI();
     const nabidkaAPI = useNabidkaAPI();
@@ -83,12 +85,15 @@ export default function VytvoritNabidku() {
     };
 
     const handleCreation = async () => {
+        if (submittingRef.current) return;
         if (!validateForm()) {
             addMessage(t('form.validation_error'), "W");
             return;
         }
 
         setErrors({});
+        submittingRef.current = true;
+        setSubmitting(true);
         try {
             const res = await nabidkaAPI.createNabidka(buildPayload());
             if (res) {
@@ -117,6 +122,9 @@ export default function VytvoritNabidku() {
                 ),
                 "E"
             );
+        } finally {
+            submittingRef.current = false;
+            setSubmitting(false);
         }
     }
 
@@ -166,6 +174,7 @@ export default function VytvoritNabidku() {
                     handleChange={handleChange}
                     handleSubmit={handleCreation}
                     errors={errors}
+                    submitting={submitting}
                 />
             </Container>
             )}

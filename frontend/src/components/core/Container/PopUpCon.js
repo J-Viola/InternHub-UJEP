@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import ContainerForEntity from "./ContainerForEntity";
 import Container from "./Container";
 import Button from "@core/Button/Button";
@@ -20,6 +20,25 @@ export default function PopUpCon({
     customContainer = null
 }) {
     const { t } = useTranslation();
+    const dialogRef = useRef(null);
+    const returnFocusRef = useRef(null);
+
+    useEffect(() => {
+        returnFocusRef.current = document.activeElement;
+        const firstControl = dialogRef.current?.querySelector("button, input, textarea, select, [tabindex]:not([tabindex='-1'])");
+        firstControl?.focus();
+        const onKeyDown = (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                closePopUp();
+            }
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => {
+            document.removeEventListener("keydown", onKeyDown);
+            returnFocusRef.current?.focus?.();
+        };
+    }, []);
     const closePopUp = () => {
         if (onClose) {
             onClose();
@@ -32,11 +51,11 @@ export default function PopUpCon({
     // Custom container variant
     if (useCustomContainer) {
         return (
-            <Container property={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
+            <div role="dialog" aria-modal="true" aria-labelledby="popup-dialog-title" ref={dialogRef} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 {customContainer || (
                     <ContainerForEntity property={"w-1/2 max-w-2xl"} variant={variant}>
                         <Container property={"flex justify-between items-center mb-4"}>
-                            <Headings property={"ml-4"} sizeTag={"h5"}>{title}</Headings>
+                            <Headings id="popup-dialog-title" property={"ml-4"} sizeTag={"h5"}>{title}</Headings>
                             <Button variant={"red"} onClick={closePopUp} property={"px-2 py-1"}>
                                 X
                             </Button>
@@ -56,16 +75,16 @@ export default function PopUpCon({
                         </Container>
                     </ContainerForEntity>
                 )}
-            </Container>
+            </div>
         );
     }
 
     // Standardní variant
     return(
-        <Container data-testid="popup-con" property={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
+        <div role="dialog" aria-modal="true" aria-labelledby="popup-dialog-title" ref={dialogRef} data-testid="popup-con" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <ContainerForEntity property={"w-1/2 max-w-2xl"} variant={variant}>
                 <Container property={"flex justify-between items-center mb-4"}>
-                    <Headings property={"ml-4"} sizeTag={"h5"}>{title}</Headings>
+                    <Headings id="popup-dialog-title" property={"ml-4"} sizeTag={"h5"}>{title}</Headings>
                     <Button variant={"red"} onClick={onClose} property={"px-2 py-1"}>
                         X
                     </Button>
@@ -86,6 +105,6 @@ export default function PopUpCon({
                     {children}
                 </Container>
             </ContainerForEntity>
-        </Container>
+        </div>
     )
 }

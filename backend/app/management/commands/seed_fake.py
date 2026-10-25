@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from faker import Faker
 
+from app.db_identity import NonDisposableDatabaseError, assert_disposable_db
 from department.models import Department
 from practices.models import Practice, ProgressStatus
 from student_practices.models import DocumentHelper, StudentPractice
@@ -33,6 +34,13 @@ class Command(BaseCommand):
         parser.add_argument("--applications", type=int, default=15, help="Počet přihlášek k vytvoření")
 
     def handle(self, *args, **options):
+        try:
+            assert_disposable_db("seed_fake bulk deletion", force=True)
+        except NonDisposableDatabaseError as error:
+            from django.core.management.base import CommandError
+
+            raise CommandError(f"seed_fake odmítnut BL-07 DB-identity guardem: {error}") from error
+
         self.stdout.write("Zahajuji generování fake dat...")
 
         # Inicializace Faker s českou lokalizací

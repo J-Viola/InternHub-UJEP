@@ -121,7 +121,12 @@ class PracticeService:
         # BE-013: externí individuální cyklus — student smí přihlásit právě
         # vytvořenou externí praxi ve stavu PENDING_CONTENT_APPROVAL.
         if practice.workflow_state is not None and practice.workflow_state != PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
-            if not (practice.is_external and practice.workflow_state == PracticeWorkflowState.PENDING_CONTENT_APPROVAL):
+            if not (
+                practice.is_external
+                and practice.workflow_state == PracticeWorkflowState.PENDING_CONTENT_APPROVAL
+                and practice.external_employer is not None
+                and practice.external_employer.created_by_id == user.pk
+            ):
                 raise ValueError("PRACTICE_NOT_OPEN_FOR_APPLICATIONS")
 
         if not practice.start_date or not practice.end_date:
@@ -246,7 +251,7 @@ class PracticeService:
                 action_type=ActionLogType.APPLY,
                 object_type="StudentPractice",
                 object_id=serializer.data.get("student_practice_id"),
-                description=f"Student {user.email} se přihlásil na praxi ID {practice_id}",
+                description=f"Student (aktér #{user.pk}) se přihlásil na praxi ID {practice_id}",
             )
 
             return serializer.data

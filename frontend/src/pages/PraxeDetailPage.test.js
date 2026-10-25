@@ -143,7 +143,9 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+      jest.useRealTimers();
+      jest.restoreAllMocks();
+      jest.clearAllMocks();
     });
 
     test('C19-B: garant (VY) rozhoduje o DOCUMENTS_RESUBMITTED, terminální REJECTED jen admin', async () => {
@@ -213,6 +215,53 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         // důvod se zobrazí v obou banerech (rejected + opravný)
         expect(screen.getAllByText('Chybí podpis').length).toBeGreaterThan(0);
     });
+
+    test('feedback review is available only for ENDED or corrective states', async () => {
+        const feedbackDoc = { id: 31, type: 'feedback', status: 0 };
+        mockGetCard.mockResolvedValue(makeEntity({
+            student_practice_documents: [feedbackDoc],
+            student_practice_status: { ...makeEntity().student_practice_status, workflow_status: 'APPLIED' },
+        }));
+        useUser.mockReturnValue({ user: makeUser('VY') });
+        const { unmount } = renderPage();
+        await waitFor(() => expect(mockGetCard).toHaveBeenCalled());
+        expect(screen.queryByText(tr('common.approve'))).not.toBeInTheDocument();
+        unmount();
+
+        mockGetCard.mockResolvedValue(makeEntity({
+            student_practice_documents: [feedbackDoc],
+            student_practice_status: { ...makeEntity().student_practice_status, workflow_status: 'ENDED' },
+        }));
+        renderPage();
+        expect((await screen.findAllByText(tr('docs.feedback'))).length).toBeGreaterThan(0);
+    });
+
+  test('refreshes detail and timeline when window regains focus', async () => {
+        useUser.mockReturnValue({ user: makeUser('ST') });
+        renderPage();
+        await waitFor(() => expect(mockGetCard).toHaveBeenCalledTimes(1));
+        fireEvent.focus(window);
+        await waitFor(() => expect(mockGetCard).toHaveBeenCalledTimes(2));
+  });
+
+  test('focus/visibility refresh keeps an open dialog and deduplicates requests', async () => {
+    mockGetCard.mockResolvedValue(makeEntity({
+      student_practice_status: { ...makeEntity().student_practice_status, workflow_status: 'CONTRACTED' },
+    }));
+    useUser.mockReturnValue({ user: makeUser('ST') });
+    renderPage();
+    fireEvent.click(await screen.findByText(tr('practice_detail.cancel_request_button')));
+    const textarea = screen.getByPlaceholderText(tr('practice_detail.cancel_request_placeholder'));
+    fireEvent.change(textarea, { target: { value: 'Rozepsaný důvod žádosti' } });
+
+    mockGetCard.mockClear();
+    fireEvent.focus(window);
+    fireEvent(document, new Event('visibilitychange'));
+
+    expect(screen.getByPlaceholderText(tr('practice_detail.cancel_request_placeholder'))).toBe(textarea);
+    expect(textarea).toHaveValue('Rozepsaný důvod žádosti');
+    expect(mockGetCard).toHaveBeenCalledTimes(1);
+  });
 
     test('C02-A: student požádá o storno z CONTRACTED (důvod povinný)', async () => {
         mockGetCard.mockResolvedValue(
@@ -293,9 +342,12 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
             ).toBeInTheDocument();
         });
         fireEvent.click(screen.getByText(tr('practice_detail.cancellation_approve')));
+        fireEvent.change(screen.getByLabelText(tr('practice_detail.reject_reason_title')), {
+            target: { value: 'Schváleno po dohodě s účastníkem' },
+        });
         fireEvent.click(screen.getByTestId('popup-submit'));
         await waitFor(() => {
-            expect(mockResolveCancellation).toHaveBeenCalledWith('5', 'approve');
+            expect(mockResolveCancellation).toHaveBeenCalledWith('5', 'approve', 'Schváleno po dohodě s účastníkem');
         });
     });
 
@@ -330,7 +382,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
                 },
             })
         );
-        useUser.mockReturnValue({ user: makeUser('VY') });
+        useUser.mockReturnValue({ user: makeUser('OWNER') });
         const { unmount } = renderPage();
         await waitFor(() => {
             expect(
@@ -352,6 +404,26 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
             expect(mockGetCard).toHaveBeenCalled();
         });
         expect(screen.queryByText(tr('practice_detail.confirm_contract'))).not.toBeInTheDocument();
+    });
+
+    test('T2b: školní role vidí potvrzení smlouvy v AWAITING_CONTRACT', async () => {
+        mockGetCard.mockResolvedValue(makeEntity({
+            student_practice_status: { ...makeEntity().student_practice_status, workflow_status: 'AWAITING_CONTRACT' },
+        }));
+        useUser.mockReturnValue({ user: makeUser('VY') });
+        renderPage();
+        fireEvent.click(await screen.findByText(tr('practice_detail.confirm_contract')));
+        await waitFor(() => expect(mockConfirmContract).toHaveBeenCalledWith('5'));
+    });
+
+    test('resubmit passes the current content-rejected state', async () => {
+        mockGetCard.mockResolvedValue(makeEntity({
+            student_practice_status: { ...makeEntity().student_practice_status, workflow_status: 'CONTENT_REJECTED' },
+        }));
+        useUser.mockReturnValue({ user: makeUser('ST') });
+        renderPage();
+        fireEvent.click(await screen.findByText(tr('practice_detail.resubmit_button')));
+        await waitFor(() => expect(mockUpdateStatus).toHaveBeenCalledWith('5', 'resubmit', { workflowStatus: 'CONTENT_REJECTED' }));
     });
 
     test('FE-002: schválení posílá workflowStatus pro volbu explicitního cíle', async () => {

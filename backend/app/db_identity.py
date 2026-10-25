@@ -157,12 +157,12 @@ def guard_active() -> bool:
     return bool(getattr(settings, "DEBUG", False))
 
 
-def assert_disposable_db(operation: str, *, connection=None, allow_env: str = ALLOW_NON_TEST_DB_ENV) -> None:
+def assert_disposable_db(operation: str, *, connection=None, allow_env: str = ALLOW_NON_TEST_DB_ENV, force: bool = False) -> None:
     """Runtime guard: odmítne operaci na nedisposable databázi (fail-closed).
 
     Neotevírá DB spojení — čte pouze ``connection.settings_dict``.
     """
-    if not guard_active():
+    if not force and not guard_active():
         return
 
     if os.environ.get(allow_env) == "1":

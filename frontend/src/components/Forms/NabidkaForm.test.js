@@ -152,4 +152,30 @@ describe('NabidkaForm Component', () => {
     expect(screen.getByText('Popis je povinný.')).toBeInTheDocument();
     expect(screen.getByLabelText('form.description')).toHaveClass('border-red-500'); // Assuming TextBox applies this class
   });
+
+  test('categorized skills retain commas while typing and submit parsed values', () => {
+    const Harness = () => {
+      const [formData, setFormData] = React.useState({ ...mockFormData, skills: [] });
+      return <>
+        <NabidkaForm organizationUsers={mockOrganizationUsers} subjects={mockSubjects} formData={formData} handleChange={(change) => setFormData((old) => ({ ...old, ...(change.target ? { [change.target.id]: change.target.value } : change) }))} handleSubmit={() => mockHandleSubmit(formData)} />
+        <output data-testid="skills-value">{JSON.stringify(formData.skills)}</output>
+      </>;
+    };
+    render(<Harness />);
+    const input = screen.getByLabelText('form.skills_technologies');
+    for (const value of ['R', 'Re', 'Rea', 'Reac', 'React', 'React,', 'React, ', 'React, J', 'React, Je', 'React, Jes', 'React, Jest']) {
+      fireEvent.change(input, { target: { value } });
+    }
+    expect(input).toHaveValue('React, Jest');
+    fireEvent.click(screen.getByRole('button', { name: /form.create/i }));
+    expect(mockHandleSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      skills: { technologies: ['React', 'Jest'], tools: [], methodologies: [] },
+    }));
+  });
+
+  test('legacy skill arrays initialize in technologies', () => {
+    render(<NabidkaForm organizationUsers={mockOrganizationUsers} subjects={mockSubjects}
+      formData={{ ...mockFormData, skills: ['React', 'Jest'] }} handleChange={mockHandleChange} handleSubmit={mockHandleSubmit} />);
+    expect(screen.getByLabelText('form.skills_technologies')).toHaveValue('React, Jest');
+  });
 });

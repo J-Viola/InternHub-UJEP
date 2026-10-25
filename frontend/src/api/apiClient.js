@@ -20,21 +20,6 @@ const getBaseUrl = () => {
 
 const BASE_URL = getBaseUrl();
 
-const maskSensitiveData = (data) => {
-    if (!data || typeof data !== 'object') return data;
-    const masked = { ...data };
-    const sensitiveKeys = ['password', 'password1', 'password2', 'token', 'access', 'refresh', 'service_ticket'];
-
-    Object.keys(masked).forEach(key => {
-        if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
-            masked[key] = '********';
-        } else if (typeof masked[key] === 'object') {
-            masked[key] = maskSensitiveData(masked[key]);
-        }
-    });
-    return masked;
-};
-
 let _accessToken = null;
 
 export const getAccessToken = () => _accessToken;
@@ -60,8 +45,8 @@ export const createApiClient = (navigate) => {
 
             const isDev = process.env.NODE_ENV === 'development';
             if (isDev) {
-                const maskedData = maskSensitiveData(config.data);
-                console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`, maskedData);
+                // Request bodies may contain personal data; log only request metadata.
+                console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
             }
             return config;
         },
@@ -74,7 +59,7 @@ export const createApiClient = (navigate) => {
         response => {
             const isDev = process.env.NODE_ENV === 'development';
             if (isDev) {
-                console.log(`API Response: ${response.status} ${response.config.url}`, response.data);
+                console.log(`API Response: ${response.status} ${response.config.url}`);
             }
             return response;
         },
@@ -90,11 +75,13 @@ export const createApiClient = (navigate) => {
                 networkError.details = null;
                 networkError.status = 0;
                 networkError.response = error.response;
+                networkError.config = error.config;
+                networkError.responseData = error.response?.data ?? null;
                 return Promise.reject(networkError);
             }
 
             if (isDev) {
-                console.error(`API Error: ${error.response?.status} ${error.config?.url}`, error.response?.data);
+                console.error(`API Error: ${error.response?.status} ${error.config?.url}`);
             }
 
             let standardError = new Error(error.message);
@@ -102,6 +89,8 @@ export const createApiClient = (navigate) => {
             standardError.details = null;
             standardError.status = error.response?.status;
             standardError.response = error.response;
+            standardError.config = error.config;
+            standardError.code = error.code || standardError.code;
             // Preserve raw response data for downstream consumers (e.g., form error handling)
             standardError.responseData = error.response?.data ?? null;
 

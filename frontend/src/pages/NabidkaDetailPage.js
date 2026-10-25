@@ -23,6 +23,7 @@ import Icon from "@components/core/Icon/Icon";
 import LoadingState from "@components/core/Feedback/LoadingState";
 import ErrorState from "@components/core/Feedback/ErrorState";
 import getApiErrorMessage from "@utils/apiErrorUtils";
+import { normalizeSkills } from "@utils/skills";
 
 export default function NabidkaDetailPage() {
     const { t } = useTranslation();
@@ -42,6 +43,7 @@ export default function NabidkaDetailPage() {
     const [loadError, setLoadError] = useState(false);
 
     const [docs, setDocs] = useState([]);
+    const skills = normalizeSkills(entity?.skills);
 
     const fetchData = async () => {
         setLoading(true);
@@ -254,11 +256,11 @@ export default function NabidkaDetailPage() {
                                 <Icon name="calendar" size={14} color="text-white" />
                                 {entity?.start_date} - {entity?.end_date}
                             </Container>
-                            {entity?.skills?.map((skill, index) => (
-                                <Container key={index} property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap">
-                                    #{skill}
+                            {Object.entries(skills).flatMap(([category, values]) => values.map((skill, index) => (
+                                <Container key={`${category}-${index}`} property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap">
+                                    {t(`form.skills_${category}`)}: #{skill}
                                 </Container>
-                            ))}
+                            )))}
                         </Container>
                     </Container>
 

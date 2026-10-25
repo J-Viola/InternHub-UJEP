@@ -11,6 +11,7 @@ import StateBadge from "@core/StateBadge";
 import { useUser } from "@hooks/UserProvider"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useTranslation } from "react-i18next"
+import { flattenSkills } from "@utils/skills";
 
 export default function NabidkaEntity({ entity }) {
     const navigate = useNavigate();
@@ -124,7 +125,7 @@ export default function NabidkaEntity({ entity }) {
                         </Container>
 
                         {/* SKILLS */}
-                        {entity.skills && Array.isArray(entity.skills) && entity.skills.map((skill, index) => (
+                        {flattenSkills(entity.skills).map((skill, index) => (
                             <Container
                                 key={index}
                                 property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap"

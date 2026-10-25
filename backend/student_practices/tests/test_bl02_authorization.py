@@ -36,7 +36,6 @@ from student_practices.models import (
 )
 from subject.models import Subject
 from users.models import (
-    ActionLog,
     ApprovalStatus,
     DepartmentRole,
     EmployerProfile,
@@ -339,35 +338,16 @@ class ConfirmContractAuthorizationTests(BL02FixtureMixin, TestCase):
             allocation_before + 1,
         )
 
-    def test_preapproved_pending_reconciled_via_transition_not_confirm(self):
-        """T1/T2b + finding 6: obě osy už drží na pending řádku → opakované
-        potvrzení je čistý no-op (žádný re-write data/ActionLog/notifikace);
-        smír na CONTRACTED jde výslovně autorizovaným transition (T1 brána
-        obě osy kontroluje na API hranici)."""
+    def test_preapproved_pending_reconciled_by_confirm(self):
+        """Předem schválené osy se rekoncilují při confirm (plán krok 3.5)."""
         sp = self.make_sp(self.student_owner, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         StudentPractice.objects.filter(pk=sp.pk).update(school_approved=True, employer_approved=True)
         sp.refresh_from_db()
-        log_before = ActionLog.objects.count()
         alloc_before = Notification.objects.filter(verb="ALLOCATION_ORG").count()
 
         response = self._confirm(self.garant, sp)
 
         self.assertEqual(response.status_code, 200)
-        sp.refresh_from_db()
-        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)  # no-op, NE posun
-        self.assertEqual(sp.approval_status, ApprovalStatus.PENDING)
-        self.assertIsNone(sp.contract_received_date)  # žádný re-write data
-        self.assertEqual(ActionLog.objects.count(), log_before)
-        self.assertEqual(Notification.objects.filter(verb="ALLOCATION_ORG").count(), alloc_before)
-
-        # smír přes výslovně autorizovaný transition (obě osy drží → T1 gate OK)
-        self.client.force_authenticate(user=self.garant)
-        reconcile = self.client.post(
-            f"/api/student-practices/{sp.student_practice_id}/transition/",
-            {"target_state": StudentPracticeWorkflowState.CONTRACTED.value, "reason": "smír obou os"},
-            format="json",
-        )
-        self.assertEqual(reconcile.status_code, 200)
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.CONTRACTED)
         self.assertEqual(sp.approval_status, ApprovalStatus.APPROVED)

@@ -50,6 +50,7 @@ from users.models import (
 )
 
 SEED_ID = "BL08-SEED-v1"
+SEED_USERNAME_PREFIX = "bl08-seed-v1:"
 PASSWORD_ENV = "DEMO_SEED_PASSWORD"
 DEMO_SPEC_DEFAULT = Path(__file__).resolve().parents[4] / "audit" / "2026-10-04" / "demo" / "fixtures" / "demo_seed_spec.json"
 
@@ -116,7 +117,7 @@ class Command(BaseCommand):
         if options.get("reset"):
             # BL-07 guard: --reset jen na disposable test DB (fail-closed).
             try:
-                assert_disposable_db("seed_demo --reset")
+                assert_disposable_db("seed_demo --reset", force=True)
             except NonDisposableDatabaseError as e:
                 raise CommandError(f"seed_demo --reset odmítnut BL-07 DB-identity guardem: {e}")
             self._reset()
@@ -146,11 +147,19 @@ class Command(BaseCommand):
         if role == "admin":
             user, created = get_user_model().objects.get_or_create(
                 email=email,
-                defaults={"first_name": first, "last_name": last, "is_active": True, "is_staff": True, "is_superuser": True},
+                defaults={
+                    "username": SEED_USERNAME_PREFIX + account["key"],
+                    "first_name": first,
+                    "last_name": last,
+                    "is_active": True,
+                    "is_staff": True,
+                    "is_superuser": True,
+                },
             )
         elif role in ("VY", "VK"):
             defaults = {
                 "first_name": first,
+                "username": SEED_USERNAME_PREFIX + account["key"],
                 "last_name": last,
                 "is_active": True,
                 "department": departments[account["department"]],
@@ -162,7 +171,13 @@ class Command(BaseCommand):
         elif role == "OWNER":
             user, created = OrganizationUser.objects.get_or_create(
                 email=email,
-                defaults={"first_name": first, "last_name": last, "is_active": True, "organization_role": OrganizationRole.OWNER},
+                defaults={
+                    "username": SEED_USERNAME_PREFIX + account["key"],
+                    "first_name": first,
+                    "last_name": last,
+                    "is_active": True,
+                    "organization_role": OrganizationRole.OWNER,
+                },
             )
             profile, _profile_created = EmployerProfile.objects.get_or_create(
                 employer_id=user.pk,
@@ -174,7 +189,13 @@ class Command(BaseCommand):
                 user.save()
         else:  # ST
             user, created = StudentUser.objects.get_or_create(
-                email=email, defaults={"first_name": first, "last_name": last, "is_active": True}
+                email=email,
+                defaults={
+                    "username": SEED_USERNAME_PREFIX + account["key"],
+                    "first_name": first,
+                    "last_name": last,
+                    "is_active": True,
+                },
             )
         if created:
             Command._password_user(user, password)
@@ -358,21 +379,39 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     @staticmethod
     def _reset():
-        """Smaže JEN demo řádky (reserved e-maily + DEMO titulky); volá se
+        """Smaže jen řádky s prokazatelným markerem vlastnictví seedu; volá se
         až po schválení BL-07 guardem."""
-        demo_emails = list(get_user_model().objects.filter(email__endswith="@test.local").values_list("email", flat=True))
-        sp_qs = StudentPractice.objects.filter(Q(practice__title__in=OFFER_TITLES) | Q(user__email__in=demo_emails))
+        demo_users = get_user_model().objects.filter(username__startswith=SEED_USERNAME_PREFIX)
+        demo_user_ids = list(demo_users.values_list("pk", flat=True))
+        demo_profile_ids = list(
+            OrganizationUser.objects.filter(username__startswith=SEED_USERNAME_PREFIX).values_list("employer_profile_id", flat=True)
+        )
+        owned_practices = Practice.objects.filter(
+            title__in=OFFER_TITLES,
+            employer__organization_users__username__startswith=SEED_USERNAME_PREFIX,
+        ).distinct()
+        owned_practice_ids = list(owned_practices.values_list("pk", flat=True))
+        sp_qs = StudentPractice.objects.filter(Q(practice_id__in=owned_practice_ids) | Q(user_id__in=demo_user_ids))
         doc_ids = [i for i in sp_qs.values_list("contract_document_id", flat=True) if i]
         sp_qs.delete()  # SP nemá FK z UploadedDocument → mazání SP je bezpečné
         UploadedDocument.objects.filter(pk__in=doc_ids).delete()
-        PracticeRegistration.objects.filter(student__email__in=demo_emails).delete()
-        Practice.objects.filter(title__in=OFFER_TITLES).delete()
+        PracticeRegistration.objects.filter(student_id__in=demo_user_ids).delete()
+        owned_practices.delete()
         # EmployerProfile.employer_id je AUTO PK (FK je na straně org) —
         # demo profil má PK == demo org pk (viz _get_user).
-        EmployerProfile.objects.filter(pk__in=get_user_model().objects.filter(email__in=demo_emails).values_list("pk", flat=True)).delete()
-        get_user_model().objects.filter(email__endswith="@test.local").delete()
-        Subject.objects.filter(subject_code=DEMO_SUBJECT_CODE).delete()
-        Department.objects.filter(department_code__in=DEMO_DEPARTMENT_CODES).delete()
+        EmployerProfile.objects.filter(pk__in=demo_profile_ids).delete()
+        demo_subjects = Subject.objects.filter(
+            subject_code=DEMO_SUBJECT_CODE,
+            subject_manager__username__startswith=SEED_USERNAME_PREFIX,
+            practices__isnull=True,
+            practice_registrations__isnull=True,
+            user_subjects__isnull=True,
+        ).distinct()
+        demo_subject_ids = list(demo_subjects.values_list("pk", flat=True))
+        demo_users.delete()
+        Subject.objects.filter(pk__in=demo_subject_ids).delete()
+        # Department nemá seed-owner pole a může být sdílená uživateli/předměty;
+        # její vlastnictví nelze bezpečně doložit, proto ji reset záměrně ponechá.
         ActionLog.objects.filter(object_type="DemoSeed", action_description=SEED_ID).delete()
 
     # ------------------------------------------------------------------

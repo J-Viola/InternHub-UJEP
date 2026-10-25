@@ -138,6 +138,7 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
             "rejection_reason",
             "hours_completed",
             "cancellation_reason",
+            "cancelled_from_state",
             "cancelled_by",
             "cancelled_by_info",
         ]
@@ -146,6 +147,7 @@ class StudentPracticeWithDetailsSerializer(serializers.ModelSerializer):
             "title",
             "logo",
             "application_date",
+            "cancelled_from_state",
             "cancelled_by_info",
         ]
 
@@ -244,6 +246,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "is_cancelled",
             "cancelled_at",
             "cancellation_reason",
+            "cancelled_from_state",
             "rejection_reason",
             "cancelled_by_info",
             "cancellation_requested_at",
@@ -259,6 +262,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
             "is_cancelled",
             "cancelled_at",
             "cancellation_reason",
+            "cancelled_from_state",
             "rejection_reason",
             "cancelled_by_info",
         ]
@@ -358,6 +362,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     cancellation_requested_at = serializers.DateTimeField(read_only=True, allow_null=True)
     cancellation_resolved_at = serializers.DateTimeField(read_only=True, allow_null=True)
     is_external = serializers.BooleanField(source="practice.is_external", read_only=True)
+    cancelled_from_state = serializers.ReadOnlyField()
 
     class Meta:
         model = StudentPractice
@@ -383,6 +388,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
             "is_cancelled",
             "cancelled_at",
             "cancellation_reason",
+            "cancelled_from_state",
             "rejection_reason",
             "contract_received_date",
             "updated_at",

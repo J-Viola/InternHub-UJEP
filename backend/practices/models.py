@@ -39,6 +39,8 @@ EMPLOYMENT_TYPE_CHOICES = [
     ("uvazek_1_0", "Úvazek 1,0"),
 ]
 
+SEMESTER_CHOICES = [("ZS", "Zimní semestr"), ("LS", "Letní semestr")]
+
 # Legacy (BL-05 placeholder) → autoritativní kódy. Používá datová migrace
 # 0014_practice_employment_type_codes a legacy mapping test.
 EMPLOYMENT_TYPE_LEGACY_CODE_MAP = {
@@ -191,6 +193,7 @@ class Practice(CancellationMixin, models.Model):
         related_name="practices",
     )
     skills = models.JSONField(default=list, blank=True)
+    semester = models.CharField(max_length=2, choices=SEMESTER_CHOICES, null=True, blank=True, default=None)  # noqa: DJ001
     city = models.CharField(max_length=100, blank=True, default="", help_text="Město, kde se praxe koná")
     mentor_name = models.CharField(
         max_length=255,
