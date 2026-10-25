@@ -4,7 +4,7 @@ from django.db.models import Count, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from api.parameter_service import get_param
+from api.models import SystemSettings
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
 
@@ -37,8 +37,8 @@ class DashboardService:
         contract_pending_count = contract_pending_qs.count()
 
         # At risk student practices
-        approval_stall_days = get_param("PRACTICE_APPROVAL_STALL_DAYS", 7)
-        credit_alert_days = get_param("PRACTICE_CREDIT_ALERT_DAYS", 14)
+        approval_stall_days = SystemSettings.get_solo().practice_approval_stall_days
+        credit_alert_days = SystemSettings.get_solo().practice_credit_alert_days
         approval_states = [
             StudentPracticeWorkflowState.APPLIED.value,
             StudentPracticeWorkflowState.PRELIMINARY_APPROVED.value,

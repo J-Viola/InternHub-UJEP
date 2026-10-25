@@ -1,12 +1,26 @@
 #!/bin/sh
 set -e
 
+# A-20: jednotné parsování boolean proměnných (1/true/yes/on, bez ohledu na velikost písmen)
+env_bool() {
+    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+        1|true|yes|on) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# 0. A-13: demo reset (flush) je povolen jen ve vývojovém režimu — fail-closed
+if env_bool "$MIGRATE_DEMO" && ! env_bool "$DEBUG"; then
+    echo "CHYBA: MIGRATE_DEMO=1 je povoleno jen při DEBUG=True (demo reset provádí flush databáze)." >&2
+    exit 1
+fi
+
 # 1. Spustit migrace (vytvoří tabulky, pokud neexistují)
 echo "Spouštím migrace..."
 python manage.py migrate
 
 # 2. Pokud je zapnuto DEMO, resetujeme a naplníme DB
-if [ "$MIGRATE_DEMO" = "1" ]; then
+if env_bool "$MIGRATE_DEMO"; then
     echo "--- REŽIM DEMO AKTIVNÍ ---"
     
     # A. Vyčištění databáze (smaže všechna data, ale nechá tabulky)

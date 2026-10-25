@@ -3,14 +3,27 @@ from datetime import date
 from django.test import TestCase
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.test import APIClient
+from test_support.contracts import approve_contract_document
 
 from department.models import Department
 from practices.models import Practice, ProgressStatus
-from student_practices.models import DocumentStatus, StudentPractice, StudentPracticeWorkflowState, UploadedDocument
+from student_practices.models import (
+    DocumentStatus,
+    StudentPractice,
+    StudentPracticeWorkflowState,
+    UploadedDocument,
+)
 from student_practices.serializers import StudentPracticeWithDetailsSerializer
 from student_practices.services import StudentPracticeService
 from subject.models import Subject
-from users.models import ApprovalStatus, DepartmentRole, EmployerProfile, OrganizationUser, ProfessorUser, StudentUser
+from users.models import (
+    ApprovalStatus,
+    DepartmentRole,
+    EmployerProfile,
+    OrganizationUser,
+    ProfessorUser,
+    StudentUser,
+)
 
 
 class ContractAndCancellationRegressionTests(TestCase):
@@ -59,6 +72,7 @@ class ContractAndCancellationRegressionTests(TestCase):
 
     def test_transition_to_contracted_sets_date_once(self):
         sp = self.create_sp(StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        approve_contract_document(sp)  # A-11
         StudentPracticeService.transition_student_practice_state(sp, StudentPracticeWorkflowState.CONTRACTED, self.actor)
         sp.refresh_from_db()
         first_date = sp.contract_received_date
@@ -86,6 +100,7 @@ class ContractAndCancellationRegressionTests(TestCase):
         sp.save(update_fields=["school_approved", "employer_approved"])
         self.org.employer_profile = self.employer
         self.org.save()
+        approve_contract_document(sp)  # A-11
         client = APIClient()
         client.force_authenticate(user=self.org)
         response = client.post(f"/api/student-practices/{sp.student_practice_id}/confirm-contract/", {}, format="json")
@@ -144,7 +159,7 @@ class ContractAndCancellationRegressionTests(TestCase):
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
         self.assertFalse(sp.employer_approved)
 
-    def test_owning_organization_can_approve_and_write_own_axis(self):
+    def test_owning_organization_transition_does_not_write_employer_axis(self):
         self.org.employer_profile = self.employer
         self.org.save(update_fields=["employer_profile"])
         sp = self.create_sp(StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
@@ -154,4 +169,4 @@ class ContractAndCancellationRegressionTests(TestCase):
         StudentPracticeService.transition_student_practice_state(sp, StudentPracticeWorkflowState.AWAITING_CONTRACT, self.org)
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)
-        self.assertTrue(sp.employer_approved)
+        self.assertFalse(sp.employer_approved)  # A-03: osu zaměstnavatele zapisuje jen confirm-contract

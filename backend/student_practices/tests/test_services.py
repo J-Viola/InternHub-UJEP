@@ -2,6 +2,7 @@ from datetime import date
 
 from django.core import mail
 from django.test import TestCase, override_settings
+from test_support.contracts import approve_contract_document
 
 from department.models import Department
 from practices.models import Practice, ProgressStatus
@@ -192,6 +193,7 @@ class StudentPracticeServiceTests(TestCase):
         # aby tento capacity/orchestrace test měřil svůj předmět, ne T1 bránu.
         sp.employer_approved = True
         sp.save(update_fields=["employer_approved"])
+        approve_contract_document(sp)  # A-11
         StudentPracticeService.transition_student_practice_state(
             sp,
             StudentPracticeWorkflowState.CONTRACTED,

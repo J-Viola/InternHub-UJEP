@@ -11,7 +11,7 @@ from django.db.models import OneToOneRel
 from django_enumfield import enum
 
 from api.mixins import CancellationMixin
-from api.parameter_service import get_param
+from api.models import SystemSettings
 from practices.models import ProgressStatus
 from student_practices.messages import StudentPracticeMessages
 from users.models import ApprovalStatus
@@ -440,7 +440,7 @@ class StudentPractice(CancellationMixin, models.Model):
     school_approved = models.BooleanField(default=False)
     employer_approved = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True, help_text="Poslední změna záznamu (včetně přechodů stavu)")
-    # Idempotence notifikací — viz settings.PRACTICE_* konstanty.
+    # Idempotence notifikací — viz api.SystemSettings.
     contract_overdue_notified_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -514,7 +514,7 @@ class StudentPractice(CancellationMixin, models.Model):
     @property
     def contract_overdue(self) -> bool:
         """
-        Praxe ve stavu AWAITING_CONTRACT déle než ``PRACTICE_CONTRACT_OVERDUE_DAYS``.
+        Praxe ve stavu AWAITING_CONTRACT déle než ``SystemSettings.practice_contract_overdue_days``.
 
         Stáří ve stavu se počítá z ActionLog přechodu (STATE_TRANSITION do
         AWAITING_CONTRACT); pokud přechodový záznam není k dispozici (data
@@ -525,7 +525,7 @@ class StudentPractice(CancellationMixin, models.Model):
         if self.workflow_state != StudentPracticeWorkflowState.AWAITING_CONTRACT:
             return False
 
-        overdue_days = get_param("PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
+        overdue_days = SystemSettings.get_solo().practice_contract_overdue_days
         entered_at = self._awaiting_contract_since()
         if entered_at is None:
             return False

@@ -1,6 +1,7 @@
 # Must set DEBUG before importing settings to avoid production safety checks
 import os
 import tempfile
+from pathlib import Path
 
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("DJANGO_SECRET_KEY", "test-secret-key")
@@ -26,7 +27,7 @@ from docx import Document  # noqa: E402
 
 from .settings import *  # noqa: F403,E402
 
-MEDIA_ROOT = tempfile.mkdtemp(prefix="internhub-test-media-")
+MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="internhub-test-media-"))  # Path jako v app.settings (modely používají operátor /)
 _default_documents = os.path.join(MEDIA_ROOT, "default_documents")
 os.makedirs(_default_documents, exist_ok=True)
 for _template_name in ("default_contract.docx", "default_content.docx", "default_feedback.docx"):

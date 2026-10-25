@@ -434,8 +434,8 @@ class CompletionProtocolPdfTests(TestCase):
         self.assertIn("Informatika", stream)
         self.assertIn("Pdf Corp", stream)
         self.assertIn("480", stream)
-        self.assertIn("Spln", stream)  # ReportLab encodes Czech glyphs in separate font runs.
-        self.assertIn("(no)", stream)
+        # „Splněno": ě je glyf (\\006), zbytek může být v jednom i ve dvou font runech (dle verze ReportLab)
+        self.assertRegex(stream, r"Spln\\\d{3}(?:\)[^(]*\()?no\)")
         self.assertIn("Potvrzen", stream)
         self.assertIn("et hodin", stream)
 
@@ -444,5 +444,4 @@ class CompletionProtocolPdfTests(TestCase):
         self.sp.workflow_state = StudentPracticeWorkflowState.ENDED
         pdf_bytes = PDFCompletionProtocolGenerator.generate_pdf(self.sp)
         stream = self._pdf_streams(pdf_bytes)
-        self.assertIn("Nespln", stream)  # ReportLab encodes Czech glyphs in separate font runs.
-        self.assertIn("(no)", stream)
+        self.assertRegex(stream, r"Nespln\\\d{3}(?:\)[^(]*\()?no\)")

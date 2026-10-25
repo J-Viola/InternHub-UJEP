@@ -16,6 +16,7 @@ from users.models import (
     ApprovalStatus,
     DepartmentRole,
     EmployerProfile,
+    InvalidStagTicketError,
     OrganizationRole,
     OrganizationUser,
     ProfessorUser,
@@ -696,6 +697,7 @@ def fetch_student_data_from_stag(student, ticket=None):
 
     Raises:
         ValueError: if student has no os_cislo
+        InvalidStagTicketError: uložený ticket nemá platný podpis (A-10, fail-closed)
     """
     if not student.os_cislo:
         raise ValueError("Student has no os_cislo — cannot fetch from STAG")
@@ -706,7 +708,12 @@ def fetch_student_data_from_stag(student, ticket=None):
         ticket = f"mock-student:{student.os_cislo}"
     else:
         if not ticket:
-            ticket = student.stag_user_ptr.get_ticket()
+            try:
+                ticket = student.get_ticket()
+            except InvalidStagTicketError:
+                # A-10: fail-closed — STAG se nevolá, v logu není obsah ticketu
+                logger.warning("STAG ticket uživatele %s má neplatný podpis — nutné nové přihlášení.", student.pk)
+                raise
         if not ticket:
             return {}
 

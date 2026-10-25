@@ -5,19 +5,19 @@ from django.db import transaction
 from django.utils import timezone
 from notifications.services import NotificationService
 
-from api.parameter_service import get_param
+from api.models import SystemSettings
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
 
 class Command(BaseCommand):
     help = (
         "Eskalace SMLOUVA_PO_TERMINU: pro každou praxi ve stavu "
-        "AWAITING_CONTRACT déle než settings.PRACTICE_CONTRACT_OVERDUE_DAYS odešle "
+        "AWAITING_CONTRACT déle než SystemSettings.practice_contract_overdue_days odešle "
         "JEDNOU notifikaci garantovi (idempotence přes contract_overdue_notified_at)."
     )
 
     def handle(self, *args, **options):
-        overdue_days = get_param("PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
+        overdue_days = SystemSettings.get_solo().practice_contract_overdue_days
         notified_count = 0
 
         # Rychlá předfiltrace: AWAITING_CONTRACT + updated_at starší než práh.

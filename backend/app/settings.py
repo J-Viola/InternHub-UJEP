@@ -21,8 +21,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+def env_bool(name, default=False):
+    """A-20: jednotné parsování boolean proměnných prostředí (1/true/yes/on, bez ohledu na velikost písmen)."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+DEBUG = env_bool("DEBUG")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # No default fallback in production — crash early rather than run insecure.
@@ -40,6 +49,7 @@ AUTH_USER_MODEL = "users.User"
 
 INSTALLED_APPS = [
     "polymorphic",
+    "solo",
     "api.apps.ApiConfig",
     "app",
     "django_seed",
@@ -162,7 +172,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+# Admin a další statika: collectstatic (entrypoint.prod.sh) → STATIC_ROOT, sdíleno s nginxem přes svazek
+# a servírováno z /static/django/ (viz .docker/Frontend/nginx.conf).
+STATIC_URL = "/static/django/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGE_ROOT = BASE_DIR / "storage"
 STORAGE_URL = "storage/"
 
@@ -173,12 +186,12 @@ MEDIA_URL = "/" + STORAGE_URL
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-DEMO_LOGIN = os.environ.get("DEMO_LOGIN", "false") == "1"
+DEMO_LOGIN = env_bool("DEMO_LOGIN")
 DEMO_SUBJECT_CODE = os.environ.get("DEMO_SUBJECT_CODE", "BOP")
 DEMO_DEPARTMENT_CODE = os.environ.get("DEMO_DEPARTMENT_CODE", "DEMO")
 
 STAG_WS_URL = os.environ.get("STAG_WS_URL")
-STAG_MOCK = os.environ.get("STAG_MOCK", "False") == "True"
+STAG_MOCK = env_bool("STAG_MOCK")
 
 # University info for document generation
 UNIVERSITY_NAME = "Univerzita Jana Evangelisty Purkyně v Ústí nad Labem"
@@ -242,17 +255,13 @@ else:
     CSP_CONNECT_SRC = ("'self'",)
 
 # File upload settings
-MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
-FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
+# Limit nahrávaných souborů je v SystemSettings.max_upload_size (admin); zde jen práh pro zpracování v paměti.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
-# ---------------------------------------------------------------------------
-# Prahové konstanty procesů praxí (číselníky z DB jsou post-MVP;
-# krátkodobě settings konstanty s prefixem PRACTICE_* — TODO: převést na DB číselníky).
-# ---------------------------------------------------------------------------
-PRACTICE_CONTRACT_OVERDUE_DAYS = 7  # prodlení se zasmluvněním (AWAITING_CONTRACT)
-PRACTICE_URGENCY_DAYS = [14, 7, 2]  # urgence před start_date
-PRACTICE_CREDIT_ALERT_DAYS = 14  # alert po ENDED bez zápočtu
+# Prahové hodnoty procesů praxí (lhůty, urgence, limit uploadu) jsou v modelu api.SystemSettings (django-solo, A-26).
+SOLO_CACHE = "default"
+SOLO_CACHE_TIMEOUT = 300
 # C20-A: auto-close dle kapacity je NEschrálené rozšíření — uzavření je manuální.
 # Default False = kapacitní auto-close nikdy netrkne potichu; termínový
 # (TIME) auto-close je samostatný mechanismus a tímto se nemění.

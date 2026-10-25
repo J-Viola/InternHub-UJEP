@@ -11,22 +11,22 @@ from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.file_access import (
+    StorageAccess,
+    canonical_rel_path,
+    check_storage_access,
+    rel_path_from_uri,
+    user_can_access_storage_path,
+)
 from api.test_scenarios import ScenarioBuilder
-from student_practices.models import UploadedDocument
 from users.models import (
     ActionLog,
-    DepartmentRole,
     EmployerProfile,
-    OrganizationUser,
-    ProfessorUser,
-    StudentUser,
-    UserSubjectType,
 )
 
 # ---------------------------------------------------------------------------
@@ -55,86 +55,59 @@ class StandardResultsSetPagination(PageNumberPagination):
 # ---------------------------------------------------------------------------
 
 
-class ServeUserFileView(APIView):
+class ServeStorageFileView(APIView):
     """
-    Serve user-uploaded documents with authentication and path validation.
+    Serve a file from ``STORAGE_ROOT`` with authentication and path validation.
 
-    Permission model (fail-closed):
+    A-25: oprávnění rozhoduje jediná funkce ``api.file_access.check_storage_access``
+    (stejná jako v ``StorageAuthCheckView`` a ``DocumentPermissionMiddleware``):
       - Superuser → always allowed
-      - CV files:   owner / employer who received application / professor teaching the
-                     student's subject / department head
+      - CV / profilová fotka: owner / employer who received application / professor
+        teaching the student's subject / department head
       - Practice docs: delegated to ``UploadedDocument.user_has_permission()``
+      - Firemní loga: veřejná
 
     Replace ``/storage/`` direct Nginx serve with ``X-Accel-Redirect`` in production
     to bypass Django for the actual byte stream.
     """
 
     permission_classes = [IsAuthenticated]
+    rel_prefix = ""
 
     # ── public API ──────────────────────────────────────────────────────
 
     def get(self, request, path):
-        file_path = self._resolve(path)
-        self._check_access(request.user, file_path, path)
+        rel = self.rel_prefix + path
+        file_path = self._resolve(rel)
+        decision = check_storage_access(request.user, rel)
+        if decision is StorageAccess.NOT_FOUND:
+            raise Http404
+        if decision is not StorageAccess.ALLOWED:
+            raise PermissionDenied
         return FileResponse(open(file_path, "rb"), filename=file_path.name)
 
     # ── path resolution + security ──────────────────────────────────────
 
-    def _resolve(self, path: str) -> Path:
-        """Resolve *path* inside STORAGE_ROOT/documents; raise Http404 on escape or missing file."""
-        doc_root = Path(settings.STORAGE_ROOT) / "documents"
-        full = (doc_root / path).resolve()
-        if not full.is_relative_to(doc_root.resolve()):
-            raise Http404
-        if not full.is_file():
-            raise Http404
-        return full
+    def _resolve(self, rel: str) -> Path:
+        """Resolve *rel* inside STORAGE_ROOT; raise Http404 on escape or missing file.
 
-    # ── access dispatch ─────────────────────────────────────────────────
+        Hledá i zdvojenou cestu ``storage/<rel>`` (``upload_to`` CV a obrázků obsahuje ``STORAGE_URL``).
+        """
+        root = Path(settings.STORAGE_ROOT).resolve()
+        canonical = canonical_rel_path(rel)
+        for candidate in (canonical, settings.STORAGE_URL.strip("/") + "/" + canonical):
+            full = (root / candidate).resolve()
+            if not full.is_relative_to(root):
+                raise Http404
+            if full.is_file():
+                return full
+        raise Http404
 
-    def _check_access(self, user, file_path: Path, path: str):
-        """Enforce access or raise PermissionDenied / Http404."""
-        if user.is_superuser:
-            return
 
-        rel = _media_rel(file_path)
+class ServeUserFileView(ServeStorageFileView):
+    """Zpětně kompatibilní trasa ``/api/documents/<path>/`` (kořen ``documents/``)."""
 
-        if "cvs/" in path:
-            student = get_object_or_404(StudentUser, cv_file=rel)
-            self._require_cv_access(user, student)
-        else:
-            doc = get_object_or_404(UploadedDocument, document=rel)
-            if not doc.user_has_permission(user):
-                raise PermissionDenied
-
-    # ── CV access sub-checks ────────────────────────────────────────────
-
-    def _require_cv_access(self, user, student):
-        if student.user_id == user.user_id:
-            return
-        if isinstance(user, OrganizationUser) and self._employer_has_cv_access(user, student):
-            return
-        if isinstance(user, ProfessorUser) and self._professor_has_cv_access(user, student):
-            return
-        raise PermissionDenied
-
-    @staticmethod
-    def _employer_has_cv_access(user, student) -> bool:
-        employer = getattr(user, "employer_profile", None)
-        if not employer:
-            return False
-        return student.student_practices.filter(practice__employer=employer).exists()
-
-    @staticmethod
-    def _professor_has_cv_access(user, student) -> bool:
-        if student.user_subjects.filter(
-            subject__user_subjects__user=user,
-            subject__user_subjects__role=UserSubjectType.Professor,
-        ).exists():
-            return True
-        if user.department_role == DepartmentRole.HEAD:
-            return student.user_subjects.filter(subject__department=user.department).exists()
-        return False
+    rel_prefix = "documents/"
 
 
 # ---------------------------------------------------------------------------
@@ -160,11 +133,20 @@ class UniqueLocationsListView(APIView):
 
 
 class StorageAuthCheckView(APIView):
-    """Lightweight auth gate used by nginx ``auth_request`` directive."""
+    """Auth gate pro nginx ``auth_request`` na ``/storage/`` (A-01).
+
+    Nginx předá původní URI v ``X-Original-URI``; stejná autorizační funkce jako
+    ``ServeStorageFileView``. Chybějící hlavička, neznámý soubor, traversal i
+    nedostatečné oprávnění → **403** (``auth_request`` rozumí jen 2xx/401/403,
+    cokoli jiného by Nginx změnil na 500). Nepřihlášený → 401 (DRF).
+    """
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        rel = rel_path_from_uri(request.META.get("HTTP_X_ORIGINAL_URI"))
+        if rel is None or not user_can_access_storage_path(request.user, rel):
+            return HttpResponse(status=403)
         return HttpResponse(status=200)
 
 
@@ -226,7 +208,14 @@ class TestResetDBView(APIView):
             # Lift all throttle limits for E2E test runs — many page loads & API
             # calls in quick succession would otherwise hit production-safe limits.
             if "DEFAULT_THROTTLE_RATES" in dj_settings.REST_FRAMEWORK:
-                for scope in ("anon", "user", "login", "stag_ticket", "password_reset", "ares"):
+                for scope in (
+                    "anon",
+                    "user",
+                    "login",
+                    "stag_ticket",
+                    "password_reset",
+                    "ares",
+                ):
                     dj_settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"][scope] = "100000/hour"
 
             return JsonResponse({"status": "ok", "seeded": True})
@@ -250,7 +239,10 @@ class TestResetDBView(APIView):
         pw = make_password("password123")
         dept = Department.objects.first()
         stag_st, _ = StagRole.objects.get_or_create(role="st", defaults={"role_name": "Student", "description": "Student VŠ"})
-        stag_vy, _ = StagRole.objects.get_or_create(role="vy", defaults={"role_name": "Vyučující", "description": "Vyučující na katedře"})
+        stag_vy, _ = StagRole.objects.get_or_create(
+            role="vy",
+            defaults={"role_name": "Vyučující", "description": "Vyučující na katedře"},
+        )
 
         if not User.objects.filter(email="professor@ujep.cz").exists():
             professor = ProfessorUser.objects.create(
@@ -298,7 +290,11 @@ class TestResetDBView(APIView):
 
             first = Subject.objects.first()
             if first:
-                UserSubject.objects.get_or_create(user=student, subject=first, defaults={"role": UserSubjectType.Student})
+                UserSubject.objects.get_or_create(
+                    user=student,
+                    subject=first,
+                    defaults={"role": UserSubjectType.Student},
+                )
 
 
 class TestScenarioView(APIView):
@@ -379,7 +375,10 @@ class HealthCheckView(APIView):
         except Exception:
             pass
         return JsonResponse(
-            {"status": "ok" if db_ok else "error", "db": "ok" if db_ok else "unavailable"},
+            {
+                "status": "ok" if db_ok else "error",
+                "db": "ok" if db_ok else "unavailable",
+            },
             status=200 if db_ok else 503,
         )
 
@@ -419,7 +418,10 @@ class DataExportView(APIView):
 
     def get(self, request):
         from api.export_service import ExportService
-        from student_practices.models import StudentPractice, StudentPracticeWorkflowState
+        from student_practices.models import (
+            StudentPractice,
+            StudentPracticeWorkflowState,
+        )
 
         try:
             params = getattr(request, "query_params", request.GET)
@@ -461,7 +463,10 @@ class DataExportView(APIView):
             if dept_ids is None and org_employer is None and owner_user is None:
                 pass  # superuser
             elif not dept_ids and org_employer is None and owner_user is None:
-                return Response({"detail": "Pro váš účet neexistuje žádný exportní rozsah."}, status=403)
+                return Response(
+                    {"detail": "Pro váš účet neexistuje žádný exportní rozsah."},
+                    status=403,
+                )
 
             # Zjisti počet záznamů
             count = ExportService.get_count(filters, dept_ids=dept_ids, employer=org_employer, owner_user=owner_user)
@@ -469,7 +474,10 @@ class DataExportView(APIView):
             # Fail-closed (BE-003): žádné autorizované řádky → prázdná množina
             # = deny (403), ne prázdný „úspěch" a nikdy globální export.
             if count == 0:
-                return Response({"detail": "Pro váš účet neexistuje žádný exportní rozsah."}, status=403)
+                return Response(
+                    {"detail": "Pro váš účet neexistuje žádný exportní rozsah."},
+                    status=403,
+                )
 
             # Pokud >500, deleguj na Celery task — scoping se aplikuje uvnitř tasku
             # (předává se user_id; viz api/tasks.py export_data_async).

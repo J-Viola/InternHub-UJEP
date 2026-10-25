@@ -8,6 +8,7 @@
 """
 
 import io
+import os
 from datetime import date
 from pathlib import Path
 from unittest import mock
@@ -31,7 +32,7 @@ from subject.models import Subject
 from users.models import ActionLog, EmployerProfile
 
 SEED_ID = "BL08-SEED-v1"
-SPEC_PATH = Path(__file__).resolve().parent / "fixtures" / "demo_seed_spec.json"
+SPEC_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "demo_seed_spec.json"
 DEMO_PASSWORD = "bl08-demo-test-pw"
 DEMO_EMAILS = [
     "demo.student@test.local",
@@ -214,8 +215,11 @@ class SeedDemoCommandTests(TestCase):
         # BL-07 guard: nedisposable jméno → --reset odmítnut, nic smazáno
         with (
             mock.patch.dict(connection.settings_dict, {"NAME": "internhub_prod"}),
+            # dev kontejner má BL07_ALLOW_NON_TEST_DB=1 → test musí běžet bez operátorské výjimky
+            mock.patch.dict(os.environ, clear=False),
             mock.patch("app.management.commands.seed_demo.Command._reset") as destructive_reset,
         ):
+            os.environ.pop("BL07_ALLOW_NON_TEST_DB", None)
             with self.assertRaises(CommandError) as cm:
                 call_command("seed_demo", "--password", DEMO_PASSWORD, "--spec", str(SPEC_PATH), "--reset", stdout=io.StringIO())
         destructive_reset.assert_not_called()

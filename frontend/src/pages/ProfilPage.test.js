@@ -4,10 +4,13 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ProfilPage from './ProfilPage';
 import { useUserAPI } from '@api/user/userAPI';
 import { useMessage } from '@hooks/MessageContext';
+import { useApi } from '@hooks/useApi';
+import { fireEvent } from '@testing-library/react';
 
 // Mock hooks
 jest.mock('@api/user/userAPI');
 jest.mock('@hooks/MessageContext');
+jest.mock('@hooks/useApi');
 
 // Mock child components
 jest.mock('@components/Forms/ProfileForm', () => () => <div data-testid="profile-form">Profile Form</div>);
@@ -19,6 +22,7 @@ describe('ProfilPage', () => {
     const mockGetStudentProfile = jest.fn();
     const mockUpdateProfile = jest.fn();
     const mockAddMessage = jest.fn();
+    const mockApiGet = jest.fn();
 
     const mockStudent = {
         user_id: 1,
@@ -37,6 +41,7 @@ describe('ProfilPage', () => {
             updateProfile: mockUpdateProfile
         });
         useMessage.mockReturnValue({ addMessage: mockAddMessage });
+        useApi.mockReturnValue({ get: mockApiGet });
     });
 
     afterEach(() => {
@@ -110,5 +115,31 @@ describe('ProfilPage', () => {
         await waitFor(() => {
             expect(screen.getByTestId('profile-form')).toBeInTheDocument();
         });
+    });
+
+    test('A-24: CV se stahuje přes /files/ API s tokenem (blob), ne přímým odkazem', async () => {
+        mockGetCurrentUserProfile.mockResolvedValue({
+            ...mockStudent,
+            cv_file: 'http://localhost:8000/storage/storage/documents/cvs/a.pdf',
+        });
+        mockApiGet.mockResolvedValue({ data: new Blob(['x']) });
+        global.URL.createObjectURL = jest.fn(() => 'blob:cv');
+        global.URL.revokeObjectURL = jest.fn();
+        const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+        render(
+            <MemoryRouter initialEntries={['/profil']}>
+                <Routes>
+                    <Route path="/profil" element={<ProfilPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        const link = await screen.findByText('profile.download_cv');
+        fireEvent.click(link);
+
+        await waitFor(() => expect(mockApiGet).toHaveBeenCalledWith('/files/storage/documents/cvs/a.pdf/', { responseType: 'blob' }));
+        await waitFor(() => expect(openSpy).toHaveBeenCalledWith('blob:cv', '_blank', 'noopener'));
+        openSpy.mockRestore();
     });
 });

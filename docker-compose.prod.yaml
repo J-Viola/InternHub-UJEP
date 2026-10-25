@@ -36,19 +36,29 @@ services:
   django:
     build:
       context: .
-      dockerfile: .docker/Backend/Dockerfile
+      dockerfile: .docker/Backend/Dockerfile.prod
       args:
         - PY_VERSION=${PY_VERSION}
     container_name: internhub-backend
     restart: unless-stopped
-    command: gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 4
+    # command z image (gunicorn, počet workerů z GUNICORN_WORKERS — výchozí 3)
     env_file:
       - .env
+    environment:
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
     volumes:
       - storage_data:/app/backend/storage
       - logs_data:/app/backend/logs
+      - static_data:/app/backend/staticfiles
     expose:
       - "8000"
+    healthcheck:
+      # migrace + collectstatic běží v entrypointu před startem gunicornu; X-Forwarded-Proto kvůli SECURE_SSL_REDIRECT
+      test: ["CMD", "python", "-c", "import urllib.request as u; r = u.Request('http://localhost:8000/api/health/', headers={'X-Forwarded-Proto': 'https'}); u.urlopen(r, timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,7 +70,7 @@ services:
   celery-worker:
     build:
       context: .
-      dockerfile: .docker/Backend/Dockerfile
+      dockerfile: .docker/Backend/Dockerfile.prod
       args:
         - PY_VERSION=${PY_VERSION}
     container_name: internhub-celery-worker
@@ -71,6 +81,8 @@ services:
       - storage_data:/app/backend/storage
       - logs_data:/app/backend/logs
     depends_on:
+      django:
+        condition: service_healthy  # schéma musí existovat (migrate běží v django entrypointu)
       postgres:
         condition: service_healthy
       redis:
@@ -82,7 +94,7 @@ services:
   celery-beat:
     build:
       context: .
-      dockerfile: .docker/Backend/Dockerfile
+      dockerfile: .docker/Backend/Dockerfile.prod
       args:
         - PY_VERSION=${PY_VERSION}
     container_name: internhub-celery-beat
@@ -93,6 +105,8 @@ services:
       - storage_data:/app/backend/storage
       - logs_data:/app/backend/logs
     depends_on:
+      django:
+        condition: service_healthy  # schéma musí existovat (migrate běží v django entrypointu)
       postgres:
         condition: service_healthy
       redis:
@@ -111,11 +125,12 @@ services:
     restart: always
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - storage_data:/usr/share/nginx/html/storage:ro
+      - static_data:/usr/share/nginx/html/static/django:ro
     depends_on:
-      - django
+      django:
+        condition: service_healthy
     networks:
       - internhub
 
@@ -129,3 +144,4 @@ volumes:
   redis_data:
   storage_data:
   logs_data:
+  static_data:

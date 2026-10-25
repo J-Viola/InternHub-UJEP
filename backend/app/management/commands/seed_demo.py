@@ -1,7 +1,7 @@
 """BL-08 GO-5 — deterministický demo seed (BL08-SEED-v1).
 
 Ne-dstruktivní, idempotentní (get_or_create) seed podle
-``audit/2026-10-04/demo/fixtures/demo_seed_spec.json`` + SYNTHETIC_DATA_PLAN.md:
+``app/fixtures/demo_seed_spec.json`` + SYNTHETIC_DATA_PLAN.md:
 fixní syntetické identity na vyhrazené doméně ``.test.local``, fixní
 stavové fixture F1–F9 (+ F4b opravný stav DOCUMENTS_RESUBMITTED), žádná
 náhoda, žádné PII, žádná hesla v repu.
@@ -52,7 +52,7 @@ from users.models import (
 SEED_ID = "BL08-SEED-v1"
 SEED_USERNAME_PREFIX = "bl08-seed-v1:"
 PASSWORD_ENV = "DEMO_SEED_PASSWORD"
-DEMO_SPEC_DEFAULT = Path(__file__).resolve().parents[4] / "audit" / "2026-10-04" / "demo" / "fixtures" / "demo_seed_spec.json"
+DEMO_SPEC_DEFAULT = Path(__file__).resolve().parents[2] / "fixtures" / "demo_seed_spec.json"  # A-04: verzovaná fixture v repu
 
 # Fixní (deterministické) časové konstanty — žádné now() v datech seedu.
 OFFER_START = date(2027, 3, 1)
@@ -85,10 +85,7 @@ OFFER_TITLES = [t for t, _cap, _emp in OFFER_SPECS]
 
 
 class Command(BaseCommand):
-    help = (
-        "Deterministický demo seed BL08-SEED-v1 (ne-dstruktivní, idempotentní). "
-        "Viz audit/2026-10-04/demo/SYNTHETIC_DATA_PLAN.md a fixtures/demo_seed_spec.json."
-    )
+    help = "Deterministický demo seed BL08-SEED-v1 (ne-dstruktivní, idempotentní). " "Viz app/fixtures/demo_seed_spec.json."
 
     def add_arguments(self, parser):
         parser.add_argument("--spec", default=str(DEMO_SPEC_DEFAULT), help="Cesta k demo_seed_spec.json.")

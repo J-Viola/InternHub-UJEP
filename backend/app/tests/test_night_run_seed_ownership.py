@@ -1,6 +1,7 @@
 """Regression coverage for destructive seed ownership and DB guards."""
 
 import json
+import os
 import tempfile
 from pathlib import Path
 from unittest import mock
@@ -126,6 +127,10 @@ class DemoSeedOwnershipTests(TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             spec_path = Path(temp_dir) / "spec.json"
             spec_path.write_text(json.dumps({"seed_id": "BL08-SEED-v1"}), encoding="utf-8")
-            with mock.patch.dict(connection.settings_dict, {"NAME": "internhub_prod"}):
+            with (
+                mock.patch.dict(connection.settings_dict, {"NAME": "internhub_prod"}),
+                mock.patch.dict(os.environ, clear=False),  # dev kontejner má BL07_ALLOW_NON_TEST_DB=1
+            ):
+                os.environ.pop("BL07_ALLOW_NON_TEST_DB", None)
                 with self.assertRaises(CommandError):
                     call_command("seed_demo", "--spec", str(spec_path), "--reset")

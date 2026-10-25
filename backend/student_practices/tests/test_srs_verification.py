@@ -25,7 +25,13 @@ from student_practices.models import (
     StudentPracticeWorkflowState as State,
 )
 from subject.models import Subject
-from users.models import ApprovalStatus, EmployerProfile, OrganizationUser, ProfessorUser, StudentUser
+from users.models import (
+    ApprovalStatus,
+    EmployerProfile,
+    OrganizationUser,
+    ProfessorUser,
+    StudentUser,
+)
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")

@@ -8,7 +8,14 @@ from department.models import Department
 from practices.models import Practice, PracticeWorkflowState
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 from student_practices.services import StudentPracticeService
-from users.models import ApprovalStatus, DepartmentRole, EmployerProfile, ProfessorUser, StagRole, StudentUser
+from users.models import (
+    ApprovalStatus,
+    DepartmentRole,
+    EmployerProfile,
+    ProfessorUser,
+    StagRole,
+    StudentUser,
+)
 
 
 class Phase4FullTestSuite(APITestCase):

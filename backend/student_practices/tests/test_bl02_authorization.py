@@ -23,6 +23,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from notifications.models import Notification
 from rest_framework.test import APIClient
+from test_support.contracts import approve_contract_document
 
 from department.models import Department
 from practices.models import Practice, PracticeWorkflowState, ProgressStatus
@@ -308,6 +309,7 @@ class ConfirmContractAuthorizationTests(BL02FixtureMixin, TestCase):
         """T1: CONTRACTED + APPROVED nastává PŘESNĚ druhou osou vlastní
         rolí; první osa stav nemění; allokační notifikace až s přechodem."""
         sp = self.make_sp(self.student_owner, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        approve_contract_document(sp)  # A-11: do CONTRACTED jen se schválenou smlouvou
         allocation_before = Notification.objects.filter(verb="ALLOCATION_ORG", recipient=self.org_user).count()
 
         # 1) zaměstnavatel potvrdí svou osu — pending, žádný CONTRACTED
@@ -342,6 +344,7 @@ class ConfirmContractAuthorizationTests(BL02FixtureMixin, TestCase):
         """Předem schválené osy se rekoncilují při confirm (plán krok 3.5)."""
         sp = self.make_sp(self.student_owner, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         StudentPractice.objects.filter(pk=sp.pk).update(school_approved=True, employer_approved=True)
+        approve_contract_document(sp)  # A-11
         sp.refresh_from_db()
         alloc_before = Notification.objects.filter(verb="ALLOCATION_ORG").count()
 
@@ -375,6 +378,8 @@ class ConfirmContractAuthorizationTests(BL02FixtureMixin, TestCase):
         )
         sp1 = self.make_sp(self.student_owner, practice=cap_practice, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         sp2 = self.make_sp(self.foreign_student, practice=cap_practice, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        approve_contract_document(sp1)  # A-11
+        approve_contract_document(sp2)
 
         # SP1: první osa → pending, místo NEkonzumuje (0/1 obsazeno)
         response = self._confirm(self.org_user, sp1)

@@ -14,13 +14,17 @@ COPY backend/requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install gunicorn
 
 # Copy application code
 COPY backend/ .
 
-# Create logs directory and non-root user
-RUN mkdir -p /app/backend/logs \
+# Entrypoint (migrate + collectstatic jen pro gunicorn, bez demo větve — A-23)
+COPY .docker/Backend/entrypoint.prod.sh /entrypoint.prod.sh
+RUN chmod +x /entrypoint.prod.sh
+
+# Neprivilegovaný uživatel; adresáře svazků (storage, logs, staticfiles) vlastní appuser,
+# takže nově vytvořené pojmenované svazky zdědí jeho vlastnictví.
+RUN mkdir -p /app/backend/logs /app/backend/storage /app/backend/staticfiles \
     && addgroup --system appgroup \
     && adduser --system --ingroup appgroup appuser \
     && chown -R appuser:appgroup /app/backend
@@ -29,5 +33,8 @@ USER appuser
 
 EXPOSE 8000
 
-# Start Gunicorn
-CMD ["gunicorn", "app.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+ENV GUNICORN_WORKERS=3
+
+ENTRYPOINT ["/entrypoint.prod.sh"]
+# Počet workerů: jediné místo pravdy je GUNICORN_WORKERS (výchozí 3, lze přepsat v compose/.env)
+CMD ["sh", "-c", "exec gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS}"]

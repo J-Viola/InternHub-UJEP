@@ -6,6 +6,7 @@ from django.test import TestCase
 from notifications.models import Notification
 from rest_framework import status
 from rest_framework.test import APIClient
+from test_support.contracts import approve_contract_document
 
 from department.models import Department
 from practices.models import Practice, ProgressStatus
@@ -159,6 +160,7 @@ class CapacityAllocationTests(TestCase):
         self.assertEqual(Notification.objects.filter(recipient=self.org_user, verb="ALLOCATION_ORG").count(), 0)
 
         # 3) CONTRACTED s oběma osami → vzniká ALLOCATION_ORG
+        approve_contract_document(sp)  # A-11
         StudentPracticeService.transition_student_practice_state(
             sp,
             StudentPracticeWorkflowState.CONTRACTED,
@@ -191,6 +193,7 @@ class CapacityAllocationTests(TestCase):
 
         # 2) seed employer osy + volná kapacita → CONTRACTED projde
         StudentPractice.objects.filter(pk=sp.pk).update(employer_approved=True)
+        approve_contract_document(sp)  # A-11: do CONTRACTED jen se schválenou smlouvou
         sp.refresh_from_db()
         sp = StudentPracticeService.transition_student_practice_state(
             sp,

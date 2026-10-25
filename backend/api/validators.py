@@ -4,17 +4,17 @@ import zipfile
 
 from django.core.exceptions import ValidationError
 
-from api.parameter_service import get_param
+from api.models import SystemSettings
 
 
 def validate_file_size(value):
     """
-    Ověří, že nahraný soubor nepřesahuje ``settings.MAX_UPLOAD_SIZE`` (10 MB).
+    Ověří, že nahraný soubor nepřesahuje ``SystemSettings.max_upload_size`` (výchozí 10 MB).
 
     Limit se čte z settings (žádný hardcode). Sdíleno přes backend/api —
     sjednotí duplicitní kontroly v student_practices/views.py na tento validátor.
     """
-    limit = get_param("MAX_UPLOAD_SIZE", 10 * 1024 * 1024)
+    limit = SystemSettings.get_solo().max_upload_size
     if value is not None and getattr(value, "size", None) is not None and value.size > limit:
         mb = limit // (1024 * 1024)
         raise ValidationError(f"Soubor přesahuje maximální povolenou velikost {mb} MB.")

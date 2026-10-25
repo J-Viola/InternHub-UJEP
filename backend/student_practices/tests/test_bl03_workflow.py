@@ -28,9 +28,15 @@ from django.db import connection, connections
 from django.test import TestCase, TransactionTestCase
 from notifications.models import Notification
 from rest_framework.test import APIClient
+from test_support.contracts import approve_contract_document
 
 from department.models import Department
-from practices.models import ApplicationClosureReason, Practice, PracticeWorkflowState, ProgressStatus
+from practices.models import (
+    ApplicationClosureReason,
+    Practice,
+    PracticeWorkflowState,
+    ProgressStatus,
+)
 from student_practices.models import (
     DocumentStatus,
     DocumentType,
@@ -41,7 +47,12 @@ from student_practices.models import (
     StudentPracticeWorkflowState,
     UploadedDocument,
 )
-from student_practices.services import AxesIncompleteError, StudentPracticeService, _check_contract_capacity, record_own_approval_axis
+from student_practices.services import (
+    AxesIncompleteError,
+    StudentPracticeService,
+    _check_contract_capacity,
+    record_own_approval_axis,
+)
 from subject.models import Subject
 from users.models import (
     ActionLog,
@@ -346,6 +357,7 @@ class Bl03CapacityMatrixTests(BL03FixtureMixin, TestCase):
         sp = self.make_sp(self.owner_student, practice=practice, state=StudentPracticeWorkflowState.AWAITING_DOCUMENTS)
         # T1 brána: obě osy musí držet, aby test měřil KAPACITU (ne osy)
         StudentPractice.objects.filter(pk=sp.pk).update(employer_approved=True)
+        approve_contract_document(sp)  # A-11: do CONTRACTED jen se schválenou smlouvou
         sp.refresh_from_db()
         before = self.sp_snapshot(sp)
 
@@ -362,6 +374,7 @@ class Bl03CapacityMatrixTests(BL03FixtureMixin, TestCase):
         sp = self.make_sp(self.owner_student, practice=external, state=StudentPracticeWorkflowState.CONTENT_APPROVED)
         # T1 brána: obě osy musí držet, aby test měřil KAPACITU (ne osy)
         StudentPractice.objects.filter(pk=sp.pk).update(employer_approved=True)
+        approve_contract_document(sp)  # A-11: do CONTRACTED jen se schválenou smlouvou
         sp.refresh_from_db()
         before = self.sp_snapshot(sp)
 
@@ -1273,6 +1286,7 @@ class Bl03ConfirmT2bTests(BL03FixtureMixin, TestCase):
     def test_repeat_same_axis_is_idempotent_without_new_notification(self):
         """T2b: opakování stejné osy = 200 no-op, ŽÁDNÁ nová notifikace."""
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        approve_contract_document(sp)  # A-11: do CONTRACTED jen se schválenou smlouvou
 
         # první osa (pending, žádná allokační notifikace)
         self.assertEqual(self._confirm(self.org_user, sp).status_code, 200)
@@ -1309,6 +1323,7 @@ class Bl03ConfirmT2bTests(BL03FixtureMixin, TestCase):
         """Obě předem schválené osy se při confirm rekoncilují do CONTRACTED."""
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         StudentPractice.objects.filter(pk=sp.pk).update(school_approved=True, employer_approved=True)
+        approve_contract_document(sp)  # A-11: do CONTRACTED jen se schválenou smlouvou
         sp.refresh_from_db()
         self.assertIsNone(sp.contract_received_date)
 
@@ -1548,6 +1563,8 @@ class CapacityConcurrencyPostgresTests(TransactionTestCase):
         ]
         # T1 service gate: employer osa musí držet, aby závod měřil KAPACITU (ne osy)
         StudentPractice.objects.filter(pk__in=[sp.pk for sp in sps]).update(employer_approved=True)
+        for sp in sps:
+            approve_contract_document(sp)  # A-11
 
         barrier = threading.Barrier(2, timeout=15)
         succeeded: list[int] = []

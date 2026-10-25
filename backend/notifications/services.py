@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.template.loader import render_to_string
 
-from api.parameter_service import get_param
+from api.models import SystemSettings
 from users.models import ApprovalStatus
 
 from .models import Notification, NotificationType
@@ -650,7 +650,7 @@ class EmailService:
         student = student_practice.user
         practice_title = practice.title if practice else "N/A"
         student_name = student.full_name if student else "N/A"
-        overdue_days = get_param("PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
+        overdue_days = SystemSettings.get_solo().practice_contract_overdue_days
         subject = f"Prodlení se zasmluvněním praxe: {practice_title}"
         message = (
             f"Dobrý den,\n\n"
@@ -994,7 +994,7 @@ class NotificationService:
         student = student_practice.user
         practice_title = practice.title if practice else "N/A"
         student_name = student.full_name if student else "N/A"
-        overdue_days = get_param("PRACTICE_CONTRACT_OVERDUE_DAYS", 7)
+        overdue_days = SystemSettings.get_solo().practice_contract_overdue_days
         message = (
             f"Praxe '{practice_title}' studenta {student_name} čeká na zasmluvnění "
             f"déle než {overdue_days} dní.\n"

@@ -9,7 +9,11 @@ from rest_framework.test import APIClient
 
 from department.models import Department
 from practices.models import Practice, ProgressStatus
-from student_practices.models import DocumentHelper, StudentPractice, StudentPracticeWorkflowState
+from student_practices.models import (
+    DocumentHelper,
+    StudentPractice,
+    StudentPracticeWorkflowState,
+)
 from subject.models import Subject
 from users.models import (
     ApprovalStatus,
@@ -132,7 +136,19 @@ class StudentPracticeLifecycleTests(TestCase):
         student_practice.refresh_from_db()
         self.assertEqual(student_practice.workflow_state, StudentPracticeWorkflowState.AWAITING_DOCUMENTS)
 
-        # 5. Professor approves contract document -> CONTRACTED
+        # 5. Organizace potvrdí převzetí smlouvy (employer_approved)
+        self.client.force_authenticate(user=self.org_user)
+        response = self.client.post(
+            f"/api/student-practices/{student_practice.student_practice_id}/confirm-contract/",
+            {},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        student_practice.refresh_from_db()
+        self.assertTrue(student_practice.employer_approved)
+        self.assertNotEqual(student_practice.workflow_state, StudentPracticeWorkflowState.CONTRACTED)
+
+        # 6. Garant schválí dokument smlouvy -> CONTRACTED
         review_url = f"/api/student-practices/review-document/{contract_doc.document_id}"
         self.client.force_authenticate(user=self.professor)
         response = self.client.patch(review_url, {"status": 1})  # DocumentStatus.APPROVED

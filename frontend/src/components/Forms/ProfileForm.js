@@ -4,7 +4,7 @@ import TextField from "@core/Form/TextField";
 import TextBox from "@core/Form/TextBox";
 import Button from "@components/core/Button/Button";
 import UploadFile from "@core/Form/UploadFile";
-import Image from "@core/Image/Image";
+import ProtectedImage from "@core/Image/ProtectedImage";
 import Headings from "@core/Text/Headings";
 import { useTranslation } from "react-i18next";
 
@@ -232,7 +232,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                             {t('profile.current_photo')}:
                         </Container>
                         <Container property="w-32 h-32 bg-blue-600 rounded-lg p-4 flex items-center justify-center">
-                            <Image
+                            <ProtectedImage
                                 src={formData.profile_picture}
                                 alt={t('profile.current_photo')}
                                 width="100%"

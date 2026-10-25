@@ -60,13 +60,13 @@ jobs:
       PG_PASSWORD: testpassword
       PG_HOST: localhost
       PG_PORT: 5432
-      SECRET_KEY: ci-test-secret-key-not-used-in-production
+      DJANGO_SECRET_KEY: ci-test-secret-key-not-used-in-production
       JWT_SECRET_KEY: ci-test-jwt-secret
       DEBUG: "True"
       STAG_MOCK: "True"
       EMAIL_USE_TLS: "False"
-      DEMO_LOGIN: "False"
-      MIGRATE_DEMO: "False"
+      DEMO_LOGIN: "0"
+      MIGRATE_DEMO: "0"
 
     steps:
       - uses: actions/checkout@v4
@@ -173,12 +173,12 @@ jobs:
       PG_PASSWORD: testpassword
       PG_HOST: localhost
       PG_PORT: 5432
-      SECRET_KEY: ci-e2e-secret-key-not-used-in-production
+      DJANGO_SECRET_KEY: ci-e2e-secret-key-not-used-in-production
       JWT_SECRET_KEY: ci-e2e-jwt-secret
       DEBUG: "True"
       STAG_MOCK: "True"
-      DEMO_LOGIN: "True"
-      MIGRATE_DEMO: "True"
+      DEMO_LOGIN: "0"  # A-20: dříve "True" (settings testovaly "1" → fakticky vypnuto); E2E na demo loginu nezávisí
+      MIGRATE_DEMO: "0"
 
     steps:
       - uses: actions/checkout@v4

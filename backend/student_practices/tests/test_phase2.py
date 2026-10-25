@@ -2,10 +2,15 @@ from datetime import date, timedelta
 
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
+from test_support.contracts import approve_contract_document
 
 from department.models import Department
 from practices.models import Practice, PracticeWorkflowState
-from student_practices.models import Evaluation, StudentPractice, StudentPracticeWorkflowState
+from student_practices.models import (
+    Evaluation,
+    StudentPractice,
+    StudentPracticeWorkflowState,
+)
 from subject.models import Subject
 from users.models import (
     ApprovalStatus,
@@ -189,6 +194,7 @@ class Phase2Tests(APITestCase):
         self.assertEqual(Notification.objects.filter(verb="ALLOCATION_ORG", recipient=org_user).count(), 0)
 
         # 3) druhá osa (škola) → CONTRACTED + APPROVED + přesně jedna allokační notifikace
+        approve_contract_document(self.sp)  # A-11: smlouva musí být schválená
         self.client.force_authenticate(user=mentor)
         res = self.client.post(confirm_url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)

@@ -25,6 +25,8 @@ argon2-cffi
 reportlab
 openpyxl
 django-redis
+gunicorn>=23,<24
+django-solo>=2.5,<3
 celery
 pytest-bdd
 django-celery-beat

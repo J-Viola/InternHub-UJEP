@@ -191,6 +191,10 @@ class OrganizationUser(User):
         return self.organization_role.name if self.organization_role is not None else None
 
 
+class InvalidStagTicketError(ValueError):
+    """A-10: uložený STAG ticket nemá platný podpis — požadavek se odmítá, je třeba nové přihlášení."""
+
+
 class StagUser(User):
     stag_role = models.ForeignKey(StagRole, models.PROTECT, blank=True, null=True, related_name="stag_users")
     stag_ticket = models.CharField(
@@ -216,48 +220,47 @@ class StagUser(User):
 
     def get_ticket(self):
         """
-        Returns the decrypted STAG ticket.
+        Vrátí STAG ticket s ověřeným podpisem (A-10, fail-closed).
 
-        Graceful migration: if the value stored in the DB is still plaintext
-        (from before encryption was introduced), it is returned as-is.
+        Prázdný ticket → ``""``. Ticket s neplatným podpisem (úprava, plaintext
+        z doby před podepisováním) → ``InvalidStagTicketError``; nikdy se nevrací surová hodnota.
         """
         if not self.stag_ticket:
             return ""
-        return self._decrypt_ticket(self.stag_ticket)
+        return self._unsign_ticket(self.stag_ticket)
 
     def save(self, *args, **kwargs):
-        """Encrypt stag_ticket before saving if it is in plaintext."""
+        """Podepíše stag_ticket před uložením, pokud ještě není podepsaný."""
         if self.stag_ticket:
             # Skip if the value is already encrypted (re-saves from DB loads)
             if not self._is_ticket_encrypted(self.stag_ticket):
-                self.stag_ticket = self._encrypt_ticket(self.stag_ticket)
+                self.stag_ticket = self._sign_ticket(self.stag_ticket)
         super().save(*args, **kwargs)
 
     # --- static helpers (no side effects) ----------------------------------
 
     @staticmethod
-    def _encrypt_ticket(plain_text):
-        """Sign (encrypt) a plaintext ticket for storage."""
+    def _sign_ticket(plain_text):
+        """Podepíše ticket (Django ``Signer`` — integrita, NE šifrování; ticket je v DB čitelný)."""
         from django.core.signing import Signer
 
         signer = Signer(salt="stag_ticket_encryption")
         return signer.sign(plain_text)
 
     @staticmethod
-    def _decrypt_ticket(encrypted_text):
-        """
-        Verify signature and return original plaintext.
-        Falls back to returning the raw value if the signature is invalid
-        (handles existing plaintext records during migration).
-        """
+    def _unsign_ticket(signed_text):
+        """Ověří podpis a vrátí původní ticket; při neplatném podpisu vyhodí ``InvalidStagTicketError`` (fail-closed)."""
         from django.core.signing import BadSignature, Signer
 
         signer = Signer(salt="stag_ticket_encryption")
         try:
-            return signer.unsign(encrypted_text)
-        except BadSignature:
-            # Plaintext value – graceful migration for existing records
-            return encrypted_text
+            return signer.unsign(signed_text)
+        except BadSignature as exc:
+            raise InvalidStagTicketError("STAG ticket má neplatný podpis.") from exc
+
+    # zpětně kompatibilní aliasy (zavádějící původní názvy)
+    _encrypt_ticket = _sign_ticket
+    _decrypt_ticket = _unsign_ticket
 
     @staticmethod
     def _is_ticket_encrypted(value):

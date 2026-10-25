@@ -9,7 +9,9 @@ import { useUserAPI } from "@api/user/userAPI";
 import { useParams, useSearchParams } from "react-router-dom";
 import ProfileForm from "@components/Forms/ProfileForm";
 import { useNavigate } from "react-router-dom";
-import Image from "@core/Image/Image";
+import ProtectedImage from "@core/Image/ProtectedImage";
+import { useApi } from "@hooks/useApi";
+import { storageUrlToApiPath } from "@utils/storagePath";
 import { useTranslation } from "react-i18next";
 
 import { useMessage } from "@hooks/MessageContext";
@@ -24,6 +26,22 @@ export default function ProfilPage() {
     const isEditMode = searchParams.get('edit') === 'true';
     const navigate = useNavigate();
     const { addMessage } = useMessage();
+    const api = useApi();
+
+    // A-24: CV je chráněné — stáhne se přes API s tokenem a otevře se jako blob.
+    const handleCvDownload = async (e) => {
+        const apiPath = storageUrlToApiPath(userData?.cv_file);
+        if (!apiPath) return; // neznámý tvar URL → výchozí chování odkazu
+        e.preventDefault();
+        try {
+            const res = await api.get(apiPath, { responseType: "blob" });
+            const url = URL.createObjectURL(res.data);
+            window.open(url, "_blank", "noopener");
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+        } catch (err) {
+            addMessage(t('profile.update_error'), "E");
+        }
+    };
     // přidělat check na param id -> pak bud tahadam data ciziho profilu, nebo svůj
 
     useEffect(() => {
@@ -105,7 +123,7 @@ export default function ProfilPage() {
                         {/* PROFILE PIC */}
                         <Container property="w-32 h-32 bg-blue-600 rounded-lg p-4 flex items-center justify-center">
                             {userData.profile_picture ? (
-                                <Image
+                                <ProtectedImage
                                     src={userData.profile_picture}
                                     alt={t('profile.personal_info')}
                                     width="100%"
@@ -263,6 +281,7 @@ export default function ProfilPage() {
                                 <Container property="pt-2">
                                     <a
                                         href={userData.cv_file}
+                                        onClick={handleCvDownload}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-3 bg-gray-50 hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg border border-gray-200 transition-colors shadow-sm"

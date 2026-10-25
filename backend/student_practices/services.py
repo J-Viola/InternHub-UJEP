@@ -178,6 +178,23 @@ class AxesIncompleteError(ValueError):
     """
 
 
+class ContractDocumentNotApprovedError(ValueError):
+    """A-11: pokus o přechod do CONTRACTED bez schváleného smluvního dokumentu.
+
+    Brána běží ve stejném bloku jako ``AxesIncompleteError`` — dřív než
+    jakýkoli save/ActionLog/notifikace. HTTP vrstva překládá na
+    ``{"error_code": "CONTRACT_NOT_APPROVED"}``. Admin override neexistuje.
+    """
+
+    error_code = "CONTRACT_NOT_APPROVED"
+
+
+def contract_document_is_approved(sp) -> bool:
+    """A-11: smluvní dokument existuje a je ve stavu APPROVED."""
+    doc = sp.contract_document
+    return bool(doc and doc.status == DocumentStatus.APPROVED)
+
+
 def record_own_approval_axis(sp, actor) -> bool:
     """
     T1/C06-A — centrální zápis VLASTNÍ approval osy aktéra.
@@ -599,15 +616,6 @@ class StudentPracticeService:
             )
 
         elif (
-            sp.workflow_state == StudentPracticeWorkflowState.PRELIMINARY_APPROVED
-            and target_state == StudentPracticeWorkflowState.AWAITING_CONTRACT
-        ):
-            # T1/C06-A: přijetí studenta organizací je souhlas osy zaměstnavatele
-            # (symetricky ke školní ose při APPLIED -> PRELIMINARY_APPROVED).
-            # Helper zapíše jen vlastní osu aktéra, nikdy cizí.
-            record_own_approval_axis(sp, actor)
-
-        elif (
             sp.workflow_state in (StudentPracticeWorkflowState.APPLIED, StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
             and target_state == StudentPracticeWorkflowState.REJECTED
         ):
@@ -691,6 +699,9 @@ class StudentPracticeService:
                     "AXES_INCOMPLETE: Přechod do CONTRACTED vyžaduje obě nezávislé "
                     f"schvalovací osy (T1/C06-A) — chybí osa: {', '.join(missing)}."
                 )
+            # A-11: bez schválené smlouvy se do CONTRACTED nejde nikdy (žádný override).
+            if not contract_document_is_approved(sp):
+                raise ContractDocumentNotApprovedError("CONTRACT_NOT_APPROVED: Přechod do CONTRACTED vyžaduje schválený smluvní dokument.")
 
         # --- T2a/BE-005: jediná kapacitní brána pro KAŽDOU generic cestu
         # do CONTRACTED (AWAITING_DOCUMENTS, CONTENT_APPROVED, externí větve…);

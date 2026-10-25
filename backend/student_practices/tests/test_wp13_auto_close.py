@@ -6,7 +6,12 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from department.models import Department
-from practices.models import ApplicationClosureReason, Practice, PracticeWorkflowState, ProgressStatus
+from practices.models import (
+    ApplicationClosureReason,
+    Practice,
+    PracticeWorkflowState,
+    ProgressStatus,
+)
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 from subject.models import Subject
 from users.models import ApprovalStatus, EmployerProfile, OrganizationUser, StudentUser

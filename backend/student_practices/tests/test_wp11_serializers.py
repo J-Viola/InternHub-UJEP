@@ -7,8 +7,15 @@ from django.utils import timezone
 
 from department.models import Department
 from practices.models import Practice, ProgressStatus
-from student_practices.models import DocumentHelper, StudentPractice, StudentPracticeWorkflowState
-from student_practices.serializers import ListStudentPracticeSerializer, StudentPracticeCardSerializer
+from student_practices.models import (
+    DocumentHelper,
+    StudentPractice,
+    StudentPracticeWorkflowState,
+)
+from student_practices.serializers import (
+    ListStudentPracticeSerializer,
+    StudentPracticeCardSerializer,
+)
 from subject.models import Subject
 from users.models import ApprovalStatus, EmployerProfile, OrganizationUser, StudentUser
 

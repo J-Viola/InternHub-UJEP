@@ -42,7 +42,13 @@ from student_practices.permissions import (
     IsOrganizationApproverForStudentPractice,
     IsSubjectTeacherOrHeadForPractice,
 )
-from student_practices.services import StudentPracticeService, _enter_contracted, record_own_approval_axis
+from student_practices.services import (
+    ContractDocumentNotApprovedError,
+    StudentPracticeService,
+    _enter_contracted,
+    contract_document_is_approved,
+    record_own_approval_axis,
+)
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
 from users.models import ActionLog, ApprovalStatus, OrganizationUser, StudentUser
@@ -378,7 +384,7 @@ class StudentPracticeUploadDocumentSerializer(serializers.ModelSerializer):
         if ext not in allowed_exts:
             raise serializers.ValidationError(StudentPracticeMessages.INVALID_EXTENSION)
 
-        # Sdílený validátor velikosti (backend/api/validators.py — settings.MAX_UPLOAD_SIZE)
+        # Sdílený validátor velikosti (backend/api/validators.py — SystemSettings.max_upload_size)
         from django.core.exceptions import ValidationError as DjangoValidationError
 
         from api.validators import validate_file_size
@@ -514,7 +520,7 @@ class StudentPracticeUploadDocumentView(APIView):
 
         file_obj = request.FILES.get("document") or request.FILES.get("file")
         if file_obj:
-            # Max velikost souboru dle settings.MAX_UPLOAD_SIZE (sdílený validátor
+            # Max velikost souboru dle SystemSettings.max_upload_size (sdílený validátor
             # z backend/api/validators.py — sjednocení duplicitního limitu).
             from django.core.exceptions import ValidationError as DjangoValidationError
 
@@ -770,6 +776,8 @@ class TransitionStudentPracticeView(APIView):
                     {"error_code": "CAPACITY_FULL", "detail": "Kapacita partnera je plně obsazena"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            if isinstance(e, ContractDocumentNotApprovedError):
+                return Response({"error_code": e.error_code, "detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ListStudentPracticeSerializer(sp, context={"request": request}).data)
@@ -1312,7 +1320,8 @@ class ConfirmContractView(APIView):
 
         # T2b: potvrzení jen z pre-kontrakčních stavů — AWAITING_CONTRACT,
         # u externí praxe i APPLIED (externí cesta). Jinak 400 bez mutace.
-        allowed_source_states = {StudentPracticeWorkflowState.AWAITING_CONTRACT}
+        # A-03: organizace potvrzuje i po nahrání smlouvy (AWAITING_DOCUMENTS) — BP, krok 5.
+        allowed_source_states = {StudentPracticeWorkflowState.AWAITING_CONTRACT, StudentPracticeWorkflowState.AWAITING_DOCUMENTS}
         if sp.practice is not None and sp.practice.is_external:
             allowed_source_states.add(StudentPracticeWorkflowState.APPLIED)
         if sp.workflow_state not in allowed_source_states:
@@ -1343,6 +1352,8 @@ class ConfirmContractView(APIView):
         # only, žádná osa); druhou osu může nastavit jen její vlastní role.
         was_already_contract_approved = sp.employer_approved and sp.school_approved
         both_axes_approved = record_own_approval_axis(sp, request.user) or was_already_contract_approved
+        # A-11: bez schváleného smluvního dokumentu zůstává stav beze změny (osa se zapíše).
+        both_axes_approved = both_axes_approved and contract_document_is_approved(sp)
 
         # T1: CONTRACTED + APPROVED jen při obou osách schválených touto
         # akcí (nebo již dříve); jinak aplikace zůstává v aktuálním stavu

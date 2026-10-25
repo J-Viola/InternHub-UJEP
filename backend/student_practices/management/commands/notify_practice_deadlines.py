@@ -7,23 +7,23 @@ from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from notifications.services import NotificationService
 
-from api.parameter_service import get_param
+from api.models import SystemSettings
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
 
 class Command(BaseCommand):
     help = (
         "Deadline výstrahy: praxe mimo stav CONTRACTED se start_date "
-        "za 14/7/2 dny (settings.PRACTICE_URGENCY_DAYS) → e-mail + in-app studentovi "
+        "za 14/7/2 dny (SystemSettings.practice_urgency_days) → e-mail + in-app studentovi "
         "(idempotence přes last_urgency_sent_at/urgency_level); praxe ve stavu "
-        "ENDED déle než PRACTICE_CREDIT_ALERT_DAYS bez přechodu do COMPLETED → "
+        "ENDED déle než SystemSettings.practice_credit_alert_days bez přechodu do COMPLETED → "
         "e-mail + in-app garantovi."
     )
 
     def handle(self, *args, **options):
         today = date.today()
-        urgency_days = get_param("PRACTICE_URGENCY_DAYS", [14, 7, 2])
-        credit_alert_days = get_param("PRACTICE_CREDIT_ALERT_DAYS", 14)
+        urgency_days = SystemSettings.get_solo().practice_urgency_days
+        credit_alert_days = SystemSettings.get_solo().practice_credit_alert_days
 
         urgency_count = self._notify_start_urgent(today, urgency_days)
         credit_count = self._notify_credit_alert(credit_alert_days)
@@ -92,7 +92,7 @@ class Command(BaseCommand):
 
     def _notify_credit_alert(self, credit_alert_days):
         """
-        praxe ve stavu ENDED déle než PRACTICE_CREDIT_ALERT_DAYS bez přechodu
+        praxe ve stavu ENDED déle než SystemSettings.practice_credit_alert_days bez přechodu
         do COMPLETED → e-mail + in-app garantovi.
 
         Idempotence: existuje-li již notifikace CREDIT_ALERT_GARANT pro danou praxi.

@@ -4,10 +4,15 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.test import TestCase
+from test_support.contracts import approve_contract_document
 
 from practices.models import ExternalEmployerInfo, Practice, PracticeWorkflowState
 from practices.services import PracticeService
-from student_practices.models import DocumentStatus, DocumentType, StudentPracticeWorkflowState
+from student_practices.models import (
+    DocumentStatus,
+    DocumentType,
+    StudentPracticeWorkflowState,
+)
 from student_practices.services import StudentPracticeService
 from student_practices.tests.test_bl03_workflow import BL03FixtureMixin
 from users.models import ActionLog, ApprovalStatus
@@ -120,6 +125,7 @@ class NightRunWorkflowTests(BL03FixtureMixin, TestCase):
     def test_confirm_reconciles_preapproved_axes_and_capacity_blocks(self):
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         type(sp).objects.filter(pk=sp.pk).update(employer_approved=True, school_approved=True)
+        approve_contract_document(sp)  # A-11: do CONTRACTED jen se schválenou smlouvou
         sp.refresh_from_db()
         response = self._confirm(self.garant, sp)
         self.assertEqual(response.status_code, 200)

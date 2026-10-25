@@ -30,7 +30,10 @@ from student_practices.models import (
     StudentPractice,
     StudentPracticeWorkflowState,
 )
-from student_practices.services import StudentPracticeService, ensure_practice_registration
+from student_practices.services import (
+    StudentPracticeService,
+    ensure_practice_registration,
+)
 from student_practices.tests.test_bl03_workflow import BL03FixtureMixin
 from users.models import ApprovalStatus
 
