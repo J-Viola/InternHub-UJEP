@@ -51,7 +51,7 @@ from student_practices.services import (
 )
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
-from users.models import ActionLog, ApprovalStatus, OrganizationUser, StudentUser
+from users.models import ActionLog, ApprovalStatus, InvalidStagTicketError, OrganizationUser, StudentUser
 from users.permissions import (
     CanCancelStudentPractice,
     IsAdminUser,
@@ -865,14 +865,12 @@ class CancelStudentPracticeView(APIView):
         reason = serializer.validated_data["reason"]
         try:
             if isinstance(request.user, StudentUser):
-                # C02-A: student podává ŽÁDOST o storno — žádné okamžité
-                # storno; praxe zůstává v aktuálním stavu a rozhodne
-                # resolver přes resolve-cancellation (T2d).
+                # A-12 (BDD UC05 AC-02): student praxi stornuje okamžitě; garant
+                # storno jen bere na vědomí přes resolve-cancellation.
                 sp = StudentPracticeService.submit_cancellation_request(sp=student_practice, actor=request.user, reason=reason)
             else:
                 # Nestudentští aktéři (org/garant/admin dle CanCancelStudentPractice)
-                # zachovávají dosavadní chování — okamžité storno; C02-A se týká
-                # studentské žádosti a rozhodovací role zde není rozhodnutím měněna.
+                # zachovávají dosavadní chování — okamžité storno bez blokace studenta.
                 sp = StudentPracticeService.cancel_student_practice(sp=student_practice, actor=request.user, reason=reason)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -883,7 +881,7 @@ class CancelStudentPracticeView(APIView):
 class ResolveCancellationView(APIView):
     """
         POST /api/student-practices/{student_practice_id}/resolve-cancellation/
-        Garant vyřeší storno přihlášky — odblokuje studentovi podání nové žádosti
+        Garant vezme storno přihlášky na vědomí — odblokuje studentovi podání nové žádosti
     Permissions: garant (profesor VY/VK nebo is_garant_praxe)
         dané katedry nebo admin.
     """
@@ -891,10 +889,10 @@ class ResolveCancellationView(APIView):
     permission_classes = [IsAuthenticated, IsGarantForStudentPractice]
 
     @extend_schema(
-        summary="Resolve a cancelled student practice",
+        summary="Acknowledge (take note of) a cancelled student practice",
         description=(
-            "Garant vyřeší storno přihlášky studenta (nastaví cancellation_resolved_at). "
-            "Po vyřešení může student podat novou žádost. "
+            "Garant vezme storno přihlášky studenta na vědomí (nastaví cancellation_resolved_at). "
+            "Storno se tím nemění (je nevratné); student může podat novou žádost. "
             "**Permissions: Garant praxe (VY/VK profesor nebo is_garant_praxe) dané katedry, Admin**"
         ),
         tags=["Student Practices"],
@@ -909,15 +907,8 @@ class ResolveCancellationView(APIView):
         student_practice = get_object_or_404(StudentPractice, pk=student_practice_id)
         self.check_object_permissions(request, student_practice)
 
-        # T2d: u pending žádosti o storno (C02-A) je povinné rozhodnutí
-        # decision=approve|reject; u legacy již stornovaného jen odblokování.
-        decision = request.data.get("decision") if hasattr(request, "data") else None
         try:
-            sp = StudentPracticeService.resolve_cancellation(
-                sp=student_practice,
-                actor=request.user,
-                decision=decision,
-            )
+            sp = StudentPracticeService.resolve_cancellation(sp=student_practice, actor=request.user)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -961,7 +952,14 @@ class StudentPracticeContractDownloadView(APIView):
 
         from student_practices.services import generate_contract
 
-        buffer = generate_contract(sp)
+        try:
+            buffer = generate_contract(sp)
+        except InvalidStagTicketError:
+            # A-10: fail-closed — STAG se nevolá, uživatel se musí znovu přihlásit
+            return Response(
+                {"error_code": "STAG_TICKET_INVALID", "detail": "STAG přihlášení není platné — přihlaste se prosím znovu."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         filename = f"smlouva_{sp.student_practice_id}.docx"
 
         ActionLogService.log(
@@ -1331,20 +1329,6 @@ class ConfirmContractView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Kapacitní kontrola při alokaci (select_for_update na praxi uvnitř transakce)
-        practice = sp.practice
-        if practice is not None:
-            practice = Practice.objects.select_for_update().get(pk=practice.pk)
-            try:
-                _check_contract_capacity(practice)
-            except ValueError as e:
-                if str(e) == "CAPACITY_FULL":
-                    return Response(
-                        {"error_code": "CAPACITY_FULL", "detail": "Kapacita partnera je plně obsazena"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                raise
-
         _enter_contracted(sp, request.user)
 
         # T1/C06-A (centrální helper): aktér zapíše JEN svou vlastní osu
@@ -1354,6 +1338,22 @@ class ConfirmContractView(APIView):
         both_axes_approved = record_own_approval_axis(sp, request.user) or was_already_contract_approved
         # A-11: bez schváleného smluvního dokumentu zůstává stav beze změny (osa se zapíše).
         both_axes_approved = both_axes_approved and contract_document_is_approved(sp)
+
+        # Pořadí bran: osa → dokument → kapacita (kapacita jen při reálném vstupu do CONTRACTED).
+        if both_axes_approved:
+            # Kapacitní kontrola při alokaci (select_for_update na praxi uvnitř transakce)
+            practice = sp.practice
+            if practice is not None:
+                practice = Practice.objects.select_for_update().get(pk=practice.pk)
+                try:
+                    _check_contract_capacity(practice)
+                except ValueError as e:
+                    if str(e) == "CAPACITY_FULL":
+                        return Response(
+                            {"error_code": "CAPACITY_FULL", "detail": "Kapacita partnera je plně obsazena"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    raise
 
         # T1: CONTRACTED + APPROVED jen při obou osách schválených touto
         # akcí (nebo již dříve); jinak aplikace zůstává v aktuálním stavu

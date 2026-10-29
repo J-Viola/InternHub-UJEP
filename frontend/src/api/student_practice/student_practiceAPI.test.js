@@ -43,7 +43,7 @@ describe("useStudentPracticeAPI workflow fail-closed", () => {
         expect(mockApi.post).not.toHaveBeenCalled();
     });
 
-    test.each(["STARTED", "AWAITING_DOCUMENTS"])("recognizes backend workflow state %s", async (workflowStatus) => {
+    test.each(["STARTED", "AWAITING_DOCUMENTS", "CANCELLED"])("recognizes backend workflow state %s", async (workflowStatus) => {
         mockApi.get.mockResolvedValue({ data: { student_practice_status: { workflow_status: workflowStatus } } });
         const { result } = renderHook(() => useStudentPracticeAPI());
         const card = await result.current.getStudentPracticeCard(1);

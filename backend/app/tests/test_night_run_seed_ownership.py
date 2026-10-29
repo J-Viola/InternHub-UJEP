@@ -110,6 +110,7 @@ class DemoSeedOwnershipTests(TestCase):
             spec_path = Path(temp_dir) / "spec.json"
             spec_path.write_text(json.dumps({"seed_id": "BL08-SEED-v1"}), encoding="utf-8")
             with (
+                mock.patch.object(Command, "_preflight"),  # A-18: cizí nabídka se shodným titulkem by jinak seed odmítla
                 mock.patch.object(Command, "_seed", return_value={}),
                 mock.patch.object(Command, "_verify_and_report"),
             ):

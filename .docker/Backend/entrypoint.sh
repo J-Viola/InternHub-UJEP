@@ -3,7 +3,7 @@ set -e
 
 # A-20: jednotné parsování boolean proměnných (1/true/yes/on, bez ohledu na velikost písmen)
 env_bool() {
-    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in
         1|true|yes|on) return 0 ;;
         *) return 1 ;;
     esac

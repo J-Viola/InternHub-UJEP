@@ -49,10 +49,10 @@ describe('getApiErrorMessage — BL-04 error surfacing', () => {
     test('serverová věta se zobrazí přímo (žádný generický překlad)', () => {
         const error = makeError({
             code: 'DRF_ERROR',
-            details: 'Pro rozhodnutí o žádosti o storno je povinné pole decision=approve|reject.',
+            details: 'Storno je již vyřešeno.',
         });
         expect(getApiErrorMessage(error, t, 'practice_detail.cancellation_resolve_error')).toBe(
-            'Pro rozhodnutí o žádosti o storno je povinné pole decision=approve|reject.'
+            'Storno je již vyřešeno.'
         );
     });
 

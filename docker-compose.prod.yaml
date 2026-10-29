@@ -54,7 +54,7 @@ services:
       - "8000"
     healthcheck:
       # migrace + collectstatic běží v entrypointu před startem gunicornu; X-Forwarded-Proto kvůli SECURE_SSL_REDIRECT
-      test: ["CMD", "python", "-c", "import urllib.request as u; r = u.Request('http://localhost:8000/api/health/', headers={'X-Forwarded-Proto': 'https'}); u.urlopen(r, timeout=5)"]
+      test: ["CMD", "python", "-c", "import os, urllib.request as u; h = (os.environ.get('ALLOWED_HOSTS', '').split(',')[0].strip().lstrip('.') or 'localhost'); h = 'localhost' if h == '*' else h; r = u.Request('http://127.0.0.1:8000/api/health/', headers={'X-Forwarded-Proto': 'https', 'Host': h}); u.urlopen(r, timeout=5)"]
       interval: 10s
       timeout: 10s
       retries: 30
@@ -74,7 +74,7 @@ services:
       args:
         - PY_VERSION=${PY_VERSION}
     container_name: internhub-celery-worker
-    command: celery -A app worker --loglevel=info
+    command: celery -A app worker --loglevel=info --concurrency=2
     env_file:
       - .env
     volumes:
@@ -91,16 +91,20 @@ services:
       - internhub
     restart: unless-stopped
 
-  celery-beat:
+  # A-27: scheduler (supercronic) nahrazuje Celery Beat. Právě jedna instance — nikdy neškálovat
+  # (replicas > 1 by spouštěly úlohy vícekrát).
+  scheduler:
     build:
       context: .
       dockerfile: .docker/Backend/Dockerfile.prod
       args:
         - PY_VERSION=${PY_VERSION}
-    container_name: internhub-celery-beat
-    command: celery -A app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    container_name: internhub-scheduler
+    command: supercronic /app/backend/crontab
     env_file:
       - .env
+    environment:
+      TZ: Europe/Prague
     volumes:
       - storage_data:/app/backend/storage
       - logs_data:/app/backend/logs

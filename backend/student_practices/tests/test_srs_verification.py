@@ -1,11 +1,14 @@
 """SRS audit tests: executable evidence for selected functional requirements."""
 
 import io
-import unittest
+import os
+import shutil
+import tempfile
 import zipfile
 from datetime import date, timedelta
 
 from django.apps import apps
+from django.conf import settings
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -94,14 +97,67 @@ class AutomaticLifecycleTests(SRSFixture):
         self.assertEqual(ends_today.workflow_state, State.ENDED)
         self.assertEqual(not_due.workflow_state, State.CONTRACTED)
 
-    def test_celery_beat_registration_is_daily_at_three(self):
-        call_command("setup_celery_beat")
-        from django_celery_beat.models import PeriodicTask
+    def test_crontab_is_valid_and_matches_requirements(self):
+        """A-27: rozvrh je ve verzovaném crontabu (supercronic); příkazy existují a pokrývají RF-13/14/17a/19a."""
+        import re
 
-        task = PeriodicTask.objects.get(task="auto_start_end_practices")
-        self.assertTrue(task.enabled)
-        self.assertEqual((task.crontab.minute, task.crontab.hour), ("0", "3"))
-        self.assertEqual((task.crontab.day_of_week, task.crontab.day_of_month, task.crontab.month_of_year), ("*", "*", "*"))
+        from django.core.management import get_commands
+
+        path = settings.BASE_DIR / "crontab"
+        entries = []
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split(None, 5)
+            self.assertEqual(len(parts), 6, line)
+            minute, hour, dom, month, dow, command = parts
+            for value, upper in ((minute, 59), (hour, 23), (dom, 31), (month, 12), (dow, 7)):
+                self.assertRegex(value, r"^(\*|\d+)(/\d+)?$|^\d+(,\d+)*$|^\d+-\d+$")
+                if value.isdigit():
+                    self.assertLessEqual(int(value), upper)
+            m = re.fullmatch(r"python manage\.py (\w+)(?: .*)?", command)
+            self.assertIsNotNone(m, command)
+            self.assertIn(m.group(1), get_commands())
+            entries.append((m.group(1), minute, hour, dow))
+        daily = {name: (minute, hour) for name, minute, hour, dow in entries if dow == "*"}
+        self.assertEqual(
+            daily,
+            {
+                "auto_close_practices": ("0", "2"),
+                "auto_start_end_practices": ("0", "3"),
+                "notify_contract_overdue": ("0", "4"),
+                "notify_practice_deadlines": ("0", "5"),
+            },
+        )
+        self.assertIn(("cleanup_old_action_logs", "30", "1", "0"), entries)
+
+    def test_scheduled_commands_are_idempotent(self):
+        """A-27: opakovaný běh každého příkazu z crontabu nic nezdvojí ani nespadne."""
+        from io import StringIO
+
+        from notifications.models import Notification
+
+        self.make_sp(State.CONTRACTED, start=date.today(), end=date.today() + timedelta(days=4))
+        for name in (
+            "auto_close_practices",
+            "auto_start_end_practices",
+            "notify_contract_overdue",
+            "notify_practice_deadlines",
+            "cleanup_old_action_logs",
+        ):
+            with self.subTest(command=name):
+                call_command(name, stdout=StringIO())
+                snapshot = (
+                    tuple(StudentPractice.objects.order_by("pk").values_list("pk", "workflow_state", "is_cancelled")),
+                    Notification.objects.count(),
+                )
+                call_command(name, stdout=StringIO())
+                again = (
+                    tuple(StudentPractice.objects.order_by("pk").values_list("pk", "workflow_state", "is_cancelled")),
+                    Notification.objects.count(),
+                )
+                self.assertEqual(snapshot, again)
 
 
 class DualChannelNotificationTests(SRSFixture):
@@ -208,18 +264,90 @@ class OrganizationEvaluationScopeTests(SRSFixture):
         self.assertEqual(foreign_eval.expertise_comment, "Audit")
 
 
-class NoCVPortfolioManagementTests(SRSFixture):
-    @unittest.expectedFailure  # SRS mezera: StudentUser.cv_file je správa CV přes FileField.
-    def test_models_and_api_have_no_cv_portfolio_resume_management(self):
-        matches = []
-        terms = ("cv", "portfolio", "resume")
-        for model in apps.get_models():
-            if any(term in model.__name__.lower() for term in terms):
-                matches.append(f"model {model._meta.label}")
-            for field in model._meta.get_fields():
-                if getattr(field, "name", "") and any(term in field.name.lower() for term in terms):
-                    from django.db.models import FileField
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="srs_cv_"), STORAGE_ROOT=tempfile.mkdtemp(prefix="srs_cv_"))
+class OptionalCVAttachmentTests(SRSFixture):
+    """RNF-08: plnohodnotná správa CV/portfolia se neimplementuje.
 
-                    if isinstance(field, FileField) or any(term in field.name.lower() for term in terms):
-                        matches.append(f"field {model._meta.label}.{field.name}")
-        self.assertEqual(matches, [], "; ".join(matches))
+    Zůstává jen volitelná PDF příloha profilu (``StudentUser.cv_file``):
+    nepovinná, pouze PDF, stažitelná jen oprávněnými osobami.
+    """
+
+    PROFILE_URL = "/api/users/profile/"
+
+    def setUp(self):
+        super().setUp()
+        # STORAGE_ROOT i MEDIA_ROOT musí ukazovat do stejné složky
+        self.root = settings.MEDIA_ROOT
+        override = override_settings(STORAGE_ROOT=self.root)
+        override.enable()
+        self.addCleanup(override.disable)
+        self.addCleanup(shutil.rmtree, self.root, ignore_errors=True)
+        self.client_student = APIClient()
+        self.client_student.force_authenticate(user=self.student)
+
+    def _upload(self, name="zivotopis.pdf", content=b"%PDF-1.4 test"):
+        return self.client_student.patch(
+            self.PROFILE_URL,
+            {"cv_file": SimpleUploadedFile(name, content, content_type="application/pdf")},
+            format="multipart",
+        )
+
+    def test_no_cv_or_portfolio_management_models(self):
+        """Neexistuje model pro správu CV/portfolia; pole smí být jen volitelné cv_file a resume na StudentUser."""
+        terms = ("cv", "portfolio", "resume")
+        models_found = [m._meta.label for m in apps.get_models() if any(t in m.__name__.lower() for t in terms)]
+        self.assertEqual(models_found, [])
+        fields_found = sorted(
+            f"{m._meta.label}.{f.name}"
+            for m in apps.get_models()
+            for f in m._meta.get_fields()
+            if any(t in getattr(f, "name", "").lower() for t in terms)
+        )
+        # cv_file = volitelná PDF příloha, resume = volitelný krátký textový popis u profilu
+        self.assertEqual(fields_found, ["users.StudentUser.cv_file", "users.StudentUser.resume"])
+
+    def test_cv_is_optional(self):
+        """Student bez CV existuje a může si upravit profil bez nahrání souboru."""
+        self.assertFalse(self.student.cv_file)
+        response = self.client_student.patch(self.PROFILE_URL, {"first_name": "Honza"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.first_name, "Honza")
+        self.assertFalse(self.student.cv_file)
+
+    def test_only_pdf_is_accepted(self):
+        response = self._upload(name="zivotopis.exe", content=b"MZ")
+        self.assertEqual(response.status_code, 400)
+        self.student.refresh_from_db()
+        self.assertFalse(self.student.cv_file)
+
+    def test_upload_and_download_by_authorised_users_only(self):
+        """Nahrání → stažení vlastníkem; cizí student a cizí firma dostanou 404 (A-20: neprozrazuje existenci)."""
+        response = self._upload()
+        self.assertEqual(response.status_code, 200)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.cv_file.name.endswith(".pdf"))
+        rel = f"/api/files/{self.student.cv_file.name}/"
+
+        own = self.client_student.get(rel)
+        self.assertEqual(own.status_code, 200)
+        self.assertEqual(b"".join(own.streaming_content), b"%PDF-1.4 test")
+
+        stranger = StudentUser.objects.create(email="stranger@test.invalid", is_active=True)
+        client = APIClient()
+        client.force_authenticate(user=stranger)
+        self.assertEqual(client.get(rel).status_code, 404)
+
+        # zaměstnavatel bez přihlášky studenta CV nevidí, s přihláškou ano
+        client.force_authenticate(user=self.org_user)
+        self.assertEqual(client.get(rel).status_code, 404)
+        self.make_sp(State.APPLIED)
+        self.assertEqual(client.get(rel).status_code, 200)
+
+    def test_replacing_cv_removes_previous_file(self):
+        self._upload(name="stary.pdf")
+        self.student.refresh_from_db()
+        old_path = self.student.cv_file.path
+        self.assertTrue(os.path.exists(old_path))
+        self._upload(name="novy.pdf", content=b"%PDF-1.4 novy")
+        self.assertFalse(os.path.exists(old_path))

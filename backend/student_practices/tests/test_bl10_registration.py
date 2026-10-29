@@ -483,7 +483,8 @@ class Bl10C03RegistrationIdentityTests(BL03FixtureMixin, TestCase):
 
     APPLY_URL = "/api/practices/student/apply/"
 
-    def test_pending_on_other_year_does_not_block_current_year(self):
+    def test_pending_on_other_year_blocks_any_new_application(self):
+        """BDD UC05 AC-04: nevzaté na vědomí storno studentem blokuje jakoukoli novou žádost (i jiný rok)."""
         old_registration = PracticeRegistration.objects.create(student=self.owner_student, subject=self.subject, year=date.today().year - 1)
         sp_old = self.make_sp(self.owner_student, practice=self.practice, state=StudentPracticeWorkflowState.CONTRACTED)
         self._link(sp_old, old_registration)
@@ -492,10 +493,10 @@ class Bl10C03RegistrationIdentityTests(BL03FixtureMixin, TestCase):
         self.client.force_authenticate(user=self.owner_student)
         response = self.client.post(self.APPLY_URL, {"practice": self.practice_same_subject.practice_id}, format="json")
 
-        # jiný rok = jiná registrace → neblokováno
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Nelze podat novou žádost, dokud není storno vyřešeno", str(response.data))
 
-    def test_pending_on_current_registration_blocks_and_resolve_unblocks(self):
+    def test_cancellation_blocks_until_acknowledged_by_garant(self):
         current = PracticeRegistration.objects.create(student=self.owner_student, subject=self.subject, year=date.today().year)
         sp_cur = self.make_sp(self.owner_student, practice=self.practice, state=StudentPracticeWorkflowState.CONTRACTED)
         self._link(sp_cur, current)
@@ -509,7 +510,7 @@ class Bl10C03RegistrationIdentityTests(BL03FixtureMixin, TestCase):
         self.client.force_authenticate(user=self.garant)
         resolved = self.client.post(
             f"/api/student-practices/{sp_cur.student_practice_id}/resolve-cancellation/",
-            {"decision": "reject"},
+            {},
             format="json",
         )
         self.assertEqual(resolved.status_code, 200)

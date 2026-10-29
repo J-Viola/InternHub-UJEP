@@ -353,9 +353,19 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+def validate_pdf_signature(value):
+    """CV musí být skutečné PDF — kontrola signatury ``%PDF-``, ne jen přípony."""
+    head = value.read(5)
+    value.seek(0)
+    if head != b"%PDF-":
+        raise serializers.ValidationError("Soubor není platné PDF.")
+
+
 class StudentUserProfileSerializer(UserProfileSerializer):
     profile_picture = Base64ImageField(required=False, allow_null=True)
-    cv_file = serializers.FileField(required=False, allow_null=True, validators=[FileExtensionValidator(allowed_extensions=["pdf"])])
+    cv_file = serializers.FileField(
+        required=False, allow_null=True, validators=[FileExtensionValidator(allowed_extensions=["pdf"]), validate_pdf_signature]
+    )
     favorite_practices = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta(UserProfileSerializer.Meta):

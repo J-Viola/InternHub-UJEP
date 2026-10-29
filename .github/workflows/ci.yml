@@ -78,7 +78,7 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt -c constraints.txt
 
       - name: Create logs directory
         run: mkdir -p logs
@@ -191,7 +191,7 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install Python deps
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt -c constraints.txt
         working-directory: backend
 
       - name: Create logs directory

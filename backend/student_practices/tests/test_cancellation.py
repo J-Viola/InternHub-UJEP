@@ -3,6 +3,7 @@
 from datetime import date
 
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -155,7 +156,7 @@ class CancellationResolutionTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_cancellation_action_log_contains_original_state(self):
-        """ActionLog při stornu obsahuje původní název stavu."""
+        """ActionLog při stornu obsahuje původní název stavu, datum a důvod (BDD UC05 AC-05)."""
         sp = self._create_cancelled_sp()
 
         storno_logs = ActionLog.objects.filter(
@@ -165,4 +166,5 @@ class CancellationResolutionTests(TestCase):
         )
         self.assertTrue(storno_logs.exists())
         self.assertIn("CONTRACTED", storno_logs.first().action_description)
-        self.assertNotIn("Zdravotní důvody", storno_logs.first().action_description)
+        self.assertIn("Zdravotní důvody", storno_logs.first().action_description)
+        self.assertIn(timezone.now().date().isoformat(), storno_logs.first().action_description)

@@ -1,0 +1,14 @@
+# A-27: rozvrh denních úloh (supercronic, TZ=Europe/Prague). Jedna instance scheduleru.
+# Formát: minuta hodina den-v-měsíci měsíc den-v-týdnu příkaz
+# Každý příkaz je idempotentní; zdroj požadavků: RF-13, RF-14, RF-17a, RF-19a, D-06, SMLOUVA_PO_TERMINU.
+
+# RF-13: uzavření nabídek 14 dní před začátkem praxe
+0 2 * * * python manage.py auto_close_practices
+# RF-14 / RF-17a: CONTRACTED → STARTED a STARTED → ENDED
+0 3 * * * python manage.py auto_start_end_practices
+# SMLOUVA_PO_TERMINU: upozornění na smlouvu po termínu
+0 4 * * * python manage.py notify_contract_overdue
+# RF-19a / D-06: upozornění na blížící se termíny
+0 5 * * * python manage.py notify_practice_deadlines
+# Retence auditního logu (365 dní), neděle 01:30
+30 1 * * 0 python manage.py cleanup_old_action_logs --days 365

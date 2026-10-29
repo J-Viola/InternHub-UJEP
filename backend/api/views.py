@@ -10,7 +10,6 @@ from django.db import connection
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -80,10 +79,9 @@ class ServeStorageFileView(APIView):
         rel = self.rel_prefix + path
         file_path = self._resolve(rel)
         decision = check_storage_access(request.user, rel)
-        if decision is StorageAccess.NOT_FOUND:
-            raise Http404
+        # A-20: nepovolený přístup je nerozlišitelný od neexistujícího souboru (404), aby API neprozrazovalo existenci.
         if decision is not StorageAccess.ALLOWED:
-            raise PermissionDenied
+            raise Http404
         return FileResponse(open(file_path, "rb"), filename=file_path.name)
 
     # ── path resolution + security ──────────────────────────────────────
@@ -142,6 +140,8 @@ class StorageAuthCheckView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    # Interní subrequest nginxu: 429 by auth_request změnil na 500 (viz docstring).
+    throttle_classes = []
 
     def get(self, request):
         rel = rel_path_from_uri(request.META.get("HTTP_X_ORIGINAL_URI"))
@@ -365,6 +365,8 @@ class HealthCheckView(APIView):
     """
 
     permission_classes = [AllowAny]
+    # Probe běží každých 10 s — DRF throttling (100/hod) by kontejner po ~17 min označil za unhealthy.
+    throttle_classes = []
 
     def get(self, request):
         db_ok = False

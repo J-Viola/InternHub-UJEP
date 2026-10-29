@@ -12,47 +12,21 @@ const makeUser = (roles) => ({
     isAdmin: () => roles.includes('admin'),
 });
 
-describe('spWorkflowUtils — C02-A/C03-A cancellation request', () => {
-    test('pending žádost bez explicitních polí (fallback: reason + není storno)', () => {
-        expect(
-            isCancellationPending({
-                is_cancelled: false,
-                cancellation_reason: 'Nemám čas',
-            })
-        ).toBe(true);
+describe('spWorkflowUtils — A-12 storno studentem', () => {
+    const cancelled = { is_cancelled: true, cancellation_requested_at: '2026-10-10T10:00:00Z', cancellation_resolved_at: null };
+
+    test('storno studentem bez vzetí na vědomí je pending', () => {
+        expect(isCancellationPending(cancelled)).toBe(true);
     });
 
-    test('žádná žádost → není pending', () => {
-        expect(isCancellationPending({ is_cancelled: false })).toBe(false);
+    test('vzaté na vědomí, nestornované i storno bez žádosti (kaskáda) není pending', () => {
+        expect(isCancellationPending({ ...cancelled, cancellation_resolved_at: '2026-10-11T10:00:00Z' })).toBe(false);
+        expect(isCancellationPending({ is_cancelled: false, cancellation_requested_at: '2026-10-10T10:00:00Z' })).toBe(false);
         expect(isCancellationPending({ is_cancelled: true, cancellation_reason: 'x' })).toBe(false);
+        expect(isCancellationPending(null)).toBe(false);
     });
 
-    test('explicitní cancellation_requested_at / cancellation_resolved_at mají přednost', () => {
-        expect(
-            isCancellationPending({
-                is_cancelled: false,
-                cancellation_requested_at: '2026-10-10T10:00:00Z',
-                cancellation_resolved_at: null,
-                cancellation_reason: 'důvod',
-            })
-        ).toBe(true);
-        expect(
-            isCancellationPending({
-                is_cancelled: false,
-                cancellation_requested_at: '2026-10-10T10:00:00Z',
-                cancellation_resolved_at: '2026-10-11T10:00:00Z',
-                cancellation_reason: 'důvod',
-            })
-        ).toBe(false);
-    });
-
-    test('stornovaný záznam není pending', () => {
-        expect(
-            isCancellationPending({ is_cancelled: true, cancelled_at: '2026-10-10', cancellation_reason: 'x' })
-        ).toBe(false);
-    });
-
-    test('žádost o storno: jen student-vlastník ve stavu CONTRACTED a ne pending', () => {
+    test('storno: jen student-vlastník ve stavu CONTRACTED a ne už stornované', () => {
         const student = makeUser(['ST']);
         const contracted = {
             student_practice_status: { workflow_status: 'CONTRACTED' },
@@ -60,7 +34,7 @@ describe('spWorkflowUtils — C02-A/C03-A cancellation request', () => {
         expect(canRequestCancellation(contracted, student)).toBe(true);
         expect(
             canRequestCancellation(
-                { ...contracted, cancellation_reason: 'pending' },
+                { ...contracted, is_cancelled: true },
                 student
             )
         ).toBe(false);
@@ -71,7 +45,7 @@ describe('spWorkflowUtils — C02-A/C03-A cancellation request', () => {
         expect(canRequestCancellation({}, student)).toBe(false);
     });
 
-    test('resolver rozhoduje jen garant (VY/VK) nebo admin', () => {
+    test('storno bere na vědomí jen garant (VY/VK) nebo admin', () => {
         expect(canResolveCancellation(makeUser(['VY']))).toBe(true);
         expect(canResolveCancellation(makeUser(['VK']))).toBe(true);
         expect(canResolveCancellation(makeUser(['admin']))).toBe(true);

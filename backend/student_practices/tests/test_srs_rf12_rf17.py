@@ -131,18 +131,14 @@ class ContractAndCancellationRegressionTests(TestCase):
         sp.refresh_from_db()
         self.assertIsNone(sp.cancelled_from_state)
 
-    def test_rejected_request_does_not_capture_state_for_later_cancellation(self):
-        sp = self.create_sp(StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
-        StudentPracticeService.submit_cancellation_request(sp, self.student, "please cancel")
+    def test_student_cancellation_records_original_state_and_acknowledge_keeps_it(self):
+        """A-12: okamžité storno uloží původní stav; vzetí na vědomí ho nemění."""
+        sp = self.create_sp(StudentPracticeWorkflowState.STARTED)
+        sp = StudentPracticeService.submit_cancellation_request(sp, self.student, "please cancel")
+        self.assertTrue(sp.is_cancelled)
+        self.assertEqual(sp.cancelled_from_state, StudentPracticeWorkflowState.STARTED)
+        sp = StudentPracticeService.resolve_cancellation(sp, self.actor)
         sp.refresh_from_db()
-        self.assertIsNone(sp.cancelled_from_state)
-        StudentPracticeService.resolve_cancellation(sp, self.actor, decision="reject")
-        sp.refresh_from_db()
-        self.assertIsNone(sp.cancelled_from_state)
-        sp.workflow_state = StudentPracticeWorkflowState.STARTED
-        sp.save(update_fields=["workflow_state"])
-        StudentPracticeService.submit_cancellation_request(sp, self.student, "please cancel again")
-        sp = StudentPracticeService.resolve_cancellation(sp, self.actor, decision="approve")
         self.assertEqual(sp.cancelled_from_state, StudentPracticeWorkflowState.STARTED)
 
     def test_organization_cannot_approve_foreign_practice_or_write_axis(self):
@@ -159,7 +155,7 @@ class ContractAndCancellationRegressionTests(TestCase):
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
         self.assertFalse(sp.employer_approved)
 
-    def test_owning_organization_transition_does_not_write_employer_axis(self):
+    def test_owning_organization_transition_writes_employer_axis(self):
         self.org.employer_profile = self.employer
         self.org.save(update_fields=["employer_profile"])
         sp = self.create_sp(StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
@@ -169,4 +165,4 @@ class ContractAndCancellationRegressionTests(TestCase):
         StudentPracticeService.transition_student_practice_state(sp, StudentPracticeWorkflowState.AWAITING_CONTRACT, self.org)
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)
-        self.assertFalse(sp.employer_approved)  # A-03: osu zaměstnavatele zapisuje jen confirm-contract
+        self.assertTrue(sp.employer_approved)  # schválení organizací zapisuje vlastní osu (rozhodnutí autora, review 26. 10.)

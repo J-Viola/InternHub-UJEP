@@ -80,35 +80,33 @@ class NightRunWorkflowTests(BL03FixtureMixin, TestCase):
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
         self.assertEqual(second.status, DocumentStatus.PENDING)
 
-    def test_pending_cancellation_freezes_transition_confirm_and_review_but_can_resolve(self):
+    def test_student_cancellation_freezes_transition_confirm_and_review_but_can_be_acknowledged(self):
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         doc = self.make_doc(sp, status=DocumentStatus.PENDING)
         StudentPracticeService.submit_cancellation_request(sp, self.owner_student, "Důvod")
-        with self.assertRaisesRegex(ValueError, "čeká na rozhodnutí"):
+        with self.assertRaisesRegex(ValueError, "stornována"):
             StudentPracticeService.transition_student_practice_state(sp, StudentPracticeWorkflowState.CONTRACTED, self.garant)
         sp.refresh_from_db()
-        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)
-        self.assertEqual(self._confirm(self.garant, sp).status_code, 400)
-        with self.assertRaisesRegex(ValueError, "čeká na rozhodnutí"):
+        self.assertTrue(sp.is_cancelled)
+        self.assertEqual(sp.cancelled_from_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        self.assertIn(self._confirm(self.garant, sp).status_code, (400, 403))
+        with self.assertRaisesRegex(ValueError, "stornována"):
             StudentPracticeService.process_document_review(self.garant, doc.pk, DocumentStatus.APPROVED)
-        sp.refresh_from_db()
         doc.refresh_from_db()
-        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.AWAITING_CONTRACT)
         self.assertEqual(doc.status, DocumentStatus.PENDING)
-        StudentPracticeService.resolve_cancellation(sp, self.garant, decision="reject")
+        StudentPracticeService.resolve_cancellation(sp, self.garant)
         sp.refresh_from_db()
         self.assertIsNotNone(sp.cancellation_resolved_at)
+        self.assertTrue(sp.is_cancelled)
 
-    def test_rejected_cancellation_can_be_requested_again_then_approved(self):
+    def test_cancellation_cannot_be_repeated_after_acknowledgement(self):
         sp = self.make_sp(self.owner_student)
         StudentPracticeService.submit_cancellation_request(sp, self.owner_student, "První důvod")
-        StudentPracticeService.resolve_cancellation(sp, self.garant, decision="reject")
-        StudentPracticeService.submit_cancellation_request(sp, self.owner_student, "Druhý důvod")
+        StudentPracticeService.resolve_cancellation(sp, self.garant)
+        with self.assertRaises(ValueError):
+            StudentPracticeService.submit_cancellation_request(sp, self.owner_student, "Druhý důvod")
         sp.refresh_from_db()
-        self.assertIsNone(sp.cancellation_resolved_at)
-        StudentPracticeService.resolve_cancellation(sp, self.garant, decision="approve")
-        sp.refresh_from_db()
-        self.assertTrue(sp.is_cancelled)
+        self.assertEqual(sp.cancellation_reason, "První důvod")
 
     def test_external_pending_application_is_creator_only(self):
         external_info = ExternalEmployerInfo.objects.create(name="Externí", created_by=self.owner_student)
@@ -135,6 +133,7 @@ class NightRunWorkflowTests(BL03FixtureMixin, TestCase):
 
         full = self.make_sp(self.other_student, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         type(full).objects.filter(pk=full.pk).update(employer_approved=True, school_approved=True)
+        approve_contract_document(full)  # kapacita se kontroluje až po smlouvě
         Practice.objects.filter(pk=self.practice.pk).update(available_positions=1)
         self.make_sp(self.foreign_student, state=StudentPracticeWorkflowState.CONTRACTED)
         response = self._confirm(self.garant, full)
@@ -175,7 +174,7 @@ class NightRunWorkflowTests(BL03FixtureMixin, TestCase):
     def test_audit_descriptions_do_not_include_email_addresses(self):
         sp = self.make_sp(self.owner_student)
         StudentPracticeService.submit_cancellation_request(sp, self.owner_student, "Důvod")
-        StudentPracticeService.resolve_cancellation(sp, self.garant, decision="reject")
+        StudentPracticeService.resolve_cancellation(sp, self.garant)
         logs = ActionLog.objects.filter(object_id=sp.pk)
         self.assertTrue(logs.exists())
         self.assertTrue(all("@" not in log.action_description for log in logs))

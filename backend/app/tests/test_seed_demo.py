@@ -17,6 +17,7 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection
+from django.db.models import Q
 from django.test import TestCase
 
 from department.models import Department
@@ -29,7 +30,7 @@ from student_practices.models import (
     StudentPracticeWorkflowState,
 )
 from subject.models import Subject
-from users.models import ActionLog, EmployerProfile
+from users.models import ActionLog
 
 SEED_ID = "BL08-SEED-v1"
 SPEC_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "demo_seed_spec.json"
@@ -58,7 +59,7 @@ class SeedDemoCommandTests(TestCase):
         # verifikační tabulka ve stdout + verifikace prošla
         self.assertIn("Seed OK", output)
         self.assertIn(SEED_ID, output)
-        self.assertIn("F9: pending žádost o storno", output)
+        self.assertIn("F9: storno studentem", output)
 
         # role účtů — přesně 7, doména .test.local, heslo nastaveno
         users = get_user_model().objects.filter(email__in=DEMO_EMAILS)
@@ -76,7 +77,7 @@ class SeedDemoCommandTests(TestCase):
         from users.models import OrganizationUser
 
         org_user = OrganizationUser.objects.get(email="demo.org@test.local")
-        employer = EmployerProfile.objects.get(pk=org_user.pk)  # profile PK == org pk (BL-02 pattern)
+        employer = org_user.employer_profile  # A-18: vazba přes FK, PK se nevynucuje
         self.assertTrue(employer.company_name.startswith("SYNTHETIC DEMO DATA"))
         self.assertEqual(employer.ico, "00000000")
 
@@ -117,13 +118,13 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(Practice.objects.get(title="DEMO Úvazek C").employment_type, "")
         # F8: nic předseedováno — externí praxe vzniká až v akci 7
         self.assertFalse(Practice.objects.filter(title__icontains="externí").exists())
-        # F9: pending žádost o storno (C02-A) na loňské registraci
+        # F9: storno studentem (A-12) na loňské registraci, vzaté na vědomí
         f9 = StudentPractice.objects.get(practice__title="DEMO Storno")
         self.assertIsNotNone(f9.cancellation_requested_at)
-        self.assertIsNone(f9.cancellation_resolved_at)
-        self.assertFalse(f9.is_cancelled)
+        self.assertIsNotNone(f9.cancellation_resolved_at)
+        self.assertTrue(f9.is_cancelled)
         self.assertEqual(f9.year, date.today().year - 1)
-        self.assertIn("žádost o storno", f9.cancellation_reason)
+        self.assertIn("storno", f9.cancellation_reason)
 
         # BL-10 registrace: 3 klíče (student/rok-current, student2/rok-current, student/rok-minulý)
         self.assertEqual(PracticeRegistration.objects.filter(student__email__in=DEMO_EMAILS).count(), 3)
@@ -170,7 +171,7 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(f4b.workflow_state, st.DOCUMENTS_RESUBMITTED)
         self.assertIsNotNone(f4b.contract_document)
         self.assertEqual(f4b.contract_document.status, DocumentStatus.PENDING)
-        # F5 — CONTRACTED (akt 5: žádost o storno)
+        # F5 — CONTRACTED (akt 5: storno studentem)
         self.assertEqual(StudentPractice.objects.get(practice__title="DEMO Smlouvy 2").workflow_state, st.CONTRACTED)
         # F6 — ENDED bez Evaluation (akt 6: completion gate)
         f6 = StudentPractice.objects.get(practice__title="DEMO Dokončení")
@@ -183,6 +184,19 @@ class SeedDemoCommandTests(TestCase):
         )
         # F8 — žádná externí praxe předseedováno → akt 7 si ji vytvoří sám
         self.assertFalse(Practice.objects.filter(is_external=True).exists())
+
+    def test_contracted_fixtures_have_approved_contract(self):
+        """A-11: seedované CONTRACTED (F1, F5, F9) mají schválenou smlouvu, i po opakovaném seedu."""
+        run_seed("--spec", str(SPEC_PATH))
+        run_seed("--spec", str(SPEC_PATH))
+        contracted = StudentPractice.objects.filter(practice__title__startswith="DEMO").filter(
+            Q(workflow_state=StudentPracticeWorkflowState.CONTRACTED) | Q(cancelled_from_state=StudentPracticeWorkflowState.CONTRACTED)
+        )
+        self.assertGreaterEqual(contracted.count(), 3)
+        for sp in contracted:
+            with self.subTest(sp=sp.pk):
+                self.assertIsNotNone(sp.contract_document)
+                self.assertEqual(sp.contract_document.status, DocumentStatus.APPROVED)
 
     def test_seed_is_idempotent(self):
         def snapshot():

@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from solo.models import SingletonModel
 
 
@@ -54,7 +54,7 @@ class SystemSettings(SingletonModel):
     max_upload_size = models.PositiveIntegerField(
         "Maximální velikost nahrávaného souboru (B)",
         default=10 * MB,
-        # Horní mez odpovídá `client_max_body_size 20M` v .docker/Frontend/nginx.conf — vyšší hodnota by neměla účinek.
+        # Horní mez 20 MB; `client_max_body_size 25M` v .docker/Frontend/nginx.conf nechává rezervu na multipart režii.
         validators=[MinValueValidator(1 * MB), MaxValueValidator(20 * MB)],
         help_text="Bajty; 1 MB až 20 MB (20 MB je limit reverzní proxy nginx).",
     )
@@ -69,4 +69,7 @@ class SystemSettings(SingletonModel):
     def save(self, *args, **kwargs):
         # Validátory musí platit i mimo admin (shell, skripty, fixtures).
         self.full_clean()
-        super().save(*args, **kwargs)
+        # Cache se publikuje až po commitu (django-solo ji jinak plní hned po zápisu → po rollbacku by zůstala neplatná hodnota).
+        self.pk = self.singleton_instance_id
+        super(SingletonModel, self).save(*args, **kwargs)
+        transaction.on_commit(self.set_to_cache)

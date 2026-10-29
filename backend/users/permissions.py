@@ -357,8 +357,8 @@ class CanCancelStudentPractice(permissions.BasePermission):
                     return True
 
         # Student who owns the SP — only up to PRELIMINARY_APPROVED (N10)
-        # + CONTRACTED (BE-014/REQ-010: oprávněný vlastník MUSÍ moci podat
-        # žádost o storno i ze Zasmluvněno; foreign aktéři zůstávají deny).
+        # + CONTRACTED (BE-014/REQ-010: oprávněný vlastník MUSÍ moci
+        # stornovat praxi i ze Zasmluvněno; foreign aktéři zůstávají deny).
         if isinstance(user, StudentUser) and obj.user == user:
             from student_practices.models import StudentPracticeWorkflowState
 

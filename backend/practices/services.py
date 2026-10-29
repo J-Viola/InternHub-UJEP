@@ -156,8 +156,8 @@ class PracticeService:
             if active_count >= practice.available_positions:
                 raise ValueError("CAPACITY_FULL")
 
-        # 3.7/C03-A + BL-10: nevyřešené storno NEBO pending žádost o storno
-        # stejné registrace (student, subject, year — Q2-A) blokuje novou žádost.
+        # 3.7/C03-A + BL-10: storno studentem nevzaté na vědomí NEBO nevyřešené
+        # storno stejné registrace (student, subject, year — Q2-A) blokuje novou žádost.
         from student_practices.services import student_has_blocking_cancellation
 
         if student_has_blocking_cancellation(user, practice):

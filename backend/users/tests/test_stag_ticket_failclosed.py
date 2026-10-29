@@ -43,6 +43,30 @@ class StagTicketFailClosedTests(TestCase):
         client.return_value.get_student_info.assert_not_called()
         self.assertNotIn("evil99", "".join(logs.output))
 
+    def test_regular_save_does_not_resign_corrupted_ticket(self):
+        """Běžné save() načteného uživatele nesmí poškozený ticket „legitimizovat"."""
+        student = self._set_raw_ticket("plaintext-ticket")
+        student.first_name = "Změna"
+        student.save()
+        student = StudentUser.objects.get(pk=self.student.pk)
+        self.assertEqual(student.stag_ticket, "plaintext-ticket")
+        with self.assertRaises(InvalidStagTicketError):
+            student.get_ticket()
+
+    def test_generate_contract_propagates_invalid_ticket(self):
+        """A-10: generate_contract() neplatný ticket nespolkne ani neoznačí fetch za úspěšný."""
+        from student_practices import services as sp_services
+        from student_practices.models import StudentPractice
+
+        student = self._set_raw_ticket("plaintext-ticket")
+        sp = StudentPractice(user=student)
+        sp_services._stag_data_cache.pop("A10", None)
+        with mock.patch("users.services.get_stag_client") as client:
+            with self.assertRaises(InvalidStagTicketError):
+                sp_services.generate_contract(sp)
+        client.return_value.get_student_info.assert_not_called()
+        self.assertNotIn("A10", sp_services._stag_data_cache)
+
     def test_plaintext_ticket_is_rejected(self):
         student = self._set_raw_ticket("plaintext-ticket")
         with mock.patch("users.services.get_stag_client") as client:

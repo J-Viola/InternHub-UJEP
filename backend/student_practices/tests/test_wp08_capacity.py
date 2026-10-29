@@ -95,7 +95,10 @@ class CapacityAllocationTests(TestCase):
             approval_status=ApprovalStatus.PENDING,
             progress_status=ProgressStatus.NOT_STARTED,
             workflow_state=StudentPracticeWorkflowState.AWAITING_CONTRACT,
+            school_approved=True,
+            employer_approved=True,
         )
+        approve_contract_document(sp2)  # kapacita se kontroluje až po osách a smlouvě
 
         with self.assertRaises(ValueError) as cm:
             StudentPracticeService.transition_student_practice_state(
@@ -122,7 +125,9 @@ class CapacityAllocationTests(TestCase):
             approval_status=ApprovalStatus.PENDING,
             progress_status=ProgressStatus.NOT_STARTED,
             workflow_state=StudentPracticeWorkflowState.AWAITING_CONTRACT,
+            school_approved=True,
         )
+        approve_contract_document(sp2)  # osa školy + smlouva hotové → organizace dorazí na kapacitní bránu
         self.client.force_authenticate(user=self.org_user)
         response = self.client.post(f"/api/student-practices/{sp2.student_practice_id}/confirm-contract/")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

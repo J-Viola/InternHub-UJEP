@@ -22,7 +22,17 @@ class StudentPracticeAdmin(admin.ModelAdmin):
     )
     search_fields = ("user__email", "user__last_name", "practice__title")
     list_select_related = ("user", "practice")
-    readonly_fields = ("contract_document", "content_document", "feedback_document")
+    # Stavy a schvalovací osy mění jen služba (brány A-11, audit, notifikace) — admin je nesmí obejít.
+    readonly_fields = (
+        "contract_document",
+        "content_document",
+        "feedback_document",
+        "workflow_state",
+        "school_approved",
+        "employer_approved",
+        "approval_status",
+        "progress_status",
+    )
     date_hierarchy = "application_date"
 
 

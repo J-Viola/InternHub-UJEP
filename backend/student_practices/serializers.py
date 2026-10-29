@@ -216,7 +216,7 @@ class ListStudentPracticeSerializer(serializers.ModelSerializer):
     contract_received_date = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
     contract_overdue = serializers.BooleanField(read_only=True)
-    # Additive (BL-04): pending-vs-rejected storno žádosti (C02-A) pro FE
+    # Additive (BL-04): storno studentem a jeho vzetí na vědomí (A-12) pro FE
     cancellation_requested_at = serializers.DateTimeField(read_only=True, allow_null=True)
     cancellation_resolved_at = serializers.DateTimeField(read_only=True, allow_null=True)
 
@@ -357,7 +357,7 @@ class StudentPracticeCardSerializer(serializers.ModelSerializer):
     image_base64 = serializers.CharField(source="practice.image_base64", read_only=True)
     student_practice_documents = serializers.SerializerMethodField()
     can_approve = serializers.SerializerMethodField()
-    # Additive (BL-04): pending-vs-rejected storno žádosti (C02-A) + externí
+    # Additive (BL-04): storno studentem (A-12) + externí
     # praxe (zdrojový stav confirm-contract T2b) pro FE.
     cancellation_requested_at = serializers.DateTimeField(read_only=True, allow_null=True)
     cancellation_resolved_at = serializers.DateTimeField(read_only=True, allow_null=True)

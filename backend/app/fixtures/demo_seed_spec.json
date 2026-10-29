@@ -27,7 +27,7 @@
     {"id": "F7", "offers": ["DEMO Úvazek A", "DEMO Úvazek B", "DEMO Úvazek C"], "state": "OPEN_FOR_APPLICATIONS", "demo_acts": [8], "employment_types": ["uvazek_0_5", "uvazek_1_0", ""]},
     {"id": "F8", "seed_rows": [], "demo_acts": [7]},
     {"id": "F3", "offer": "DEMO Předsmluvní", "seed_rows": ["demo-student SP AWAITING_CONTRACT"], "demo_acts": [3]},
-    {"id": "F9", "offer": "DEMO Storno", "seed_rows": ["demo-student SP CONTRACTED with pending cancellation, previous year"], "demo_acts": [5]}
+    {"id": "F9", "offer": "DEMO Storno", "seed_rows": ["demo-student SP cancelled by student (acknowledged), previous year"], "demo_acts": [5]}
   ],
   "rollback_checks": {"users": 7, "seed_id_must_equal": "BL08-SEED-v1"}
 }

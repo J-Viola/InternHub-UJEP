@@ -1,56 +1,36 @@
 /**
  * Odvození stavu StudentPractice workflow pro UI (BL-04).
  *
- * C02-A/C03-A (cancellation request) a C19-B/T2c (repair loop) jsou backendové
+ * A-12 (okamžité storno studentem) a C19-B/T2c (repair loop) jsou backendové
  * stavy, které FE potřebuje zobrazit bez zásahu do designu.
  */
 
 /**
- * Je podána nevyřízená žádost o storno (C02-A)?
+ * Je praxe stornovaná studentem a garant storno ještě nevzal na vědomí (A-12)?
  *
- * Preferovaná cesta jsou explicitní pole `cancellation_requested_at` +
- * `cancellation_resolved_at`, která modeluje backend (BL-03). Tyto sloupce
- * zatím žádný serializer nevydává (hlášeno jako backend gap BL-04), proto
- * fallback: `cancellation_reason` vyplněné + `is_cancelled=false` +
- * `cancelled_at` prázdné = žádost o storno podána a ještě nerozhodnuta.
- *
- * Po rozhodnutí „zamítnout“ zůstává `cancellation_reason` zaplněné, dokud
- * backend nevydá `cancellation_resolved_at` — do té doby UI ukazuje pending
- * state konzervativně a server odmítne druhé rozhodnutí čistým 400.
+ * Storno studentem je okamžité a nevratné (`is_cancelled=true`); příznak
+ * `cancellation_requested_at` ho odlišuje od stornování nabídky/garantem a
+ * `cancellation_resolved_at` značí „vzato na vědomí“. Dokud chybí, backend
+ * blokuje studentovi podání nové žádosti.
  */
 export function isCancellationPending(entity) {
-    if (!entity) return false;
-    if (entity.is_cancelled) return false;
-
-    if (
-        Object.prototype.hasOwnProperty.call(entity, "cancellation_requested_at") &&
-        entity.cancellation_requested_at !== null &&
-        entity.cancellation_requested_at !== undefined
-    ) {
-        return (
-            entity.cancellation_resolved_at === null ||
-            entity.cancellation_resolved_at === undefined
-        );
-    }
-
-    // Fallback bez explicitních polí (viz hlášený backend gap)
-    return Boolean(entity.cancellation_reason) && !entity.cancelled_at;
+    if (!entity?.is_cancelled) return false;
+    return Boolean(entity.cancellation_requested_at) && !entity.cancellation_resolved_at;
 }
 
 /**
- * Studen může požádat o storno jen z aktivních stavů, které backend
- * připouští pro vlastníka (APPLIED / PRELIMINARY_APPROVED / CONTRACTED).
- * APPLIED/PRELIMINARY mají vlastní akci „stáhnout přihlášku“ (withdraw),
- * proto UI nabízí žádost o storno až ze Zasmluvněno (CONTRACTED).
+ * Student může praxi stornovat jen ze stavu CONTRACTED; z APPLIED /
+ * PRELIMINARY_APPROVED má vlastní akci „stáhnout přihlášku“ (withdraw).
+ * Storno je nevratné (RF-16) a okamžité (BDD UC05 AC-02).
  */
 export function canRequestCancellation(entity, user) {
     if (!entity?.student_practice_status || !user?.isStudent?.()) return false;
-    if (isCancellationPending(entity)) return false;
+    if (entity.is_cancelled) return false;
     return entity.student_practice_status.workflow_status === "CONTRACTED";
 }
 
 /**
- * Kdo smí rozhodnout o žádosti o storno (T2d): garant katedry (VY/VK) nebo
+ * Kdo smí vzít storno na vědomí (A-12): garant katedry (VY/VK) nebo
  * admin. Odpovídá backendovému IsGarantForStudentPractice + superuser;
  * objektovou kontrolu katedry vždy provádí server.
  */

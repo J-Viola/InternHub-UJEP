@@ -5,8 +5,8 @@ Pokryté položky zadání:
 2. Kapacita na VŠECH cestách do CONTRACTED (BE-005) — T2a počítací množina,
    stornované/axis-pending se NEPOČÍTAJÍ, guard na generic/review/confirm/apply cestách.
 3. Completion gate (BE-004, BL-10 Q3) — ENDED→COMPLETED jen se schválenými hodnotícími podklady.
-4. Cancellation request flow (C02-A/C03-A/T2d + BE-014) — žádost místo storna, blok
-   stejné registrace, rozhodnutí resolvery, nevratnost v okamžiku rozhodnutí.
+4. Cancellation request flow (A-12, C03-A + BE-014) — okamžité storno studentem, blok
+   nové žádosti do vzetí na vědomí garantem, nevratnost.
 5. Opravná smyčka (C19-B/T2c) — DOCUMENTS_RESUBMITTED review-pending, review
    rozhoduje, terminální zamítnutí jen admin + důvod, BE-015 deny na nových hranách.
 6. Auto-close jen manuálně (C20-A) — kapacitní auto-close guardován, TIME cutoff odděleně.
@@ -18,6 +18,7 @@ Vše syntetické; běh izolovanými test settings (audit verification wrapper).
 import threading
 from datetime import date, timedelta
 from io import StringIO
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
@@ -414,6 +415,10 @@ class Bl03CapacityMatrixTests(BL03FixtureMixin, TestCase):
         """Confirm-contract cesta volí kapacitní guard (select_for_update)."""
         practice = self.make_practice(title="BL03 cap-confirm", available_positions=5)
         sp = self.make_sp(self.owner_student, practice=practice, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
+        # kapacita se kontroluje až po osách a schválené smlouvě (osa → dokument → kapacita)
+        StudentPractice.objects.filter(pk=sp.pk).update(school_approved=True)
+        sp.refresh_from_db()
+        approve_contract_document(sp)
 
         with patch(
             "student_practices.services._check_contract_capacity",
@@ -594,11 +599,13 @@ class Bl03CompletionGateTests(BL03FixtureMixin, TestCase):
 
 
 # ===================================================================
-# 4) C02-A / C03-A / T2d / BE-014 — cancellation request flow
+# 4) A-12 / C03-A / BE-014 — storno studentem
 # ===================================================================
 
 
 class Bl03CancellationRequestTests(BL03FixtureMixin, TestCase):
+    """A-12: okamžité storno studentem (BDD UC05 AC-01…05, UAT TC-05-xx, AC-LC-09)."""
+
     def _submit_request(self, sp, actor, reason="BL03 synthetic request"):
         self.client.force_authenticate(user=actor)
         return self.client.post(
@@ -607,135 +614,132 @@ class Bl03CancellationRequestTests(BL03FixtureMixin, TestCase):
             format="json",
         )
 
-    def _resolve(self, sp, resolver, decision=None):
+    def _resolve(self, sp, resolver):
         self.client.force_authenticate(user=resolver)
-        payload = {"decision": decision} if decision is not None else {}
-        return self.client.post(
-            f"/api/student-practices/{sp.student_practice_id}/resolve-cancellation/",
-            payload,
-            format="json",
-        )
+        return self.client.post(f"/api/student-practices/{sp.student_practice_id}/resolve-cancellation/", {}, format="json")
 
-    def test_owner_student_can_submit_request_from_contracted(self):
-        """BE-014/REQ-010: oprávněný vlastník MUSÍ podat žádost z CONTRACTED;
-        C02-A: žádné okamžité storno — stav zůstává."""
+    def test_owner_student_cancels_immediately_from_contracted(self):
+        """AC-02: praxe je po odeslání okamžitě Stornováno, důvod i původní stav se uloží."""
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
-        before = self.sp_snapshot(sp)
 
         response = self._submit_request(sp, self.owner_student)
 
         self.assertEqual(response.status_code, 200)
         sp.refresh_from_db()
-        # C02-A: stav/approval NEZMĚNĚNY (žádost, ne storno)
-        self.assertEqual(self.sp_snapshot(sp), before)
-        self.assertFalse(sp.is_cancelled)
-        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.CONTRACTED)
-        # žádost evidence: důvod + čas + bez rozhodnutí
+        self.assertTrue(sp.is_cancelled)
+        self.assertEqual(sp.cancelled_from_state, StudentPracticeWorkflowState.CONTRACTED)
         self.assertEqual(sp.cancellation_reason, "BL03 synthetic request")
         self.assertIsNotNone(sp.cancellation_requested_at)
         self.assertIsNone(sp.cancellation_resolved_at)
+
+    def test_cancellation_frees_capacity(self):
+        sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
+        self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
+        occupied = StudentPractice.objects.filter(
+            practice=sp.practice, is_cancelled=False, workflow_state=StudentPracticeWorkflowState.CONTRACTED
+        ).count()
+        self.assertEqual(occupied, 0)
+
+    def test_reason_is_required(self):
+        """AC-01."""
+        sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
+        response = self._submit_request(sp, self.owner_student, reason="   ")
+        self.assertEqual(response.status_code, 400)
+        sp.refresh_from_db()
+        self.assertFalse(sp.is_cancelled)
 
     def test_foreign_student_cancel_denied(self):
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
         before = self.sp_snapshot(sp)
 
-        self.client.force_authenticate(user=self.foreign_student)
-        response = self.client.post(
-            f"/api/student-practices/{sp.student_practice_id}/cancel/",
-            {"reason": "foreign attempt"},
-            format="json",
-        )
+        response = self._submit_request(sp, self.foreign_student, reason="foreign attempt")
 
         self.assertEqual(response.status_code, 403)
         sp.refresh_from_db()
         self.assertEqual(self.sp_snapshot(sp), before)
         self.assertIsNone(sp.cancellation_requested_at)
 
-    def test_duplicate_request_rejected(self):
+    def test_cancellation_is_irreversible_and_not_repeatable(self):
+        """RF-16: druhé storno téže praxe se odmítne a stav se nemění."""
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
         self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
 
-        response = self._submit_request(sp, self.owner_student, reason="druhá žádost")
+        response = self._submit_request(sp, self.owner_student, reason="druhé storno")
 
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("již byla podána", str(response.data))
+        self.assertIn(response.status_code, (400, 403))
+        sp.refresh_from_db()
+        self.assertEqual(sp.cancellation_reason, "BL03 synthetic request")
 
-    def test_pending_request_blocks_same_registration_only(self):
-        """C03-A: blok stejné registrace (student+subject); jiný předmět volný."""
+    def test_completed_and_rejected_cannot_be_cancelled(self):
+        for state in (StudentPracticeWorkflowState.COMPLETED, StudentPracticeWorkflowState.REJECTED):
+            with self.subTest(state=state.name):
+                StudentPractice.objects.filter(user=self.owner_student).delete()
+                sp = self.make_sp(self.owner_student, state=state)
+                with self.assertRaises(ValueError):
+                    StudentPracticeService.submit_cancellation_request(sp, self.owner_student, "pozdě")
+                sp.refresh_from_db()
+                self.assertFalse(sp.is_cancelled)
+                self.assertIsNone(sp.cancellation_requested_at)
+
+    def test_garant_is_notified_and_audit_logged(self):
+        """AC-03 a AC-05: notifikace garantovi (po commitu) a audit s datem a důvodem."""
+        sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
+        with mock.patch("student_practices.services.NotificationService.notify_garant_cancellation") as notify:
+            with self.captureOnCommitCallbacks(execute=True):
+                self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
+        notify.assert_called_once()
+        log = ActionLog.objects.filter(object_type="StudentPractice", object_id=sp.student_practice_id).latest("pk")
+        self.assertIn("BL03 synthetic request", log.action_description)
+        self.assertIn("CONTRACTED", log.action_description)
+
+    def test_cancellation_blocks_any_new_application_until_resolved(self):
+        """AC-04: blokace trvá, dokud garant storno nevezme na vědomí; platí napříč předměty."""
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
         self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
 
         self.client.force_authenticate(user=self.owner_student)
-        # stejný předmět (jiná praxe) → BLOK
-        blocked = self.client.post("/api/practices/student/apply/", {"practice": self.practice_same_subject.practice_id}, format="json")
-        self.assertEqual(blocked.status_code, 400)
-        self.assertIn("Nelze podat novou žádost, dokud není storno vyřešeno", str(blocked.data))
-        # reapply též blokován
+        for practice in (self.practice_same_subject, self.practice_other_subject):
+            blocked = self.client.post("/api/practices/student/apply/", {"practice": practice.practice_id}, format="json")
+            self.assertEqual(blocked.status_code, 400)
+            self.assertIn("Nelze podat novou žádost, dokud není storno vyřešeno", str(blocked.data))
         reapply = self.client.post(f"/api/student-practices/reapply/{self.practice_same_subject.practice_id}/", {}, format="json")
         self.assertEqual(reapply.status_code, 400)
-        self.assertIn("Nelze podat novou žádost, dokud není storno vyřešeno", str(reapply.data))
-        # jiný předmět (jiná registrace) → povoleno
-        allowed = self.client.post("/api/practices/student/apply/", {"practice": self.practice_other_subject.practice_id}, format="json")
-        self.assertEqual(allowed.status_code, 201)
 
-    def test_resolve_requires_decision_for_pending_request(self):
-        sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
-        self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
+        self.assertEqual(self._resolve(sp, self.garant).status_code, 200)
 
-        response = self._resolve(sp, self.garant)  # bez decision
-
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("decision", response.data.get("detail", ""))
-        sp.refresh_from_db()
-        self.assertIsNone(sp.cancellation_resolved_at)
-        self.assertFalse(sp.is_cancelled)
-
-    def test_resolve_reject_keeps_active_and_unblocks(self):
-        sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
-        self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
-
-        response = self._resolve(sp, self.garant, decision="reject")
-
-        self.assertEqual(response.status_code, 200)
-        sp.refresh_from_db()
-        self.assertFalse(sp.is_cancelled)
-        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.CONTRACTED)
-        self.assertIsNotNone(sp.cancellation_resolved_at)
-        # blokaci konečně odstraněn (C03: konec bloku = zaznamenané rozhodnutí)
         self.client.force_authenticate(user=self.owner_student)
         allowed = self.client.post("/api/practices/student/apply/", {"practice": self.practice_same_subject.practice_id}, format="json")
         self.assertEqual(allowed.status_code, 201)
 
-    def test_resolve_approve_applies_storno_irreversibly(self):
-        """T2d: rozhodnutí = okamžik nevratnosti (C02-A)."""
+    def test_resolve_only_acknowledges_and_keeps_cancellation(self):
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
         self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
 
-        response = self._resolve(sp, self.garant, decision="approve")
+        response = self._resolve(sp, self.garant)
 
         self.assertEqual(response.status_code, 200)
         sp.refresh_from_db()
-        self.assertTrue(sp.is_cancelled)  # storno aplikováno až teď
-        self.assertIsNone(sp.workflow_state)
-        self.assertIsNotNone(sp.cancelled_at)
-        self.assertEqual(sp.cancelled_by_id, self.garant.pk)
-        self.assertEqual(sp.cancellation_reason, "BL03 synthetic request")
+        self.assertTrue(sp.is_cancelled)
+        self.assertEqual(sp.cancelled_by_id, self.owner_student.pk)
         self.assertIsNotNone(sp.cancellation_resolved_at)
-        # nevratnost: druhé rozhodnutí odmítnuto
-        second = self._resolve(sp, self.garant, decision="reject")
+        second = self._resolve(sp, self.garant)
         self.assertEqual(second.status_code, 400)
         self.assertIn("již vyřešeno", str(second.data))
 
-    def test_foreign_resolver_denied_while_pending(self):
+    def test_resolve_requires_cancelled_practice(self):
+        sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
+        response = self._resolve(sp, self.garant)
+        self.assertEqual(response.status_code, 400)
+
+    def test_foreign_resolver_denied(self):
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.CONTRACTED)
         self.assertEqual(self._submit_request(sp, self.owner_student).status_code, 200)
 
-        response = self._resolve(sp, self.foreign_professor, decision="approve")
+        response = self._resolve(sp, self.foreign_professor)
 
         self.assertEqual(response.status_code, 403)
         sp.refresh_from_db()
         self.assertIsNone(sp.cancellation_resolved_at)
-        self.assertFalse(sp.is_cancelled)
 
 
 # ===================================================================
@@ -1116,7 +1120,7 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
 
 
 # ===================================================================
-# Finding 3 — C03-A: pending žádost blokuje i přijetí pozvánky
+# Finding 3 — C03-A: nevzaté storno blokuje i přijetí pozvánky
 # ===================================================================
 
 
@@ -1132,10 +1136,9 @@ class Bl03InvitationC03Tests(BL03FixtureMixin, TestCase):
         )
 
     def test_invitation_accept_blocked_by_pending_cancellation(self):
-        """F3: pending žádost o storno stejné registrace (student+subject)
-        blokuje přijetí pozvánky — nulová mutace; po rozhodnutí resolvery
-        přijetí projde."""
-        # pending žádost na JINÉ praxi téhož předmětu (registrace ≈ subject)
+        """F3: storno studentem stejné registrace (student+subject) blokuje
+        přijetí pozvánky — nulová mutace; po vzetí na vědomí garantem přijetí projde."""
+        # storno na JINÉ praxi téhož předmětu (registrace ≈ subject)
         other_sp = self.make_sp(self.owner_student, practice=self.practice, state=StudentPracticeWorkflowState.CONTRACTED)
         StudentPracticeService.submit_cancellation_request(other_sp, self.owner_student, "BL03 pending cancel")
 
@@ -1159,11 +1162,11 @@ class Bl03InvitationC03Tests(BL03FixtureMixin, TestCase):
         self.assertEqual(ActionLog.objects.count(), log_before)
         self.assertEqual(Notification.objects.count(), notif_before)
 
-        # --- rozhodnutí resolvery (reject) odblokuje ---
+        # --- vzetí storna na vědomí garantem odblokuje ---
         self.client.force_authenticate(user=self.garant)
         resolved = self.client.post(
             f"/api/student-practices/{other_sp.student_practice_id}/resolve-cancellation/",
-            {"decision": "reject"},
+            {},
             format="json",
         )
         self.assertEqual(resolved.status_code, 200)

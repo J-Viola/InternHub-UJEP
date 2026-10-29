@@ -4,17 +4,6 @@ Do ``CONTRACTED`` se nejde bez schváleného smluvního dokumentu (žádný over
 testy proto před přechodem dokument schválí tímto helperem.
 """
 
-import io
-
-from docx import Document
-
-
-def make_valid_docx_bytes() -> bytes:
-    """Platné DOCX (obsahuje ``word/``), které projde ``validate_file_content``."""
-    buf = io.BytesIO()
-    Document().save(buf)
-    return buf.getvalue()
-
 
 def approve_contract_document(sp):
     """Zajistí u přihlášky schválený smluvní dokument (vytvoří záznam, pokud chybí)."""

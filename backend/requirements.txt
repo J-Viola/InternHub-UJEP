@@ -1,4 +1,4 @@
-Django>=5.0,<6.0
+Django>=6.0,<6.1
 djangorestframework
 pytest-django
 django-cors-headers
@@ -13,7 +13,6 @@ djangorestframework-simplejwt
 django-polymorphic
 django-model-utils
 drf-spectacular
-django-verify-email
 django-enumfield
 django-seed
 holidays
@@ -29,5 +28,4 @@ gunicorn>=23,<24
 django-solo>=2.5,<3
 celery
 pytest-bdd
-django-celery-beat
 sentry-sdk[django]>=2.0,<3.0

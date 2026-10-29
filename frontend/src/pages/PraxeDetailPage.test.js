@@ -263,7 +263,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
     expect(mockGetCard).toHaveBeenCalledTimes(1);
   });
 
-    test('C02-A: student požádá o storno z CONTRACTED (důvod povinný)', async () => {
+    test('A-12: student stornuje praxi z CONTRACTED (důvod povinný)', async () => {
         mockGetCard.mockResolvedValue(
             makeEntity({
                 student_practice_status: {
@@ -290,7 +290,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         expect(mockRequestCancellation).toHaveBeenCalledTimes(1);
     });
 
-    test('C02-A: bez důvodu se žádost o storno neodešle', async () => {
+    test('A-12: bez důvodu se storno neodešle', async () => {
         mockGetCard.mockResolvedValue(
             makeEntity({
                 student_practice_status: {
@@ -312,15 +312,19 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         );
     });
 
-    test('C02-A: pending žádost — student vidí stav bez akce, garant vidí rozhodnutí', async () => {
-        mockGetCard.mockResolvedValue(
-            makeEntity({
-                cancellation_reason: 'Z rodinných důvodů',
-                is_cancelled: false,
-            })
-        );
+    const cancelledByStudent = (extra = {}) =>
+        makeEntity({
+            cancellation_reason: 'Z rodinných důvodů',
+            is_cancelled: true,
+            cancellation_requested_at: '2026-10-10T10:00:00Z',
+            cancellation_resolved_at: null,
+            ...extra,
+        });
 
-        // student: banner stavu, žádná nová žádost ani rozhodovací tlačítka
+    test('A-12: storno studentem — student vidí stav bez akce, garant může vzít na vědomí', async () => {
+        mockGetCard.mockResolvedValue(cancelledByStudent());
+
+        // student: banner stavu, žádná nová akce
         useUser.mockReturnValue({ user: makeUser('ST') });
         const { unmount } = renderPage();
         await waitFor(() => {
@@ -329,11 +333,10 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
             ).toBeInTheDocument();
         });
         expect(screen.queryByText(tr('practice_detail.cancel_request_button'))).not.toBeInTheDocument();
-        expect(screen.queryByText(tr('practice_detail.cancellation_approve'))).not.toBeInTheDocument();
-        expect(screen.queryByText(tr('practice_detail.cancellation_reject'))).not.toBeInTheDocument();
+        expect(screen.queryByText(tr('practice_detail.cancellation_acknowledge'))).not.toBeInTheDocument();
         unmount();
 
-        // garant VK: vidí rozhodnutí a schvaluje
+        // garant VK: vezme storno na vědomí (bez rozhodnutí a bez důvodu)
         useUser.mockReturnValue({ user: makeUser('VK') });
         renderPage();
         await waitFor(() => {
@@ -341,36 +344,30 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
                 screen.getByText(tr('practice_detail.cancellation_pending_resolver'))
             ).toBeInTheDocument();
         });
-        fireEvent.click(screen.getByText(tr('practice_detail.cancellation_approve')));
-        fireEvent.change(screen.getByLabelText(tr('practice_detail.reject_reason_title')), {
-            target: { value: 'Schváleno po dohodě s účastníkem' },
-        });
-        fireEvent.click(screen.getByTestId('popup-submit'));
+        fireEvent.click(screen.getByText(tr('practice_detail.cancellation_acknowledge')));
         await waitFor(() => {
-            expect(mockResolveCancellation).toHaveBeenCalledWith('5', 'approve', 'Schváleno po dohodě s účastníkem');
+            expect(mockResolveCancellation).toHaveBeenCalledWith('5');
         });
     });
 
-    test('C02-A: organizace ani student nemohou rozhodovat o stornu', async () => {
-        mockGetCard.mockResolvedValue(
-            makeEntity({ cancellation_reason: 'důvod', is_cancelled: false })
-        );
-        useUser.mockReturnValue({ user: makeUser('OWNER') });
-        const { unmount } = renderPage();
+    test('A-12: vzaté na vědomí storno už banner ani tlačítko nezobrazuje', async () => {
+        mockGetCard.mockResolvedValue(cancelledByStudent({ cancellation_resolved_at: '2026-10-11T10:00:00Z' }));
+        useUser.mockReturnValue({ user: makeUser('VK') });
+        renderPage();
         await waitFor(() => {
             expect(mockGetCard).toHaveBeenCalled();
         });
-        expect(screen.queryByText(tr('practice_detail.cancellation_approve'))).not.toBeInTheDocument();
-        unmount();
+        expect(screen.queryByText(tr('practice_detail.cancellation_acknowledge'))).not.toBeInTheDocument();
+    });
 
-        useUser.mockReturnValue({ user: makeUser('ST') });
+    test('A-12: organizace nemůže vzít storno na vědomí', async () => {
+        mockGetCard.mockResolvedValue(cancelledByStudent());
+        useUser.mockReturnValue({ user: makeUser('OWNER') });
         renderPage();
         await waitFor(() => {
-            expect(
-                screen.getByText(tr('practice_detail.cancellation_pending_student'))
-            ).toBeInTheDocument();
+            expect(mockGetCard).toHaveBeenCalled();
         });
-        expect(screen.queryByText(tr('practice_detail.cancellation_approve'))).not.toBeInTheDocument();
+        expect(screen.queryByText(tr('practice_detail.cancellation_acknowledge'))).not.toBeInTheDocument();
     });
 
     test('T2b: potvrzení smlouvy jen ve AWAITING_CONTRACT, ne ve CONTRACTED', async () => {

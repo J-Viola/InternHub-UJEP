@@ -65,7 +65,7 @@ ORG_COMPANY = "SYNTHETIC DEMO DATA — Demo Firma Demo s.r.o."
 ORG_ICO = "00000000"  # syntetické; checksum neodpovídá reálnému IČO
 DEMO_SUBJECT_CODE = "DEMO-PRAXE"
 DEMO_DEPARTMENT_CODES = ["DEMO-KI", "DEMO-MA"]
-DEMO_CANCELLATION_REASON = "SYNTHETIC DEMO: žádost o storno (pending, minulý rok — C02-A)."
+DEMO_CANCELLATION_REASON = "SYNTHETIC DEMO: storno studentem (minulý rok, vzato na vědomí — A-12)."
 
 # Nabídky: (titulek, kapacita, employment_type) — F1..F9 + F4b + F7 triáda.
 OFFER_SPECS = [
@@ -79,7 +79,7 @@ OFFER_SPECS = [
     ("DEMO Úvazek A", 5, "uvazek_0_5"),  # F7
     ("DEMO Úvazek B", 5, "uvazek_1_0"),  # F7
     ("DEMO Úvazek C", 5, ""),  # F7
-    ("DEMO Storno", 5, ""),  # F9 (additive: pending cancellation)
+    ("DEMO Storno", 5, ""),  # F9 (additive: storno studentem)
 ]
 OFFER_TITLES = [t for t, _cap, _emp in OFFER_SPECS]
 
@@ -121,6 +121,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("seed_demo: demo řádky smazány (--reset)."))
 
         with transaction.atomic():
+            self._preflight(spec)
             ctx = self._seed(spec, password)
 
         self._verify_and_report(spec, ctx)
@@ -131,6 +132,48 @@ class Command(BaseCommand):
             self.stdout.write("Demo heslo nastaveno přes --password/env (nevytištěno, jen hash v DB).")
 
     # ------------------------------------------------------------------
+    @staticmethod
+    def _preflight(spec):
+        """A-18: před jakýmkoli zápisem odmítne kolizi s cizími (ne-seedovými) daty.
+
+        ``get_or_create`` podle e-mailu / kódu předmětu / titulku by jinak převzalo cizí
+        řádek a seed by ho přepsal (správce předmětu) nebo mu připojil demo vazby.
+        """
+        problems = []
+
+        emails = [a["email"] for a in spec.get("accounts", [])]
+        for user in get_user_model().objects.filter(email__in=emails):
+            if not (user.username or "").startswith(SEED_USERNAME_PREFIX):
+                problems.append(f"účet {user.email} už existuje a není seedový")
+
+        subject = Subject.objects.filter(subject_code=DEMO_SUBJECT_CODE).select_related("subject_manager").first()
+        if subject is not None:
+            manager = subject.subject_manager
+            seed_owned = (manager is not None and (manager.username or "").startswith(SEED_USERNAME_PREFIX)) or (
+                manager is None
+                and not subject.practices.exists()
+                and not subject.practice_registrations.exists()
+                and not subject.user_subjects.exists()
+            )
+            if not seed_owned:
+                problems.append(f"předmět {DEMO_SUBJECT_CODE} už existuje a patří jinému správci / má data")
+
+        org_user = OrganizationUser.objects.filter(username__startswith=SEED_USERNAME_PREFIX, employer_profile__isnull=False).first()
+        seed_employer_id = org_user.employer_profile_id if org_user else None
+        foreign_titles = (
+            Practice.objects.filter(title__in=OFFER_TITLES).exclude(employer_id=seed_employer_id).values_list("title", flat=True)
+            if seed_employer_id
+            else Practice.objects.filter(title__in=OFFER_TITLES).values_list("title", flat=True)
+        )
+        for title in sorted(set(foreign_titles)):
+            problems.append(f"nabídka „{title}“ už existuje u jiného zaměstnavatele")
+
+        if problems:
+            raise CommandError(
+                "seed_demo: kolize s existujícími daty, nic nebylo zapsáno — " + "; ".join(problems) + ". "
+                "Přejmenujte / odstraňte cizí řádky, nebo použijte --reset na disposable DB."
+            )
+
     @staticmethod
     def _password_user(user, password):
         user.set_password(password)
@@ -176,12 +219,11 @@ class Command(BaseCommand):
                     "organization_role": OrganizationRole.OWNER,
                 },
             )
-            profile, _profile_created = EmployerProfile.objects.get_or_create(
-                employer_id=user.pk,
-                defaults={"company_name": ORG_COMPANY, "ico": ORG_ICO, "approval_status": ApprovalStatus.APPROVED},
-            )
-            # BL-02 pattern: profile PK = org pk + FK na straně OrganizationUser
-            if getattr(user, "employer_profile_id", None) != profile.pk:
+            # A-18: profil se hledá přes FK na straně OrganizationUser; PK se nevynucuje
+            # (dřívější ``employer_id=user.pk`` mohlo převzít cizí profil se shodným PK).
+            profile = user.employer_profile
+            if profile is None:
+                profile = EmployerProfile.objects.create(company_name=ORG_COMPANY, ico=ORG_ICO, approval_status=ApprovalStatus.APPROVED)
                 user.employer_profile = profile
                 user.save()
         else:  # ST
@@ -229,19 +271,21 @@ class Command(BaseCommand):
         approval_status=ApprovalStatus.PENDING,
         contract_received_date=None,
         cancellation_requested_at=None,
+        cancellation_resolved_at=None,
         cancellation_reason=None,
+        cancelled_from_state=None,
         contract_doc=False,
+        contract_status=DocumentStatus.PENDING,
     ):
         registration = ensure_practice_registration(user, practice.subject_id, year)
         sp, created = StudentPractice.objects.get_or_create(
             user=user,
             practice=practice,
-            is_cancelled=False,
+            is_cancelled=cancellation_requested_at is not None,
             defaults={
                 "application_date": OFFER_START,
-                "workflow_state": state,
-                "approval_status": approval_status,
-                "progress_status": ProgressStatus.NOT_STARTED,
+                "workflow_state": None if cancellation_requested_at else state,
+                "approval_status": ApprovalStatus.REJECTED if cancellation_requested_at else approval_status,
                 "hours_completed": 0,
                 "year": year,
                 "start_date": OFFER_START,
@@ -250,6 +294,10 @@ class Command(BaseCommand):
                 "employer_approved": employer_approved,
                 "contract_received_date": contract_received_date,
                 "cancellation_requested_at": cancellation_requested_at,
+                "cancellation_resolved_at": cancellation_resolved_at,
+                "cancelled_from_state": cancelled_from_state,
+                "cancelled_at": cancellation_requested_at,
+                "progress_status": ProgressStatus.CANCELLED if cancellation_requested_at else ProgressStatus.NOT_STARTED,
                 # cancellation_reason je NOT NULL bez defaultu → "" místo None
                 "cancellation_reason": cancellation_reason or "",
                 "registration": registration,
@@ -259,9 +307,13 @@ class Command(BaseCommand):
             sp.registration = registration
             sp.save(update_fields=["registration"])
         if contract_doc and sp.contract_document_id is None:
-            doc = UploadedDocument.objects.create(document_type=DocumentType.CONTRACT, status=DocumentStatus.PENDING)
+            doc = UploadedDocument.objects.create(document_type=DocumentType.CONTRACT, status=contract_status)
             sp.contract_document = doc
             sp.save(update_fields=["contract_document"])
+        elif contract_doc and contract_status == DocumentStatus.APPROVED and sp.contract_document.status != DocumentStatus.APPROVED:
+            # A-11: CONTRACTED fixture musí mít schválenou smlouvu i při opakovaném seedu
+            sp.contract_document.status = DocumentStatus.APPROVED
+            sp.contract_document.save(update_fields=["status"])
         return sp
 
     def _seed(self, spec, password):
@@ -286,7 +338,7 @@ class Command(BaseCommand):
         # subject_manager dle spec (flag demo-garant)
         Subject.objects.filter(pk=subject.pk).update(subject_manager=ctx["users"]["demo-garant"])
 
-        employer = EmployerProfile.objects.get(employer_id=ctx["users"]["demo-org"].pk)
+        employer = ctx["users"]["demo-org"].employer_profile
         year = date.today().year
 
         # 4) nabídky (F1–F7, F9)
@@ -303,6 +355,8 @@ class Command(BaseCommand):
             school_approved=True,
             employer_approved=True,
             approval_status=ApprovalStatus.APPROVED,
+            contract_doc=True,
+            contract_status=DocumentStatus.APPROVED,
             contract_received_date=CONTRACT_FIXED,
         )
         ctx["sps"]["F2"] = self._get_sp(
@@ -342,6 +396,8 @@ class Command(BaseCommand):
             school_approved=True,
             employer_approved=True,
             approval_status=ApprovalStatus.APPROVED,
+            contract_doc=True,
+            contract_status=DocumentStatus.APPROVED,
             contract_received_date=CONTRACT_FIXED,
         )
         ctx["sps"]["F6"] = self._get_sp(
@@ -350,8 +406,8 @@ class Command(BaseCommand):
             state=st.ENDED,
             year=year,
         )
-        # F9 (additive): pending žádost o storno na LOŇSKÉ registraci —
-        # C03 identita (student, subject, aktuální rok) neblokuje demo akce.
+        # F9 (additive): storno studentem (A-12, okamžité) na LOŇSKÉ registraci, už vzaté
+        # garantem na vědomí — nevyřízené storno by blokovalo další žádosti demo studenta.
         ctx["sps"]["F9"] = self._get_sp(
             user=ctx["users"]["demo-student"],
             practice=ctx["practices"]["DEMO Storno"],
@@ -360,8 +416,12 @@ class Command(BaseCommand):
             school_approved=True,
             employer_approved=True,
             approval_status=ApprovalStatus.APPROVED,
+            contract_doc=True,
+            contract_status=DocumentStatus.APPROVED,
             contract_received_date=CONTRACT_FIXED,
             cancellation_requested_at=CANCEL_REQUEST_FIXED,
+            cancellation_resolved_at=CANCEL_REQUEST_FIXED,
+            cancelled_from_state=st.CONTRACTED,
             cancellation_reason=DEMO_CANCELLATION_REASON,
         )
 
@@ -446,6 +506,15 @@ class Command(BaseCommand):
             sps["F4"].workflow_state == st.AWAITING_DOCUMENTS and f4_doc is not None and f4_doc.status == DocumentStatus.PENDING,
         )
         check("F5: demo-student2 CONTRACTED", sps["F5"].workflow_state == st.CONTRACTED)
+        check(
+            "A-11: každé CONTRACTED fixture má schválený smluvní dokument (F1, F5, F9)",
+            all(
+                (sps[k].workflow_state == st.CONTRACTED or sps[k].cancelled_from_state == st.CONTRACTED)
+                and sps[k].contract_document is not None
+                and sps[k].contract_document.status == DocumentStatus.APPROVED
+                for k in ("F1", "F5", "F9")
+            ),
+        )
         f4b = sps["F4b"]
         check(
             "F4b: DOCUMENTS_RESUBMITTED (review-pending oprava) + CONTRACT doklad PENDING",
@@ -467,10 +536,10 @@ class Command(BaseCommand):
         check("F7: employment_type uvazek_0_5/uvazek_1_0/empty", f7_types == ["uvazek_0_5", "uvazek_1_0", ""])
         f9 = sps["F9"]
         check(
-            "F9: pending žádost o storno (C02-A, nevyřízená)",
+            "F9: storno studentem (A-12), vzaté na vědomí",
             f9.cancellation_requested_at is not None
-            and f9.cancellation_resolved_at is None
-            and not f9.is_cancelled
+            and f9.cancellation_resolved_at is not None
+            and f9.is_cancelled
             and f9.year == date.today().year - 1,
         )
 

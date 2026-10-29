@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             name="cancellation_requested_at",
             field=models.DateTimeField(
                 blank=True,
-                help_text="C02-A: čas podání žádosti o storno — žádost je pending, dokud rozhodnutí neurčí jinak",
+                help_text="A-12: čas stornování praxe studentem; storno blokuje novou žádost, dokud ho garant nevezme na vědomí",
                 null=True,
             ),
         ),

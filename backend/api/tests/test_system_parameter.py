@@ -64,7 +64,8 @@ class SystemSettingsTests(TestCase):
     def test_change_is_visible_through_shared_cache(self):
         s = SystemSettings.get_solo()
         s.practice_credit_alert_days = 30
-        s.save()
+        with self.captureOnCommitCallbacks(execute=True):  # cache se publikuje až po commitu
+            s.save()
         self.assertEqual(SystemSettings.get_solo().practice_credit_alert_days, 30)
 
     @patch("student_practices.management.commands.notify_practice_deadlines.Command._notify_start_urgent")
@@ -73,7 +74,8 @@ class SystemSettingsTests(TestCase):
         s = SystemSettings.get_solo()
         s.practice_urgency_days = [10, 5]
         s.practice_credit_alert_days = 30
-        s.save()
+        with self.captureOnCommitCallbacks(execute=True):
+            s.save()
         from student_practices.management.commands.notify_practice_deadlines import (
             Command,
         )

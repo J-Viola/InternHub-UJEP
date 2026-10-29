@@ -27,7 +27,7 @@ from student_practices.models import (
 )
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
-from users.models import ApprovalStatus, OrganizationUser, ProfessorUser, StagRoleEnum, StudentUser
+from users.models import ApprovalStatus, InvalidStagTicketError, OrganizationUser, ProfessorUser, StagRoleEnum, StudentUser
 from users.services import fetch_student_data_from_stag
 
 logger = logging.getLogger(__name__)
@@ -139,7 +139,7 @@ def get_transitions_matrix(sp: StudentPractice) -> dict:
 
 def _assert_no_pending_cancellation(sp):
     if sp.cancellation_requested_at is not None and sp.cancellation_resolved_at is None:
-        raise ValueError("Tato přihláška je zmrazena: žádost o storno čeká na rozhodnutí.")
+        raise ValueError("Tato přihláška je stornována studentem; storno čeká na vzetí na vědomí garantem.")
 
 
 def _check_contract_capacity(practice: Practice) -> None:
@@ -241,28 +241,30 @@ def ensure_practice_registration(student, subject_id, year) -> "PracticeRegistra
 
 def student_has_blocking_cancellation(user, practice) -> bool:
     """
-    C03-A + BL-10: blok nové žádosti, dokud pro stejnou REGISTRACI
-    (student, subject, year — identita dle Q2-A) neexistuje nevyřízené
-    storno (legacy okamžité) ANEBO nevyřízená žádost o storno (C02-A).
-
-    Plná identita: pendingřádek napojený na registraci stejného
-    (student, subject, year) blokuje; registrace jiného roku je jiná
-    registrace → neblokuje. Legacy fallback: řádky BEZ registration FK
-    (před-backfillem / triáž) blokují předmětově (rok-agnosticky) — fail-closed.
+    C03-A + BL-10 + BDD UC05 AC-04: blok nové žádosti, dokud garant nevzal
+    na vědomí storno studentem (A-12) — to blokuje studenta CELKOVĚ
+    (jakýkoli předmět a rok). Nevyřízené legacy okamžité storno (kaskáda
+    zrušení nabídky) blokuje jen stejnou REGISTRACI (student, subject, year —
+    identita dle Q2-A); řádky BEZ registration FK (před-backfillem / triáž)
+    blokují předmětově (rok-agnosticky) — fail-closed.
 
     JEDNO volání .filter() (žádný řetězený .filter) — bílé krabice testy
     (practices/tests/test_services.py) mockují přesnou sekvenci volání.
     """
     from django.db.models import Q
 
+    same_registration = Q(
+        registration__isnull=False, registration__subject_id=practice.subject_id, registration__year=date.today().year
+    ) | Q(registration__isnull=True, practice__subject_id=practice.subject_id)
     return StudentPractice.objects.filter(
         Q(user=user)
         & Q(cancellation_resolved_at__isnull=True)
         & (
-            Q(registration__isnull=False, registration__subject_id=practice.subject_id, registration__year=date.today().year)
-            | Q(registration__isnull=True, practice__subject_id=practice.subject_id)
+            # BDD UC05 AC-04: storno studentem nevzaté na vědomí blokuje jakoukoli novou žádost studenta
+            Q(cancellation_requested_at__isnull=False)
+            # legacy okamžité storno (kaskáda zrušení nabídky) blokuje jen stejnou registraci
+            | (Q(is_cancelled=True) & same_registration)
         )
-        & (Q(is_cancelled=True) | Q(cancellation_requested_at__isnull=False))
     ).exists()
 
 
@@ -616,6 +618,13 @@ class StudentPracticeService:
             )
 
         elif (
+            sp.workflow_state == StudentPracticeWorkflowState.PRELIMINARY_APPROVED
+            and target_state == StudentPracticeWorkflowState.AWAITING_CONTRACT
+        ):
+            # Schválení organizací (FE používá tento přechod): zapíše se jen VLASTNÍ osa aktéra.
+            record_own_approval_axis(sp, actor)
+
+        elif (
             sp.workflow_state in (StudentPracticeWorkflowState.APPLIED, StudentPracticeWorkflowState.PRELIMINARY_APPROVED)
             and target_state == StudentPracticeWorkflowState.REJECTED
         ):
@@ -647,13 +656,7 @@ class StudentPracticeService:
         elif (
             sp.workflow_state == StudentPracticeWorkflowState.AWAITING_CONTRACT and target_state == StudentPracticeWorkflowState.CONTRACTED
         ):
-            # kapacitní kontrola při alokaci — plná kapacita blokuje
-            # přechod do CONTRACTED. select_for_update na praxi proti race condition.
-            practice = sp.practice
-            if practice is not None:
-                practice = Practice.objects.select_for_update().get(pk=practice.pk)
-                sp.practice = practice
-                _check_contract_capacity(practice)
+            # Kapacita se kontroluje až v jediné bráně níže (osa → dokument → kapacita).
             # T1/C06-A: žádné forcování obou os — viz jediná brána níže.
             sp.approval_status = ApprovalStatus.APPROVED
 
@@ -710,6 +713,8 @@ class StudentPracticeService:
             if sp.practice_id:
                 locked_practice = Practice.objects.select_for_update().get(pk=sp.practice_id)
                 _check_contract_capacity(locked_practice)
+            # Kompatibilní approval_status po úspěšném vstupu do CONTRACTED (všechny cesty).
+            sp.approval_status = ApprovalStatus.APPROVED
 
         # --- Apply new workflow state ---
         old_state = sp.workflow_state
@@ -996,7 +1001,7 @@ class StudentPracticeService:
                 if active_count >= practice.available_positions:
                     raise ValueError(StudentPracticeMessages.CAPACITY_FULL)
 
-            # C03-A (finding 3): pending žádost/storno stejné registrace
+            # C03-A (finding 3): nevyřešené storno stejné registrace
             # (student+subject) blokuje přijetí pozvánky — stejná kanonická
             # hláška jako apply/reapply; žádná mutace při odmítnutí.
             if student_has_blocking_cancellation(user, practice):
@@ -1069,12 +1074,13 @@ class StudentPracticeService:
     @transaction.atomic
     def submit_cancellation_request(sp, actor, reason: str):
         """
-        C02-A: student podává ŽÁDOST o storno — žádné okamžité storno.
+        A-12 (BDD UC05 AC-02): student žádostí praxi OKAMŽITĚ stornuje.
 
-        Praxe zůstává v aktuálním stavu (workflow_state, approval_status i
-        is_cancelled beze změny). Důvod + ``cancellation_requested_at`` označí
-        pending žádost; rozhodne resolver přes ``resolve_cancellation`` —
-        okamžik rozhodnutí je okamžikem nevratnosti (C02-A/T2d).
+        Jedna transakce se zámkem řádku: ``cancel_student_practice`` nastaví ``is_cancelled``,
+        ``cancelled_from_state`` a ``cancellation_reason`` (kapacita se tím uvolní), zapíše audit
+        a po commitu notifikuje garanta. ``cancellation_requested_at`` zároveň označí storno
+        z podnětu studenta, které blokuje novou žádost, dokud ho garant nevezme na vědomí
+        (``resolve_cancellation``). Storno je nevratné (RF-16).
         """
         sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
 
@@ -1082,44 +1088,13 @@ class StudentPracticeService:
             raise ValueError(StudentPracticeMessages.ALREADY_CANCELLED)
         if sp.workflow_state == StudentPracticeWorkflowState.COMPLETED:
             raise ValueError("Storno nelze požadovat u již dokončené praxe (COMPLETED).")
-        if not reason or not reason.strip():
-            raise ValueError(StudentPracticeMessages.CANCELLATION_REASON_REQUIRED)
-        if sp.cancellation_requested_at is not None and sp.cancellation_resolved_at is None:
-            raise ValueError("Žádost o storno již byla podána a čeká na rozhodnutí.")
-        if sp.cancellation_resolved_at is not None:
-            sp.cancellation_resolved_at = None
+        if sp.workflow_state == StudentPracticeWorkflowState.REJECTED:
+            raise ValueError("Storno nelze požadovat u zamítnuté přihlášky.")
 
-        old_state_name = sp.workflow_state.name if sp.workflow_state is not None else "None"
-        sp.cancelled_from_state = None
-        sp.cancellation_reason = reason.strip()
-        sp.cancellation_requested_at = timezone.now()
-        sp.save(update_fields=["cancellation_reason", "cancellation_requested_at", "cancellation_resolved_at", "cancelled_from_state"])
-
-        ActionLogService.log(
-            user=actor,
-            action_type=ActionLogType.STATUS_CHANGE,
-            object_type="StudentPractice",
-            object_id=sp.student_practice_id,
-            description=(f"Žádost o storno přihlášky ID {sp.student_practice_id} (stav zůstává {old_state_name})"),
-        )
-
-        # in-app rozhodovatelům (garanti katedry — resolve-cancellation)
-        recipients = NotificationService.resolve_garant_recipients(sp)
-        student_name = sp.user.full_name if sp.user else ""
-        practice_title = sp.practice.title if sp.practice else "N/A"
-        for recipient in recipients:
-            NotificationService.create_notification(
-                recipient=recipient,
-                verb="CANCELLATION_REQUESTED",
-                message=(
-                    f"Student {student_name} požádal o storno přihlášky na praxi "
-                    f"'{practice_title}' — čeká na rozhodnutí. Důvod: {reason.strip()}"
-                ),
-                actor=actor,
-                target=sp,
-                notification_type=NotificationType.WARNING,
-                send_email=False,
-            )
+        sp = StudentPracticeService.cancel_student_practice(sp=sp, actor=actor, reason=reason)
+        sp.cancellation_requested_at = sp.cancelled_at
+        sp.cancellation_resolved_at = None
+        sp.save(update_fields=["cancellation_requested_at", "cancellation_resolved_at"])
         return sp
 
     @staticmethod
@@ -1167,7 +1142,10 @@ class StudentPracticeService:
             action_type=ActionLogType.STORNO,
             object_type="StudentPractice",
             object_id=sp.student_practice_id,
-            description=(f"Stornovana prihlaska ID {sp.student_practice_id} " f"(původní stav: {old_state_name})"),
+            description=(
+                f"Stornovana prihlaska ID {sp.student_practice_id} (původní stav: {old_state_name}); "
+                f"datum: {sp.cancelled_at.date().isoformat()}; důvod: {sp.cancellation_reason}"
+            ),
         )
 
         # --- Notify student ---
@@ -1254,84 +1232,29 @@ class StudentPracticeService:
 
     @staticmethod
     @transaction.atomic
-    def resolve_cancellation(sp, actor, decision: str | None = None):
+    def resolve_cancellation(sp, actor):
         """
-        Rozhodnutí o stornu / žádosti o storno (T2d, C02-A, C03-A).
-
-        - Legacy větev (``is_cancelled=True``, ještě nevyřešeno — např. kaskáda
-          zrušení praxe): jen ``cancellation_resolved_at`` — odblokování,
-          chování se nemění.
-        - C02-A pending žádost (``cancellation_requested_at`` + nevyřešeno):
-          rozhodnutí je OKAMŽIK NEVRATNOSTI. ``decision="approve"`` → storno
-          se provede nyní (nevratné) + resolved; ``decision="reject"`` →
-          žádost zamítnuta, praxe zůstává aktivní + resolved; bez/neplatný
-          decision → 400 (povinné rozhodnutí).
+        „Vzít na vědomí“ storno (A-12): nastaví ``cancellation_resolved_at`` a tím
+        uvolní blokaci nové žádosti studenta. Storno samo zůstává (nevratné, RF-16);
+        rozhodnutí o jeho zamítnutí neexistuje.
         """
         sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
 
-        # --- Legacy: již stornované (okamžité) — jen odblokovat ---
-        if sp.is_cancelled:
-            if sp.cancellation_resolved_at is not None:
-                raise ValueError("Storno je již vyřešeno.")
-            sp.cancellation_resolved_at = timezone.now()
-            sp.save(update_fields=["cancellation_resolved_at"])
-            ActionLogService.log(
-                user=actor,
-                action_type=ActionLogType.STATUS_CHANGE,
-                object_type="StudentPractice",
-                object_id=sp.student_practice_id,
-                description=(f"Vyřešení storna přihlášky ID {sp.student_practice_id} " f"aktérem #{actor.pk}"),
-            )
-            return sp
+        if not sp.is_cancelled:
+            raise ValueError("Přihláška není stornovaná — není co řešit.")
+        if sp.cancellation_resolved_at is not None:
+            raise ValueError("Storno je již vyřešeno.")
 
-        # --- C02-A: pending žádost o storno ---
-        pending_request = sp.cancellation_requested_at is not None and sp.cancellation_resolved_at is None
-        if pending_request and sp.cancellation_reason:
-            if decision not in ("approve", "reject"):
-                raise ValueError("Pro rozhodnutí o žádosti o storno je povinné pole decision=approve|reject.")
-
-            if decision == "approve":
-                # Okamžik nevratnosti (C02-A): platí se storno.
-                sp = StudentPracticeService.cancel_student_practice(sp=sp, actor=actor, reason=sp.cancellation_reason)
-                sp.cancellation_resolved_at = timezone.now()
-                sp.save(update_fields=["cancellation_resolved_at"])
-                ActionLogService.log(
-                    user=actor,
-                    action_type=ActionLogType.STATUS_CHANGE,
-                    object_type="StudentPractice",
-                    object_id=sp.student_practice_id,
-                    description=(
-                        f"Schválení žádosti o storno přihlášky ID {sp.student_practice_id} " f"aktérem #{actor.pk} — storno provedeno"
-                    ),
-                )
-                return sp
-
-            # decision == "reject" — žádost zamítnuta, praxe zůstává aktivní
-            sp.cancellation_resolved_at = timezone.now()
-            sp.cancelled_from_state = None
-            sp.save(update_fields=["cancellation_resolved_at", "cancelled_from_state"])
-            ActionLogService.log(
-                user=actor,
-                action_type=ActionLogType.STATUS_CHANGE,
-                object_type="StudentPractice",
-                object_id=sp.student_practice_id,
-                description=(
-                    f"Zamítnutí žádosti o storno přihlášky ID {sp.student_practice_id} " f"aktérem #{actor.pk} — praxe zůstává aktivní"
-                ),
-            )
-            if sp.user:
-                NotificationService.create_notification(
-                    recipient=sp.user,
-                    verb="CANCELLATION_REQUEST_REJECTED",
-                    message=(f"Vaše žádost o storno přihlášky na praxi '{sp.practice.title if sp.practice else 'N/A'}' byla zamítnuta."),
-                    actor=actor,
-                    target=sp,
-                    notification_type=NotificationType.INFO,
-                    send_email=False,
-                )
-            return sp
-
-        raise ValueError("Přihláška není stornovaná — není co řešit.")
+        sp.cancellation_resolved_at = timezone.now()
+        sp.save(update_fields=["cancellation_resolved_at"])
+        ActionLogService.log(
+            user=actor,
+            action_type=ActionLogType.STATUS_CHANGE,
+            object_type="StudentPractice",
+            object_id=sp.student_practice_id,
+            description=f"Garant vzal na vědomí storno přihlášky ID {sp.student_practice_id} aktérem #{actor.pk}",
+        )
+        return sp
 
     @staticmethod
     @transaction.atomic
@@ -1354,7 +1277,7 @@ class StudentPracticeService:
         if practice.workflow_state is not None and practice.workflow_state != PracticeWorkflowState.OPEN_FOR_APPLICATIONS:
             raise ValueError(StudentPracticeMessages.APPLICATIONS_CLOSED)
 
-        # nevyřešené storno NEBO pending žádost o storno blokuje novou žádost
+        # storno studentem nevzaté na vědomí NEBO nevyřešené storno blokuje novou žádost
         # pro stejnou registraci (C03-A; shodná kontrola jako v
         # practices/services.py apply_student_practice).
         if student_has_blocking_cancellation(student, practice):
@@ -1773,10 +1696,11 @@ def generate_contract(sp: StudentPractice) -> io.BytesIO:
     if cache_key and cache_key not in _stag_data_cache:
         try:
             fetch_student_data_from_stag(student)
+        except InvalidStagTicketError:
+            raise  # A-10: neplatný podpis ticketu → nutné nové přihlášení, nejde o „nekritickou" chybu
         except Exception:
             pass  # Non-critical — use whatever data we have
-        if cache_key:
-            _stag_data_cache[cache_key] = True
+        _stag_data_cache[cache_key] = True
 
     student_name = _get_student_display_name(student)
     student_birth_date = _format_date(student.date_of_birth)

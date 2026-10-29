@@ -1,4 +1,4 @@
-ARG PY_VERSION=3.11
+ARG PY_VERSION=3.13
 FROM python:${PY_VERSION}-slim
 
 WORKDIR /app/backend
@@ -10,10 +10,27 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
-COPY backend/requirements.txt .
+COPY backend/requirements.txt backend/constraints.txt ./
+
+# A-27: supercronic (cron pro kontejnery) s pinovanou verzí a ověřeným SHA-256
+ARG TARGETARCH=amd64
+ARG SUPERCRONIC_VERSION=v0.2.51
+ARG SUPERCRONIC_SHA256_AMD64=cc232108374e8e2b537045f2d5eaa1229f619db314c3ba6a14d38b35dc0aa123
+ARG SUPERCRONIC_SHA256_ARM64=4ae22576a78223d8ccdf5f3b3660a5cbb5288416bf0ca96afc4a36d195932b94
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+    && case "$TARGETARCH" in \
+        amd64) SHA="$SUPERCRONIC_SHA256_AMD64" ;; \
+        arm64) SHA="$SUPERCRONIC_SHA256_ARM64" ;; \
+        *) echo "Nepodporovaná architektura: $TARGETARCH" >&2; exit 1 ;; \
+    esac \
+    && curl -fsSL -o /usr/local/bin/supercronic \
+        "https://github.com/aptible/supercronic/releases/download/${SUPERCRONIC_VERSION}/supercronic-linux-${TARGETARCH}" \
+    && echo "${SHA}  /usr/local/bin/supercronic" | sha256sum -c - \
+    && chmod +x /usr/local/bin/supercronic \
+    && apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 # Copy application code
 COPY backend/ .

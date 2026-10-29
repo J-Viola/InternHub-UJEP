@@ -57,6 +57,7 @@ export const useStudentPracticeAPI = () => {
         "APPLIED", "PRELIMINARY_APPROVED", "REJECTED", "CONTRACTED", "STARTED", "ENDED",
         "COMPLETED", "AWAITING_CONTRACT", "AWAITING_DOCUMENTS", "DOCUMENTS_REJECTED",
         "AWAITING_CONTENT_APPROVAL", "CONTENT_REJECTED", "CONTENT_APPROVED", "DOCUMENTS_RESUBMITTED",
+        "CANCELLED", // A-12: stornovaná přihláška nesmí skončit jako "Neznámý"
     ]);
 
     // action: "approve" | "reject" | "resubmit"
@@ -205,9 +206,9 @@ export const useStudentPracticeAPI = () => {
         }
     };
 
-    // POST /api/student-practices/<id>/cancel/ — C02-A: student podává
-    // ŽÁDOST o storno (stav se nemění), rozhodne garant/admin přes
-    // resolve-cancellation. Non-student aktéři dělají legacy okamžité storno.
+    // POST /api/student-practices/<id>/cancel/ — A-12: student praxi stornuje
+    // okamžitě; garant/admin storno bere na vědomí přes resolve-cancellation.
+    // Non-student aktéři dělají okamžité storno bez blokace studenta.
     const requestCancellation = async (studentPracticeId, reason) => {
         try {
             const response = await api.post(`/student-practices/${studentPracticeId}/cancel/`, {
@@ -215,23 +216,22 @@ export const useStudentPracticeAPI = () => {
             });
             return response.data;
         } catch (error) {
-            console.error('Chyba při podávání žádosti o storno:', error);
+            console.error('Chyba při stornování praxe:', error);
             throw error;
         }
     };
 
-    // POST /api/student-practices/<id>/resolve-cancellation/ — T2d:
-    // decision: "approve" (nevratné storno) | "reject" (žádost zamítnuta,
-    // praxe zůstává aktivní). Povinné pro pending žádost o storno.
-    const resolveCancellation = async (studentPracticeId, decision, reason = "") => {
+    // POST /api/student-practices/<id>/resolve-cancellation/ — A-12:
+    // garant bere storno studenta na vědomí (storno se nemění, student se odblokuje).
+    const resolveCancellation = async (studentPracticeId) => {
         try {
             const response = await api.post(
                 `/student-practices/${studentPracticeId}/resolve-cancellation/`,
-                { decision, reason }
+                {}
             );
             return response.data;
         } catch (error) {
-            console.error('Chyba při vyřizování žádosti o storno:', error);
+            console.error('Chyba při vzetí storna na vědomí:', error);
             throw error;
         }
     };

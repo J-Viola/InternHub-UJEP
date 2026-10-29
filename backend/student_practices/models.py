@@ -173,16 +173,20 @@ class UploadedDocument(models.Model):
         if isinstance(user, ProfessorUser):
             subject = sp.practice.subject
             # Check if professor is assigned to the subject
-            if subject.user_subjects.filter(user=user, role=UserSubjectType.Professor).exists():
+            if subject.user_subjects.filter(user=user, role=UserSubjectType.Professor, is_active=True).exists():
                 return True
             # Check if professor is head of department
             if user.department_role == DepartmentRole.HEAD and user.department_id == subject.department_id:
+                return True
+            # Garant praxe své katedry (stejné pravidlo jako u CanCancelPractice)
+            if user.is_garant_praxe and user.department_id == subject.department_id:
                 return True
 
         # 3. Organization access
         if isinstance(user, OrganizationUser):
             # Check if user belongs to the employer organization of the practice
-            return sp.practice.employer_id == user.employer_profile_id
+            # None == None (externí praxe × organizace bez firmy) nesmí oprávnit
+            return user.employer_profile_id is not None and sp.practice.employer_id == user.employer_profile_id
 
         return False
 
@@ -396,7 +400,7 @@ class StudentPractice(CancellationMixin, models.Model):
     cancellation_requested_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="C02-A: čas podání žádosti o storno — žádost je pending, dokud rozhodnutí neurčí jinak",
+        help_text="A-12: čas stornování praxe studentem; storno blokuje novou žádost, dokud ho garant nevezme na vědomí",
     )
     year = models.IntegerField(blank=True, null=True)
     # BL-10 (Schema Option A): registrace předmětu (student, subject, year).

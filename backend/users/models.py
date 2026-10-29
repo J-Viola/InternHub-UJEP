@@ -229,13 +229,21 @@ class StagUser(User):
             return ""
         return self._unsign_ticket(self.stag_ticket)
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        # A-10: hodnotu načtenou z DB nikdy znovu nepodepisovat (poškozený ticket by se „legitimizoval").
+        instance._loaded_stag_ticket = instance.__dict__.get("stag_ticket")
+        return instance
+
     def save(self, *args, **kwargs):
-        """Podepíše stag_ticket před uložením, pokud ještě není podepsaný."""
-        if self.stag_ticket:
-            # Skip if the value is already encrypted (re-saves from DB loads)
+        """Podepíše NOVĚ nastavený stag_ticket před uložením; beze změny načtenou hodnotu nechá být."""
+        if self.stag_ticket and self.stag_ticket != getattr(self, "_loaded_stag_ticket", None):
+            # Skip if the value is already signed
             if not self._is_ticket_encrypted(self.stag_ticket):
                 self.stag_ticket = self._sign_ticket(self.stag_ticket)
         super().save(*args, **kwargs)
+        self._loaded_stag_ticket = self.__dict__.get("stag_ticket")
 
     # --- static helpers (no side effects) ----------------------------------
 

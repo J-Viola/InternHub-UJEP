@@ -97,13 +97,16 @@ def _employer_has_access(user, student) -> bool:
 
 
 def _professor_has_access(user, student) -> bool:
+    # Jen aktivní vazby obou stran (synchronizace STAG odebrané vazby deaktivuje, nemaže).
     if student.user_subjects.filter(
+        is_active=True,
         subject__user_subjects__user=user,
         subject__user_subjects__role=UserSubjectType.Professor,
+        subject__user_subjects__is_active=True,
     ).exists():
         return True
-    if user.department_role == DepartmentRole.HEAD:
-        return student.user_subjects.filter(subject__department=user.department).exists()
+    if user.department_role == DepartmentRole.HEAD or user.is_garant_praxe:
+        return student.user_subjects.filter(is_active=True, subject__department=user.department).exists()
     return False
 
 
@@ -116,6 +119,18 @@ def user_can_see_student_private_file(user, student) -> bool:
     return bool(isinstance(user, ProfessorUser) and _professor_has_access(user, student))
 
 
+def _decide_for_students(user, students) -> StorageAccess:
+    """Rozhodnutí pro soubor patřící studentům (jméno s ``storage/`` prefixem i bez).
+
+    Kolidují-li obě varianty jména u různých studentů, nelze určit, který fyzický soubor se vydá —
+    přístup se povolí jen tehdy, smí-li uživatel vidět VŠECHNY dotčené studenty.
+    """
+    students = list(students)
+    if not students:
+        return StorageAccess.NOT_FOUND
+    return StorageAccess.ALLOWED if all(user_can_see_student_private_file(user, st) for st in students) else StorageAccess.DENIED
+
+
 def check_storage_access(user, rel_path: str) -> StorageAccess:
     """Rozhodne o přístupu uživatele k souboru ``rel_path`` (relativně ke ``STORAGE_ROOT``)."""
     if not user or not getattr(user, "is_authenticated", False):
@@ -126,10 +141,7 @@ def check_storage_access(user, rel_path: str) -> StorageAccess:
     names = _db_names(canonical)
 
     if canonical.startswith("documents/cvs/"):
-        student = StudentUser.objects.filter(cv_file__in=names).first()
-        if student is None:
-            return StorageAccess.NOT_FOUND
-        return StorageAccess.ALLOWED if user_can_see_student_private_file(user, student) else StorageAccess.DENIED
+        return _decide_for_students(user, StudentUser.objects.filter(cv_file__in=names))
 
     if canonical.startswith("documents/"):
         doc = UploadedDocument.objects.filter(document=canonical).first()
@@ -138,10 +150,7 @@ def check_storage_access(user, rel_path: str) -> StorageAccess:
         return StorageAccess.ALLOWED if doc.user_has_permission(user) else StorageAccess.DENIED
 
     if canonical.startswith("images/profiles/"):
-        student = StudentUser.objects.filter(profile_picture__in=names).first()
-        if student is None:
-            return StorageAccess.NOT_FOUND
-        return StorageAccess.ALLOWED if user_can_see_student_private_file(user, student) else StorageAccess.DENIED
+        return _decide_for_students(user, StudentUser.objects.filter(profile_picture__in=names))
 
     if canonical.startswith("images/logos/"):
         return StorageAccess.ALLOWED
