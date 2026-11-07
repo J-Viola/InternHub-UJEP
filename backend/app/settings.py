@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
+    "drf_spectacular_sidecar",
     "corsheaders",
     "csp",
 ]
@@ -353,6 +354,9 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # Swagger UI se servíruje ze statiky aplikace; CDN by blokovala CSP (script-src 'self').
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
 }
 
 # Celery / Redis configuration

@@ -740,9 +740,9 @@ class StudentPracticeService:
             object_type="StudentPractice",
             object_id=sp.student_practice_id,
             description=(
-                f"Zmena stavu prihlasky ID {sp.student_practice_id}: "
-                f"{old_state.name if old_state else 'None'} -> {target_state.name} "
-                f"({reason or 'bez duvodu'})"
+                f"Změna stavu přihlášky ID {sp.student_practice_id}: "
+                f"{old_state.name if old_state is not None else 'vytvoření'} -> {target_state.name} "
+                f"({reason or 'bez důvodu'})"
             ),
         )
 

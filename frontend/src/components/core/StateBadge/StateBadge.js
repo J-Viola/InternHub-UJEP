@@ -63,6 +63,22 @@ export function getStateLabelKey(status) {
 }
 
 /**
+ * Převede číselný workflow_state NABÍDKY (Practice) na název stavu.
+ * Číselná mapa getStateLabelKey odpovídá stavům přihlášky, proto se čísla nabídky
+ * musí před předáním do StateBadge přeložit.
+ */
+const PRACTICE_STATE_NAMES = [
+  "PENDING_CONTENT_APPROVAL",
+  "CONTENT_APPROVED",
+  "CONTENT_REJECTED",
+  "OPEN_FOR_APPLICATIONS",
+  "CLOSED_FOR_APPLICATIONS",
+];
+export function practiceStateName(state) {
+  return typeof state === "number" ? PRACTICE_STATE_NAMES[state] ?? state : state;
+}
+
+/**
  * Maps status to Button variant (color).
  */
 export function getStateVariant(status) {

@@ -83,17 +83,17 @@ class ExportFormulaInjectionTests(TestCase):
         rows = list(ExportService._export_rows(StudentPractice.objects.all()))
         by_id = {row[0]: row for row in rows}
         headers = [
-            "ID prihlasky",
+            "ID přihlášky",
             "Student",
             "Email studenta",
             "Praxe",
             "Organizace",
-            "Obor / Predmet",
+            "Obor / Předmět",
             "Stav workflow",
-            "Datum prihlasky",
+            "Datum přihlášky",
             "Od",
             "Do",
-            "Dokoncene hodiny",
+            "Dokončené hodiny",
             "Garant",
         ]
         first = by_id[self.sp.student_practice_id]
@@ -102,8 +102,8 @@ class ExportFormulaInjectionTests(TestCase):
         self.assertTrue(values["Email studenta"].startswith("'\t"))
         self.assertTrue(values["Praxe"].startswith("'+"))
         self.assertTrue(values["Organizace"].startswith("'-"))
-        self.assertTrue(values["Obor / Predmet"].startswith("'@"))
+        self.assertTrue(values["Obor / Předmět"].startswith("'@"))
         self.assertEqual(_escape_formula_cell("\rDanger"), "'\rDanger")
         self.assertEqual(values["Student"].endswith("Normal"), True)
-        self.assertEqual(values["ID prihlasky"], self.sp.student_practice_id)
-        self.assertEqual(values["Dokoncene hodiny"], 0)
+        self.assertEqual(values["ID přihlášky"], self.sp.student_practice_id)
+        self.assertEqual(values["Dokončené hodiny"], 0)

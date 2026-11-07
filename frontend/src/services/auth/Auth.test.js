@@ -171,4 +171,24 @@ describe('AuthProvider - concurrent 401 race', () => {
         await expect(responseInterceptors.rejected(error)).rejects.toBe(error);
         expect(mockApiClient.post).not.toHaveBeenCalled();
     });
+
+    test('počáteční refresh pod StrictMode proběhne právě jednou (F-8)', async () => {
+        // StrictMode spouští efekt dvakrát; rotující refresh cookie by druhému
+        // souběžnému požadavku vrátilo 401, proto se musí sdílet jeden požadavek.
+        mockApiClient.post.mockResolvedValue({ data: { access: 'tok', user: null } });
+
+        render(
+            <React.StrictMode>
+                <MemoryRouter>
+                    <AuthProvider>
+                        <div>Children</div>
+                    </AuthProvider>
+                </MemoryRouter>
+            </React.StrictMode>
+        );
+
+        await waitFor(() => expect(setAccessToken).toHaveBeenCalledWith('tok'));
+        const refreshCalls = mockApiClient.post.mock.calls.filter(([url]) => url === '/users/token/refresh/');
+        expect(refreshCalls).toHaveLength(1);
+    });
 });

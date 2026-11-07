@@ -68,6 +68,8 @@ module.exports = {
         '^@api(.*)$': '<rootDir>/src/api$1',
         '^@dummy(.*)$': '<rootDir>/src/api/_data_/dummy$1',
         '^@docs(.*)$': '<rootDir>/src/api/_data_/docs$1',
+        // Importy ve tvaru "src/..." (např. PraxePage, UpravitNabidku) — webpack je řeší přes baseUrl.
+        '^src/(.*)$': '<rootDir>/src/$1',
       };
       // Přidáme transformIgnorePatterns pro date-fns a react-datepicker
       jestConfig.transformIgnorePatterns = [

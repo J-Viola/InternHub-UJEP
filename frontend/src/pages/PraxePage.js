@@ -3,7 +3,7 @@ import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
-import StateBadge from "@core/StateBadge";
+import StateBadge, { practiceStateName } from "@core/StateBadge";
 import { Image } from "@components/core/Image";
 import { useNabidkaAPI } from "src/api/nabidka/nabidkaAPI";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
@@ -17,7 +17,9 @@ import ContainerForEntity from "@core/Container/ContainerForEntity";
 
 // Stavy, ve kterých smí organizace nabídku upravovat.
 // Backend 403 zůstává enforcement; zde jen FE blokuje UI.
-const EDITABLE_OFFER_STATES = ["PENDING_CONTENT_APPROVAL", "CONTENT_REJECTED"];
+// API vrací workflow_state nabídky jako číslo (PracticeWorkflowState: 0 = PENDING_CONTENT_APPROVAL,
+// 2 = CONTENT_REJECTED); řetězcové názvy ponecháváme pro případ serializace jménem.
+const EDITABLE_OFFER_STATES = [0, 2, "PENDING_CONTENT_APPROVAL", "CONTENT_REJECTED"];
 
 function ApplicationCard({ entity }) {
     const navigate = useNavigate();
@@ -27,7 +29,9 @@ function ApplicationCard({ entity }) {
         <ContainerForEntity
             variant={"white"}
             property="p-4 border border-black rounded-[10px] shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => navigate(`/nabidka/${entity.practice_id}`)}
+            onClick={() => navigate(
+                entity.student_practice_id ? `/karta-praxe/${entity.student_practice_id}` : `/nabidka/${entity.practice_id}`
+            )}
         >
             <Container property="flex items-center gap-4">
                 <Container property="w-12 h-12 shrink-0">
@@ -223,7 +227,7 @@ export default function PraxePage() {
                                                 <Paragraph property={"text-sm text-gray-500 mb-1"}>
                                                     {t('common.status')}
                                                 </Paragraph>
-                                                <StateBadge status={entity.workflow_state || entity.approval_status} />
+                                                <StateBadge status={practiceStateName(entity.workflow_state ?? entity.approval_status)} />
                                             </Container>
                                             <Container property={"min-w-[150px]"}>
                                                 <Paragraph property={"text-sm text-gray-500 mb-1"}>

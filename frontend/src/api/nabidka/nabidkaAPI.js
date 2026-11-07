@@ -42,6 +42,17 @@ export const useNabidkaAPI = () => {
         }
     }, [api]);
 
+    // Detail vlastní nabídky pro editaci — katalogový endpoint skrývá nezveřejněné nabídky (404).
+    const getEmployerNabidkaById = useCallback(async (id) => {
+        try {
+            const response = await api.get(`/practices/employer/${id}/`)
+            return response && response.data ? response.data : null
+        } catch (error) {
+            console.error("Chyba při získávání nabídky organizace podle ID:", error);
+            throw error;
+        }
+    }, [api]);
+
     const getNabidkaById = useCallback(async (id) => {
         try {
             const response = await api.get(`/practices/student/${id}/`)
@@ -263,6 +274,7 @@ export const useNabidkaAPI = () => {
     return useMemo(() => ({
         getNabidky,
         getNabidkaById,
+        getEmployerNabidkaById,
         createNabidka,
         applyNabidka,
         getPracticeUserRelations,
@@ -275,7 +287,7 @@ export const useNabidkaAPI = () => {
         getAdminPractices,
         toggleFavorite,
         createExternalPractice
-    }), [getNabidky, getNabidkaById, createNabidka, applyNabidka,
+    }), [getNabidky, getNabidkaById, getEmployerNabidkaById, createNabidka, applyNabidka,
         getPracticeUserRelations, getOrganizationPractices, getNabidkyByUserDepartment,
         changeStatus, cancelPractice, calculateEndDate, updateNabidka,
         getAdminPractices, toggleFavorite, createExternalPractice]);

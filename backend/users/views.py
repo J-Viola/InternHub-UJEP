@@ -468,7 +468,14 @@ class CookieTokenRefreshView(TokenRefreshView):
 
         data = {"refresh": str(token)}
         serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except User.DoesNotExist:
+            # refresh cookie patří smazanému uživateli → neplatné přihlášení, ne 500
+            return Response(
+                {"detail": "Invalid or expired refresh token"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         response_data = {
             "access": serializer.validated_data["access"],

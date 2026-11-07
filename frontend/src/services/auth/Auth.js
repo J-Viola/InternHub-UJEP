@@ -22,6 +22,9 @@ function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const isRefreshingRef = useRef(false);
+  // Sdílený počáteční refresh: StrictMode spouští efekt dvakrát a rotující (blacklistovaný)
+  // refresh cookie by druhému souběžnému požadavku vrátil 401 a session by se zahodila.
+  const initialRefreshRef = useRef(null);
   const accessTokenRef = useRef(accessToken);
   const { setUser, cleanUser } = useUser();
   const navigate = useNavigate();
@@ -83,7 +86,11 @@ function AuthProvider({ children }) {
   useEffect(() => {
     const currentPath = window.location.pathname;
 
-    refreshUX()
+    if (!initialRefreshRef.current) {
+      initialRefreshRef.current = refreshUX();
+    }
+
+    initialRefreshRef.current
       .then((success) => {
         if (
           success &&

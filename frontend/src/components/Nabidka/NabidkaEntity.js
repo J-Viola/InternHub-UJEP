@@ -7,7 +7,7 @@ import { Image } from "@components/core/Image"
 import { useNavigate } from "react-router-dom"
 import Button from "@components/core/Button/Button"
 import Icon from "@components/core/Icon/Icon"
-import StateBadge from "@core/StateBadge";
+import StateBadge, { practiceStateName } from "@core/StateBadge";
 import { useUser } from "@hooks/UserProvider"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
 import { useTranslation } from "react-i18next"
@@ -95,7 +95,7 @@ export default function NabidkaEntity({ entity }) {
                         {/* ACTIONS (Heart / Status) */}
                         <Container property="flex gap-4 items-center shrink-0 ml-4">
                              {(user.isDepartmentMg() || user.isAdmin() || user.isOrganizationUser()) &&
-                                <StateBadge status={entity.workflow_state || entity.approval_status} />
+                                <StateBadge status={practiceStateName(entity.workflow_state ?? entity.approval_status)} />
                             }
 
                             {user.isStudent() && (

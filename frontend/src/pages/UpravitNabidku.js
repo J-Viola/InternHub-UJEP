@@ -42,7 +42,7 @@ export default function UpravitNabidku() {
                 const usersRes = await userAPI.getOrganizationUsers();
                 setOrganizationUsers(usersRes);
 
-                const practiceRes = await nabidkaAPI.getNabidkaById(id);
+                const practiceRes = await nabidkaAPI.getEmployerNabidkaById(id);
 
                 if (practiceRes) {
                     let contactUserId = practiceRes.contact_user;

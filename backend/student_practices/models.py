@@ -509,7 +509,7 @@ class StudentPractice(CancellationMixin, models.Model):
             "CONTENT_APPROVED": "Obsah praxe schválen",
             "CONTENT_REJECTED": "Zamítnutí obsahu",
         }
-        return labels.get(self.workflow_state.name if self.workflow_state else "", "Neznámý")
+        return labels.get(self.workflow_state.name if self.workflow_state is not None else "", "Neznámý")
 
     # ------------------------------------------------------------------
     # (SMLOUVA_PO_TERMINU): computed flag prodlení se zasmluvněním

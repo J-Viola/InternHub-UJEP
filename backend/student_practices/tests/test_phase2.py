@@ -78,7 +78,7 @@ class Phase2Tests(APITestCase):
 
         qs = StudentPractice.objects.filter(is_cancelled=False)
         csv_content = ExportService.generate_csv(qs)
-        self.assertIn("ID prihlasky", csv_content)
+        self.assertIn("ID přihlášky", csv_content)
 
     def _attach_subject_and_mentor(self):
         """BL-06 fixture: předmět + garant předmětu (mentor) pro scope hodnotitele."""

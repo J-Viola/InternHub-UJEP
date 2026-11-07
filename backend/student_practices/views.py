@@ -1,5 +1,6 @@
 import logging
 import random
+from datetime import timedelta
 
 from django.db import transaction
 from django.http import FileResponse
@@ -689,13 +690,24 @@ class StudentPracticeCardView(APIView):
 
         serializer = StudentPracticeCardSerializer(student_practice, context={"request": request})
 
-        ActionLogService.log(
+        # Opakovaná zobrazení stejné karty stejným uživatelem se do historie nezapisují
+        # častěji než jednou za hodinu (jinak historii zahlcuje šum).
+        recently_viewed = ActionLog.objects.filter(
             user=request.user,
             action_type=ActionLogType.VIEW,
             object_type="StudentPractice",
             object_id=student_practice.student_practice_id,
-            description=f"Zobrazení karty přihlášky ID {student_practice.student_practice_id}",
-        )
+            action_description__startswith="Zobrazení karty přihlášky",
+            action_date__gte=timezone.now() - timedelta(hours=1),
+        ).exists()
+        if not recently_viewed:
+            ActionLogService.log(
+                user=request.user,
+                action_type=ActionLogType.VIEW,
+                object_type="StudentPractice",
+                object_id=student_practice.student_practice_id,
+                description=f"Zobrazení karty přihlášky ID {student_practice.student_practice_id}",
+            )
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

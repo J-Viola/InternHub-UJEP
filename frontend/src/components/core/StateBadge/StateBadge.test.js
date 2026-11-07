@@ -35,3 +35,16 @@ describe('StateBadge — mapování stavů (BL-04)', () => {
         expect(screen.getByText('state_badge.DOCUMENTS_RESUBMITTED')).toBeInTheDocument();
     });
 });
+
+describe("practiceStateName (F-1)", () => {
+  const { practiceStateName } = require("./StateBadge");
+  test("číselné stavy nabídky se překládají na názvy", () => {
+    expect(practiceStateName(0)).toBe("PENDING_CONTENT_APPROVAL");
+    expect(practiceStateName(3)).toBe("OPEN_FOR_APPLICATIONS");
+    expect(practiceStateName(4)).toBe("CLOSED_FOR_APPLICATIONS");
+  });
+  test("řetězce a neznámé hodnoty projdou beze změny", () => {
+    expect(practiceStateName("CONTENT_REJECTED")).toBe("CONTENT_REJECTED");
+    expect(practiceStateName(undefined)).toBeUndefined();
+  });
+});

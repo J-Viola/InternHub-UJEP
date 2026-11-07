@@ -12,6 +12,7 @@ Covers:
 from datetime import date, timedelta
 
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -158,3 +159,24 @@ class StudentPracticeDetailTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.sp.refresh_from_db()
         self.assertEqual(self.sp.workflow_state, StudentPracticeWorkflowState.APPLIED)
+
+    def test_card_view_is_logged_once_per_hour(self):
+        """F-3: opakované otevření karty nezahlcuje historii."""
+        from users.models import ActionLog
+
+        card_url = f"/api/student-practices/{self.sp.student_practice_id}"
+        filters = {
+            "user": self.student,
+            "action_type": ActionLogType.VIEW,
+            "object_type": "StudentPractice",
+            "object_id": self.sp.student_practice_id,
+            "action_description__startswith": "Zobrazení karty",
+        }
+        self.client.force_authenticate(user=self.student)
+        for _ in range(3):
+            self.assertEqual(self.client.get(card_url).status_code, status.HTTP_200_OK)
+        self.assertEqual(ActionLog.objects.filter(**filters).count(), 1)
+
+        ActionLog.objects.filter(**filters).update(action_date=timezone.now() - timedelta(hours=2))
+        self.client.get(card_url)
+        self.assertEqual(ActionLog.objects.filter(**filters).count(), 2)

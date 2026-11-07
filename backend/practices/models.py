@@ -274,4 +274,4 @@ class Practice(CancellationMixin, models.Model):
             "CLOSED_FOR_APPLICATIONS": "Uzavřeno",
             "CONTENT_REJECTED": "Zamítnutí obsahu",
         }
-        return labels.get(self.workflow_state.name if self.workflow_state else "", "Neznámý")
+        return labels.get(self.workflow_state.name if self.workflow_state is not None else "", "Neznámý")

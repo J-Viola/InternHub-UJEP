@@ -136,7 +136,7 @@ class DataExportScopeTests(TestCase):
         )
 
     def _exported_ids(self, response):
-        """Přesná množina exportovaných ID (sloupec „ID prihlasky“)."""
+        """Přesná množina exportovaných ID (sloupec „ID přihlášky“)."""
         import csv as _csv
         import io as _io
 
@@ -328,7 +328,7 @@ class DataExportScopeTests(TestCase):
         self.assertEqual(cache.get(f"export_{export_id}_status"), "completed")
         data = cache.get(f"export_{export_id}")
         self.assertIsNotNone(data)
-        self.assertIn("ID prihlasky", data)  # hlavička CSV zůstává
+        self.assertIn("ID přihlášky", data)  # hlavička CSV
         self.assertNotIn(STARTED_MARKER, data)  # žádný cizí řádek
         self.assertNotIn(FOREIGN_DEPT_MARKER, data)
 

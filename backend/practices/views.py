@@ -294,7 +294,14 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Get organization practice detail")
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance)
+        # Plný detail (pro editační formulář) jen vlastní organizaci a staffu; ostatní
+        # dostanou zkrácený výstup, aby se nezveřejněný obsah nabídky neprozradil.
+        employer_profile = getattr(request.user, "employer_profile", None)
+        is_owner_org = employer_profile is not None and employer_profile.pk == instance.employer_id
+        if is_owner_org or request.user.is_staff:
+            serializer = PracticeSerializer(instance, context=self.get_serializer_context())
+        else:
+            serializer = self.get_serializer(instance)
 
         ActionLogService.log(
             user=request.user,
@@ -388,7 +395,14 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
                 {"detail": "Nabídku lze editovat pouze ve stavu PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        response = super().update(request, *args, **kwargs)
+        # employer_id je write_only+required a FE ho neposílá; vlastník se při editaci nesmí měnit,
+        # proto ho doplníme z instance (stejně jako ve create).
+        data = request.data.copy()
+        data["employer_id"] = instance.employer_id
+        serializer = self.get_serializer(instance, data=data, partial=kwargs.pop("partial", False))
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        response = Response(serializer.data)
 
         ActionLogService.log(
             user=request.user,

@@ -178,17 +178,17 @@ class ExportService:
         ws.title = "Odborné praxe"
 
         headers = [
-            "ID prihlasky",
+            "ID přihlášky",
             "Student",
             "Email studenta",
             "Praxe",
             "Organizace",
-            "Obor / Predmet",
+            "Obor / Předmět",
             "Stav workflow",
-            "Datum prihlasky",
+            "Datum přihlášky",
             "Od",
             "Do",
-            "Dokoncene hodiny",
+            "Dokončené hodiny",
             "Garant",
             "Akademický rok",
         ]
@@ -222,17 +222,17 @@ class ExportService:
         writer = csv.writer(output)
 
         headers = [
-            "ID prihlasky",
+            "ID přihlášky",
             "Student",
             "Email studenta",
             "Praxe",
             "Organizace",
-            "Obor / Predmet",
+            "Obor / Předmět",
             "Stav workflow",
-            "Datum prihlasky",
+            "Datum přihlášky",
             "Od",
             "Do",
-            "Dokoncene hodiny",
+            "Dokončené hodiny",
             "Garant",
             "Akademický rok",
         ]

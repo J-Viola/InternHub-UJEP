@@ -76,7 +76,7 @@ class ContractOverdueTests(TestCase):
             action_type=ActionLogType.STATE_TRANSITION,
             object_type="StudentPractice",
             object_id=sp.student_practice_id,
-            description=f"Zmena stavu prihlasky ID {sp.student_practice_id}: PRELIMINARY_APPROVED -> AWAITING_CONTRACT (bez duvodu)",
+            description=f"Změna stavu přihlášky ID {sp.student_practice_id}: PRELIMINARY_APPROVED -> AWAITING_CONTRACT (bez důvodu)",
         )
         from users.models import ActionLog
 

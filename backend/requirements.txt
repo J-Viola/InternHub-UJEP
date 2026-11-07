@@ -13,6 +13,7 @@ djangorestframework-simplejwt
 django-polymorphic
 django-model-utils
 drf-spectacular
+drf-spectacular-sidecar
 django-enumfield
 django-seed
 holidays
