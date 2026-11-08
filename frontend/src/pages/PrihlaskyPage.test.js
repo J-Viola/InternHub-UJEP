@@ -126,7 +126,7 @@ describe('PrihlaskyPage', () => {
 
         // Check if popup appears
         expect(screen.getByTestId('popup')).toBeInTheDocument();
-        expect(screen.getByText('applications.change_status_title')).toBeInTheDocument();
+        expect(screen.getByText("Změnit stav přihlášky")).toBeInTheDocument();
 
         // Click approve
         fireEvent.click(screen.getByText('Approve'));
@@ -170,7 +170,7 @@ describe('PrihlaskyPage', () => {
         fireEvent.click(screen.getByText('Reject'));
         expect(mockUpdateStatus).not.toHaveBeenCalled();
 
-        const textarea = screen.getByPlaceholderText('practice_detail.reject_reason_placeholder');
+        const textarea = screen.getByPlaceholderText("Minimálně 10 znaků...");
         fireEvent.change(textarea, { target: { value: 'Student nevyhovuje podmínkám' } });
         fireEvent.click(screen.getByText('Reject'));
 
@@ -186,7 +186,7 @@ describe('PrihlaskyPage', () => {
         mockGetProfessorApps.mockRejectedValue(new Error('network unavailable'));
         render(<MemoryRouter><PrihlaskyPage /></MemoryRouter>);
         expect(await screen.findByRole('alert')).toBeInTheDocument();
-        expect(screen.queryByText('applications.no_data')).not.toBeInTheDocument();
+        expect(screen.queryByText("Zatím nemáte žádné data k zobrazení.")).not.toBeInTheDocument();
     });
 
     test('latest applications request wins', async () => {

@@ -15,16 +15,15 @@ import Button from "@components/core/Button/Button";
 import {useNabidkaAPI} from "../api/nabidka/nabidkaAPI";
 import Pagination from "@core/Pagination";
 import useDebounce from "@hooks/useDebounce";
-import { useTranslation } from "react-i18next";
 import EmptyState from "@core/Feedback/EmptyState";
 import NabidkaEntityInline from "@components/Nabidka/NabidkaEntityInline";
 import PopUpCon from "@core/Container/PopUpCon";
 import TextField from "@core/Form/TextField";
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 const PAGE_SIZE = 10;
 
 export default function StudentPage() {
-    const { t } = useTranslation();
     const { getDepartmentStudents } = useDepartmentAPI();
     const [entities, setEntities] = useState([]);
     const [practice, setPractice] = useState();
@@ -46,9 +45,7 @@ export default function StudentPage() {
     const { user } = useUser();
     const { getAllStudents } = useUserAPI();
     const getAllStudentsRef = useRef(getAllStudents);
-    const translationRef = useRef(t);
     getAllStudentsRef.current = getAllStudents;
-    translationRef.current = t;
     const { addMessage } = useMessage();
 
 
@@ -94,7 +91,7 @@ export default function StudentPage() {
                     setEntities(res);
                 }
             } catch {
-                setError(t('students.load_error'));
+                setError("Nepodařilo se načíst studenty.");
             } finally {
                 setLoading(false);
             }
@@ -111,7 +108,7 @@ export default function StudentPage() {
             setEntities(res.results ?? []);
             setCount(res.count ?? 0);
         } catch {
-            setError(translationRef.current('students.load_error'));
+            setError("Nepodařilo se načíst studenty.");
         } finally {
             setLoading(false);
         }
@@ -145,7 +142,7 @@ export default function StudentPage() {
         const buttons = [
             {
                 icon: "user",
-                title: t('students.view_profile'),
+                title: "Zobrazit profil",
                 btnfunction: () => navigate(`/profil/${entity?.user_id}`)
             }
         ];
@@ -153,7 +150,7 @@ export default function StudentPage() {
         if (hasPractice) {
             buttons.unshift({
                 icon: "doc",
-                title: t('students.view_practice_card'),
+                title: "Zobrazit kartu praxe",
                 btnfunction: () => navigate(`/karta-praxe/${entity?.student_practice.student_practice_id}`)
             });
         }
@@ -168,12 +165,12 @@ export default function StudentPage() {
         const buttons = [
             {
                 icon: isSelected ? "check" : "plus",
-                title: isSelected ? t('students.deselect') : t('students.select_for_invite'),
+                title: isSelected ? "Zrušit výběr" : "Vybrat pro pozvánku",
                 btnfunction: () => handleStudentSelection(entity.user_id, isSelected)
             },
             {
                 icon: "user",
-                title: t('students.view_profile'),
+                title: "Zobrazit profil",
                 btnfunction: () => navigate(`/profil/${entity?.user_id}`)
             }
         ];
@@ -182,7 +179,7 @@ export default function StudentPage() {
         if (id && hasPractice) {
              buttons.unshift({
                 icon: "doc",
-                title: t('students.view_practice_card'),
+                title: "Zobrazit kartu praxe",
                 btnfunction: () => navigate(`/karta-praxe/${entity?.student_practice_id || entity?.student_practice?.student_practice_id}`)
             });
         }
@@ -195,7 +192,7 @@ export default function StudentPage() {
         const buttons = [
             {
                 icon: "user",
-                title: t('students.view_profile'),
+                title: "Zobrazit profil",
                 btnfunction: () => navigate(`/profil/${entity?.user_id}`)
             }
         ];
@@ -203,7 +200,7 @@ export default function StudentPage() {
         if (hasPractice) {
             buttons.unshift({
                 icon: "doc",
-                title: t('students.view_practice_card'),
+                title: "Zobrazit kartu praxe",
                 btnfunction: () => navigate(`/karta-praxe/${entity?.student_practice_id}`)
             });
         }
@@ -228,28 +225,28 @@ export default function StudentPage() {
 
         if (user.isOrganizationUser() && !id) {
             return viewParam === 'true'
-                ? { [t('students.personal_number')]: "os_cislo" }  // View mode
-                : { [t('students.personal_number')]: "os_cislo", "": "department" };  // Normal mode
+                ? { ["Osobní číslo"]: "os_cislo" }  // View mode
+                : { ["Osobní číslo"]: "os_cislo", "": "department" };  // Normal mode
         }
 
         if (user.isAdmin()) {
             return {
-                [t('students.personal_number')]: "os_cislo",
+                "Osobní číslo": "os_cislo",
                 "": "department"
             };
         }
 
         if (!id) {
-            return { [t('students.personal_number')]: "os_cislo" };  // Department users
+            return { ["Osobní číslo"]: "os_cislo" };  // Department users
         } else if (!user.isOrganizationUser()) {
             return {  // Student practice
-                [t('students.applied_on')]: "application_date",
-                [t('common.status')]: "workflow_status",
-                [t('students.hours')]: "hours_completed"
+                "Podání": "application_date",
+                "Stav": "workflow_status",
+                "Hodiny": "hours_completed"
             };
         }
 
-        return { [t('students.personal_number')]: "os_cislo" };  // Fallback
+        return { ["Osobní číslo"]: "os_cislo" };  // Fallback
     };
 
 
@@ -257,20 +254,20 @@ export default function StudentPage() {
         const viewParam = searchParams.get('view');
 
         if (id) {
-            return `${t('students.applicants_title')} - ${practice ? practice.title : ''}`;
+            return `Přihlášení k praxi - ${practice ? practice.title : ''}`;
         }
 
         if (user.isDepartmentUser()) {
             return !isPaginated && entities[0] && entities[0].department
-                ? `${t('students.dept_students_title')} - ${entities[0].department}`
-                : t('students.title');
+                ? `Studenti katedry - ${entities[0].department}`
+                : "Studenti";
         }
 
         if (user.isOrganizationUser()) {
-            return viewParam === 'true' ? t('students.applicants_title') : t('students.title');
+            return viewParam === 'true' ? "Přihlášení k praxi" : "Studenti";
         }
 
-        return t('students.title');
+        return "Studenti";
     };
 
 
@@ -319,7 +316,7 @@ export default function StudentPage() {
         const practiceId = id || selectedNabidkaForInvite?.practice_id;
 
         if (!practiceId) {
-            addMessage(t('invitations.select_practice'), "E");
+            addMessage("Vyberte, na jakou stáž má být pozvánka vázána", "E");
             return;
         }
 
@@ -329,9 +326,9 @@ export default function StudentPage() {
             // Let's assume for now we just want to implement the UI as planned.
             const res = await createInvitation(practiceId, studentIds);
             if (res) {
-                addMessage(t('invitations.create_success', { count: res.created }), "S");
+                addMessage(`Pozvánka pro ${res.created} studentů vytvořena.`, "S");
                 if (res.errors && res.errors.length > 0) {
-                    addMessage(`${t('invitations.errors_label')}: ${res.errors.join(", ")}`, "E");
+                    addMessage(`Chyby: ${res.errors.join(", ")}`, "E");
                 }
                 setShowInviteModal(false);
                 setSelectedStudents(new Set());
@@ -339,9 +336,8 @@ export default function StudentPage() {
                 setInvitationMessage("");
             }
         } catch (error) {
-            console.error(t('invitations.create_error'), error);
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(`${t('invitations.create_error')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
+            console.error("Chyba při vytváření pozvánky", error);
+            addMessage(`Chyba při vytváření pozvánky: ${getApiErrorMessage(error, error.message)}`, "E");
         }
     };
 
@@ -357,7 +353,7 @@ export default function StudentPage() {
                     icon={"user-plus"}
                     disabled={selectedStudents.size === 0}
                 >
-                    {t('students.invite_selected', { count: selectedStudents.size })}
+                    {`Pozvat (${selectedStudents.size})`}
                 </Button>
             </Container>
         );
@@ -403,7 +399,7 @@ export default function StudentPage() {
                     id={"name"}
                     variant={"student"}
                     value={filterValues.name}
-                    placeholder={t('students.search_placeholder')}
+                    placeholder={"Hledat podle jména..."}
                     onChange={handleChange}
                     onClear={handleClear}
                 />
@@ -411,15 +407,15 @@ export default function StudentPage() {
 
             <Container property={"mt-4"}>
                 {loading && (
-                    <Paragraph property="text-center text-gray-500 py-8">{t('students.loading')}</Paragraph>
+                    <Paragraph property="text-center text-gray-500 py-8">{"Načítání studentů..."}</Paragraph>
                 )}
                 {!loading && error && (
                     <Paragraph property="text-center text-red-500 py-8">{error}</Paragraph>
                 )}
                 {!loading && !error && filteredEntities.length === 0 && (
                     <EmptyState
-                        title={t('students.no_results')}
-                        description={t('students.no_results_desc', { defaultValue: "" })}
+                        title={"Žádní studenti nebyli nalezeni."}
+                        description={"Zkuste změnit vyhledávací dotaz."}
                         icon="user-slash"
                     />
                 )}
@@ -446,19 +442,19 @@ export default function StudentPage() {
             {showInviteModal && (
                 <PopUpCon
                     onClose={() => setShowInviteModal(false)}
-                    title={t('invitations.invite_modal_title')}
-                    text={t('invitations.invite_modal_text', { count: selectedStudents.size })}
+                    title={"Pozvat studenty na stáž"}
+                    text={`Chystáte se pozvat ${selectedStudents.size} vybraných studentů na stáž.`}
                     onSubmit={handleSendInvitations}
                     onReject={() => setShowInviteModal(false)}
-                    submitText={t('common.confirm')}
-                    rejectText={t('common.cancel')}
+                    submitText={"Potvrdit"}
+                    rejectText={"Zrušit"}
                     variant="blue"
                 >
                     <Container property="mt-4 px-4 space-y-6 pb-4">
                         {!id && (
                             <Container>
                                 <Headings sizeTag="h5" property="mb-3">
-                                    {t('invitations.select_practice')}
+                                    {"Vyberte, na jakou stáž má být pozvánka vázána"}
                                 </Headings>
                                 <Container property="space-y-3 max-h-60 overflow-y-auto pr-2 border-b pb-4">
                                     {invitationNabidky.length > 0 ? (
@@ -473,7 +469,7 @@ export default function StudentPage() {
                                         ))
                                     ) : (
                                         <Paragraph property="text-gray-500 italic">
-                                            {t('offers.loading')}
+                                            {"Načítání nabídek..."}
                                         </Paragraph>
                                     )}
                                 </Container>
@@ -483,8 +479,8 @@ export default function StudentPage() {
                         <Container>
                             <TextField
                                 id="invitationMessage"
-                                label={t('invitations.message_label')}
-                                placeholder={t('invitations.message_placeholder')}
+                                label={"Zpráva pro studenty (volitelné)"}
+                                placeholder={"Zde můžete napsat krátkou zprávu pro studenty..."}
                                 value={invitationMessage}
                                 onChange={(val) => setInvitationMessage(val.invitationMessage)}
                             />

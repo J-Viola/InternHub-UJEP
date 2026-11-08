@@ -1,1 +1,1 @@
-export { default, getStateLabelKey, getStateVariant, practiceStateName } from "./StateBadge";
+export { default, getStateLabel, getStateVariant, practiceStateName } from "./StateBadge";

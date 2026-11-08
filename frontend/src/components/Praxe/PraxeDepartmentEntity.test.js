@@ -2,7 +2,6 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import PraxeDepartmentEntity from "./PraxeDepartmentEntity";
 
-jest.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key) => key }) }));
 jest.mock("@core/Container/ContainerForEntity", () => ({ children }) => <div>{children}</div>);
 jest.mock("@core/Container/Container", () => ({ children }) => <div>{children}</div>);
 jest.mock("@components/core/Text/Paragraph", () => ({ children }) => <p>{children}</p>);

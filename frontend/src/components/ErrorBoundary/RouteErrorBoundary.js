@@ -3,7 +3,6 @@ import Container from '@core/Container/Container';
 import Headings from '@core/Text/Headings';
 import Paragraph from '@core/Text/Paragraph';
 import Button from '@core/Button/Button';
-import { useTranslation } from 'react-i18next';
 
 /**
  * RouteErrorBoundary — a route-level ErrorBoundary that renders a full-page
@@ -12,7 +11,7 @@ import { useTranslation } from 'react-i18next';
  * Props:
  *   - children: ReactNode
  *   - onError?: (error, errorInfo) => void
- *   - pageTitle?: string — shown in the error card (defaults to t('common.error'))
+ *   - pageTitle?: string — shown in the error card (defaults to „Něco se pokazilo“)
  */
 class RouteErrorBoundary extends React.Component {
     constructor(props) {
@@ -52,7 +51,6 @@ class RouteErrorBoundary extends React.Component {
 }
 
 function RouteErrorFallback({ pageTitle, onRetry }) {
-    const { t } = useTranslation();
 
     return (
         <Container property="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -75,11 +73,11 @@ function RouteErrorFallback({ pageTitle, onRetry }) {
                 </Container>
 
                 <Headings sizeTag="h4" property="text-gray-900 font-bold mb-2">
-                    {pageTitle || t('common.error')}
+                    {pageTitle || "Něco se pokazilo"}
                 </Headings>
 
                 <Paragraph property="text-gray-500 mb-6">
-                    {t('common.unexpected_error')}
+                    {"Došlo k neočekávané chybě"}
                 </Paragraph>
 
                 <Button
@@ -87,7 +85,7 @@ function RouteErrorFallback({ pageTitle, onRetry }) {
                     onClick={onRetry}
                     property="px-8"
                 >
-                    {t('common.retry')}
+                    {"Zkusit znovu"}
                 </Button>
             </Container>
         </Container>

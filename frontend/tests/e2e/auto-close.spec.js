@@ -7,6 +7,8 @@ import { execSync } from 'node:child_process';
  * Data a přechody se připravují přes API (izolovaný stack), takže test
  * nezávisí na UI formuláři ani na hostitelském Pythonu.
  */
+const container = process.env.E2E_BACKEND_CONTAINER || 'internhub-e2e-backend';
+
 test.describe('Auto-Close Practices (E2E)', () => {
   test('auto_close_practices uzavře inzerát v den start_date', async ({ request }) => {
     const api = process.env.E2E_API_URL || 'http://localhost:8000';
@@ -41,13 +43,13 @@ test.describe('Auto-Close Practices (E2E)', () => {
     expect((await request.post(`${api}/api/practices/${practiceId}/transition/`, { headers, data: { target_state: 3 } })).ok()).toBeTruthy();
 
     // 4) Cron příkaz v izolovaném backendu.
-    execSync('docker exec internhub-e2e-backend python manage.py auto_close_practices --settings=app.e2e_settings', {
+    execSync(`docker exec ${container} python manage.py auto_close_practices --settings=app.e2e_settings`, {
       encoding: 'utf-8',
     });
 
     // 5) Stav přímo z DB (employer endpoint je pro admina 404).
     const state = execSync(
-      `docker exec internhub-e2e-backend python manage.py shell --settings=app.e2e_settings -c ` +
+      `docker exec ${container} python manage.py shell --settings=app.e2e_settings -c ` +
         `"from practices.models import Practice; print(Practice.objects.get(pk=${practiceId}).workflow_state.name)"`,
       { encoding: "utf-8" }
     ).trim().split("\n").pop();

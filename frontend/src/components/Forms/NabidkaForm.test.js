@@ -2,12 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import NabidkaForm from '@components/Forms/NabidkaForm';
 
-// Mock react-i18next — spread the actual module so initReactI18next
-// (used by src/i18n.js in the import chain) stays available
-jest.mock('react-i18next', () => ({
-  ...jest.requireActual('react-i18next'),
-  useTranslation: () => ({ t: (key) => key }),
-}));
 
 // Explicit mocks for components used in NabidkaForm
 jest.mock('@core/Form/DatePicker', () => ({ id, label, value, onChange }) => (
@@ -66,15 +60,15 @@ describe('NabidkaForm Component', () => {
     );
 
     expect(screen.getByTestId('datepicker-start_date')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'form.coefficient' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: "Úvazek" })).toBeInTheDocument();
     expect(screen.getByTestId('datepicker-end_date')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'form.contact_user' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'form.subject' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'form.available_positions' })).toBeInTheDocument();
-    expect(screen.getByLabelText('form.title')).toBeInTheDocument();
-    expect(screen.getByLabelText('form.description')).toBeInTheDocument();
-    expect(screen.getByLabelText('form.responsibilities')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /form.create/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: "Správce inzerátu" })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: "Přiřazený předmět" })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: "Počet volných míst" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Název")).toBeInTheDocument();
+    expect(screen.getByLabelText("Popis stáže")).toBeInTheDocument();
+    expect(screen.getByLabelText("Náplň práce")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Vytvořit/i })).toBeInTheDocument();
   });
 
   test('displays form data correctly', () => {
@@ -88,10 +82,10 @@ describe('NabidkaForm Component', () => {
         />
     );
 
-    expect(screen.getByLabelText('form.title')).toHaveValue('Test Offer');
-    expect(screen.getByLabelText('form.description')).toHaveValue('Test Description');
-    expect(screen.getByLabelText('form.responsibilities')).toHaveValue('Test Responsibilities');
-    expect(screen.getByLabelText('form.contact_user')).toHaveValue('1'); // value of the selected option
+    expect(screen.getByLabelText("Název")).toHaveValue('Test Offer');
+    expect(screen.getByLabelText("Popis stáže")).toHaveValue('Test Description');
+    expect(screen.getByLabelText("Náplň práce")).toHaveValue('Test Responsibilities');
+    expect(screen.getByLabelText("Správce inzerátu")).toHaveValue('1'); // value of the selected option
   });
 
   test('calls handleChange on input change', () => {
@@ -105,11 +99,11 @@ describe('NabidkaForm Component', () => {
         />
     );
 
-    const titleInput = screen.getByLabelText('form.title');
+    const titleInput = screen.getByLabelText("Název");
     fireEvent.change(titleInput, { target: { value: 'New Title' } });
     expect(mockHandleChange).toHaveBeenCalledWith({ title: 'New Title' });
 
-    const descriptionInput = screen.getByLabelText('form.description');
+    const descriptionInput = screen.getByLabelText("Popis stáže");
     fireEvent.change(descriptionInput, { target: { value: 'New Description' } });
     expect(mockHandleChange).toHaveBeenCalledWith({ description: 'New Description' });
   });
@@ -125,7 +119,7 @@ describe('NabidkaForm Component', () => {
         />
     );
 
-    const submitButton = screen.getByRole('button', { name: /form.create/i });
+    const submitButton = screen.getByRole('button', { name: /Vytvořit/i });
     fireEvent.click(submitButton);
     expect(mockHandleSubmit).toHaveBeenCalledTimes(1);
   });
@@ -147,10 +141,10 @@ describe('NabidkaForm Component', () => {
     );
 
     expect(screen.getByText('Název je povinný.')).toBeInTheDocument();
-    expect(screen.getByLabelText('form.title')).toHaveClass('border-red-500'); // Assuming TextField applies this class
+    expect(screen.getByLabelText("Název")).toHaveClass('border-red-500'); // Assuming TextField applies this class
 
     expect(screen.getByText('Popis je povinný.')).toBeInTheDocument();
-    expect(screen.getByLabelText('form.description')).toHaveClass('border-red-500'); // Assuming TextBox applies this class
+    expect(screen.getByLabelText("Popis stáže")).toHaveClass('border-red-500'); // Assuming TextBox applies this class
   });
 
   test('categorized skills retain commas while typing and submit parsed values', () => {
@@ -162,12 +156,12 @@ describe('NabidkaForm Component', () => {
       </>;
     };
     render(<Harness />);
-    const input = screen.getByLabelText('form.skills_technologies');
+    const input = screen.getByLabelText("Technologie");
     for (const value of ['R', 'Re', 'Rea', 'Reac', 'React', 'React,', 'React, ', 'React, J', 'React, Je', 'React, Jes', 'React, Jest']) {
       fireEvent.change(input, { target: { value } });
     }
     expect(input).toHaveValue('React, Jest');
-    fireEvent.click(screen.getByRole('button', { name: /form.create/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Vytvořit/i }));
     expect(mockHandleSubmit).toHaveBeenCalledWith(expect.objectContaining({
       skills: { technologies: ['React', 'Jest'], tools: [], methodologies: [] },
     }));
@@ -176,6 +170,6 @@ describe('NabidkaForm Component', () => {
   test('legacy skill arrays initialize in technologies', () => {
     render(<NabidkaForm organizationUsers={mockOrganizationUsers} subjects={mockSubjects}
       formData={{ ...mockFormData, skills: ['React', 'Jest'] }} handleChange={mockHandleChange} handleSubmit={mockHandleSubmit} />);
-    expect(screen.getByLabelText('form.skills_technologies')).toHaveValue('React, Jest');
+    expect(screen.getByLabelText("Technologie")).toHaveValue('React, Jest');
   });
 });

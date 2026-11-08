@@ -8,10 +8,9 @@ import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import { useUserAPI } from "@api/user/userAPI";
 import { useMessage } from "@hooks/MessageContext";
-import { useTranslation } from "react-i18next";
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 export default function PasswordResetRequestPage() {
-    const { t } = useTranslation();
     const { requestPasswordReset } = useUserAPI();
     const { addMessage } = useMessage();
     const [email, setEmail] = useState("");
@@ -20,7 +19,7 @@ export default function PasswordResetRequestPage() {
 
     const handleSubmit = async () => {
         if (!email) {
-            addMessage(t('password_reset.enter_email'), "E");
+            addMessage("Zadejte prosím email", "E");
             return;
         }
 
@@ -28,11 +27,10 @@ export default function PasswordResetRequestPage() {
         try {
             await requestPasswordReset(email);
             setSubmitted(true);
-            addMessage(t('password_reset.email_sent_success'), "S");
+            addMessage("Pokud účet existuje, email s instrukcemi byl odeslán.", "S");
         } catch (error) {
             console.error(error);
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('password_reset.request_error') }), "E");
+            addMessage(getApiErrorMessage(error, "Chyba při odesílání žádosti."), "E");
         } finally {
             setLoading(true); // Keep loading state until navigation if needed or just false
             setLoading(false);
@@ -43,19 +41,19 @@ export default function PasswordResetRequestPage() {
         <Container property="flex items-center justify-center">
             <ContainerForEntity property="w-full max-w-md p-8">
                 <BackButton />
-                <Headings sizeTag="h2" property="mb-4 mt-4 text-center">{t('password_reset.request_title')}</Headings>
+                <Headings sizeTag="h2" property="mb-4 mt-4 text-center">{"Zapomenuté heslo"}</Headings>
 
                 {!submitted ? (
                     <>
                         <Paragraph property="mb-6 text-center text-gray-600">
-                            {t('password_reset.request_instruction')}
+                            {"Zadejte svůj email a my vám pošleme odkaz pro obnovu hesla."}
                         </Paragraph>
 
                         <TextField
                             id="email"
                             type="email"
-                            label={t('login.email')}
-                            placeholder={t('profile.email_placeholder')}
+                            label={"E-mail"}
+                            placeholder={"Zadejte e-mailovou adresu"}
                             value={email}
                             onChange={(value) => setEmail(value.email)}
                             required
@@ -67,17 +65,17 @@ export default function PasswordResetRequestPage() {
                                 property="w-full"
                                 disabled={loading}
                             >
-                                {loading ? t('common.sending') : t('password_reset.send_link')}
+                                {loading ? "Odesílám..." : "Odeslat odkaz"}
                             </Button>
                         </Container>
                     </>
                 ) : (
                     <Container property="text-center">
                         <Paragraph property="mb-6 text-green-600 font-medium">
-                            {t('password_reset.check_mailbox')}
+                            {"Zkontrolujte svou emailovou schránku. Odkaz pro obnovu hesla byl odeslán."}
                         </Paragraph>
                         <Button onClick={() => window.location.href = "/"} variant="secondary">
-                            {t('password_reset.back_to_login')}
+                            {"Zpět na přihlášení"}
                         </Button>
                     </Container>
                 )}

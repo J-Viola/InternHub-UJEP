@@ -5,12 +5,10 @@ import Headings from '@core/Text/Headings';
 import Paragraph from '@core/Text/Paragraph';
 import BackButton from '@core/Button/BackButton';
 import Button from '@core/Button/Button';
-import { useTranslation } from 'react-i18next';
 import { useMessage } from '@hooks/MessageContext';
 import { useNavigate } from 'react-router-dom';
 
 const NotificationsPage = () => {
-    const { t, i18n } = useTranslation();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const notificationAPI = useNotificationAPI();
@@ -24,7 +22,7 @@ const NotificationsPage = () => {
             setNotifications(data.results || data || []);
         } catch (error) {
             console.error('Failed to fetch all notifications:', error);
-            addMessage(t('common.error'), 'E');
+            addMessage("Něco se pokazilo", 'E');
         } finally {
             setLoading(false);
         }
@@ -42,7 +40,7 @@ const NotificationsPage = () => {
             );
         } catch (error) {
             console.error('Failed to mark notification as read:', error);
-            addMessage(t('common.error'), 'E');
+            addMessage("Něco se pokazilo", 'E');
         }
     };
 
@@ -50,10 +48,10 @@ const NotificationsPage = () => {
         try {
             await notificationAPI.markAllAsRead();
             setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-            addMessage(t('common.save'), 'S');
+            addMessage("Uložit", 'S');
         } catch (error) {
             console.error('Failed to mark all notifications as read:', error);
-            addMessage(t('common.error'), 'E');
+            addMessage("Něco se pokazilo", 'E');
         }
     };
 
@@ -72,27 +70,23 @@ const NotificationsPage = () => {
         }
     };
 
-    const getMessage = (n) => i18n.language === 'en'
-        ? (n.message_en || n.message)
-        : (n.message_cz || n.message);
-
     return (
         <Container property="max-w-4xl mx-auto p-4">
             <BackButton />
             <Container property="flex justify-between items-center mb-6 mt-4">
-                <Headings sizeTag="h2">{t('nav.notifications')}</Headings>
+                <Headings sizeTag="h2">{"Oznámení"}</Headings>
                 {notifications.some(n => !n.is_read) && (
                     <Button variant="blueSmall" onClick={handleMarkAllAsRead}>
-                        {t('notifications.mark_all_read')}
+                        {"Označit vše jako přečtené"}
                     </Button>
                 )}
             </Container>
 
             {loading ? (
-                <Paragraph>{t('common.loading')}</Paragraph>
+                <Paragraph>{"Načítání..."}</Paragraph>
             ) : notifications.length === 0 ? (
                 <Container property="bg-white p-8 rounded-lg shadow-sm text-center border border-gray-100">
-                    <Paragraph property="text-gray-500 italic">{t('notifications.no_notifications')}</Paragraph>
+                    <Paragraph property="text-gray-500 italic">{"Žádná nová oznámení"}</Paragraph>
                 </Container>
             ) : (
                 <div className="space-y-3">
@@ -123,11 +117,11 @@ const NotificationsPage = () => {
                                 </span>
                             </div>
                             <Paragraph property="text-gray-800 text-base">
-                                {getMessage(notification)}
+                                {notification.message}
                             </Paragraph>
                             {!notification.is_read && (
                                 <button className="mt-2 text-xs text-blue-600 hover:underline">
-                                    {t('notifications.mark_as_read')}
+                                    {"Označit jako přečtené"}
                                 </button>
                             )}
                         </div>

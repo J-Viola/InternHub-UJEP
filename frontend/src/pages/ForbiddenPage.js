@@ -5,10 +5,8 @@ import Paragraph from "@core/Text/Paragraph";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 
 export default function ForbiddenPage() {
-    const { t } = useTranslation();
     const navigate = useNavigate();
 
     return (
@@ -19,13 +17,13 @@ export default function ForbiddenPage() {
                     <Headings sizeTag="h1" property="text-red-300 text-8xl">403</Headings>
                 </Container>
                 <Headings sizeTag="h3" property="text-gray-700 mb-4">
-                    {t('errors.forbidden')}
+                    {"Přístup odepřen"}
                 </Headings>
                 <Paragraph property="text-gray-500 mb-8">
-                    {t('errors.forbidden_desc')}
+                    {"Nemáte oprávnění pro přístup k této stránce."}
                 </Paragraph>
                 <Button onClick={() => navigate('/')} variant="primary" property="px-8">
-                    {t('common.back')}
+                    {"Zpět"}
                 </Button>
             </Container>
         </Container>

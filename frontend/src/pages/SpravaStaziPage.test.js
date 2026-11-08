@@ -1,9 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { createInstance } from 'i18next';
-import { I18nextProvider } from 'react-i18next';
-import translations from '../../public/locales/cs/translation.json';
 import SpravaStaziPage from './SpravaStaziPage';
 import { useNabidkaAPI } from '@api/nabidka/nabidkaAPI';
 import { useUser } from '@hooks/UserProvider';
@@ -11,7 +8,6 @@ import { useMessage } from '@hooks/MessageContext';
 import { useApi } from '@hooks/useApi';
 import { useSubjectAPI } from '@api/subject/subjectAPI';
 
-jest.unmock('react-i18next');
 jest.mock('@api/nabidka/nabidkaAPI');
 jest.mock('@hooks/UserProvider');
 jest.mock('@hooks/MessageContext');
@@ -32,8 +28,6 @@ const items = riskTypes.map((risk_type, index) => ({
 }));
 
 async function loadDashboard(total = 60) {
-    const i18n = createInstance();
-    await i18n.init({ lng: 'cs', resources: { cs: { translation: translations } }, interpolation: { escapeValue: false } });
     useNabidkaAPI.mockReturnValue({ getNabidkyByUserDepartment: jest.fn().mockResolvedValue({}) });
     useUser.mockReturnValue({ user: { isAdmin: () => false } });
     useMessage.mockReturnValue({ addMessage: jest.fn() });
@@ -41,7 +35,7 @@ async function loadDashboard(total = 60) {
         getDepartmentSubjects: jest.fn().mockResolvedValue([{ subject_id: 7, subject_name: 'Odborná praxe' }]),
     });
     useApi.mockReturnValue({ get: jest.fn().mockResolvedValue({ data: { at_risk_items: items, at_risk_count: total } }) });
-    render(<I18nextProvider i18n={i18n}><MemoryRouter><SpravaStaziPage /></MemoryRouter></I18nextProvider>);
+    render(<MemoryRouter><SpravaStaziPage /></MemoryRouter>);
     return screen.findByRole('region', { name: 'Praxe vyžadující pozornost' });
 }
 
@@ -116,7 +110,7 @@ describe('filtry exportu', () => {
             params: { format: 'csv', year: '2026', workflow_state: '4', subject_id: '7', institution: 'Firma & syn' },
             responseType: 'blob',
         }));
-        const expectedMessage = status === 202 ? translations.export.processing : translations.export.success.replace('{{format}}', 'CSV');
+        const expectedMessage = status === 202 ? 'Export se zpracovává. Budete notifikováni po dokončení.' : 'Export CSV byl úspěšně vygenerován.';
         await waitFor(() => expect(useMessage.mock.results[useMessage.mock.results.length - 1].value.addMessage)
             .toHaveBeenCalledWith(expectedMessage, status === 202 ? 'I' : 'S'));
         expect(window.URL.createObjectURL).toHaveBeenCalledTimes(status === 202 ? 0 : 1);

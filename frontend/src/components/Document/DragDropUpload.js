@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export default function DragDropUpload({ onFileSelect, acceptedTypes = ".pdf,.docx,.png,.jpg", maxSizeMB = 10 }) {
-  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState(null);

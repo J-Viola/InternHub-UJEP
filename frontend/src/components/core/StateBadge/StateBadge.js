@@ -1,70 +1,68 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 
 /**
- * Maps workflow_state / progress_status values to translation keys.
+ * Maps workflow_state / progress_status values to Czech labels.
  * Central single source of truth — replaces ad-hoc statusToText/statusVariant patterns.
  *
- * Translations live in public/locales/cs/translation.json under "state_badge"
- * (exists only for `cs`; no `en` file). Kanonické labely inzerce:
+ * Kanonické labely inzerce:
  * OPEN_FOR_APPLICATIONS → "Aktivní", CLOSED_FOR_APPLICATIONS → "Uzavřeno".
  * POZOR: Practice stavy (PENDING_CONTENT_APPROVAL..CLOSED_FOR_APPLICATIONS)
  * ≠ StudentPractice stavy (APPLIED..CONTENT_APPROVED) — toto je pro Practice.
  */
-export function getStateLabelKey(status) {
+export function getStateLabel(status) {
   const keyMap = {
     // Integer values from django_enumfield / DRF
-    0: "state_badge.APPLIED",
-    1: "state_badge.PRELIMINARY_APPROVED",
-    2: "state_badge.REJECTED",
-    3: "state_badge.CONTRACTED",
-    4: "state_badge.STARTED",
-    5: "state_badge.ENDED",
-    6: "state_badge.COMPLETED",
-    7: "state_badge.AWAITING_CONTRACT",
-    8: "state_badge.AWAITING_DOCUMENTS",
-    9: "state_badge.DOCUMENTS_REJECTED",
-    10: "state_badge.AWAITING_CONTENT_APPROVAL",
-    11: "state_badge.CONTENT_REJECTED",
-    12: "state_badge.CONTENT_APPROVED",
-    13: "state_badge.DOCUMENTS_RESUBMITTED",
+    0: "Čeká na schválení garanta",
+    1: "Čeká na schválení organizací",
+    2: "Přihláška na praxi odmítnuta",
+    3: "Zasmluvněno",
+    4: "Zahájeno",
+    5: "Ukončeno",
+    6: "Splněno",
+    7: "Čeká na zasmluvnění",
+    8: "Čeká na schválení dokumentů",
+    9: "Dokumenty zamítnuty",
+    10: "Čeká na schválení obsahu",
+    11: "Zamítnutí obsahu",
+    12: "Obsah praxe schválen",
+    13: "Opravené dokumenty čekají na kontrolu",
 
     // String keys
-    DRAFT: "state_badge.DRAFT",
-    PENDING_CONTENT_APPROVAL: "state_badge.PENDING_CONTENT_APPROVAL",
-    CONTENT_APPROVED: "state_badge.CONTENT_APPROVED",
-    CONTENT_REJECTED: "state_badge.CONTENT_REJECTED",
-    OPEN_FOR_APPLICATIONS: "state_badge.OPEN_FOR_APPLICATIONS",
-    CLOSED_FOR_APPLICATIONS: "state_badge.CLOSED_FOR_APPLICATIONS",
+    DRAFT: "Koncept",
+    PENDING_CONTENT_APPROVAL: "Čeká na schválení obsahu",
+    CONTENT_APPROVED: "Obsah praxe schválen",
+    CONTENT_REJECTED: "Zamítnutí obsahu",
+    OPEN_FOR_APPLICATIONS: "Aktivní",
+    CLOSED_FOR_APPLICATIONS: "Uzavřeno",
 
-    APPLIED: "state_badge.APPLIED",
-    PRELIMINARY_APPROVED: "state_badge.PRELIMINARY_APPROVED",
-    REJECTED: "state_badge.REJECTED",
-    CONTRACTED: "state_badge.CONTRACTED",
-    STARTED: "state_badge.STARTED",
-    ENDED: "state_badge.ENDED",
-    COMPLETED: "state_badge.COMPLETED",
-    CANCELLED: "state_badge.CANCELLED",
+    APPLIED: "Čeká na schválení garanta",
+    PRELIMINARY_APPROVED: "Čeká na schválení organizací",
+    REJECTED: "Přihláška na praxi odmítnuta",
+    CONTRACTED: "Zasmluvněno",
+    STARTED: "Zahájeno",
+    ENDED: "Ukončeno",
+    COMPLETED: "Splněno",
+    CANCELLED: "Stornováno",
 
-    AWAITING_CONTRACT: "state_badge.AWAITING_CONTRACT",
-    AWAITING_DOCUMENTS: "state_badge.AWAITING_DOCUMENTS",
-    DOCUMENTS_REJECTED: "state_badge.DOCUMENTS_REJECTED",
-    DOCUMENTS_RESUBMITTED: "state_badge.DOCUMENTS_RESUBMITTED",
-    AWAITING_CONTENT_APPROVAL: "state_badge.AWAITING_CONTENT_APPROVAL",
+    AWAITING_CONTRACT: "Čeká na zasmluvnění",
+    AWAITING_DOCUMENTS: "Čeká na schválení dokumentů",
+    DOCUMENTS_REJECTED: "Dokumenty zamítnuty",
+    DOCUMENTS_RESUBMITTED: "Opravené dokumenty čekají na kontrolu",
+    AWAITING_CONTENT_APPROVAL: "Čeká na schválení obsahu",
 
     // Legacy / approval_status
-    PENDING: "state_badge.PENDING",
-    APPROVED: "state_badge.APPROVED",
-    IN_PROGRESS: "state_badge.IN_PROGRESS",
+    PENDING: "Čeká na schválení",
+    APPROVED: "Schváleno",
+    IN_PROGRESS: "Probíhá",
   };
   return (
-    keyMap[status] || (status !== undefined && status !== null ? `state_badge.${status}` : "state_badge.UNKNOWN")
+    keyMap[status] || (status !== undefined && status !== null ? `state_badge.${status}` : "Neznámý")
   );
 }
 
 /**
  * Převede číselný workflow_state NABÍDKY (Practice) na název stavu.
- * Číselná mapa getStateLabelKey odpovídá stavům přihlášky, proto se čísla nabídky
+ * Číselná mapa getStateLabel odpovídá stavům přihlášky, proto se čísla nabídky
  * musí před předáním do StateBadge přeložit.
  */
 const PRACTICE_STATE_NAMES = [
@@ -123,9 +121,7 @@ export function getStateVariant(status) {
  * Usage: <StateBadge status={entity.workflow_state} />
  */
 export default function StateBadge({ status, property = "" }) {
-  const { t } = useTranslation();
-  const labelKey = getStateLabelKey(status);
-  const label = t(labelKey);
+  const label = getStateLabel(status);
   const variant = getStateVariant(status);
 
   const variantClassMap = {

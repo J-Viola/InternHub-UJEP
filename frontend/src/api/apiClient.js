@@ -1,5 +1,4 @@
 import axios from 'axios';
-import i18n from '../i18n';
 
 const API_ROOT = '/api';
 const DEFAULT_URL = 'http://localhost:8000';

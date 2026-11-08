@@ -22,7 +22,7 @@ test.describe('Homepage smoke tests', () => {
     const loginSwitch = page.locator('#Department');
     await expect(loginSwitch).toBeVisible({ timeout: 10000 });
 
-    // Verify a heading or button text is present (i18n key login.title or login.login_button)
+    // Verify a heading or button text is present
     const body = page.locator('body');
     await expect(body).toBeVisible();
   });

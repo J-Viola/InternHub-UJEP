@@ -7,10 +7,8 @@ import Headings from "@core/Text/Headings";
 import { useSubjectAPI } from "src/api/subject/subjectAPI";
 import { useUserAPI } from "src/api/user/userAPI";
 import { useDepartmentAPI } from "src/api/department/departmentAPI";
-import { useTranslation } from "react-i18next";
 
 export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
-    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         name: "",
         subjectCode: "",
@@ -107,7 +105,7 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
     };
 
     if (loading) {
-        return <Container property={"text-center py-4"}>{t('common.loading')}</Container>;
+        return <Container property={"text-center py-4"}>{"Načítání..."}</Container>;
     }
 
     return(
@@ -115,15 +113,15 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
             {/* Údaje předmětu */}
             <Container property={"space-y-4"}>
                 <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                    {isEditing ? t('subjects.edit_subject') : t('subjects.subject_data')}
+                    {isEditing ? "Upravit předmět" : "Údaje předmětu"}
                 </Headings>
 
                 <Container property={"grid gap-4 grid-cols-1 md:grid-cols-2"}>
                     <TextField
                         id={"name"}
                         required={true}
-                        label={t('offers.filter.name')}
-                        placeholder={t('offers.filter.name')}
+                        label={"Název"}
+                        placeholder={"Název"}
                         value={formData.name}
                         onChange={handleChange("name")}
                     />
@@ -131,8 +129,8 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
                     <TextField
                         id={"subjectCode"}
                         required={true}
-                        label={t('subjects.code')}
-                        placeholder={t('subjects.code')}
+                        label={"Kód"}
+                        placeholder={"Kód"}
                         value={formData.subjectCode}
                         onChange={handleChange("subjectCode")}
                     />
@@ -140,8 +138,8 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
                     <TextField
                         id={"timeCriterion"}
                         required={true}
-                        label={t('subjects.time_criterion')}
-                        placeholder={t('subjects.time_criterion')}
+                        label={"Časové kritérium"}
+                        placeholder={"Časové kritérium"}
                         value={formData.timeCriterion}
                         onChange={handleChange("timeCriterion")}
                     />
@@ -149,8 +147,8 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
                     <DropDown
                         id={"department"}
                         required={true}
-                        label={t('subjects.department')}
-                        placeholder={t('subjects.select_department')}
+                        label={"Katedra"}
+                        placeholder={"Vyberte katedru"}
                         options={departmentOptions}
                         value={formData.department}
                         onChange={handleChange("department")}
@@ -160,8 +158,8 @@ export default function SubjectForm({handleCreate, handleUpdate, action, id}) {
                     <DropDown
                         id={"subjectManager"}
                         required={true}
-                        label={t('subjects.subject_manager')}
-                        placeholder={t('subjects.subject_manager')}
+                        label={"Správce předmětu"}
+                        placeholder={"Správce předmětu"}
                         options={professorOptions}
                         value={formData.subjectManager}
                         onChange={handleChange("subjectManager")}

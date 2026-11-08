@@ -62,7 +62,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 stag_data = validate_stag_ticket(ticket, stag_user_info=stag_user_info)
                 user = get_or_create_stag_user(stag_data, ticket)
                 if not user:
-                    raise AuthenticationFailed("Could not create or retrieve STAG user.")
+                    raise AuthenticationFailed("Uživatele ze STAGu se nepodařilo vytvořit nebo načíst.")
 
                 # Update last login manually since we bypassed authenticate()
                 update_last_login(None, user)
@@ -91,16 +91,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if email and password:
             return self._validate_with_credentials(email, password)
 
-        raise AuthenticationFailed("Email and password are required")
+        raise AuthenticationFailed("E-mail a heslo jsou povinné")
 
     def _validate_with_credentials(self, email, password):
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-            raise AuthenticationFailed("Invalid credentials")
+            raise AuthenticationFailed("Neplatné přihlašovací údaje")
 
         if not user.check_password(password) or not user.is_active:
-            raise AuthenticationFailed("Invalid credentials")
+            raise AuthenticationFailed("Neplatné přihlašovací údaje")
 
         # authenticate() updates last_login internally if used, but here we verify manually.
         update_last_login(None, user)

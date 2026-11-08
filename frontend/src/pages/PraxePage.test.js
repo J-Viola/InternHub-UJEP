@@ -72,7 +72,7 @@ describe("PraxePage - tlačítko Upravit (F-6)", () => {
       </MemoryRouter>,
     );
 
-    const editButton = await screen.findByLabelText("internships.edit_internship");
+    const editButton = await screen.findByLabelText("Upravit stáž");
     const isDisabled = editButton.disabled === true || editButton.getAttribute("aria-disabled") === "true";
     expect(isDisabled).toBe(!editable);
   });
@@ -89,12 +89,12 @@ describe("PraxePage - klik na Upravit (TC-11-03/04)", () => {
         <PraxePage />
       </MemoryRouter>,
     );
-    return screen.findByLabelText("internships.edit_internship");
+    return screen.findByLabelText("Upravit stáž");
   };
 
   test("zablokovaný inzerát: klik zobrazí upozornění a nenaviguje", async () => {
     fireEvent.click(await renderOffer(3));
-    expect(mockAddMessage).toHaveBeenCalledWith("internships.edit_blocked", "W");
+    expect(mockAddMessage).toHaveBeenCalledWith("Schválený inzerát nelze editovat", "W");
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 

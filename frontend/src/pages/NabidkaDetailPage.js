@@ -17,7 +17,6 @@ import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "@api/documents/documentsAPI";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { buildFormData } from "@utils/formDataUtils";
 import Icon from "@components/core/Icon/Icon";
 import LoadingState from "@components/core/Feedback/LoadingState";
@@ -25,8 +24,8 @@ import ErrorState from "@components/core/Feedback/ErrorState";
 import getApiErrorMessage from "@utils/apiErrorUtils";
 import { normalizeSkills } from "@utils/skills";
 
+import { SKILL_LABELS } from "@utils/skills";
 export default function NabidkaDetailPage() {
-    const { t } = useTranslation();
     const { id } = useParams();
     const [ popUp, setPopUp ] = useState(false);
     // BL-07/PBUG-BL07-07: stornování aktivní nabídky (oprávněné roly)
@@ -53,7 +52,7 @@ export default function NabidkaDetailPage() {
             setEntity(result);
             setDocs(result.student_practice_documents || []);
         } catch (error) {
-            addMessage(t('common.error'), "E");
+            addMessage("Něco se pokazilo", "E");
             setLoadError(true);
         } finally {
             setLoading(false);
@@ -78,7 +77,7 @@ export default function NabidkaDetailPage() {
             link.parentNode.removeChild(link);
             setTimeout(() => window.URL.revokeObjectURL(url), 100);
         } catch (error) {
-            addMessage(t('common.error'), "E");
+            addMessage("Něco se pokazilo", "E");
         }
     };
 
@@ -92,10 +91,10 @@ export default function NabidkaDetailPage() {
             const formData = buildFormData({ document: file });
             try {
                 await documentAPI.uploadDocument(documentId, formData);
-                addMessage(t('common.save'), "S");
+                addMessage("Uložit", "S");
                 fetchData();
             } catch (error) {
-                addMessage(t('common.error'), "E");
+                addMessage("Něco se pokazilo", "E");
             }
         };
         input.click();
@@ -108,22 +107,22 @@ export default function NabidkaDetailPage() {
     const handleApprove = async () => {
         try {
             await nabidkaAPI.changeStatus(id, { "approval_status": 1 });
-            addMessage(t('common.save'), "S");
+            addMessage("Uložit", "S");
             setPopUp(false);
             fetchData();
         } catch (error) {
-            addMessage(t('common.error'), "E");
+            addMessage("Něco se pokazilo", "E");
         }
     };
 
     const handleReject = async () => {
         try {
             await nabidkaAPI.changeStatus(id, { "approval_status": 2 });
-            addMessage(t('common.save'), "S");
+            addMessage("Uložit", "S");
             setPopUp(false);
             fetchData();
         } catch (error) {
-            addMessage(t('common.error'), "E");
+            addMessage("Něco se pokazilo", "E");
         }
     };
 
@@ -133,17 +132,17 @@ export default function NabidkaDetailPage() {
     // error resolver (getApiErrorMessage).
     const handleCancelOffer = async () => {
         if (cancelReason.trim().length < 5) {
-            addMessage(t('offers.cancel_reason_required'), "E");
+            addMessage("Důvod storna je povinný (alespoň 5 znaků).", "E");
             return;
         }
         try {
             await nabidkaAPI.cancelPractice(id, cancelReason.trim());
-            addMessage(t('offers.cancel_offer_success'), "S");
+            addMessage("Nabídka byla stornována.", "S");
             setCancelPopUp(false);
             setCancelReason("");
             fetchData();
         } catch (error) {
-            addMessage(getApiErrorMessage(error, t, 'offers.cancel_offer_error'), "E");
+            addMessage(getApiErrorMessage(error, "Nabídku se nepodařilo stornovat."), "E");
         }
     };
 
@@ -153,14 +152,13 @@ export default function NabidkaDetailPage() {
                 "practice" : id
             })
             if (res) {
-                addMessage(t('offers.apply'), "S")
+                addMessage("Podat přihlášku", "S")
                 handlePopUp(!popUp)
-                navigate(`/praxe`)
+                navigate("/praxe")
             }
         } catch (error) {
             console.error(error);
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('common.error') }), "E");
+            addMessage(getApiErrorMessage(error, "Něco se pokazilo"), "E");
         }
     }
 
@@ -171,10 +169,10 @@ export default function NabidkaDetailPage() {
     const handleReapply = async () => {
         try {
             await studentPracticeAPI.reapplyToPractice(entity.practice_id);
-            addMessage(t('practice_detail.reapply_success'), "S");
+            addMessage("Znovu jste se přihlásili na praxi", "S");
             navigate('/praxe');
         } catch (error) {
-            const detail = error?.response?.data?.detail || error?.details || t('practice_detail.reapply_error');
+            const detail = error?.response?.data?.detail || error?.details || "Chyba při opětovném přihlašování na praxi";
             addMessage(detail, "E");
         }
     }
@@ -183,24 +181,24 @@ export default function NabidkaDetailPage() {
         return (
             <Container property={"editor-content mt-2"}>
                 <Container property="flex justify-between items-center mb-4">
-                    <Headings sizeTag="h3">{t('offers.contact_person')}</Headings>
+                    <Headings sizeTag="h3">{"Kontaktní osoba"}</Headings>
                     {entity.student_practice_status && (
                         <StateBadge status={entity.student_practice_status.workflow_status} />
                     )}
                 </Container>
                 {(entity.contact_user_info.first_name || entity.contact_user_info.last_name) && (
                     <Paragraph property="mb-2">
-                        {t('form.contact_user')}: {`${entity.contact_user_info.first_name || ''} ${entity.contact_user_info.last_name || ''}`.trim()}
+                        {"Správce inzerátu"}: {`${entity.contact_user_info.first_name || ''} ${entity.contact_user_info.last_name || ''}`.trim()}
                     </Paragraph>
                 )}
                 {entity.contact_user_info.email && (
                     <Paragraph property="mb-2">
-                        {t('profile.email')}: {entity.contact_user_info.email}
+                        {"Email"}: {entity.contact_user_info.email}
                     </Paragraph>
                 )}
                 {entity.contact_user_info.phone && (
                     <Paragraph property="mb-2">
-                        {t('profile.phone')}: {entity.contact_user_info.phone}
+                        {"Telefonní číslo"}: {entity.contact_user_info.phone}
                     </Paragraph>
                 )}
             </Container>
@@ -212,12 +210,12 @@ export default function NabidkaDetailPage() {
             <BackButton/>
 
             {loading && (
-                <LoadingState message={t('common.loading')} />
+                <LoadingState message={"Načítání..."} />
             )}
 
             {!loading && loadError && (
                 <ErrorState
-                    description={t('common.error')}
+                    description={"Něco se pokazilo"}
                     onRetry={fetchData}
                 />
             )}
@@ -250,7 +248,7 @@ export default function NabidkaDetailPage() {
                         <Container property="flex flex-wrap gap-3 mt-2">
                             <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
                                 <Icon name="location-dot" size={14} color="text-white" />
-                                {t('offers.location')}: {entity?.employer?.address || t('common.not_specified')}
+                                {"Místo konání"}: {entity?.employer?.address || "Není uvedeno"}
                             </Container>
                             <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
                                 <Icon name="calendar" size={14} color="text-white" />
@@ -258,7 +256,7 @@ export default function NabidkaDetailPage() {
                             </Container>
                             {Object.entries(skills).flatMap(([category, values]) => values.map((skill, index) => (
                                 <Container key={`${category}-${index}`} property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap">
-                                    {t(`form.skills_${category}`)}: #{skill}
+                                    {SKILL_LABELS[category]}: #{skill}
                                 </Container>
                             )))}
                         </Container>
@@ -267,13 +265,13 @@ export default function NabidkaDetailPage() {
                 </Container>
                 {/* DESCRIPTION */}
                 <Container property={"editor-content mt-2"}>
-                    <Headings sizeTag="h3" property="mb-2">{t('offers.responsibilities')}</Headings>
+                    <Headings sizeTag="h3" property="mb-2">{"Popis pozice"}</Headings>
                     <Paragraph>{entity?.description}</Paragraph>
                 </Container>
 
                 {/* RESPONSIBILITY */}
                 <Container property={"editor-content mt-4"}>
-                    <Headings sizeTag="h3" property="mb-2">{t('offers.requirements')}</Headings>
+                    <Headings sizeTag="h3" property="mb-2">{"Náplň práce"}</Headings>
                     <Paragraph>{entity?.responsibilities}</Paragraph>
                 </Container>
 
@@ -290,13 +288,13 @@ export default function NabidkaDetailPage() {
                 <Container property={"flex flex-row  justify-end gap-8 mt-4"}>
                     {/* TLAČÍTKO PRO PODÁNÍ PŘIHLÁŠKY */}
                     {user && user.isStudent() && (!entity?.student_practice_status) && (
-                        <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>{t('offers.apply')}</Button>
+                        <Button property="col-start-1 justify-self-end w-full" onClick={handlePopUp}>{"Podat přihlášku"}</Button>
                     )}
 
                     {user && user.isStudent() && entity?.student_practice_status &&
                         (entity.student_practice_status.workflow_status === "REJECTED" || entity.student_practice_status.workflow_status === "CANCELLED") && (
                         <Button variant="green" onClick={handleReapply}>
-                            {t('practice_detail.reapply_button')}
+                            {"Znovu se přihlásit"}
                         </Button>
                     )}
 
@@ -308,7 +306,7 @@ export default function NabidkaDetailPage() {
                                 property={"px-8"}
                                 onClick={() => navigate(`/students/${entity.practice_id}`)}
                             >
-                                {t('offers.view_applicants')}
+                                {"Zobrazit přihlášené"}
                             </Button>
 
                             <Button
@@ -317,7 +315,7 @@ export default function NabidkaDetailPage() {
                                 property={"px-8"}
                                 onClick={handlePopUp}
                             >
-                                {t('common.manage')}
+                                {"Spravovat"}
                             </Button>
                         </>
                     )}
@@ -332,7 +330,7 @@ export default function NabidkaDetailPage() {
                             property={"px-8"}
                             onClick={() => { setCancelReason(""); setCancelPopUp(true); }}
                         >
-                            {t('offers.cancel_offer')}
+                            {"Zrušit nabídku"}
                         </Button>
                     )}
 
@@ -344,7 +342,7 @@ export default function NabidkaDetailPage() {
                                 property={"px-8"}
                                 onClick={handlePopUp}
                             >
-                                {t('common.manage')}
+                                {"Spravovat"}
                             </Button>
 
                             <Button
@@ -353,7 +351,7 @@ export default function NabidkaDetailPage() {
                                 property={"px-8"}
                                 onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
                             >
-                                {t('offers.edit_offer')}
+                                {"Upravit nabídku"}
                             </Button>
                         </>
                     )}
@@ -367,7 +365,7 @@ export default function NabidkaDetailPage() {
                                 property={"px-8"}
                                 onClick={() => navigate(`/students/${entity.practice_id}?view=true`)}
                             >
-                                {t('offers.view_applicants')}
+                                {"Zobrazit přihlášené"}
                             </Button>
 
                             <Button
@@ -376,7 +374,7 @@ export default function NabidkaDetailPage() {
                                 property={"px-8"}
                                 onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
                             >
-                                {t('offers.edit_offer')}
+                                {"Upravit nabídku"}
                             </Button>
                         </>
                     )}
@@ -398,8 +396,8 @@ export default function NabidkaDetailPage() {
             {popUp && user.isStudent() && (
                 <PopUpCon
                     onClose={handlePopUp}
-                    title={t('nav.applications')}
-                    text={t('internships.start_practice_confirm')}
+                    title={"Přihlášky"}
+                    text={"Opravdu chcete podat přihlášku na tuto praxi?"}
                     onSubmit={onSubmit}
                     onReject={onReject}
                 />
@@ -408,12 +406,12 @@ export default function NabidkaDetailPage() {
             {popUp && user.isProfessor() && (
                 <PopUpCon
                     onClose={handlePopUp}
-                    title={t('common.manage')}
-                    text={t('internships.change_status_text', { title: entity?.title })}
+                    title={"Spravovat"}
+                    text={`Chcete změnit stav nabídky: ${entity?.title}?`}
                     onSubmit={handleApprove}
                     onReject={handleReject}
-                    onSubmitText={t('common.approve')}
-                    onRejectText={t('common.reject')}
+                    onSubmitText={"Schválit"}
+                    onRejectText={"Zamítnout"}
                 />
             )}
 
@@ -421,15 +419,15 @@ export default function NabidkaDetailPage() {
             {cancelPopUp && (
                 <PopUpCon
                     onClose={() => { setCancelPopUp(false); setCancelReason(""); }}
-                    title={t('offers.cancel_offer')}
-                    text={t('offers.cancel_offer_text')}
+                    title={"Zrušit nabídku"}
+                    text={"Stornování nabídky je nevratné a zruší všechny přihlášky studentů."}
                     onSubmit={handleCancelOffer}
-                    onSubmitText={t('offers.cancel_offer')}
+                    onSubmitText={"Zrušit nabídku"}
                     onReject={() => { setCancelPopUp(false); setCancelReason(""); }}
                 >
                     <Container property={"mb-4"}>
                         <label htmlFor="cancel-reason" className="block text-sm font-medium text-gray-700 mb-1">
-                            {t('offers.cancel_reason')}
+                            {"Důvod storna"}
                         </label>
                         <textarea
                             id="cancel-reason"
@@ -437,7 +435,7 @@ export default function NabidkaDetailPage() {
                             onChange={(e) => setCancelReason(e.target.value)}
                             rows={3}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder={t('offers.cancel_reason_placeholder')}
+                            placeholder={"Napište důvod storna nabídky…"}
                         />
                     </Container>
                 </PopUpCon>

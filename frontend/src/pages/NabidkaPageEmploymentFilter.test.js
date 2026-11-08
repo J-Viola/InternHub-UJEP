@@ -12,7 +12,6 @@ import { useCodeListAPI } from '@api/code_list/code_listAPI';
 import { useMessage } from '@hooks/MessageContext';
 
 // Factory mocky (bez automocku) — jinak se načte reálný řetězec
-// nabidkaAPI → apiClient → src/i18n.js, který při mocku react-i18next padá.
 jest.mock('@api/nabidka/nabidkaAPI', () => ({ useNabidkaAPI: jest.fn() }));
 jest.mock('@api/code_list/code_listAPI', () => ({ useCodeListAPI: jest.fn() }));
 jest.mock('@hooks/MessageContext', () => ({ useMessage: jest.fn() }));
@@ -27,9 +26,6 @@ jest.mock('@hooks/SearchParams', () => ({
     useClearParams: () => jest.fn(),
     useStripParams: () => jest.fn(() => ({})),
     makeQuery: () => ''
-}));
-jest.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (key) => key })
 }));
 
 // Lehké náhrady za těžké dětské komponenty (NabidkaPage test je jinak mockuje);
@@ -91,9 +87,9 @@ describe('NabidkaPage — odeslání filtru úvazku do API', () => {
 
         await waitFor(() => expect(mockGetNabidky).toHaveBeenCalled());
 
-        const select = screen.getByLabelText(/offers\.filter\.employment_type/);
+        const select = screen.getByLabelText(/Typ úvazku/);
         fireEvent.change(select, { target: { value: 'uvazek_0_5' } });
-        fireEvent.click(screen.getByText('common.search'));
+        fireEvent.click(screen.getByText("Hledat"));
 
         await waitFor(() =>
             expect(mockGetNabidky).toHaveBeenLastCalledWith(
@@ -111,9 +107,9 @@ describe('NabidkaPage — odeslání filtru úvazku do API', () => {
 
         await waitFor(() => expect(mockGetNabidky).toHaveBeenCalled());
 
-        const select = screen.getByLabelText(/offers\.filter\.employment_type/);
+        const select = screen.getByLabelText(/Typ úvazku/);
         fireEvent.change(select, { target: { value: 'uvazek_1_0' } });
-        fireEvent.click(screen.getByText('common.search'));
+        fireEvent.click(screen.getByText("Hledat"));
         await waitFor(() =>
             expect(mockGetNabidky).toHaveBeenLastCalledWith(
                 expect.objectContaining({ employment_type: 'uvazek_1_0' })
@@ -121,7 +117,7 @@ describe('NabidkaPage — odeslání filtru úvazku do API', () => {
         );
 
         fireEvent.change(select, { target: { value: '' } });
-        fireEvent.click(screen.getByText('common.search'));
+        fireEvent.click(screen.getByText("Hledat"));
         await waitFor(() => {
             const lastParams = mockGetNabidky.mock.calls[mockGetNabidky.mock.calls.length - 1][0];
             expect(lastParams).not.toHaveProperty('employment_type');

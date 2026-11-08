@@ -2,10 +2,8 @@ import React from "react";
 import Button from "@core/Button/Button";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
-import { useTranslation } from "react-i18next";
 
 export default function ApplicationEntity({ entity, onSettings, onProfile, onClick }) {
-    const { t } = useTranslation();
     return (
         <ContainerForEntity
             id={`application-entity-${entity.student_practice_id}`}
@@ -33,7 +31,7 @@ export default function ApplicationEntity({ entity, onSettings, onProfile, onCli
                 {entity.can_approve && (
                     <Button
                         icon="manage"
-                        title={t('applications.manage_app')}
+                        title={"Spravovat přihlášku"}
                         noVariant={true}
                         iconColor="text-black"
                         iconSize="28"
@@ -45,7 +43,7 @@ export default function ApplicationEntity({ entity, onSettings, onProfile, onCli
                 )}
                 <Button
                     icon="user"
-                    title={t('students.view_profile')}
+                    title={"Zobrazit profil"}
                     noVariant={true}
                     iconColor="text-black"
                     iconSize="28"

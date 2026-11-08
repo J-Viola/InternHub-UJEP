@@ -10,7 +10,6 @@ import Icon from "@components/core/Icon/Icon"
 import StateBadge, { practiceStateName } from "@core/StateBadge";
 import { useUser } from "@hooks/UserProvider"
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI"
-import { useTranslation } from "react-i18next"
 import { flattenSkills } from "@utils/skills";
 
 export default function NabidkaEntity({ entity }) {
@@ -18,7 +17,6 @@ export default function NabidkaEntity({ entity }) {
     const { user, setUser } = useUser();
     const { toggleFavorite } = useNabidkaAPI();
     const [isFavorite, setIsFavorite] = useState(false);
-    const { t } = useTranslation();
 
     useEffect(() => {
         if (user && user.favorite_practices && user.favorite_practices.includes(entity.practice_id)) {
@@ -101,7 +99,7 @@ export default function NabidkaEntity({ entity }) {
 
                             {user.isStudent() && (
                                 <Button
-                                    title={isFavorite ? t('offers.favorite_remove') : t('offers.favorite_add')}
+                                    title={isFavorite ? "Odebrat z oblíbených" : "Přidat mezi oblíbené"}
                                     icon={isFavorite ? "heart-filled" : "heart"}
                                     iconColor={isFavorite ? "text-red-500" : "text-gray-400"}
                                     onClick={handleHeartClick}
@@ -123,7 +121,7 @@ export default function NabidkaEntity({ entity }) {
                         {/* MÍSTO */}
                         <Container property="bg-[#93c5fd] text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-sm whitespace-nowrap flex items-center gap-2">
                             <Icon name="location-dot" size={14} color="text-white" />
-                            {t('offers.location')}: {entity.employer?.address || t('common.not_specified')}
+                            {"Místo konání"}: {entity.employer?.address || "Není uvedeno"}
                         </Container>
 
                         {/* SKILLS */}
@@ -146,10 +144,10 @@ export default function NabidkaEntity({ entity }) {
                                 }`}
                             >
                                 <span>
-                                    {entity.approved_applications || 0}/{entity.available_positions} {t('offers.occupied')}
+                                    {entity.approved_applications || 0}/{entity.available_positions} {"obsazeno"}
                                 </span>
                                 {entity.approved_applications >= entity.available_positions && entity.available_positions > 0 && (
-                                    <span className="uppercase text-xs font-bold">{t('offers.full')}</span>
+                                    <span className="uppercase text-xs font-bold">{"plná"}</span>
                                 )}
                             </Container>
                         )}
@@ -165,7 +163,7 @@ export default function NabidkaEntity({ entity }) {
                                 property="px-6 py-2 text-sm font-bold uppercase"
                                 onClick={handleClick}
                             >
-                                {t('common.view_detail')}
+                                {"Zobrazit detail"}
                             </Button>
                         </Container>
                     </Container>

@@ -8,7 +8,6 @@ import { useDocumentsAPI } from '@api/documents/documentsAPI';
 import { useUser } from '@hooks/UserProvider';
 import { useMessage } from '@hooks/MessageContext';
 import User from '@auth/UserObj';
-import translations from '../../public/locales/cs/translation.json';
 
 jest.mock('@api/student_practice/student_practiceAPI');
 jest.mock('@api/nabidka/nabidkaAPI');
@@ -20,17 +19,6 @@ jest.mock('@hooks/useApi', () => ({
     useApi: () => ({ get: jest.fn().mockResolvedValue({ data: [] }) }),
 }));
 
-jest.mock('react-i18next', () => {
-    const dict = require('../../public/locales/cs/translation.json');
-    const resolve = (obj, key) =>
-        key.split('.').reduce((acc, part) => (acc && typeof acc === 'object' ? acc[part] : undefined), obj);
-    return {
-        useTranslation: () => ({
-            t: (key) => resolve(dict, key) ?? key,
-            i18n: { language: 'cs' },
-        }),
-    };
-});
 
 jest.mock('@core/Button/BackButton', () => () => <button>Back</button>);
 
@@ -50,10 +38,6 @@ jest.mock('@core/Container/PopUpCon', () => ({
         </div>
     ),
 }));
-
-const resolve = (obj, key) =>
-    key.split('.').reduce((acc, part) => (acc && typeof acc === 'object' ? acc[part] : undefined), obj);
-const tr = (key) => resolve(translations, key) ?? key;
 
 const makeUser = (role) => {
     const user = new User();
@@ -153,14 +137,14 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         renderPage();
 
         await waitFor(() => {
-            expect(screen.getByText(tr('practice_detail.repair_approve'))).toBeInTheDocument();
+            expect(screen.getByText("Schválit opravu (Ukončeno)")).toBeInTheDocument();
         });
-        expect(screen.getByText(tr('practice_detail.repair_approve_continue'))).toBeInTheDocument();
-        expect(screen.getByText(tr('practice_detail.repair_reject'))).toBeInTheDocument();
+        expect(screen.getByText("Schválit opravu (kontrola dokumentů)")).toBeInTheDocument();
+        expect(screen.getByText("Zamítnout opravu")).toBeInTheDocument();
         // garant není admin → terminální zamítnutí se nezobrazuje
-        expect(screen.queryByText(tr('practice_detail.terminal_reject'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Trvale zamítnout (REJECTED)")).not.toBeInTheDocument();
 
-        fireEvent.click(screen.getByText(tr('practice_detail.repair_approve')));
+        fireEvent.click(screen.getByText("Schválit opravu (Ukončeno)"));
         await waitFor(() => {
             expect(mockTransition).toHaveBeenCalledWith('5', 5, '');
         });
@@ -171,10 +155,10 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         renderPage();
 
         await waitFor(() => {
-            expect(screen.getByText(tr('practice_detail.terminal_reject'))).toBeInTheDocument();
+            expect(screen.getByText("Trvale zamítnout (REJECTED)")).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByText(tr('practice_detail.repair_approve_continue')));
+        fireEvent.click(screen.getByText("Schválit opravu (kontrola dokumentů)"));
         await waitFor(() => {
             expect(mockTransition).toHaveBeenCalledWith('5', 8, '');
         });
@@ -186,12 +170,12 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
 
         await waitFor(() => {
             expect(
-                screen.getByText(tr('practice_detail.documents_resubmitted_banner'))
+                screen.getByText("Opravené dokumenty byly nahrány a čekají na kontrolu garantem. Schválení provede garant nebo škola.")
             ).toBeInTheDocument();
         });
-        expect(screen.queryByText(tr('practice_detail.repair_approve'))).not.toBeInTheDocument();
-        expect(screen.queryByText(tr('practice_detail.repair_reject'))).not.toBeInTheDocument();
-        expect(screen.queryByText(tr('practice_detail.terminal_reject'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Schválit opravu (Ukončeno)")).not.toBeInTheDocument();
+        expect(screen.queryByText("Zamítnout opravu")).not.toBeInTheDocument();
+        expect(screen.queryByText("Trvale zamítnout (REJECTED)")).not.toBeInTheDocument();
     });
 
     test('C19-B: student ve DOCUMENTS_REJECTED dostane opravný banner', async () => {
@@ -209,7 +193,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
 
         await waitFor(() => {
             expect(
-                screen.getByText(tr('practice_detail.documents_rejected_banner'))
+                screen.getByText("Dokumenty byly zamítnuty. Nahraďte opravené soubory v panelu dokumentů níže — po nahrání odejdou ke kontrole garantovi.")
             ).toBeInTheDocument();
         });
         // důvod se zobrazí v obou banerech (rejected + opravný)
@@ -225,7 +209,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         useUser.mockReturnValue({ user: makeUser('VY') });
         const { unmount } = renderPage();
         await waitFor(() => expect(mockGetCard).toHaveBeenCalled());
-        expect(screen.queryByText(tr('common.approve'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Schválit")).not.toBeInTheDocument();
         unmount();
 
         mockGetCard.mockResolvedValue(makeEntity({
@@ -233,7 +217,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
             student_practice_status: { ...makeEntity().student_practice_status, workflow_status: 'ENDED' },
         }));
         renderPage();
-        expect((await screen.findAllByText(tr('docs.feedback'))).length).toBeGreaterThan(0);
+        expect((await screen.findAllByText("Zpětná vazba")).length).toBeGreaterThan(0);
     });
 
   test('refreshes detail and timeline when window regains focus', async () => {
@@ -250,15 +234,15 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
     }));
     useUser.mockReturnValue({ user: makeUser('ST') });
     renderPage();
-    fireEvent.click(await screen.findByText(tr('practice_detail.cancel_request_button')));
-    const textarea = screen.getByPlaceholderText(tr('practice_detail.cancel_request_placeholder'));
+    fireEvent.click(await screen.findByText("Stornovat praxi"));
+    const textarea = screen.getByPlaceholderText("Důvod ukončení");
     fireEvent.change(textarea, { target: { value: 'Rozepsaný důvod žádosti' } });
 
     mockGetCard.mockClear();
     fireEvent.focus(window);
     fireEvent(document, new Event('visibilitychange'));
 
-    expect(screen.getByPlaceholderText(tr('practice_detail.cancel_request_placeholder'))).toBe(textarea);
+    expect(screen.getByPlaceholderText("Důvod ukončení")).toBe(textarea);
     expect(textarea).toHaveValue('Rozepsaný důvod žádosti');
     expect(mockGetCard).toHaveBeenCalledTimes(1);
   });
@@ -275,17 +259,17 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         useUser.mockReturnValue({ user: makeUser('ST') });
         renderPage();
 
-        const requestButton = await screen.findByText(tr('practice_detail.cancel_request_button'));
+        const requestButton = await screen.findByText("Stornovat praxi");
         fireEvent.click(requestButton);
 
-        const textarea = screen.getByPlaceholderText(tr('practice_detail.cancel_request_placeholder'));
+        const textarea = screen.getByPlaceholderText("Důvod ukončení");
         fireEvent.change(textarea, { target: { value: 'Zrušeno ze zdravotních důvodů' } });
         fireEvent.click(screen.getByTestId('popup-submit'));
 
         await waitFor(() => {
             expect(mockRequestCancellation).toHaveBeenCalledWith('5', 'Zrušeno ze zdravotních důvodů');
         });
-        expect(mockAddMessage).toHaveBeenCalledWith(tr('practice_detail.cancel_request_success'), 'S');
+        expect(mockAddMessage).toHaveBeenCalledWith("Praxe byla stornována", 'S');
         // žádost se neposílá bez důvodu
         expect(mockRequestCancellation).toHaveBeenCalledTimes(1);
     });
@@ -302,12 +286,12 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         useUser.mockReturnValue({ user: makeUser('ST') });
         renderPage();
 
-        fireEvent.click(await screen.findByText(tr('practice_detail.cancel_request_button')));
+        fireEvent.click(await screen.findByText("Stornovat praxi"));
         fireEvent.click(screen.getByTestId('popup-submit'));
 
         expect(mockRequestCancellation).not.toHaveBeenCalled();
         expect(mockAddMessage).toHaveBeenCalledWith(
-            tr('practice_detail.cancel_request_reason_required'),
+            "Důvod storno je povinný",
             'E'
         );
     });
@@ -329,11 +313,11 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         const { unmount } = renderPage();
         await waitFor(() => {
             expect(
-                screen.getByText(tr('practice_detail.cancellation_pending_student'))
+                screen.getByText("Praxe je stornována. Novou žádost o praxi můžete podat, až garant storno vezme na vědomí.")
             ).toBeInTheDocument();
         });
-        expect(screen.queryByText(tr('practice_detail.cancel_request_button'))).not.toBeInTheDocument();
-        expect(screen.queryByText(tr('practice_detail.cancellation_acknowledge'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Stornovat praxi")).not.toBeInTheDocument();
+        expect(screen.queryByText("Vzít na vědomí")).not.toBeInTheDocument();
         unmount();
 
         // garant VK: vezme storno na vědomí (bez rozhodnutí a bez důvodu)
@@ -341,10 +325,10 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         renderPage();
         await waitFor(() => {
             expect(
-                screen.getByText(tr('practice_detail.cancellation_pending_resolver'))
+                screen.getByText("Student tuto praxi stornoval. Vezměte storno na vědomí:")
             ).toBeInTheDocument();
         });
-        fireEvent.click(screen.getByText(tr('practice_detail.cancellation_acknowledge')));
+        fireEvent.click(screen.getByText("Vzít na vědomí"));
         await waitFor(() => {
             expect(mockResolveCancellation).toHaveBeenCalledWith('5');
         });
@@ -357,7 +341,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         await waitFor(() => {
             expect(mockGetCard).toHaveBeenCalled();
         });
-        expect(screen.queryByText(tr('practice_detail.cancellation_acknowledge'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Vzít na vědomí")).not.toBeInTheDocument();
     });
 
     test('A-12: organizace nemůže vzít storno na vědomí', async () => {
@@ -367,7 +351,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         await waitFor(() => {
             expect(mockGetCard).toHaveBeenCalled();
         });
-        expect(screen.queryByText(tr('practice_detail.cancellation_acknowledge'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Vzít na vědomí")).not.toBeInTheDocument();
     });
 
     test('T2b: potvrzení smlouvy jen ve AWAITING_CONTRACT, ne ve CONTRACTED', async () => {
@@ -383,7 +367,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         const { unmount } = renderPage();
         await waitFor(() => {
             expect(
-                screen.getByText(tr('practice_detail.confirm_contract'))
+                screen.getByText("Potvrdit přijetí smlouvy")
             ).toBeInTheDocument();
         });
         unmount();
@@ -400,7 +384,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         await waitFor(() => {
             expect(mockGetCard).toHaveBeenCalled();
         });
-        expect(screen.queryByText(tr('practice_detail.confirm_contract'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Potvrdit přijetí smlouvy")).not.toBeInTheDocument();
     });
 
     test('T2b: školní role vidí potvrzení smlouvy v AWAITING_CONTRACT', async () => {
@@ -409,7 +393,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         }));
         useUser.mockReturnValue({ user: makeUser('VY') });
         renderPage();
-        fireEvent.click(await screen.findByText(tr('practice_detail.confirm_contract')));
+        fireEvent.click(await screen.findByText("Potvrdit přijetí smlouvy"));
         await waitFor(() => expect(mockConfirmContract).toHaveBeenCalledWith('5'));
     });
 
@@ -419,7 +403,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         }));
         useUser.mockReturnValue({ user: makeUser('ST') });
         renderPage();
-        fireEvent.click(await screen.findByText(tr('practice_detail.resubmit_button')));
+        fireEvent.click(await screen.findByText("Upravit a znovu odeslat"));
         await waitFor(() => expect(mockUpdateStatus).toHaveBeenCalledWith('5', 'resubmit', { workflowStatus: 'CONTENT_REJECTED' }));
     });
 
@@ -436,7 +420,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         useUser.mockReturnValue({ user: makeUser('VK') });
         renderPage();
 
-        fireEvent.click(await screen.findByText(tr('common.manage')));
+        fireEvent.click(await screen.findByText("Spravovat"));
         fireEvent.click(screen.getByTestId('popup-submit'));
 
         await waitFor(() => {
@@ -453,17 +437,17 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         });
         useUser.mockReturnValue({ user: makeUser('ST') });
         mockApply.mockRejectedValue(
-            Object.assign(new Error('capacity'), { code: 'CAPACITY_FULL' })
+            Object.assign(new Error('capacity'), { code: 'CAPACITY_FULL', details: 'Kapacita partnera je plně obsazena' })
         );
 
         renderPage();
 
-        fireEvent.click(await screen.findByText(tr('offers.apply')));
+        fireEvent.click(await screen.findByText("Podat přihlášku"));
         fireEvent.click(screen.getByTestId('popup-submit'));
 
         await waitFor(() => {
             expect(mockAddMessage).toHaveBeenCalledWith(
-                'Kapacita partnera je plně obsazena.',
+                'Kapacita partnera je plně obsazena',
                 'E'
             );
         });
@@ -485,7 +469,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         await waitFor(() => {
             expect(mockGetCard).toHaveBeenCalled();
         });
-        expect(screen.queryByText(tr('practice_detail.complete_button'))).not.toBeInTheDocument();
+        expect(screen.queryByText("Udělit zápočet (Splněno)")).not.toBeInTheDocument();
         unmount();
 
         // garant: akci vidí a server gate (400) se zobrazí čistě
@@ -498,7 +482,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         );
         renderPage();
 
-        fireEvent.click(await screen.findByText(tr('practice_detail.complete_button')));
+        fireEvent.click(await screen.findByText("Udělit zápočet (Splněno)"));
         await waitFor(() => {
             expect(mockTransition).toHaveBeenCalledWith('5', 6, '');
         });
@@ -536,7 +520,7 @@ describe('PraxeDetailPage — BL-04 role visibility / workflow akce', () => {
         useUser.mockReturnValue({ user: makeUser('VK') });
         renderPage();
 
-        fireEvent.click(await screen.findByText(tr('common.approve')));
+        fireEvent.click(await screen.findByText("Schválit"));
         await waitFor(() => {
             expect(mockReviewDocument).toHaveBeenCalledWith(42, 1, '');
         });

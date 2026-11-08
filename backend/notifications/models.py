@@ -37,8 +37,7 @@ class Notification(models.Model):
         ``None`` when there is no single associated entity.
 
     message
-        Human-readable text shown to the user (currently Czech-only; i18n can
-        be reintroduced later as ``message_cs`` / ``message_en`` if needed).
+        Human-readable Czech text shown to the user.
 
     notification_type
         Severity level (INFO / SUCCESS / WARNING / ERROR).

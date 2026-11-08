@@ -12,10 +12,10 @@ describe('LoginForm', () => {
         );
 
         // Switch to Company login first
-        const companySwitch = screen.getByText('login.i_am_firma');
+        const companySwitch = screen.getByText("Jsem firma");
         fireEvent.click(companySwitch);
 
-        const emailInput = screen.getByPlaceholderText('login.email');
+        const emailInput = screen.getByPlaceholderText("E-mail");
         const passwordInput = screen.getByPlaceholderText('*****');
 
         fireEvent.change(emailInput, { target: { value: 'test@firma.cz' } });
@@ -33,20 +33,20 @@ describe('LoginForm', () => {
         );
 
         // Default is STAG
-        expect(screen.getByText('login.stag_info')).toBeInTheDocument();
+        expect(screen.getByText("Přihlášení pomocí systému STAG příslušné univerzity.")).toBeInTheDocument();
 
         // Switch to Company login
-        const companySwitch = screen.getByText('login.i_am_firma');
+        const companySwitch = screen.getByText("Jsem firma");
         fireEvent.click(companySwitch);
 
-        expect(screen.getByPlaceholderText('login.email')).toBeInTheDocument();
-        expect(screen.queryByText('login.stag_info')).not.toBeInTheDocument();
+        expect(screen.getByPlaceholderText("E-mail")).toBeInTheDocument();
+        expect(screen.queryByText("Přihlášení pomocí systému STAG příslušné univerzity.")).not.toBeInTheDocument();
 
         // Switch back to STAG
-        const stagSwitch = screen.getByText('login.stag_label');
+        const stagSwitch = screen.getByText("STAG");
         fireEvent.click(stagSwitch);
 
-        expect(screen.queryByPlaceholderText('login.email')).not.toBeInTheDocument();
-        expect(screen.getByText('login.stag_info')).toBeInTheDocument();
+        expect(screen.queryByPlaceholderText("E-mail")).not.toBeInTheDocument();
+        expect(screen.getByText("Přihlášení pomocí systému STAG příslušné univerzity.")).toBeInTheDocument();
     });
 });

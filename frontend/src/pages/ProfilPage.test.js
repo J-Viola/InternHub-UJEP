@@ -58,7 +58,7 @@ describe('ProfilPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('common.loading')).toBeInTheDocument();
+        expect(screen.getByText("Načítání...")).toBeInTheDocument();
     });
 
     test('renders own profile details', async () => {
@@ -73,7 +73,7 @@ describe('ProfilPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.queryByText('common.loading')).not.toBeInTheDocument();
+            expect(screen.queryByText("Načítání...")).not.toBeInTheDocument();
         });
 
         expect(screen.getByText('Jan Student')).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('ProfilPage', () => {
             </MemoryRouter>
         );
 
-        const link = await screen.findByText('profile.download_cv');
+        const link = await screen.findByText("Stáhnout CV");
         fireEvent.click(link);
 
         await waitFor(() => expect(mockApiGet).toHaveBeenCalledWith('/files/storage/documents/cvs/a.pdf/', { responseType: 'blob' }));

@@ -50,6 +50,9 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
     # Statistiky studentů
     approved_count = serializers.SerializerMethodField()
     pending_count = serializers.SerializerMethodField()
+    # Frontend používá stejná data pod těmito názvy (karty nabídek).
+    approved_applications = serializers.SerializerMethodField()
+    pending_applications = serializers.SerializerMethodField()
 
     class Meta:
         model = Practice
@@ -61,6 +64,8 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
             "available_positions",
             "approved_count",
             "pending_count",
+            "approved_applications",
+            "pending_applications",
             "approval_status",
             "workflow_state",
             "workflow_status_label",
@@ -79,6 +84,12 @@ class OrganizationPracticeSerializer(serializers.ModelSerializer):
         if hasattr(obj, "pending_count"):
             return obj.pending_count
         return obj.student_practices.filter(approval_status=ApprovalStatus.PENDING).count()
+
+    def get_approved_applications(self, obj):
+        return self.get_approved_count(obj)
+
+    def get_pending_applications(self, obj):
+        return self.get_pending_count(obj)
 
 
 class PracticeSerializer(PracticeSkillsSemesterMixin, serializers.ModelSerializer):

@@ -9,10 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { useDepartmentAPI } from "@api/department/departmentAPI";
 import { useUserAPI } from "@api/user/userAPI";
 import { useMessage } from "@hooks/MessageContext";
-import { useTranslation } from "react-i18next";
 
 export default function DepartmentForm({ handleCreate, handleUpdate, action, id }) {
-    const { t } = useTranslation();
     const isEditing = action === 'edit';
 
     const navigate = useNavigate();
@@ -59,7 +57,7 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
                 });
             }
         } catch (error) {
-            addMessage(t('departments.load_error'), 'E');
+            addMessage("Chyba při načítání kateder", 'E');
         } finally {
             setLoading(false);
         }
@@ -76,7 +74,7 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
         e.preventDefault();
 
         if (!formData.department_name.trim()) {
-            addMessage(t('departments.name_required'), 'E');
+            addMessage("Název katedry je povinný", 'E');
             return;
         }
 
@@ -88,11 +86,11 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
     };
 
     const getSubmitButtonText = () => {
-        return isEditing ? t('form.save_changes') : t('form.create');
+        return isEditing ? "Uložit změny" : "Vytvořit";
     };
 
     if (loading) {
-        return <Container property={"text-center py-4"}>{t('common.loading')}</Container>;
+        return <Container property={"text-center py-4"}>{"Načítání..."}</Container>;
     }
 
     return (
@@ -100,25 +98,25 @@ export default function DepartmentForm({ handleCreate, handleUpdate, action, id 
             <form onSubmit={handleSubmit}>
                 <Container property={"space-y-6"}>
                     <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        {isEditing ? t('departments.edit_title') : t('departments.data_title')}
+                        {isEditing ? "Upravit katedru" : "Údaje katedry"}
                     </Headings>
 
                     <Container property={"grid gap-4 grid-cols-1 md:grid-cols-2"}>
                         <TextField
                             id="department_name"
-                            label={t('departments.name_label')}
+                            label={"Název katedry"}
                             value={formData.department_name}
                             onChange={(value) => handleInputChange('department_name', value.department_name)}
-                            placeholder={t('departments.name_placeholder')}
+                            placeholder={"Zadejte název katedry"}
                             required = {true}
                         />
 
                         <DropDown
                             id="head_of_department"
-                            label={t('departments.head_label')}
+                            label={"Vedoucí katedry"}
                             value={formData.head_of_department}
                             onChange={(value) => handleInputChange('head_of_department', value.head_of_department)}
-                            placeholder={t('departments.head_placeholder')}
+                            placeholder={"Vyberte vedoucího katedry"}
                             required={true}
                             options={professors}
                         />

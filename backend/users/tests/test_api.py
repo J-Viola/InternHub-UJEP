@@ -71,7 +71,7 @@ class CustomTokenObtainPairSerializerTests(TestCase):
         attrs = {"email": "test@example.com", "password": "WrongPassword"}
         with self.assertRaises(Exception) as context:
             self.serializer.validate(attrs)
-        self.assertIn("Invalid credentials", str(context.exception))
+        self.assertIn("Neplatné přihlašovací údaje", str(context.exception))
 
     def test_fails_with_non_existent_email(self):
         attrs = {
@@ -80,13 +80,13 @@ class CustomTokenObtainPairSerializerTests(TestCase):
         }
         with self.assertRaises(Exception) as context:
             self.serializer.validate(attrs)
-        self.assertIn("Invalid credentials", str(context.exception))
+        self.assertIn("Neplatné přihlašovací údaje", str(context.exception))
 
     def test_requires_credentials(self):
         attrs = {}
         with self.assertRaises(Exception) as context:
             self.serializer.validate(attrs)
-        self.assertIn("Email and password are required", str(context.exception))
+        self.assertIn("E-mail a heslo jsou povinné", str(context.exception))
 
 
 class RegisterSerializerTests(TestCase):
@@ -365,7 +365,7 @@ class DeactivatedUserLoginTests(TestCase):
                     "password": "ValidPass123",
                 }
             )
-        self.assertIn("Invalid credentials", str(context.exception))
+        self.assertIn("Neplatné přihlašovací údaje", str(context.exception))
 
     def test_active_user_can_login_with_credentials(self):
         """Active user can still login."""

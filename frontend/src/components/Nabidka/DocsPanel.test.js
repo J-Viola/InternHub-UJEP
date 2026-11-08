@@ -1,12 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import DocsPanel from './DocsPanel';
-import { useTranslation } from 'react-i18next';
 import { useUser } from '@hooks/UserProvider';
 
-jest.mock('react-i18next', () => ({
-  useTranslation: jest.fn(),
-}));
 
 jest.mock('@hooks/UserProvider', () => ({
   useUser: jest.fn(),
@@ -28,9 +24,6 @@ describe('DocsPanel', () => {
   ];
 
   beforeEach(() => {
-    useTranslation.mockReturnValue({
-      t: (key) => key,
-    });
     useUser.mockReturnValue({
       user: {
         isDepartmentMg: jest.fn().mockReturnValue(false),
@@ -63,13 +56,13 @@ describe('DocsPanel', () => {
       />
     );
 
-    expect(screen.getByText('docs.check_status:')).toBeInTheDocument();
-    expect(screen.getByText('docs.checked')).toBeInTheDocument();
-    expect(screen.getByText('docs.title')).toBeInTheDocument();
+    expect(screen.getByText('Kontrola dokumentu:')).toBeInTheDocument();
+    expect(screen.getByText("PROBĚHLA")).toBeInTheDocument();
+    expect(screen.getByText("Dokumenty")).toBeInTheDocument();
 
-    expect(screen.getByText('docs.contract_draft')).toBeInTheDocument();
-    expect(screen.getByText('docs.internship_content')).toBeInTheDocument();
-    expect(screen.getByText('docs.feedback')).toBeInTheDocument();
+    expect(screen.getByText("Návrh smlouvy")).toBeInTheDocument();
+    expect(screen.getByText("Náplň stáže")).toBeInTheDocument();
+    expect(screen.getByText("Zpětná vazba")).toBeInTheDocument();
   });
 
   test('disables buttons when doc ID is missing', () => {
@@ -83,8 +76,8 @@ describe('DocsPanel', () => {
       />
     );
 
-    const downloadButtons = screen.getAllByText('docs.download_file');
-    const uploadButtons = screen.getAllByText('docs.upload_file');
+    const downloadButtons = screen.getAllByText("Stáhnout soubor");
+    const uploadButtons = screen.getAllByText("Nahrát soubor");
 
     expect(downloadButtons).toHaveLength(3);
     expect(uploadButtons).toHaveLength(3);
@@ -108,8 +101,8 @@ describe('DocsPanel', () => {
       />
     );
 
-    const downloadButtons = screen.getAllByText('docs.download_file');
-    const uploadButtons = screen.getAllByText('docs.upload_file');
+    const downloadButtons = screen.getAllByText("Stáhnout soubor");
+    const uploadButtons = screen.getAllByText("Nahrát soubor");
 
     fireEvent.click(downloadButtons[0]);
     expect(mockHandleDownload).toHaveBeenCalledWith(1);
@@ -136,7 +129,7 @@ describe('DocsPanel', () => {
       />
     );
 
-    const manageButton = screen.getByText('docs.doc_check');
+    const manageButton = screen.getByText("Kontrola dokumentů");
     expect(manageButton).toBeInTheDocument();
 
     fireEvent.click(manageButton);

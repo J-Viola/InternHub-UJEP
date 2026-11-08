@@ -8,6 +8,6 @@
 // migrace 0014_practice_employment_type_codes). Další hodnoty se
 // nepřidávají bez nového garantského rozhodnutí.
 export const EMPLOYMENT_TYPE_OPTIONS = [
-    { value: "uvazek_0_5", labelKey: "offers.filter.employment_type_part_time" },
-    { value: "uvazek_1_0", labelKey: "offers.filter.employment_type_full_time" },
+    { value: "uvazek_0_5", label: "Úvazek 0,5" },
+    { value: "uvazek_1_0", label: "Úvazek 1,0" },
 ];

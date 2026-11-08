@@ -60,7 +60,7 @@ describe('RegistracePage', () => {
             }));
         });
         await waitFor(() => {
-            expect(mockAddMessage).toHaveBeenCalledWith('registration.success', 'S');
+            expect(mockAddMessage).toHaveBeenCalledWith("Registrace úspěšná", 'S');
         });
         await waitFor(() => {
             expect(mockLogin).toHaveBeenCalledWith({

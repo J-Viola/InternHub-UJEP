@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import './i18n';
 import './index.css';
 import LoginPage from "@pages/LoginPage";
 import NabidkaPage from '@pages/NabidkaPage';
@@ -41,7 +40,6 @@ import ForbiddenPage from '@pages/ForbiddenPage';
 import MainLayout from '@components/Layout/MainLayout';
 import ProtectedRoute from '@components/ProtectedRoute';
 import { withErrorBoundary } from '@components/ErrorBoundary';
-import { useTranslation } from 'react-i18next';
 import * as Sentry from "@sentry/react";
 
 // Sentry error monitoring — only initializes when REACT_APP_SENTRY_DSN is set
@@ -95,12 +93,11 @@ const ForbiddenPageW      = w(ForbiddenPage);
 
 const AppRoutes = () => {
   const { isInitializing } = useAuth();
-  const { t } = useTranslation();
 
   if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-xl text-gray-600">{t('common.loading_app')}</div>
+        <div className="text-xl text-gray-600">{"Načítání aplikace..."}</div>
       </div>
     );
   }

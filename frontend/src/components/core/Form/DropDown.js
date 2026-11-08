@@ -2,10 +2,8 @@ import React, { useState, useCallback, useEffect } from "react";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
-import { useTranslation } from "react-i18next";
 
 export default function DropDown({id, property, label, placeholder, icon = false, required = false, value, onChange, options = [], onIconClick, hover = false,  variant = "default", disableDefault = false, disabled = false, error = null}) {
-    const { t } = useTranslation();
     const [selectedValue, setSelectedValue] = useState((value && id) ? {[id]: value} : {[id]: ""});
 
     // Synchronizace default value
@@ -66,7 +64,7 @@ export default function DropDown({id, property, label, placeholder, icon = false
                     value={selectedValue[id] || ""}
                     onChange={handleSelectChange}
                 >
-                    <option value="" disabled={disableDefault}>{placeholder || t('common.select_option')}</option>
+                    <option value="" disabled={disableDefault}>{placeholder || "Vyberte možnost"}</option>
                     {options.map((option) => (
                         <option key={option.value} value={option.value}>
                             {option.label}

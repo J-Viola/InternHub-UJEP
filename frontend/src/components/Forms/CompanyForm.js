@@ -9,11 +9,9 @@ import Headings from "@components/core/Text/Headings";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import { useMessage } from "@hooks/MessageContext";
 import { useCompanyAPI } from "src/api/company/companyAPI";
-import { useTranslation } from "react-i18next";
 import { validateEmail, validateICO, validateRequired, validatePassword } from "@utils/validationUtils";
 
 export default function CompanyForm({ handleCreate, handleUpdate, action, id, errors = {} }) {
-    const { t } = useTranslation();
     const ares = useAresAPI();
     const { addMessage } = useMessage();
     const companyAPI = useCompanyAPI();
@@ -86,14 +84,14 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
         setLocalErrors({}); // Clear previous local errors
         setSearchResults([]); // Clear previous results
         if (!validateRequired(icoValue)) {
-            setLocalErrors(prev => ({ ...prev, ico: t('employer.ares_fill') }));
-            addMessage(t('employer.ares_fill'), "E");
+            setLocalErrors(prev => ({ ...prev, ico: "Vyplnění údajů pomocí systému ARES" }));
+            addMessage("Vyplnění údajů pomocí systému ARES", "E");
             return;
         }
 
         if (!validateICO(icoValue)) {
-            setLocalErrors(prev => ({ ...prev, ico: t('company.invalid_ico') }));
-            addMessage(t('company.invalid_ico'), "E");
+            setLocalErrors(prev => ({ ...prev, ico: "Neplatné IČO" }));
+            addMessage("Neplatné IČO", "E");
             return;
         }
 
@@ -103,13 +101,13 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
             if (response) {
                 // ARES typically returns one specific entity for an ICO
                 setSearchResults([response]);
-                addMessage(t('employer.ares_success'), "S");
+                addMessage("Údaje byly úspěšně načteny z ARES", "S");
             } else {
-                addMessage(t('employer.ares_error'), "W");
+                addMessage("Chyba při načítání údajů z ARES", "W");
             }
         } catch (error) {
-            setLocalErrors(prev => ({ ...prev, ico: t('employer.ares_error') }));
-            addMessage(t('employer.ares_error'), "E");
+            setLocalErrors(prev => ({ ...prev, ico: "Chyba při načítání údajů z ARES" }));
+            addMessage("Chyba při načítání údajů z ARES", "E");
         } finally {
             setLoading(false);
         }
@@ -126,7 +124,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
         }));
         setAresFetched(true);
         setSearchResults([]); // Clear results after selection
-        addMessage(t('company.prefilled_success'), "S");
+        addMessage("Údaje firmy byly předvyplněny", "S");
     };
 
     const validateForm = () => {
@@ -134,44 +132,44 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
         let isValid = true;
 
         const requiredFields = {
-            'executiveName': t('employer.executive_name'),
-            'executiveSurname': t('employer.executive_surname'),
-            'executiveEmail': t('employer.executive_email'),
-            'executivePhone': t('employer.executive_phone'),
-            'companyName': t('company.name_label'),
-            'address': t('profile.address')
+            'executiveName': "Jméno jednatele",
+            'executiveSurname': "Příjmení jednatele",
+            'executiveEmail': "E-mailová adresa jednatele",
+            'executivePhone': "Telefonní číslo jednatele",
+            'companyName': "Název společnosti",
+            'address': "Adresa"
         };
 
         if (!isEditing) {
-            requiredFields['executivePassword1'] = t('login.password');
-            requiredFields['executivePassword2'] = t('login.password');
+            requiredFields['executivePassword1'] = "Heslo";
+            requiredFields['executivePassword2'] = "Heslo";
         }
 
         if (!aresFetched && !isEditing) {
-            newLocalErrors.ico = t('employer.ares_needed');
+            newLocalErrors.ico = "Nejprve načtěte údaje z ARES";
             isValid = false;
         }
 
         for (const [fieldId, fieldName] of Object.entries(requiredFields)) {
             if (!validateRequired(formData[fieldId])) {
-                newLocalErrors[fieldId] = t('company.is_required', { field: fieldName });
+                newLocalErrors[fieldId] = `${fieldName} je povinné.`;
                 isValid = false;
             }
         }
 
         if (formData.executiveEmail && !validateEmail(formData.executiveEmail)) {
-            newLocalErrors.executiveEmail = t('login.invalid_email');
+            newLocalErrors.executiveEmail = "Neplatný formát e-mailu";
             isValid = false;
         }
 
         if (!isEditing && formData.executivePassword1 && !validatePassword(formData.executivePassword1)) {
-            newLocalErrors.executivePassword1 = t('login.password_min_length', { length: 8 });
+            newLocalErrors.executivePassword1 = `Heslo musí mít alespoň ${8} znaků`;
             isValid = false;
         }
 
         if (!isEditing && formData.executivePassword1 && formData.executivePassword2 &&
             formData.executivePassword1 !== formData.executivePassword2) {
-            newLocalErrors.executivePassword2 = t('employer.password_mismatch');
+            newLocalErrors.executivePassword2 = "Hesla se neshodují";
             isValid = false;
         }
 
@@ -228,14 +226,14 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
     };
 
     if (loading) {
-        return <Container property={"text-center py-4"}>{t('common.loading')}</Container>;
+        return <Container property={"text-center py-4"}>{"Načítání..."}</Container>;
     }
 
     return(
             <>
                 <Container>
                      <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        {isEditing ? t('company.edit_title') : t('company.data_title')}
+                        {isEditing ? "Upravit společnost" : "Údaje společnosti"}
                     </Headings>
                 </Container>
                 {!isEditing && (
@@ -244,7 +242,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                             <TextField
                                 id={"ico"}
                                 required={true}
-                                label={t('company.ico_placeholder')}
+                                label={"Zadejte IČO firmy"}
                                 placeholder={"12345678"}
                                 value={icoValue}
                                 onChange={(value) => setICOValue(value.ico)}
@@ -256,7 +254,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                                 onClick={() => handleARESCall(icoValue)}
                                 variant={"blueSmall"}
                             >
-                                {t('common.search')}
+                                {"Hledat"}
                             </Button>
                         </Container>
 
@@ -264,14 +262,14 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         {searchResults.length > 0 && (
                             <Container property="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-4 shadow-sm animate-fadeIn">
                                 <Headings sizeTag="h5" property="mb-4 font-black uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-2">
-                                    {t('company.search_results')}
+                                    {"Výsledky vyhledávání"}
                                 </Headings>
                                 {searchResults.map((result, index) => (
                                     <div key={index} className="flex flex-col md:flex-row justify-between items-center p-4 bg-white rounded-lg border border-blue-100 hover:border-blue-300 transition-all shadow-sm">
                                         <div className="flex flex-col mb-4 md:mb-0">
                                             <span className="font-black text-xl text-gray-900">{result.obchodniJmeno}</span>
                                             <div className="flex gap-4 mt-1">
-                                                <span className="text-sm font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">{t('profile.ico')}: {result.ico}</span>
+                                                <span className="text-sm font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">{"IČO"}: {result.ico}</span>
                                                 {result.dic && <span className="text-sm font-bold text-gray-600">DIČ: {result.dic}</span>}
                                             </div>
                                             <span className="text-sm text-gray-500 mt-1 italic">{result.sidlo?.textovaAdresa}</span>
@@ -282,7 +280,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                                             icon="check"
                                             property="whitespace-nowrap px-6"
                                         >
-                                            {t('company.select')}
+                                            {"Vybrat"}
                                         </Button>
                                     </div>
                                 ))}
@@ -295,9 +293,9 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"companyName"}
                         required={true}
-                        label={t('company.name_label')}
+                        label={"Název společnosti"}
                         value={formData.companyName}
-                        placeholder={t('company.name_placeholder')}
+                        placeholder={"Zadejte název společnosti"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
                         error={localErrors.companyName || errors.company_name}
@@ -306,9 +304,9 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"address"}
                         required={true}
-                        label={t('profile.address')}
+                        label={"Adresa"}
                         value={formData.address}
-                        placeholder={t('profile.address')}
+                        placeholder={"Adresa"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
                         error={localErrors.address || errors.address}
@@ -317,8 +315,8 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"titleBefore"}
                         required={false}
-                        label={t('profile.title_before')}
-                        placeholder={t('profile.title_before_placeholder')}
+                        label={"Titul před"}
+                        placeholder={"např. Ing., Mgr."}
                         value={formData.titleBefore}
                         onChange={(value) => handleFormChange(value)}
                         error={localErrors.titleBefore || errors.title_before}
@@ -327,8 +325,8 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"executiveName"}
                         required={true}
-                        label={t('employer.executive_name')}
-                        placeholder={t('profile.first_name_placeholder')}
+                        label={"Jméno jednatele"}
+                        placeholder={"Zadejte jméno"}
                         value={formData.executiveName}
                         onChange={(value) => handleFormChange(value)}
                         error={localErrors.executiveName || errors.first_name}
@@ -337,8 +335,8 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"executiveSurname"}
                         required={true}
-                        label={t('employer.executive_surname')}
-                        placeholder={t('profile.last_name_placeholder')}
+                        label={"Příjmení jednatele"}
+                        placeholder={"Zadejte příjmení"}
                         value={formData.executiveSurname}
                         onChange={(value) => handleFormChange(value)}
                         error={localErrors.executiveSurname || errors.last_name}
@@ -347,8 +345,8 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"titleAfter"}
                         required={false}
-                        label={t('profile.title_after')}
-                        placeholder={t('profile.title_after_placeholder')}
+                        label={"Titul za"}
+                        placeholder={"např. Ph.D."}
                         value={formData.titleAfter}
                         onChange={(value) => handleFormChange(value)}
                         error={localErrors.titleAfter || errors.title_after}
@@ -357,8 +355,8 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"executiveEmail"}
                         required={true}
-                        label={t('employer.executive_email')}
-                        placeholder={t('profile.email_placeholder')}
+                        label={"E-mailová adresa jednatele"}
+                        placeholder={"Zadejte e-mailovou adresu"}
                         value={formData.executiveEmail}
                         onChange={(value) => handleFormChange(value)}
                         error={localErrors.executiveEmail || errors.email}
@@ -367,8 +365,8 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     <TextField
                         id={"executivePhone"}
                         required={true}
-                        label={t('employer.executive_phone')}
-                        placeholder={t('profile.phone_placeholder')}
+                        label={"Telefonní číslo jednatele"}
+                        placeholder={"Zadejte telefonní číslo"}
                         value={formData.executivePhone}
                         onChange={(value) => handleFormChange(value)}
                         error={localErrors.executivePhone || errors.phone}
@@ -380,7 +378,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         <TextField
                             id={"executivePassword1"}
                             required={true}
-                            label={t('login.password')}
+                            label={"Heslo"}
                             placeholder={"******"}
                             type={"password"}
                             value={formData.executivePassword1}
@@ -391,7 +389,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         <TextField
                             id={"executivePassword2"}
                             required={true}
-                            label={t('login.password')}
+                            label={"Heslo"}
                             placeholder={"******"}
                             type={"password"}
                             value={formData.executivePassword2}
@@ -405,7 +403,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                     id="companyLogo"
                     property={"mt-4"}
                     onChange={handleFileChange}
-                    label={t('employer.upload_logo')}
+                    label={"Nahrát logo organizace"}
                     accept="image/*"
                     previewOn={true}
                 />
@@ -415,7 +413,7 @@ export default function CompanyForm({ handleCreate, handleUpdate, action, id, er
                         property={"mt-2 px-16"}
                         onClick={handleSubmit}
                     >
-                        {isEditing ? t('form.save_changes') : t('company.create_button')}
+                        {isEditing ? "Uložit změny" : "Vytvořit společnost"}
                     </Button>
 
                 </Container>

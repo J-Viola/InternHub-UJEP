@@ -2,11 +2,9 @@ import React, { useCallback, useState } from "react";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
-import { useTranslation } from "react-i18next";
 
 export default function TextField({id, property, label, placeholder, icon = false, required = false, value = "", onChange, type = "text", onIconClick, disabled = false, error = null}) {
 
-    const { t } = useTranslation();
     const [showPassword, setShowPassword] = useState(false);
 
     const labelEntity = label ? (
@@ -56,7 +54,7 @@ export default function TextField({id, property, label, placeholder, icon = fals
                 {type === "password" && (
                     <Container property="absolute right-2 top-1/2 -translate-y-1/2">
                         <Button
-                            title={showPassword ? t('common.hide_password') : t('common.show_password')}
+                            title={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
                             noVariant={true}
                             icon={showPassword ? "eye-slash" : "eye"}
                             iconColor={"text-black"}

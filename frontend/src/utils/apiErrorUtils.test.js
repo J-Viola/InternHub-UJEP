@@ -1,11 +1,4 @@
 import { getApiErrorMessage } from './apiErrorUtils';
-import translations from '../../public/locales/cs/translation.json';
-
-const resolve = (obj, key) =>
-    key.split('.').reduce((acc, part) => (acc && typeof acc === 'object' ? acc[part] : undefined), obj);
-
-// simulace i18next: chybějící klíč se vrací jako klíč (stejně jako mocky v RTL)
-const t = (key) => resolve(translations, key) ?? key;
 
 const makeError = ({ code, details, responseData }) => {
     const err = new Error('api error');
@@ -16,24 +9,24 @@ const makeError = ({ code, details, responseData }) => {
 };
 
 describe('getApiErrorMessage — BL-04 error surfacing', () => {
-    test('capacity chyba přes error_code (transition/confirm) → česká hláška', () => {
+    test('český text z error_code má přednost před fallbackem', () => {
         const error = makeError({
             code: 'CAPACITY_FULL',
             details: 'Kapacita partnera je plně obsazena',
         });
-        expect(getApiErrorMessage(error, t, 'practice_detail.apply_error')).toBe(
-            'Kapacita partnera je plně obsazena.'
+        expect(getApiErrorMessage(error, 'Došlo k chybě při podání přihlášky.')).toBe(
+            'Kapacita partnera je plně obsazena'
         );
     });
 
-    test('capacity chyba jako detail token (apply/reapply) → přeložený token', () => {
+    test('token místo textu (apply/reapply) → fallback stránky', () => {
         const error = makeError({
             code: 'DRF_ERROR',
             details: 'CAPACITY_FULL',
             responseData: { detail: 'CAPACITY_FULL' },
         });
-        expect(getApiErrorMessage(error, t, 'practice_detail.apply_error')).toBe(
-            'Kapacita partnera je plně obsazena.'
+        expect(getApiErrorMessage(error, 'Došlo k chybě při podání přihlášky.')).toBe(
+            'Došlo k chybě při podání přihlášky.'
         );
 
         const reapplyError = makeError({
@@ -41,35 +34,33 @@ describe('getApiErrorMessage — BL-04 error surfacing', () => {
             details: 'KAPACITA_NAPLNENA',
             responseData: { detail: 'KAPACITA_NAPLNENA' },
         });
-        expect(getApiErrorMessage(reapplyError, t, 'practice_detail.reapply_error')).toBe(
-            'Kapacita partnera je plně obsazena.'
+        expect(getApiErrorMessage(reapplyError, 'Chyba při opětovném přihlašování na praxi')).toBe(
+            'Chyba při opětovném přihlašování na praxi'
         );
     });
 
-    test('serverová věta se zobrazí přímo (žádný generický překlad)', () => {
+    test('česká věta ze serveru se zobrazí přímo', () => {
         const error = makeError({
             code: 'DRF_ERROR',
             details: 'Storno je již vyřešeno.',
         });
-        expect(getApiErrorMessage(error, t, 'practice_detail.cancellation_resolve_error')).toBe(
+        expect(getApiErrorMessage(error, 'Storno se nepodařilo vzít na vědomí')).toBe(
             'Storno je již vyřešeno.'
         );
     });
 
-    test('token bez překladu → fallback klíč', () => {
+    test('token bez textu → fallback stránky', () => {
         const error = makeError({ code: 'DRF_ERROR', details: 'NEJAKY_TOKEN_XYZ' });
-        expect(getApiErrorMessage(error, t, 'practice_detail.apply_error')).toBe(
+        expect(getApiErrorMessage(error, 'Došlo k chybě při podání přihlášky.')).toBe(
             'Došlo k chybě při podání přihlášky.'
         );
     });
 
-    test('bez kódu i detailu → fallback klíč; bez erroru také', () => {
-        expect(getApiErrorMessage({}, t, 'practice_detail.reject_error')).toBe('Chyba při zamítání');
-        expect(getApiErrorMessage(undefined, t, 'practice_detail.reject_error')).toBe(
-            'Chyba při zamítání'
-        );
-        expect(getApiErrorMessage({ code: 'DRF_ERROR' }, t, undefined)).toBe(
-            'Chyba při komunikaci se serverem.'
+    test('bez detailu i fallbacku → obecná hláška', () => {
+        expect(getApiErrorMessage({}, 'Chyba při zamítání')).toBe('Chyba při zamítání');
+        expect(getApiErrorMessage(undefined, 'Chyba při zamítání')).toBe('Chyba při zamítání');
+        expect(getApiErrorMessage({ code: 'DRF_ERROR' }, undefined)).toBe(
+            'Došlo k neočekávané chybě serveru.'
         );
     });
 });

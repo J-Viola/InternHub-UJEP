@@ -18,7 +18,7 @@ module.exports = defineConfig({
     // BL-07: E2E_BASE_URL umožní namířit běh na izolovaný stack (disposable DB),
     // výchozí hodnota se nemění (CI/local default zůstává localhost:3000).
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
-    locale: 'cs',                // Force Czech locale for i18n consistency
+    locale: 'cs',                // Czech locale for consistent date/number formatting
     timezoneId: 'Europe/Prague',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',

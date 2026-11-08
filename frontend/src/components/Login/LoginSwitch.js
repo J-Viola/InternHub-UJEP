@@ -2,10 +2,8 @@ import React, {useState, useCallback, useEffect} from "react";
 import Container from "@core/Container/Container";
 import Button from "@core/Button/Button";
 import Paragraph from "@components/core/Text/Paragraph";
-import { useTranslation } from "react-i18next";
 
 export default function LoginSwitch({getLoginType}) {
-    const { t } = useTranslation();
     const logTypes = ["STAG", "Department"]
 
     // Barevné varianty stavů
@@ -50,7 +48,7 @@ export default function LoginSwitch({getLoginType}) {
         <>
             <Container property={"w-full flex flex-row items-center justify-start gap-2 mb-4"} >
                 <Container>
-                    <Paragraph id="STAG" variant={"largeBold"} property={colorTypes[0]["STAG"]} onClick={handleSwitch}>{t('login.stag_label')}</Paragraph>
+                    <Paragraph id="STAG" variant={"largeBold"} property={colorTypes[0]["STAG"]} onClick={handleSwitch}>{"STAG"}</Paragraph>
                 </Container>
 
                 <Container>
@@ -58,7 +56,7 @@ export default function LoginSwitch({getLoginType}) {
                 </Container>
 
                 <Container>
-                    <Paragraph id="Department" variant={"largeBold"} property={colorTypes[1]["Department"]} onClick={handleSwitch}>{t('login.i_am_firma')}</Paragraph>
+                    <Paragraph id="Department" variant={"largeBold"} property={colorTypes[1]["Department"]} onClick={handleSwitch}>{"Jsem firma"}</Paragraph>
                 </Container>
             </Container>
         </>

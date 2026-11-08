@@ -39,7 +39,7 @@ describe('StudentApplicationsPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('common.loading')).toBeInTheDocument();
+        expect(screen.getByText("Načítání...")).toBeInTheDocument();
     });
 
     test('renders applications and invitations when data is fetched', async () => {
@@ -60,7 +60,7 @@ describe('StudentApplicationsPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.queryByText('common.loading')).not.toBeInTheDocument();
+            expect(screen.queryByText("Načítání...")).not.toBeInTheDocument();
         });
 
         expect(screen.getByText('App 1')).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe('StudentApplicationsPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('internships.no_applications')).toBeInTheDocument();
+            expect(screen.getByText("Nemáte žádné podané přihlášky.")).toBeInTheDocument();
         });
 
         expect(screen.queryByTestId('app-card')).not.toBeInTheDocument();
@@ -99,7 +99,7 @@ describe('StudentApplicationsPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('internships.no_invitations_pending')).toBeInTheDocument();
+            expect(screen.getByText("Nemáte žádné čekající pozvánky od firem.")).toBeInTheDocument();
         });
     });
 
@@ -113,9 +113,9 @@ describe('StudentApplicationsPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('internships.error')).toBeInTheDocument();
+            expect(screen.getByText("Nepodařilo se načíst stáže. Zkuste to prosím znovu.")).toBeInTheDocument();
         });
 
-        expect(screen.queryByText('common.loading')).not.toBeInTheDocument();
+        expect(screen.queryByText("Načítání...")).not.toBeInTheDocument();
     });
 });

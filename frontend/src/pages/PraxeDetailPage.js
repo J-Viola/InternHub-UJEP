@@ -16,7 +16,6 @@ import { useMessage } from "@hooks/MessageContext";
 import ProgressPanel from "@components/Nabidka/ProgressBar";
 import { useDocumentsAPI } from "@api/documents/documentsAPI";
 import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
-import { useTranslation } from "react-i18next";
 import { buildFormData } from "@utils/formDataUtils";
 import { getApiErrorMessage } from "@utils/apiErrorUtils";
 import {
@@ -32,7 +31,6 @@ import Timeline from "@components/Student/Timeline";
 import usePolling, { POLLING_INTERVAL_MS } from "@hooks/usePolling";
 
 export default function PraxeDetailPage() {
-  const { t } = useTranslation();
   const { id } = useParams();
   const [popUp, setPopUp] = useState(false);
   const [docsPopUp, setDocsPopUp] = useState(false);
@@ -88,7 +86,7 @@ export default function PraxeDetailPage() {
       } catch (error) {
         if (sequence !== fetchSequence.current) return;
         if (!silent) {
-          addMessage(t("practice_detail.card_load_error"), "E");
+          addMessage("Chyba při načítání karty praxe", "E");
           setLoadError(true);
         }
       } finally {
@@ -134,7 +132,7 @@ export default function PraxeDetailPage() {
       link.click();
       link.parentNode.removeChild(link);
     } catch (error) {
-      addMessage(t("practice_detail.download_error"), "E");
+      addMessage("Chyba při stahování dokumentu", "E");
     }
   };
 
@@ -148,10 +146,10 @@ export default function PraxeDetailPage() {
       const formData = buildFormData({ document: file });
       try {
         await documentAPI.uploadDocument(documentId, formData);
-        addMessage(t("practice_detail.upload_success"), "S");
+        addMessage("Dokument úspěšně nahrán", "S");
         fetchData();
       } catch (error) {
-        addMessage(t("practice_detail.upload_error"), "E");
+        addMessage("Chyba při nahrávání dokumentu", "E");
       }
     };
     input.click();
@@ -162,15 +160,15 @@ export default function PraxeDetailPage() {
     let note = "";
     if (status === 2) {
       // REJECTED
-      note = prompt(t("docs.reject_note_prompt")) || "";
+      note = prompt("Zadejte důvod vrácení dokumentu:") || "";
     }
 
     try {
       await documentAPI.reviewDocument(documentId, status, note);
-      addMessage(t("docs.review_success"), "S");
+      addMessage("Dokument byl úspěšně zkontrolován", "S");
       fetchData();
     } catch (error) {
-      addMessage(t("docs.review_error"), "E");
+      addMessage("Chyba při kontrole dokumentu", "E");
     }
   };
 
@@ -189,9 +187,9 @@ export default function PraxeDetailPage() {
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
-      addMessage(t("practice_detail.generate_success"), "S");
+      addMessage("Dokument byl úspěšně vygenerován", "S");
     } catch (error) {
-      addMessage(t("practice_detail.generate_error"), "E");
+      addMessage("Chyba při generování dokumentu", "E");
     }
   };
 
@@ -209,14 +207,14 @@ export default function PraxeDetailPage() {
         practice: id,
       });
       if (res) {
-        addMessage(t("practice_detail.apply_success"), "S");
+        addMessage("Žádost byla úspěšně odeslána", "S");
         handlePopUp();
         fetchData();
       }
     } catch (error) {
       console.error(error);
       // kapacita (CAPACITY_FULL) i ostatní serverové chyby se zobrazí čistě
-      addMessage(getApiErrorMessage(error, t, "practice_detail.apply_error"), "E");
+      addMessage(getApiErrorMessage(error, "Došlo k chybě při podání přihlášky."), "E");
     }
   };
 
@@ -225,11 +223,11 @@ export default function PraxeDetailPage() {
       await studentpraticeAPI.updateStudentPracticeStatus(id, "approve", {
         workflowStatus: entity?.student_practice_status?.workflow_status,
       });
-      addMessage(t("practice_detail.approve_success"), "S");
+      addMessage("Přihláška schválena", "S");
       fetchData();
       setPopUp(false);
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.approve_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při schvalování"), "E");
     }
   };
 
@@ -241,7 +239,7 @@ export default function PraxeDetailPage() {
 
   const handleRejectWithReason = async () => {
     if (rejectReason.trim().length < 10) {
-      addMessage(t(rejectReason.trim() ? "practice_detail.reject_reason_required" : "practice_detail.reject_reason_empty"), "E");
+      addMessage(rejectReason.trim() ? "Důvod zamítnutí musí mít alespoň 10 znaků" : "Důvod zamítnutí je povinný", "E");
       return;
     }
     try {
@@ -249,12 +247,12 @@ export default function PraxeDetailPage() {
         reason: rejectReason.trim(),
         workflowStatus: entity?.student_practice_status?.workflow_status,
       });
-      addMessage(t("practice_detail.reject_success"), "S");
+      addMessage("Přihláška zamítnuta", "S");
       fetchData();
       setRejectPopUp(false);
       setRejectReason("");
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.reject_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při zamítání"), "E");
     }
   };
 
@@ -263,10 +261,10 @@ export default function PraxeDetailPage() {
       // T2b: potvrzení je idempotentní (opakování stejné osy = 200 no-op);
       // UI nabízí akci jen ve stavu AWAITING_CONTRACT, kde by jinde 400.
       await studentpraticeAPI.confirmContract(id);
-      addMessage(t("practice_detail.confirm_contract_success"), "S");
+      addMessage("Přijetí smlouvy bylo úspěšně potvrzeno", "S");
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.confirm_contract_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při potvrzování přijetí smlouvy"), "E");
     }
   };
 
@@ -275,38 +273,38 @@ export default function PraxeDetailPage() {
       await studentpraticeAPI.updateStudentPracticeStatus(id, "resubmit", {
         workflowStatus: entity?.student_practice_status?.workflow_status,
       });
-      addMessage(t("practice_detail.resubmit_success"), "S");
+      addMessage("Praxe byla znovu odeslána ke schválení", "S");
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.resubmit_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při opětovném odesílání praxe"), "E");
     }
   };
 
   const handleWithdraw = async () => {
     try {
       await studentpraticeAPI.withdrawApplication(id);
-      addMessage(t("practice_detail.withdraw_success"), "S");
+      addMessage("Úspěšně jste se odhlásili z praxe", "S");
       setWithdrawPopUp(false);
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.withdraw_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při odhlašování z praxe"), "E");
     }
   };
 
   // --- A-12: okamžité storno studentem (vlastní přihláška) ---
   const handleRequestCancellation = async () => {
     if (!cancelReason.trim()) {
-      addMessage(t("practice_detail.cancel_request_reason_required"), "E");
+      addMessage("Důvod storno je povinný", "E");
       return;
     }
     try {
       await studentpraticeAPI.requestCancellation(id, cancelReason.trim());
-      addMessage(t("practice_detail.cancel_request_success"), "S");
+      addMessage("Praxe byla stornována", "S");
       setCancelPopUp(false);
       setCancelReason("");
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.cancel_request_error"), "E");
+      addMessage(getApiErrorMessage(error, "Praxi se nepodařilo stornovat"), "E");
     }
   };
 
@@ -314,10 +312,10 @@ export default function PraxeDetailPage() {
   const handleResolveCancellation = async () => {
     try {
       await studentpraticeAPI.resolveCancellation(id);
-      addMessage(t("practice_detail.cancellation_resolve_success"), "S");
+      addMessage("Storno bylo vzato na vědomí", "S");
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.cancellation_resolve_error"), "E");
+      addMessage(getApiErrorMessage(error, "Storno se nepodařilo vzít na vědomí"), "E");
     }
   };
 
@@ -326,10 +324,10 @@ export default function PraxeDetailPage() {
   const handleComplete = async () => {
     try {
       await studentpraticeAPI.transitionStudentPractice(id, 6, "");
-      addMessage(t("practice_detail.complete_success"), "S");
+      addMessage("Praxe byla dokončena (Splněno)", "S");
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.complete_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při dokončování praxe"), "E");
     }
   };
 
@@ -337,10 +335,10 @@ export default function PraxeDetailPage() {
   const handleRepairApprove = async (targetState) => {
     try {
       await studentpraticeAPI.transitionStudentPractice(id, targetState, "");
-      addMessage(t("practice_detail.repair_action_success"), "S");
+      addMessage("Rozhodnutí o dokumentech bylo zaznamenáno", "S");
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.repair_action_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při rozhodování o dokumentech"), "E");
     }
   };
 
@@ -352,7 +350,7 @@ export default function PraxeDetailPage() {
 
   const handleRepairDecision = async () => {
     if (repairReason.trim().length < 10) {
-      addMessage(t("practice_detail.reject_reason_required"), "E");
+      addMessage("Důvod zamítnutí musí mít alespoň 10 znaků", "E");
       return;
     }
     // 'reject' → DOCUMENTS_REJECTED (smyčka pokračuje);
@@ -360,13 +358,13 @@ export default function PraxeDetailPage() {
     const targetState = repairDecision === "terminal" ? 2 : 9;
     try {
       await studentpraticeAPI.transitionStudentPractice(id, targetState, repairReason.trim());
-      addMessage(t("practice_detail.repair_action_success"), "S");
+      addMessage("Rozhodnutí o dokumentech bylo zaznamenáno", "S");
       setRepairPopUp(false);
       setRepairDecision("");
       setRepairReason("");
       fetchData();
     } catch (error) {
-      addMessage(getApiErrorMessage(error, t, "practice_detail.repair_action_error"), "E");
+      addMessage(getApiErrorMessage(error, "Chyba při rozhodování o dokumentech"), "E");
     }
   };
 
@@ -374,11 +372,11 @@ export default function PraxeDetailPage() {
     <>
       <BackButton />
 
-      {loading && <LoadingState message={t("common.loading")} />}
+      {loading && <LoadingState message={"Načítání..."} />}
 
       {!loading && loadError && (
         <ErrorState
-          description={t("practice_detail.card_load_error")}
+          description={"Chyba při načítání karty praxe"}
           onRetry={fetchData}
         />
       )}
@@ -390,16 +388,16 @@ export default function PraxeDetailPage() {
             <Container property="flex justify-between items-start">
               <Container>
                 <Headings sizeTag={"h3"} property={""}>
-                  {t("practice_detail.student_title")}
+                  {"Student"}
                 </Headings>
                 <Paragraph property={"mt-2"}>
                   {entity?.student_practice_status?.student_info?.full_name}
                 </Paragraph>
                 <Paragraph>
-                  {`${t("students.personal_number")}: ${entity?.student_practice_status?.student_info?.os_cislo || t("common.not_specified")}`}
+                  {`Osobní číslo: ${entity?.student_practice_status?.student_info?.os_cislo || "Není uvedeno"}`}
                 </Paragraph>
                 <Paragraph>
-                  {`${t("profile.email")}: ${entity?.student_practice_status?.student_info?.email}`}
+                  {`Email: ${entity?.student_practice_status?.student_info?.email}`}
                 </Paragraph>
               </Container>
 
@@ -410,7 +408,7 @@ export default function PraxeDetailPage() {
                   <Container property="flex flex-col gap-2 items-end">
                     <Container property="flex items-center gap-2">
                       <Paragraph property="text-sm font-medium">
-                        {t("practice_detail.school_approval")}:
+                        {"Schválení školou"}:
                       </Paragraph>
                       <Button
                         variant={
@@ -421,13 +419,13 @@ export default function PraxeDetailPage() {
                         pointer={false}
                       >
                         {entity.student_practice_status.school_approved
-                          ? t("practice_detail.approved")
-                          : t("practice_detail.pending")}
+                          ? "Schváleno"
+                          : "Čeká"}
                       </Button>
                     </Container>
                     <Container property="flex items-center gap-2">
                       <Paragraph property="text-sm font-medium">
-                        {t("practice_detail.employer_approval")}:
+                        {"Schválení firmou"}:
                       </Paragraph>
                       <Button
                         variant={
@@ -438,8 +436,8 @@ export default function PraxeDetailPage() {
                         pointer={false}
                       >
                         {entity.student_practice_status.employer_approved
-                          ? t("practice_detail.approved")
-                          : t("practice_detail.pending")}
+                          ? "Schváleno"
+                          : "Čeká"}
                       </Button>
                     </Container>
                   </Container>
@@ -456,7 +454,7 @@ export default function PraxeDetailPage() {
               <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
                 <Container property="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
                   <Paragraph property="text-red-800 font-semibold text-sm">
-                    {t("practice_detail.rejected_banner")}
+                    {"Přihláška na praxi byla zamítnuta"}
                   </Paragraph>
                   <Paragraph property="text-red-700 text-sm mt-1">
                     {entity.student_practice_status.rejection_reason}
@@ -472,14 +470,11 @@ export default function PraxeDetailPage() {
               <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
                 <Container property="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg shadow-sm flex flex-col gap-3">
                   <Paragraph property="text-red-800 font-medium">
-                    {t("practice_detail.content_rejected_banner", {
-                      reason:
-                        entity.student_practice_status.rejection_reason ||
-                        t("common.not_specified"),
-                    })}
+                    {`Obsah praxe byl zamítnut. Důvod: ${entity.student_practice_status.rejection_reason ||
+                        "Není uvedeno"}`}
                   </Paragraph>
                   <Button variant="primary" onClick={handleResubmit} property="w-fit">
-                    {t("practice_detail.resubmit_button")}
+                    {"Upravit a znovu odeslat"}
                   </Button>
                 </Container>
               </ContainerForEntity>
@@ -492,7 +487,7 @@ export default function PraxeDetailPage() {
               <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
                 <Container property="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg shadow-sm flex flex-col gap-2">
                   <Paragraph property="text-red-800 font-medium">
-                    {t("practice_detail.documents_rejected_banner")}
+                    {"Dokumenty byly zamítnuty. Nahraďte opravené soubory v panelu dokumentů níže — po nahrání odejdou ke kontrole garantovi."}
                   </Paragraph>
                   {entity?.student_practice_status?.rejection_reason && (
                     <Paragraph property="text-red-700 text-sm">
@@ -508,7 +503,7 @@ export default function PraxeDetailPage() {
             <ContainerForEntity property="pl-8 pr-8 pt-4 pb-4 mb-2">
               <Container property="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm">
                 <Paragraph property="text-yellow-800 font-medium">
-                  {t("practice_detail.documents_resubmitted_banner")}
+                  {"Opravené dokumenty byly nahrány a čekají na kontrolu garantem. Schválení provede garant nebo škola."}
                 </Paragraph>
               </Container>
             </ContainerForEntity>
@@ -541,7 +536,7 @@ export default function PraxeDetailPage() {
               user.isAdmin()) && (
               <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-4"}>
                 <Headings sizeTag="h4" property="mb-3">
-                  {t("practice_detail.docs_check_title")}
+                  {"Kontrola dokumentů"}
                 </Headings>
                 <Container property="flex flex-wrap gap-2">
                   <Button
@@ -550,11 +545,11 @@ export default function PraxeDetailPage() {
                     onClick={() =>
                       handleGenerateDocument(
                         "contract",
-                        t("practice_detail.generate_contract"),
+                        "Generovat smlouvu",
                       )
                     }
                   >
-                    {t("practice_detail.generate_contract")}
+                    {"Generovat smlouvu"}
                   </Button>
                   <Button
                     variant="blueSmall"
@@ -562,11 +557,11 @@ export default function PraxeDetailPage() {
                     onClick={() =>
                       handleGenerateDocument(
                         "content",
-                        t("practice_detail.generate_content"),
+                        "Generovat pracovní náplň",
                       )
                     }
                   >
-                    {t("practice_detail.generate_content")}
+                    {"Generovat pracovní náplň"}
                   </Button>
                   <Button
                     variant="blueSmall"
@@ -574,11 +569,11 @@ export default function PraxeDetailPage() {
                     onClick={() =>
                       handleGenerateDocument(
                         "report",
-                        t("practice_detail.generate_report"),
+                        "Generovat výkaz",
                       )
                     }
                   >
-                    {t("practice_detail.generate_report")}
+                    {"Generovat výkaz"}
                   </Button>
                   <Button
                     variant="blueSmall"
@@ -586,11 +581,11 @@ export default function PraxeDetailPage() {
                     onClick={() =>
                       handleGenerateDocument(
                         "feedback",
-                        t("practice_detail.generate_feedback"),
+                        "Generovat hodnocení",
                       )
                     }
                   >
-                    {t("practice_detail.generate_feedback")}
+                    {"Generovat hodnocení"}
                   </Button>
                 </Container>
               </ContainerForEntity>
@@ -625,8 +620,8 @@ export default function PraxeDetailPage() {
                     pointer={false}
                     property="w-fit"
                   >
-                    {t("offers.location")}:{" "}
-                    {entity?.employer?.address || t("common.not_specified")}
+                    {"Místo konání"}:{" "}
+                    {entity?.employer?.address || "Není uvedeno"}
                   </Button>
                   <Button
                     variant="blueSmallNoHover"
@@ -641,7 +636,7 @@ export default function PraxeDetailPage() {
             {/* DESCRIPTION */}
             <Container property={"editor-content mt-2"}>
               <Headings sizeTag="h3" property="mb-2">
-                {t("offers.responsibilities")}
+                {"Popis pozice"}
               </Headings>
               <Paragraph>{entity?.description}</Paragraph>
             </Container>
@@ -649,7 +644,7 @@ export default function PraxeDetailPage() {
             {/* RESPONSIBILITY */}
             <Container property={"editor-content mt-4"}>
               <Headings sizeTag="h3" property="mb-2">
-                {t("offers.requirements")}
+                {"Náplň práce"}
               </Headings>
               <Paragraph>{entity?.responsibilities}</Paragraph>
             </Container>
@@ -658,29 +653,29 @@ export default function PraxeDetailPage() {
             {entity && entity.contact_user_info && (
               <Container property={"editor-content mt-2"}>
                 <Headings sizeTag="h3" property="mb-4">
-                  {t("offers.contact_person")}
+                  {"Kontaktní osoba"}
                 </Headings>
                 {entity.contact_user_info.username && (
                   <Paragraph property="mb-2">
-                    {t("practice_detail.username_label")}:{" "}
+                    {"Uživatelské jméno"}:{" "}
                     {entity.contact_user_info.username}
                   </Paragraph>
                 )}
                 {(entity.contact_user_info.first_name ||
                   entity.contact_user_info.last_name) && (
                   <Paragraph property="mb-2">
-                    {t("form.contact_user")}:{" "}
+                    {"Správce inzerátu"}:{" "}
                     {`${entity.contact_user_info.first_name || ""} ${entity.contact_user_info.last_name || ""}`.trim()}
                   </Paragraph>
                 )}
                 {entity.contact_user_info.email && (
                   <Paragraph property="mb-2">
-                    {t("profile.email")}: {entity.contact_user_info.email}
+                    {"Email"}: {entity.contact_user_info.email}
                   </Paragraph>
                 )}
                 {entity.contact_user_info.phone && (
                   <Paragraph property="mb-2">
-                    {t("profile.phone")}: {entity.contact_user_info.phone}
+                    {"Telefonní číslo"}: {entity.contact_user_info.phone}
                   </Paragraph>
                 )}
               </Container>
@@ -692,7 +687,7 @@ export default function PraxeDetailPage() {
                   property="col-start-1 justify-self-end w-full"
                   onClick={handlePopUp}
                 >
-                  {t("offers.apply")}
+                  {"Podat přihlášku"}
                 </Button>
               )}
 
@@ -704,7 +699,7 @@ export default function PraxeDetailPage() {
                     icon={"gear"}
                     onClick={handlePopUp}
                   >
-                    {t("common.manage")}
+                    {"Spravovat"}
                   </Button>
                 </Container>
               )}
@@ -722,7 +717,7 @@ export default function PraxeDetailPage() {
                       property="px-4 py-2 text-sm font-medium"
                       onClick={() => setWithdrawPopUp(true)}
                     >
-                      {t("practice_detail.withdraw_button")}
+                      {"Odhlásit se z praxe"}
                     </Button>
                   </Container>
                 )}
@@ -738,7 +733,7 @@ export default function PraxeDetailPage() {
                       setCancelPopUp(true);
                     }}
                   >
-                    {t("practice_detail.cancel_request_button")}
+                    {"Stornovat praxi"}
                   </Button>
                 </Container>
               )}
@@ -749,12 +744,12 @@ export default function PraxeDetailPage() {
                   <Container property="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm w-full">
                     <Paragraph property="text-yellow-800 font-medium text-sm">
                       {canResolveCancellation(user)
-                        ? t("practice_detail.cancellation_pending_resolver")
-                        : t("practice_detail.cancellation_pending_student")}
+                        ? "Student tuto praxi stornoval. Vezměte storno na vědomí:"
+                        : "Praxe je stornována. Novou žádost o praxi můžete podat, až garant storno vezme na vědomí."}
                     </Paragraph>
                     {entity?.cancellation_reason && (
                       <Paragraph property="text-yellow-700 text-sm mt-1">
-                        {`${t("practice_detail.cancellation_reason_label")}: ${entity.cancellation_reason}`}
+                        {`Důvod studenta: ${entity.cancellation_reason}`}
                       </Paragraph>
                     )}
                   </Container>
@@ -762,7 +757,7 @@ export default function PraxeDetailPage() {
                   {canResolveCancellation(user) && (
                     <Container property="flex gap-4 justify-end">
                       <Button variant="greenSmall" onClick={handleResolveCancellation}>
-                        {t("practice_detail.cancellation_acknowledge")}
+                        {"Vzít na vědomí"}
                       </Button>
                     </Container>
                   )}
@@ -778,26 +773,26 @@ export default function PraxeDetailPage() {
                       variant="greenSmall"
                       onClick={() => handleRepairApprove(5)}
                     >
-                      {t("practice_detail.repair_approve")}
+                      {"Schválit opravu (Ukončeno)"}
                     </Button>
                     <Button
                       variant="blueSmall"
                       onClick={() => handleRepairApprove(8)}
                     >
-                      {t("practice_detail.repair_approve_continue")}
+                      {"Schválit opravu (kontrola dokumentů)"}
                     </Button>
                     <Button
                       variant="red"
                       onClick={() => openRepairPopup("reject")}
                     >
-                      {t("practice_detail.repair_reject")}
+                      {"Zamítnout opravu"}
                     </Button>
                     {canTerminalReject(user) && (
                       <Button
                         variant="red"
                         onClick={() => openRepairPopup("terminal")}
                       >
-                        {t("practice_detail.terminal_reject")}
+                        {"Trvale zamítnout (REJECTED)"}
                       </Button>
                     )}
                   </Container>
@@ -809,7 +804,7 @@ export default function PraxeDetailPage() {
                 docs.find((d) => d.type === "feedback") && (
                   <Container property="flex flex-wrap gap-4 justify-end items-center">
                     <Paragraph property="text-sm font-medium">
-                      {t("docs.feedback")}
+                      {"Zpětná vazba"}
                     </Paragraph>
                     <Button
                       variant="greenSmall"
@@ -818,7 +813,7 @@ export default function PraxeDetailPage() {
                         handleReview(docs.find((d) => d.type === "feedback").id, 1)
                       }
                     >
-                      {t("common.approve")}
+                      {"Schválit"}
                     </Button>
                     <Button
                       variant="red"
@@ -827,7 +822,7 @@ export default function PraxeDetailPage() {
                         handleReview(docs.find((d) => d.type === "feedback").id, 2)
                       }
                     >
-                      {t("common.reject")}
+                      {"Zamítnout"}
                     </Button>
                   </Container>
                 )}
@@ -837,7 +832,7 @@ export default function PraxeDetailPage() {
                 (user.isDepartmentUser() || user.isAdmin()) && (
                   <Container property="flex justify-end">
                     <Button variant="greenSmall" onClick={handleComplete}>
-                      {t("practice_detail.complete_button")}
+                      {"Udělit zápočet (Splněno)"}
                     </Button>
                   </Container>
                 )}
@@ -856,7 +851,7 @@ export default function PraxeDetailPage() {
                       variant="greenSmall"
                       onClick={handleConfirmContract}
                     >
-                      {t("practice_detail.confirm_contract")}
+                      {"Potvrdit přijetí smlouvy"}
                     </Button>
                   </Container>
                 )}
@@ -867,7 +862,7 @@ export default function PraxeDetailPage() {
           {entity?.student_practice_status && (
             <ContainerForEntity property="pl-8 pr-8 pt-4 pb-8 mt-2">
               <Headings sizeTag="h4" property="mb-4">
-                {t("practice_detail.timeline_title")}
+                {"Historie praxe"}
               </Headings>
               <Timeline
                 studentPracticeId={id}
@@ -897,12 +892,12 @@ export default function PraxeDetailPage() {
             <PopUpCon
               useCustomContainer={true}
               onClose={handlePopUp}
-              title={t("nav.applications")}
-              text={t("internships.start_practice_confirm")}
+              title={"Přihlášky"}
+              text={"Opravdu chcete podat přihlášku na tuto praxi?"}
               onSubmit={handleApply}
-              onSubmitText={t("practice_detail.apply_button")}
+              onSubmitText={"Podat"}
               onReject={handlePopUp}
-              onRejectText={t("common.cancel")}
+              onRejectText={"Zrušit"}
             />
           )}
 
@@ -914,15 +909,13 @@ export default function PraxeDetailPage() {
               user.isAdmin()) && (
               <PopUpCon
                 onClose={handlePopUp}
-                title={t("practice_detail.manage_app")}
-                text={t("practice_detail.confirm_app_text", {
-                  name: entity?.student_practice_status?.student_info
-                    ?.full_name,
-                })}
+                title={"Správa přihlášky"}
+                text={`Chcete schválit nebo zamítnout přihlášku studenta ${entity?.student_practice_status?.student_info
+                    ?.full_name}?`}
                 onSubmit={handleApprove}
-                onSubmitText={t("common.approve")}
+                onSubmitText={"Schválit"}
                 onReject={handleReject}
-                onRejectText={t("common.reject")}
+                onRejectText={"Zamítnout"}
               />
             )}
 
@@ -931,8 +924,8 @@ export default function PraxeDetailPage() {
             <PopUpCon
               useCustomContainer={true}
               onClose={handleDocsPopUp}
-              title={t("practice_detail.docs_check_title")}
-              text={t("practice_detail.docs_check_not_defined")}
+              title={"Kontrola dokumentů"}
+              text={"Proces není definován"}
             />
           )}
 
@@ -943,26 +936,26 @@ export default function PraxeDetailPage() {
                 setRejectPopUp(false);
                 setRejectReason("");
               }}
-              title={t("practice_detail.reject_reason_title")}
-              text={t("practice_detail.reject_reason_text")}
+              title={"Důvod zamítnutí"}
+              text={"Zadejte důvod zamítnutí obsahu praxe. Tento důvod uvidí student."}
               onSubmit={handleRejectWithReason}
-              onSubmitText={t("common.reject")}
+              onSubmitText={"Zamítnout"}
               onReject={() => {
                 setRejectPopUp(false);
                 setRejectReason("");
               }}
-              onRejectText={t("common.cancel")}
+              onRejectText={"Zrušit"}
             >
               <Container property="mt-4 mb-4 px-4">
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder={t("practice_detail.reject_reason_placeholder")}
+                  placeholder={"Minimálně 10 znaků..."}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none text-sm"
                 />
                 {rejectReason.trim().length > 0 && rejectReason.trim().length < 10 && (
                   <Paragraph property="text-red-500 text-xs mt-2">
-                    {t("practice_detail.reject_reason_required")}
+                    {"Důvod zamítnutí musí mít alespoň 10 znaků"}
                   </Paragraph>
                 )}
               </Container>
@@ -973,12 +966,12 @@ export default function PraxeDetailPage() {
           {withdrawPopUp && (
             <PopUpCon
               onClose={() => setWithdrawPopUp(false)}
-              title={t("practice_detail.withdraw_title")}
-              text={t("practice_detail.withdraw_text")}
+              title={"Odhlášení z praxe"}
+              text={"Opravdu si přejete odstoupit z praxe?"}
               onSubmit={handleWithdraw}
-              onSubmitText={t("practice_detail.withdraw_confirm")}
+              onSubmitText={"Odstoupit"}
               onReject={() => setWithdrawPopUp(false)}
-              onRejectText={t("common.cancel")}
+              onRejectText={"Zrušit"}
             />
           )}
 
@@ -989,27 +982,27 @@ export default function PraxeDetailPage() {
                 setCancelPopUp(false);
                 setCancelReason("");
               }}
-              title={t("practice_detail.cancel_request_title")}
-              text={t("practice_detail.cancel_request_text")}
+              title={"Stornovat praxi"}
+              text={"Praxe bude okamžitě stornována a storno je nevratné. Důvod je povinný."}
               onSubmit={handleRequestCancellation}
-              onSubmitText={t("practice_detail.cancel_request_confirm")}
+              onSubmitText={"Odeslat"}
               onReject={() => {
                 setCancelPopUp(false);
                 setCancelReason("");
               }}
-              onRejectText={t("common.cancel")}
+              onRejectText={"Zrušit"}
             >
               <Container property="mt-4 mb-4 px-4">
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder={t("practice_detail.cancel_request_placeholder")}
-                  aria-label={t("practice_detail.cancel_request_placeholder")}
+                  placeholder={"Důvod ukončení"}
+                  aria-label={"Důvod ukončení"}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none text-sm"
                 />
                 {cancelReason.trim().length === 0 && (
                   <Paragraph property="text-red-500 text-xs mt-2">
-                    {t("practice_detail.cancel_request_reason_required")}
+                    {"Důvod storno je povinný"}
                   </Paragraph>
                 )}
               </Container>
@@ -1026,33 +1019,33 @@ export default function PraxeDetailPage() {
               }}
               title={
                 repairDecision === "terminal"
-                  ? t("practice_detail.terminal_reject_title")
-                  : t("practice_detail.repair_review_title")
+                  ? "Trvalé zamítnutí přihlášky"
+                  : "Kontrola opravných dokumentů"
               }
               text={
                 repairDecision === "terminal"
-                  ? t("practice_detail.terminal_reject_text")
-                  : t("practice_detail.repair_review_text")
+                  ? "Tato akce je nevratná a je vyhrazena administrátorovi. Zadejte důvod zamítnutí."
+                  : "Rozhodněte o nahrazených dokumentech. Zamítnutí vrátí praxi studentovi k další opravě."
               }
               onSubmit={handleRepairDecision}
-              onSubmitText={t("common.reject")}
+              onSubmitText={"Zamítnout"}
               onReject={() => {
                 setRepairPopUp(false);
                 setRepairDecision(null);
                 setRepairReason("");
               }}
-              onRejectText={t("common.cancel")}
+              onRejectText={"Zrušit"}
             >
               <Container property="mt-4 mb-4 px-4">
                 <textarea
                   value={repairReason}
                   onChange={(e) => setRepairReason(e.target.value)}
-                  placeholder={t("practice_detail.reject_reason_placeholder")}
+                  placeholder={"Minimálně 10 znaků..."}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none text-sm"
                 />
                 {repairReason.trim().length > 0 && repairReason.trim().length < 10 && (
                   <Paragraph property="text-red-500 text-xs mt-2">
-                    {t("practice_detail.reject_reason_required")}
+                    {"Důvod zamítnutí musí mít alespoň 10 znaků"}
                   </Paragraph>
                 )}
               </Container>

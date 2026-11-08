@@ -11,13 +11,11 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
 import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@components/core/Form/DropDown";
-import { useTranslation } from "react-i18next";
 import { useMessage } from "@hooks/MessageContext";
 import { getApiErrorMessage } from "@utils/apiErrorUtils";
 import EmptyState from "@core/Feedback/EmptyState";
 
 export default function PrihlaskyPage() {
-	const { t } = useTranslation();
 	const { addMessage } = useMessage();
  const [data, setData] = useState([])
  const [loadError, setLoadError] = useState(false);
@@ -63,9 +61,9 @@ export default function PrihlaskyPage() {
 
 			// Show detailed message based on backend response
 			if (res && res.workflow_status && res.workflow_status !== "APPLIED") {
-				addMessage(t('applications.approve_success_full'), "S");
+				addMessage("Přihláška byla plně schválena", "S");
 			} else {
-				addMessage(t('applications.approve_success_partial'), "S");
+				addMessage("Přihláška byla částečně schválena", "S");
 			}
 
 			setShowPopup(false);
@@ -74,7 +72,7 @@ export default function PrihlaskyPage() {
 			await fetchData();
 		} catch (error) {
 			console.error(error);
-			addMessage(getApiErrorMessage(error, t, 'applications.approve_error'), "E");
+			addMessage(getApiErrorMessage(error, "Chyba při schvalování přihlášky"), "E");
 		} finally {
 			submittingRef.current = false;
 		}
@@ -82,7 +80,7 @@ export default function PrihlaskyPage() {
 
 	const handleReject = async () => {
 		if (rejectReason.trim().length < 10) {
-			addMessage(t(rejectReason.trim() ? 'practice_detail.reject_reason_required' : 'practice_detail.reject_reason_empty'), "E");
+			addMessage(rejectReason.trim() ? "Důvod zamítnutí musí mít alespoň 10 znaků" : "Důvod zamítnutí je povinný", "E");
 			return;
 		}
 		try {
@@ -91,14 +89,14 @@ export default function PrihlaskyPage() {
 				"reject",
 				{ reason: rejectReason.trim(), workflowStatus: selectedEntity.workflow_status }
 			);
-			addMessage(t('applications.reject_success'), "S");
+			addMessage("Přihláška byla zamítnuta", "S");
 			setShowPopup(false);
 			setSelectedEntity(null);
 			setRejectReason("");
 			await fetchData();
 		} catch (error) {
 			console.error(error);
-			addMessage(getApiErrorMessage(error, t, 'applications.reject_error'), "E");
+			addMessage(getApiErrorMessage(error, "Chyba při zamítnutí přihlášky"), "E");
 		}
 	}
 
@@ -117,7 +115,7 @@ export default function PrihlaskyPage() {
 			if (sequence === requestSequence.current) setData(res || []);
 		} catch (error) {
 			if (sequence !== requestSequence.current) return;
-			console.error(t('applications.load_error'), error);
+			console.error("Chyba při načítání přihlášek", error);
 			setLoadError(true);
 		}
 	};
@@ -142,7 +140,7 @@ export default function PrihlaskyPage() {
 		: (data || []);
 
 	const groupedByEmployer = (searchFiltered || []).reduce((acc, item) => {
-		const name = item.employer_name || t('users.unknown_company');
+		const name = item.employer_name || "Neznámá firma";
 		(acc[name] = acc[name] || []).push(item);
 		return acc;
 	}, {});
@@ -172,18 +170,18 @@ export default function PrihlaskyPage() {
 			<BackButton/>
 			<Container property={"flex items-center justify-between mb-6 mt-4"}>
 				<Headings sizeTag={"h3"} property={"mt-2"}>
-					{t('applications.title')}
+					{"Nevyřízené přihlášky"}
 				</Headings>
 			</Container>
 
 			{loadError ? (
-				<Container role="alert"><Paragraph>{t('applications.load_error')}</Paragraph></Container>
+				<Container role="alert"><Paragraph>{"Chyba při načítání přihlášek"}</Paragraph></Container>
 			) : (user.isAdmin() || user.isDepartmentUser()) && (
 				<Container property={"flex flex-col gap-3 mb-6 mt-4"}>
 					<SearchBar
 						id="search"
 						value={searchQuery}
-						placeholder={t('applications.search_placeholder')}
+						placeholder={"Hledat podle studenta, katedry, firmy nebo názvu praxe..."}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						onClear={() => setSearchQuery("")}
 					/>
@@ -191,7 +189,7 @@ export default function PrihlaskyPage() {
 						<DropDown
 							id="company"
 							variant="facultyGreen"
-							placeholder={t('users.select_company')}
+							placeholder={"Vyberte organizaci pro filtrování"}
 							value={companySelectValue}
 							onChange={onCompanySelect}
 							options={availableOptions.map((name) => ({ label: name, value: name }))}
@@ -213,12 +211,12 @@ export default function PrihlaskyPage() {
 
 			<Container property={"mt-4 rounded-lg"}>
 				{loadError ? null : !data ? (
-					<Paragraph>{t('common.loading')}</Paragraph>
+					<Paragraph>{"Načítání..."}</Paragraph>
 				) : (user.isAdmin() || user.isDepartmentUser()) ? (
 					displayCompanyNames.length === 0 ? (
 						<EmptyState
-							title={t('users.no_results')}
-							description={t('applications.no_results_desc', { defaultValue: "" })}
+							title={"Žádné výsledky."}
+							description={"Zkuste změnit vyhledávací dotaz."}
 							icon="search"
 						/>
 					) : (
@@ -244,16 +242,16 @@ export default function PrihlaskyPage() {
 					)
 				) : data.length === 0 ? (
 					<EmptyState
-						title={t('applications.no_data')}
-						description={t('applications.no_data_desc', { defaultValue: "" })}
+						title={"Zatím nemáte žádné data k zobrazení."}
+						description={"Všechny přihlášky byly vyřízeny."}
 						icon="file-circle-check"
 					/>
 				) : (
 					<Container property={"grid grid-cols-1 gap-4"}>
 						{searchFiltered.length === 0 ? (
 							<EmptyState
-								title={t('users.no_results')}
-								description={t('applications.no_results_desc', { defaultValue: "" })}
+								title={"Žádné výsledky."}
+								description={"Zkuste změnit vyhledávací dotaz."}
 								icon="search"
 							/>
 						) : (
@@ -273,28 +271,28 @@ export default function PrihlaskyPage() {
 			{showPopup && selectedEntity && (
 				<PopUpCon
 					onClose={handleClosePopup}
-					title={t('applications.change_status_title')}
-					text={t('applications.change_status_text', { name: selectedEntity.student_full_name })}
+					title={"Změnit stav přihlášky"}
+					text={`Opravdu si přejete změnit stav přihlášky studenta ${selectedEntity.student_full_name}?`}
 					onSubmit={handleSubmit}
 					onReject={handleReject}
 					variant="gray"
-					onSubmitText={t('common.approve')}
-					onRejectText={t('common.reject')}
+					onSubmitText={"Schválit"}
+					onRejectText={"Zamítnout"}
 				>
 					<Container property="mt-4 mb-4 px-4">
 						<Paragraph property="text-sm font-medium mb-2">
-							{t('practice_detail.reject_reason_title')}
+							{"Důvod zamítnutí"}
 						</Paragraph>
 						<textarea
 							value={rejectReason}
 							onChange={(e) => setRejectReason(e.target.value)}
-							placeholder={t('practice_detail.reject_reason_placeholder')}
-							aria-label={t('practice_detail.reject_reason_title')}
+							placeholder={"Minimálně 10 znaků..."}
+							aria-label={"Důvod zamítnutí"}
 							className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-none text-sm"
 						/>
 						{rejectReason.trim().length > 0 && rejectReason.trim().length < 10 && (
 							<Paragraph property="text-red-500 text-xs mt-2">
-								{t('practice_detail.reject_reason_required')}
+								{"Důvod zamítnutí musí mít alespoň 10 znaků"}
 							</Paragraph>
 						)}
 					</Container>

@@ -9,7 +9,15 @@ import Paragraph from "./Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
 import { FaUser } from "react-icons/fa";
 import NotificationBell from "@components/core/NotificationBell";
-import { useTranslation } from "react-i18next";
+
+const ROLE_LABELS = {
+  ST: "Student",
+  VY: "Vyučující",
+  VK: "Vedoucí katedry",
+  OWNER: "Majitel organizace",
+  INSERTER: "Referent organizace",
+  admin: "Administrátor",
+};
 
 // submenu render
 function SubMenu({ items, title }) {
@@ -93,81 +101,80 @@ function Nav({}) {
   const { user } = useUser();
   const [navigationDict, setNaviagation] = useState({});
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   const studentDict = {
-    [t("nav.internship_offers")]: "/nabidka",
-    [t("nav.my_internships")]: "/praxe",
-    [t("nav.my_applications")]: "/moje-prihlasky",
-    [t("nav.create_external_practice")]: "/vytvorit-externi-praxi",
-    [t("nav.profile")]: "/profil",
-    [t("nav.logout")]: "/logout",
+    "Nabídka praxí": "/nabidka",
+    "Moje stáže": "/praxe",
+    "Moje přihlášky": "/moje-prihlasky",
+    "Vytvořit individuální praxi": "/vytvorit-externi-praxi",
+    "Profil": "/profil",
+    "Odhlásit se": "/logout",
   };
 
   const ownerDict = {
-    [t("nav.org_management")]: {
-      [t("nav.org_accounts")]: "/users/org_users",
-      [t("nav.org_account")]: "/formular?type=org_form&action=edit",
-      [t("nav.internships")]: "/praxe",
-      [t("nav.applications")]: "/prihlasky",
-      [t("nav.sent_invitations")]: "/pozvanky-list",
+    "Správa organizace": {
+      "Uživatelské účty organizace": "/users/org_users",
+      "Účet organizace": "/formular?type=org_form&action=edit",
+      "Stáže": "/praxe",
+      "Přihlášky": "/prihlasky",
+      "Odeslané pozvánky": "/pozvanky-list",
     },
-    [t("nav.internship_offers")]: "/nabidka",
-    [t("nav.students")]: "/students",
-    [t("nav.logout")]: "/logout",
+    "Nabídka praxí": "/nabidka",
+    "Studentské účty": "/students",
+    "Odhlásit se": "/logout",
   };
 
   const inserterDict = {
-    [t("nav.org_management")]: {
-      [t("nav.org_accounts")]: "/users/org_users",
-      [t("nav.org_account")]: "/formular?type=org_form&action=edit",
-      [t("nav.internships")]: "/praxe",
-      [t("nav.applications")]: "/prihlasky",
-      [t("nav.sent_invitations")]: "/pozvanky-list",
+    "Správa organizace": {
+      "Uživatelské účty organizace": "/users/org_users",
+      "Účet organizace": "/formular?type=org_form&action=edit",
+      "Stáže": "/praxe",
+      "Přihlášky": "/prihlasky",
+      "Odeslané pozvánky": "/pozvanky-list",
     },
-    [t("nav.internship_offers")]: "/nabidka",
-    [t("nav.students")]: "/students",
-    [t("nav.logout")]: "/logout",
+    "Nabídka praxí": "/nabidka",
+    "Studentské účty": "/students",
+    "Odhlásit se": "/logout",
   };
 
   const departmentDict = {
-    [t("nav.users")]: {
-      [t("nav.school_users")]: "/users/department_users",
+    "Uživatelé": {
+      "Školní uživatelé": "/users/department_users",
     },
-    [t("nav.students")]: "/students",
-    [t("nav.subjects")]: "/subjects",
-    [t("nav.internship_management")]: "/sprava-stazi",
-    [t("nav.applications")]: "/prihlasky",
-    [t("nav.internship_offers")]: "/nabidka",
-    [t("nav.logout")]: "/logout",
+    "Studentské účty": "/students",
+    "Předměty": "/subjects",
+    "Správa stáží": "/sprava-stazi",
+    "Přihlášky": "/prihlasky",
+    "Nabídka praxí": "/nabidka",
+    "Odhlásit se": "/logout",
   };
 
   const professorDict = {
-    [t("nav.students")]: "/students",
-    [t("nav.subjects")]: "/subjects",
-    [t("nav.internship_offers")]: "/nabidka",
-    [t("nav.internship_management")]: "/sprava-stazi",
-    [t("nav.applications")]: "/prihlasky",
-    [t("nav.logout")]: "/logout",
+    "Studentské účty": "/students",
+    "Předměty": "/subjects",
+    "Nabídka praxí": "/nabidka",
+    "Správa stáží": "/sprava-stazi",
+    "Přihlášky": "/prihlasky",
+    "Odhlásit se": "/logout",
   };
 
   const adminDict = {
-    [t("nav.system_management")]: {
-      [t("nav.departments")]: "/departments",
-      [t("nav.companies")]: "/companies",
+    "Správa systému": {
+      "Katedry": "/departments",
+      "Společnosti": "/companies",
     },
-    [t("nav.internship_management")]: {
-      [t("nav.applications")]: "/prihlasky",
-      [t("nav.internship_offers")]: "/nabidka",
-      [t("nav.approval_process")]: "/sprava-stazi",
-      [t("nav.company_invitations")]: "/pozvanky-list",
+    "Správa stáží": {
+      "Přihlášky": "/prihlasky",
+      "Nabídka praxí": "/nabidka",
+      "Schvalovací kolečko": "/sprava-stazi",
+      "Pozvánky od firem": "/pozvanky-list",
     },
-    [t("nav.users")]: {
-      [t("nav.company_users")]: "/users/org_users",
-      [t("nav.school_users")]: "/users/department_users",
-      [t("nav.students")]: "/students",
+    "Uživatelé": {
+      "Firemní uživatelé": "/users/org_users",
+      "Školní uživatelé": "/users/department_users",
+      "Studentské účty": "/students",
     },
-    [t("nav.logout")]: "/logout",
+    "Odhlásit se": "/logout",
   };
 
   useEffect(() => {
@@ -193,7 +200,7 @@ function Nav({}) {
       // Fallback pro neznámou roli – žádná navigace
       setNaviagation({});
     }
-  }, [user, t]); // dependency na 't' pro aktualizaci při změně jazyka
+  }, [user]);
 
   const handleLogoClick = () => {
     navigate("/nabidka");
@@ -205,7 +212,7 @@ function Nav({}) {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:text-blue-700 focus:p-2 focus:rounded focus:shadow-lg"
       >
-        {t("common.skip_to_main")}
+        {"Přeskočit na hlavní obsah"}
       </a>
       <Container property={"w-full bg-facultyCol"}>
         <Container property={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"}>
@@ -222,7 +229,7 @@ function Nav({}) {
 
             {/* Desktop Menu */}
             <nav
-              aria-label={t("nav.main_navigation")}
+              aria-label={"Hlavní navigace"}
               className="w-full flex hidden md:flex justify-end mr-8"
             >
               <LinkNav navigationDict={navigationDict} />
@@ -249,9 +256,7 @@ function Nav({}) {
                           {user.email}
                         </Paragraph>
                         <Paragraph property={"text-white text-sm"}>
-                          {t(`profile.roles.${user.role}`, {
-                            defaultValue: user.role,
-                          })}
+                          {ROLE_LABELS[user.role] || user.role}
                         </Paragraph>
                       </Container>
                       {/* INFO o katedře uživatele */}
@@ -260,7 +265,7 @@ function Nav({}) {
                           {typeof user.department === "string"
                             ? user.department
                             : user.department?.name ||
-                              t("invitations.unknown_dept")}
+                              "Neznámá katedra"}
                         </Paragraph>
                       )}
                     </Container>
@@ -275,7 +280,7 @@ function Nav({}) {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 property="text-white hover:text-gray-200"
                 noVariant={true}
-                title={t("nav.toggle_menu")}
+                title={"Přepnout menu"}
               >
                 {isMobileMenuOpen ? (
                   <FaTimes size={24} />
@@ -290,7 +295,7 @@ function Nav({}) {
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <nav
-            aria-label={t("nav.main_navigation")}
+            aria-label={"Hlavní navigace"}
             className="md:hidden"
           >
             <Container property={"px-2 pt-2 pb-3 space-y-1 sm:px-3"}>

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
-import { useTranslation } from "react-i18next";
 
 export default function Image({
     src,
@@ -15,7 +14,6 @@ export default function Image({
     onClick = null,
     loading = "lazy"
 }) {
-    const { t } = useTranslation();
     const [imageError, setImageError] = useState(false);
     // bez zdroje není co načítat — jinak zůstane trvale skeleton „Načítání…"
     const [imageLoading, setImageLoading] = useState(Boolean(src || fallbackSrc));
@@ -60,14 +58,14 @@ export default function Image({
                     property="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center"
                     style={{ borderRadius }}
                 >
-                    <Container property="text-gray-400 text-sm">{t('common.loading')}</Container>
+                    <Container property="text-gray-400 text-sm">{"Načítání..."}</Container>
                 </Container>
             )}
 
             {currentSrc ? (
                 <img
                     src={currentSrc}
-                    alt={alt || t('common.image')}
+                    alt={alt || "Obrázek"}
                     className={`${imageLoading ? "opacity-0" : "opacity-100"} ${onClick ? "cursor-pointer" : ""}`}
                     style={defaultStyles}
                     onLoad={handleImageLoad}
@@ -84,7 +82,7 @@ export default function Image({
                         <svg className="w-8 h-8 mb-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                         </svg>
-                        <Paragraph variant="tiny" property="text-gray-400">{t('common.image_not_available')}</Paragraph>
+                        <Paragraph variant="tiny" property="text-gray-400">{"Obrázek není k dispozici"}</Paragraph>
                     </Container>
                 )
             )}
@@ -98,7 +96,7 @@ export default function Image({
                         <svg className="w-8 h-8 mb-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                         </svg>
-                        {t('common.image_not_available')}
+                        {"Obrázek není k dispozici"}
                     </Container>
                 </Container>
             )}

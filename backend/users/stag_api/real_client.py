@@ -22,7 +22,7 @@ class RealStagClient(StagDataProvider):
             raise StagUnreachableError()
 
         if resp.status_code != 200:
-            raise AuthenticationFailed("Failed to authenticate with STAG")
+            raise AuthenticationFailed("Autentizace ve STAGu selhala")
 
         return resp.json()
 

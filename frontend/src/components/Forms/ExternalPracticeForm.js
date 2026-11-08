@@ -6,7 +6,6 @@ import TextBox from "@core/Form/TextBox";
 import CustomDatePicker from "@core/Form/DatePicker";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@components/core/Text/Paragraph";
-import { useTranslation } from "react-i18next";
 import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 import useDebounce from "@hooks/useDebounce";
 
@@ -20,7 +19,6 @@ export default function ExternalPracticeForm({
   errors = {},
   subjects = [],
 }) {
-  const { t } = useTranslation();
   const aresAPI = useAresAPI();
   const [aresLoading, setAresLoading] = useState(false);
   const [aresStatus, setAresStatus] = useState(null); // { type: 'success'|'warning'|'error', text: '' }
@@ -55,12 +53,15 @@ export default function ExternalPracticeForm({
             ares_locked: true,
           });
           setAresLocked(true);
-          const sourceKey =
-            data.source === "cache" ? "ares.found_cache" : "ares.found_ares";
-          setAresStatus({ type: "success", text: t(sourceKey) });
+          setAresStatus({
+            type: "success",
+            text: data.source === "cache"
+              ? "Údaje firmy načteny z databáze (cache)"
+              : "Údaje firmy načteny z ARES",
+          });
         } else if (data && data.found === false) {
           handleChange({ employer_name: "", address: "", ares_locked: false });
-          setAresStatus({ type: "warning", text: t("ares.not_found") });
+          setAresStatus({ type: "warning", text: "Subjekt s tímto IČO nebyl v registru ARES nalezen" });
         }
       } catch (err) {
         if (sequence !== aresSequence.current) return;
@@ -68,16 +69,16 @@ export default function ExternalPracticeForm({
         const code = err.code || err.response?.data?.error_code;
         if (code === "ARES_NOT_FOUND") {
           // 404 → subjekt nenalezen v ARES, pole odemčená.
-          setAresStatus({ type: "warning", text: t("ares.not_found") });
+          setAresStatus({ type: "warning", text: "Subjekt s tímto IČO nebyl v registru ARES nalezen" });
         } else if (
           code === "ARES_UNAVAILABLE" ||
           err.response?.status === 503 ||
           (err.response?.status === 404 && err.response?.data?.manual_input)
         ) {
           // 503 → výpadek ARES + cache miss → manuální režim.
-          setAresStatus({ type: "warning", text: t("ares.unavailable") });
+          setAresStatus({ type: "warning", text: "ARES je nedostupný. Vyplňte údaje ručně." });
         } else {
-          setAresStatus({ type: "warning", text: t("ares.verify_error") });
+          setAresStatus({ type: "warning", text: "Nepodařilo se ověřit IČO v ARES. Zkontrolujte IČO." });
         }
       } finally {
         if (sequence === aresSequence.current) setAresLoading(false);
@@ -97,13 +98,13 @@ export default function ExternalPracticeForm({
     const isAllowed = /\.(pdf|docx)$/i.test(file.name);
     if (!isAllowed) {
       handleChange({ external_details_file: null });
-      setDetailsFileError(t("external.file_type_error"));
+      setDetailsFileError("Povolené formáty jsou pouze PDF a DOCX");
       e.target.value = "";
       return;
     }
     if (file.size > MAX_EXTERNAL_DETAILS_SIZE) {
       handleChange({ external_details_file: null });
-      setDetailsFileError(t("api_errors.FILE_TOO_LARGE"));
+      setDetailsFileError("Nahrávaný soubor je příliš velký.");
       e.target.value = "";
       return;
     }
@@ -142,7 +143,7 @@ export default function ExternalPracticeForm({
     >
       {/* Section 1: External Organization */}
       <Headings sizeTag="h4" property="mb-4 font-bold">
-        {t("external_practice.section_employer")}
+        {"Externí organizace"}
       </Headings>
 
       <Container property="grid gap-2 grid-cols-2 mt-4">
@@ -151,15 +152,15 @@ export default function ExternalPracticeForm({
             id="employer_name"
             value={formData?.employer_name}
             required={true}
-            label={t("external_practice.employer_name")}
-            placeholder={t("external_practice.employer_name_placeholder")}
+            label={"Název organizace"}
+            placeholder={"Název firmy / organizace"}
             onChange={handleChange}
             error={errors.employer_name}
             disabled={aresLocked}
           />
           {aresLocked && (
-            <p className="text-xs text-gray-500 mt-1" title={t("ares.locked")}>
-              {t("ares.locked")}
+            <p className="text-xs text-gray-500 mt-1" title={"Údaje jsou uzamčeny z registru ARES"}>
+              {"Údaje jsou uzamčeny z registru ARES"}
             </p>
           )}
         </div>
@@ -167,8 +168,8 @@ export default function ExternalPracticeForm({
         <TextField
           id="contact_person"
           value={formData?.contact_person}
-          label={t("external_practice.contact_person")}
-          placeholder={t("external_practice.contact_person_placeholder")}
+          label={"Kontaktní osoba"}
+          placeholder={"Jméno kontaktní osoby"}
           onChange={handleChange}
           error={errors.contact_person}
         />
@@ -176,8 +177,8 @@ export default function ExternalPracticeForm({
         <TextField
           id="contact_email"
           value={formData?.contact_email}
-          label={t("external_practice.contact_email")}
-          placeholder={t("external_practice.contact_email_placeholder")}
+          label={"Kontaktní email"}
+          placeholder={"Email kontaktní osoby"}
           type="email"
           onChange={handleChange}
           error={errors.contact_email}
@@ -186,8 +187,8 @@ export default function ExternalPracticeForm({
         <TextField
           id="contact_phone"
           value={formData?.contact_phone}
-          label={t("external_practice.contact_phone")}
-          placeholder={t("external_practice.contact_phone_placeholder")}
+          label={"Kontaktní telefon"}
+          placeholder={"Telefonní číslo"}
           onChange={handleChange}
           error={errors.contact_phone}
         />
@@ -196,13 +197,13 @@ export default function ExternalPracticeForm({
           <TextField
             id="ico"
             value={formData?.ico}
-            label={t("external_practice.ico")}
-            placeholder={t("external_practice.ico_placeholder")}
+            label={"IČO"}
+            placeholder={"Identifikační číslo (nepovinné)"}
             onChange={handleIcoChange}
             error={errors.ico}
           />
           {aresLoading && (
-            <p className="text-xs text-blue-600 mt-1">{t("ares.loading")}</p>
+            <p className="text-xs text-blue-600 mt-1">{"Ověřuji IČO v ARES..."}</p>
           )}
           {aresStatus && (
             <p
@@ -220,8 +221,8 @@ export default function ExternalPracticeForm({
         <TextField
           id="address"
           value={formData?.address}
-          label={t("external_practice.address")}
-          placeholder={t("external_practice.address_placeholder")}
+          label={"Adresa"}
+          placeholder={"Adresa organizace (nepovinné)"}
           onChange={handleChange}
           error={errors.address}
           disabled={aresLocked}
@@ -230,7 +231,7 @@ export default function ExternalPracticeForm({
 
       {/* Section 2: Practice Details */}
       <Headings sizeTag="h4" property="mb-4 mt-6 font-bold">
-        {t("external_practice.section_practice")}
+        {"Údaje praxe"}
       </Headings>
 
       <Container property="grid gap-2 grid-cols-2 mt-4">
@@ -238,7 +239,7 @@ export default function ExternalPracticeForm({
           id="subject_id"
           value={formData?.subject_id}
           required={true}
-          label={t("form.subject")}
+          label={"Přiřazený předmět"}
           icon="book"
           options={subjects}
           onChange={handleChange}
@@ -249,7 +250,7 @@ export default function ExternalPracticeForm({
           id="coefficient"
           value={formData?.coefficient}
           required={true}
-          label={t("form.coefficient")}
+          label={"Úvazek"}
           options={coefficientOptions}
           onChange={handleChange}
           error={errors.coefficient}
@@ -258,7 +259,7 @@ export default function ExternalPracticeForm({
         <CustomDatePicker
           id="start_date"
           value={formData?.start_date}
-          label={t("form.start_date")}
+          label={"Čas období od"}
           required={true}
           onChange={handleChange}
           error={errors.start_date}
@@ -268,7 +269,7 @@ export default function ExternalPracticeForm({
           id="end_date"
           locked={true}
           value={formData?.end_date}
-          label={t("form.end_date")}
+          label={"Čas období do"}
           required={true}
           onChange={handleChange}
           error={errors.end_date}
@@ -278,7 +279,7 @@ export default function ExternalPracticeForm({
           id="available_positions"
           value={formData?.available_positions}
           required={true}
-          label={t("form.available_positions")}
+          label={"Počet volných míst"}
           icon="users"
           options={availablePositions}
           onChange={handleChange}
@@ -291,8 +292,8 @@ export default function ExternalPracticeForm({
           id="title"
           value={formData?.title}
           required={true}
-          label={t("form.title")}
-          placeholder={t("form.title_placeholder")}
+          label={"Název"}
+          placeholder={"Název stáže"}
           onChange={handleChange}
           error={errors.title}
         />
@@ -300,8 +301,8 @@ export default function ExternalPracticeForm({
         <TextBox
           id="description"
           value={formData?.description}
-          label={t("form.description")}
-          placeholder={t("form.description_placeholder")}
+          label={"Popis stáže"}
+          placeholder={"Napište popis stáže"}
           onChange={handleChange}
           error={errors.description}
         />
@@ -309,8 +310,8 @@ export default function ExternalPracticeForm({
         <TextBox
           id="responsibilities"
           value={formData?.responsibilities}
-          label={t("form.responsibilities")}
-          placeholder={t("form.responsibilities_placeholder")}
+          label={"Náplň práce"}
+          placeholder={"Popište náplň práce"}
           onChange={handleChange}
           error={errors.responsibilities}
         />
@@ -320,7 +321,7 @@ export default function ExternalPracticeForm({
       <Container property="w-full gap-2 mt-4">
         <div>
           <label htmlFor="external_details_file" className="block text-base font-medium text-gray-700 mb-1">
-            {t("external.details_label")}
+            {"Dokument s detaily praxe"}
             <span className="text-red-600 ml-1">*</span>
           </label>
           <input
@@ -338,7 +339,7 @@ export default function ExternalPracticeForm({
           )}
           {formData?.external_details_file?.name && (
             <Paragraph property="text-green-700 text-sm mt-1">
-              {t("external.file_selected")}: {formData.external_details_file.name}
+              {"Vybrán soubor"}: {formData.external_details_file.name}
             </Paragraph>
           )}
         </div>
@@ -350,7 +351,7 @@ export default function ExternalPracticeForm({
           type="submit"
           className="bg-facultyCol text-white px-4 py-2 rounded-lg transition-colors duration-200 mt-2 px-16 cursor-pointer"
         >
-          {t("external_practice.create")}
+          {"Vytvořit praxi"}
         </button>
       </Container>
     </form>

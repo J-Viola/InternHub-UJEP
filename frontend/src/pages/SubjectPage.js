@@ -7,10 +7,8 @@ import BackButton from "@core/Button/BackButton";
 import { useSubjectAPI } from "@api/subject/subjectAPI";
 import { useNavigate } from "react-router-dom";
 import Button from "@components/core/Button/Button";
-import { useTranslation } from "react-i18next";
 
 export default function SubjectPage() {
-    const { t } = useTranslation();
     const [entities, setEntities] = useState([]);
     const [loading, setLoading] = useState(true);
     const { getDepartmentSubjects } = useSubjectAPI();
@@ -53,7 +51,7 @@ export default function SubjectPage() {
             <BackButton/>
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    {t('subjects.title')} {getDepartmentName() && `- ${getDepartmentName()}`}
+                    {"Předměty"} {getDepartmentName() && `- ${getDepartmentName()}`}
                 </Headings>
             </Container>
 
@@ -62,7 +60,7 @@ export default function SubjectPage() {
                     variant={"primarySmall"}
                     icon={"plus"}
                     onClick={handleCreateSubject}
-                    text={t('subjects.create_new')}
+                    text={"Založit předmět"}
                 />
             </Container>
 
@@ -70,11 +68,11 @@ export default function SubjectPage() {
             <Container property={"mt-4"}>
                 {loading ? (
                     <Container property="flex justify-center items-center py-8">
-                        <Paragraph>{t('subjects.loading')}</Paragraph>
+                        <Paragraph>{"Načítání předmětů..."}</Paragraph>
                     </Container>
                 ) : entities.length === 0 ? (
                     <Container property="flex justify-center items-center py-8">
-                        <Paragraph>{t('subjects.no_results')}</Paragraph>
+                        <Paragraph>{"Žádné předměty nebyly nalezeny"}</Paragraph>
                     </Container>
                 ) : (
                     entities.map((entity) => (
@@ -82,7 +80,7 @@ export default function SubjectPage() {
                             key={entity.subject_id}
                             entity={entity}
                             attributes={{
-                                [t('subjects.hours_required')]: "hours_required"
+                                "Počet hodin": "hours_required"
                             }}
                             buttons={[
                                 {

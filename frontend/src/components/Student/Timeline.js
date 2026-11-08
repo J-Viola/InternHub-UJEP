@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useApi } from "@hooks/useApi";
-import { useTranslation } from "react-i18next";
 
 function formatDate(isoString) {
   if (!isoString) return "";
@@ -17,7 +16,6 @@ function formatDate(isoString) {
 }
 
 export default function Timeline({ studentPracticeId, currentStatus, refreshKey = 0 }) {
-  const { t } = useTranslation();
   const api = useApi();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +55,7 @@ export default function Timeline({ studentPracticeId, currentStatus, refreshKey 
     return (
       <Container property="py-4">
         <Paragraph property="text-gray-500 text-sm">
-          {t("practice_detail.timeline_loading")}
+          {"Načítání historie praxe..."}
         </Paragraph>
       </Container>
     );
@@ -67,7 +65,7 @@ export default function Timeline({ studentPracticeId, currentStatus, refreshKey 
     return (
       <Container property="py-4">
         <Paragraph property="text-gray-500 text-sm">
-          {t("practice_detail.timeline_empty")}
+          {"Žádná historie praxe k zobrazení"}
         </Paragraph>
       </Container>
     );

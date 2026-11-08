@@ -3,7 +3,6 @@ import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@core/Text/Paragraph";
-import { useTranslation } from "react-i18next";
 
 export default function ProgressPanel({
     subject,
@@ -16,15 +15,14 @@ export default function ProgressPanel({
     title,
     property = ""
 }) {
-    const { t } = useTranslation();
     const progressPercentageSingle = goalValueSingle > 0 ? (currentValueSingle / goalValueSingle) * 100 : 0;
     const progressPercentageAll = goalValueAll > 0 ? (currentValueAll / goalValueAll) * 100 : 0;
     const fillColor = '#1CAA34';
     const emptyColor = '#e5e7eb';
 
-    const displayTitle = title || t('progress.title');
-    const displayNoteSingle = noteSingle || t('progress.note_single');
-    const displayNoteAll = noteAll || t('progress.note_all');
+    const displayTitle = title || "Průběh";
+    const displayNoteSingle = noteSingle || "Plnění aktuální karty v rámci kritéria předmětu:";
+    const displayNoteAll = noteAll || "Plnění všech probíhajících karet v rámci kritéria předmětu:";
 
     return (
         <ContainerForEntity property={"pl-8 pr-8"}>
@@ -61,7 +59,7 @@ export default function ProgressPanel({
                             {currentValueSingle}h / {goalValueSingle}h
                         </Paragraph>
                         <Paragraph property="text-sm text-gray-600 font-medium">
-                            {t('progress.criterion_fulfillment')}: {Math.round(progressPercentageSingle)}%
+                            {"Naplnění kritéria"}: {Math.round(progressPercentageSingle)}%
                         </Paragraph>
                     </Container>
 
@@ -95,7 +93,7 @@ export default function ProgressPanel({
                             {currentValueAll}h / {goalValueAll}h
                         </Paragraph>
                         <Paragraph property="text-sm text-gray-600 font-medium">
-                            {t('progress.criterion_fulfillment')}: {Math.round(progressPercentageAll)}%
+                            {"Naplnění kritéria"}: {Math.round(progressPercentageAll)}%
                         </Paragraph>
                     </Container>
 

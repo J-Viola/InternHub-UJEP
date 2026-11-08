@@ -1,5 +1,11 @@
 export const SKILL_CATEGORIES = ['technologies', 'tools', 'methodologies'];
 
+export const SKILL_LABELS = {
+  technologies: "Technologie",
+  tools: "Nástroje",
+  methodologies: "Metodiky",
+};
+
 export function normalizeSkills(value) {
     const source = Array.isArray(value) ? { technologies: value } : (value && typeof value === 'object' ? value : {});
     return Object.fromEntries(SKILL_CATEGORIES.map(category => [

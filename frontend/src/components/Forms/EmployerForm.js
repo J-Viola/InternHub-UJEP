@@ -8,10 +8,8 @@ import UploadFile from "@core/Form/UploadFile";
 import { useMessage } from "@hooks/MessageContext";
 import Headings from "@core/Text/Headings";
 import { useEmployerAPI } from "src/api/employer/employerAPI";
-import { useTranslation } from "react-i18next";
 
 export default function EmployerForm({ handleCreate, handleUpdate, action, id }) {
-    const { t } = useTranslation();
     const ares = useAresAPI();
     const { addMessage } = useMessage();
     const employerAPI = useEmployerAPI();
@@ -80,7 +78,7 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
 
     const handleARESCall = async (icoValue) => {
         if (!icoValue) {
-            addMessage(t('employer.ares_fill'), "E");
+            addMessage("Vyplnění údajů pomocí systému ARES", "E");
             return;
         }
 
@@ -97,10 +95,10 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     dic: response.dic || ''
                 }));
                 setAresFetched(true);
-                addMessage(t('employer.ares_success'), "S");
+                addMessage("Údaje byly úspěšně načteny z ARES", "S");
             }
         } catch (error) {
-            addMessage(t('employer.ares_error'), "E");
+            addMessage("Chyba při načítání údajů z ARES", "E");
         } finally {
             setLoading(false);
         }
@@ -108,21 +106,21 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
 
     const validateForm = () => {
         const requiredFields = {
-            'executiveName': t('employer.executive_name'),
-            'executiveSurname': t('employer.executive_surname'),
-            'executiveEmail': t('employer.executive_email'),
-            'executivePhone': t('employer.executive_phone')
+            'executiveName': "Jméno jednatele",
+            'executiveSurname': "Příjmení jednatele",
+            'executiveEmail': "E-mailová adresa jednatele",
+            'executivePhone': "Telefonní číslo jednatele"
         };
 
         if (!isEditing) {
-            requiredFields['executivePassword1'] = t('login.password');
-            requiredFields['executivePassword2'] = t('login.password'); // Wiederholung
+            requiredFields['executivePassword1'] = "Heslo";
+            requiredFields['executivePassword2'] = "Heslo"; // Wiederholung
         }
 
         const missingFields = [];
 
         if (!aresFetched && !isEditing) {
-            addMessage(t('employer.ares_needed'), "E");
+            addMessage("Nejprve načtěte údaje z ARES", "E");
             return false;
         }
 
@@ -134,12 +132,12 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
 
         if (!isEditing && formData.executivePassword1 && formData.executivePassword2 &&
             formData.executivePassword1 !== formData.executivePassword2) {
-            addMessage(t('employer.password_mismatch'), "E");
+            addMessage("Hesla se neshodují", "E");
             return false;
         }
 
         if (missingFields.length > 0) {
-            addMessage(t('employer.missing_fields', { fields: missingFields.join(', ') }), "E");
+            addMessage(`Chybí povinné údaje: ${missingFields.join(', ')}`, "E");
             return false;
         }
 
@@ -194,14 +192,14 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
     };
 
     if (loading) {
-        return <Container property={"text-center py-4"}>{t('common.loading')}</Container>;
+        return <Container property={"text-center py-4"}>{"Načítání..."}</Container>;
     }
 
     return(
             <>
                 <Container>
                      <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                        {isEditing ? t('employer.edit_title') : t('employer.data_title')}
+                        {isEditing ? "Upravit zaměstnavatele" : "Údaje zaměstnavatele"}
                     </Headings>
                 </Container>
                 {!isEditing && (
@@ -209,8 +207,8 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                         <TextField
                             id={"ico"}
                             required={true}
-                            label={t('employer.ares_fill')}
-                            placeholder={t('profile.ico')}
+                            label={"Vyplnění údajů pomocí systému ARES"}
+                            placeholder={"IČO"}
                             value={ico}
                             onChange={(value) => setICO(value.ico)}
                             property={"w-full"}
@@ -220,7 +218,7 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                             onClick={() => handleARESCall(ico)}
                             variant={"blueSmall"}
                         >
-                            {t('common.search')}
+                            {"Hledat"}
                         </Button>
                     </Container>
                 )}
@@ -229,9 +227,9 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"employerName"}
                         required={true}
-                        label={t('employer.name_label')}
+                        label={"Název zaměstnavatele"}
                         value={formData.employerName}
-                        placeholder={t('employer.name_placeholder')}
+                        placeholder={"Zadejte název zaměstnavatele"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
                     />
@@ -239,9 +237,9 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"address"}
                         required={true}
-                        label={t('profile.address')}
+                        label={"Adresa"}
                         value={formData.address}
-                        placeholder={t('profile.address')}
+                        placeholder={"Adresa"}
                         onChange={(value) => handleFormChange(value)}
                         disabled={!isEditing && aresFetched}
                     />
@@ -249,8 +247,8 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"titleBefore"}
                         required={false}
-                        label={t('profile.title_before')}
-                        placeholder={t('profile.title_before_placeholder')}
+                        label={"Titul před"}
+                        placeholder={"např. Ing., Mgr."}
                         value={formData.titleBefore}
                         onChange={(value) => handleFormChange(value)}
                     />
@@ -258,8 +256,8 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"executiveName"}
                         required={true}
-                        label={t('employer.executive_name')}
-                        placeholder={t('profile.first_name_placeholder')}
+                        label={"Jméno jednatele"}
+                        placeholder={"Zadejte jméno"}
                         value={formData.executiveName}
                         onChange={(value) => handleFormChange(value)}
                     />
@@ -267,8 +265,8 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"executiveSurname"}
                         required={true}
-                        label={t('employer.executive_surname')}
-                        placeholder={t('profile.last_name_placeholder')}
+                        label={"Příjmení jednatele"}
+                        placeholder={"Zadejte příjmení"}
                         value={formData.executiveSurname}
                         onChange={(value) => handleFormChange(value)}
                     />
@@ -276,8 +274,8 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"titleAfter"}
                         required={false}
-                        label={t('profile.title_after')}
-                        placeholder={t('profile.title_after_placeholder')}
+                        label={"Titul za"}
+                        placeholder={"např. Ph.D."}
                         value={formData.titleAfter}
                         onChange={(value) => handleFormChange(value)}
                     />
@@ -285,8 +283,8 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"executiveEmail"}
                         required={true}
-                        label={t('employer.executive_email')}
-                        placeholder={t('profile.email_placeholder')}
+                        label={"E-mailová adresa jednatele"}
+                        placeholder={"Zadejte e-mailovou adresu"}
                         value={formData.executiveEmail}
                         onChange={(value) => handleFormChange(value)}
                     />
@@ -294,8 +292,8 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     <TextField
                         id={"executivePhone"}
                         required={true}
-                        label={t('employer.executive_phone')}
-                        placeholder={t('profile.phone_placeholder')}
+                        label={"Telefonní číslo jednatele"}
+                        placeholder={"Zadejte telefonní číslo"}
                         value={formData.executivePhone}
                         onChange={(value) => handleFormChange(value)}
                     />
@@ -306,7 +304,7 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                         <TextField
                             id={"executivePassword1"}
                             required={true}
-                            label={t('login.password')}
+                            label={"Heslo"}
                             placeholder={"******"}
                             type={"password"}
                             value={formData.executivePassword1}
@@ -316,7 +314,7 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                         <TextField
                             id={"executivePassword2"}
                             required={true}
-                            label={t('login.password')}
+                            label={"Heslo"}
                             placeholder={"******"}
                             type={"password"}
                             value={formData.executivePassword2}
@@ -329,7 +327,7 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                     id="employerLogo"
                     property={"mt-4"}
                     onChange={handleFileChange}
-                    label={t('employer.upload_logo')}
+                    label={"Nahrát logo organizace"}
                     accept="image/*"
                     previewOn={true}
                 />
@@ -339,7 +337,7 @@ export default function EmployerForm({ handleCreate, handleUpdate, action, id })
                         property={"mt-2 px-16"}
                         onClick={handleSubmit}
                     >
-                        {isEditing ? t('form.save_changes') : t('employer.create_button')}
+                        {isEditing ? "Uložit změny" : "Vytvořit zaměstnavatele"}
                     </Button>
                 </Container>
             </>

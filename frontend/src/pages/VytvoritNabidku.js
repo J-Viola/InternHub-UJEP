@@ -7,7 +7,6 @@ import { useUserAPI } from "@api/user/userAPI";
 import { useNabidkaAPI } from "@api/nabidka/nabidkaAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
-import { useTranslation } from "react-i18next";
 import { validateRequired } from "@utils/validationUtils";
 import getApiErrorMessage from "@utils/apiErrorUtils";
 import LoadingState from "@components/core/Feedback/LoadingState";
@@ -15,7 +14,6 @@ import ErrorState from "@components/core/Feedback/ErrorState";
 
 
 export default function VytvoritNabidku() {
-    const { t } = useTranslation();
     const [ formData, setFormData ] = useState({})
     const [ subjects, setSubjects ] = useState([])
     const [ organizationUsers, setOrganizationUsers ] = useState([]);
@@ -41,7 +39,7 @@ export default function VytvoritNabidku() {
             setSubjects(subjectsRes);
             setOrganizationUsers(usersRes);
         } catch (error) {
-            addMessage(t('form.load_error'), "E");
+            addMessage("Chyba při načítání dat pro formulář", "E");
             setLoadError(true);
         } finally {
             setLoading(false);
@@ -61,7 +59,7 @@ export default function VytvoritNabidku() {
 
         required.forEach(field => {
             if (!validateRequired(formData[field])) {
-                newErrors[field] = t('form.field_required');
+                newErrors[field] = "Toto pole je povinné.";
             }
         });
 
@@ -87,7 +85,7 @@ export default function VytvoritNabidku() {
     const handleCreation = async () => {
         if (submittingRef.current) return;
         if (!validateForm()) {
-            addMessage(t('form.validation_error'), "W");
+            addMessage("Zkontrolujte prosím chyby ve formuláři.", "W");
             return;
         }
 
@@ -105,7 +103,7 @@ export default function VytvoritNabidku() {
             const fieldErrors = extractFieldErrors(error);
             if (fieldErrors) {
                 setErrors(fieldErrors);
-                addMessage(t('form.validation_error'), "E");
+                addMessage("Zkontrolujte prosím chyby ve formuláři.", "E");
                 return;
             }
             // Resolver dostane i raw axios tvar (response.data), aby se zachovala
@@ -117,8 +115,7 @@ export default function VytvoritNabidku() {
                         details: error?.details ?? (typeof error?.response?.data?.detail === "string" ? error.response.data.detail : undefined),
                         responseData: error?.responseData ?? error?.response?.data ?? null,
                     },
-                    t,
-                    'form.create_error_unknown'
+                    "Nastala neočekávaná chyba při ukládání nabídky."
                 ),
                 "E"
             );
@@ -157,11 +154,11 @@ export default function VytvoritNabidku() {
         <>
             <BackButton/>
             {loading && (
-                <LoadingState message={t('form.loading_form')} />
+                <LoadingState message={"Načítání formuláře..."} />
             )}
             {!loading && loadError && (
                 <ErrorState
-                    description={t('form.load_error')}
+                    description={"Chyba při načítání dat pro formulář"}
                     onRetry={fetchInitData}
                 />
             )}

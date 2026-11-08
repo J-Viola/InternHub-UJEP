@@ -179,7 +179,7 @@ class StudentPracticeLifecycleTests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_i18n_workflow_status_label(self):
+    def test_workflow_status_label_unknown(self):
         StudentPractice.objects.create(
             user=self.student,
             practice=self.practice,
@@ -198,8 +198,3 @@ class StudentPracticeLifecycleTests(TestCase):
         response_cs = self.client.get(url, HTTP_ACCEPT_LANGUAGE="cs")
         self.assertEqual(response_cs.status_code, status.HTTP_200_OK)
         self.assertEqual(response_cs.data["workflow_status_label"], "Neznámý")
-
-        # Test with English header (should also return "Neznámý")
-        response_en = self.client.get(url, HTTP_ACCEPT_LANGUAGE="en")
-        self.assertEqual(response_en.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_en.data["workflow_status_label"], "Neznámý")

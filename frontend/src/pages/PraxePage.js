@@ -10,7 +10,6 @@ import { useStudentPracticeAPI } from "src/api/student_practice/student_practice
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@hooks/UserProvider";
 import BackButton from "@components/core/Button/BackButton";
-import { useTranslation } from "react-i18next";
 import EmptyState from "@core/Feedback/EmptyState";
 import { useMessage } from "@hooks/MessageContext";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
@@ -23,7 +22,6 @@ const EDITABLE_OFFER_STATES = [0, 2, "PENDING_CONTENT_APPROVAL", "CONTENT_REJECT
 
 function ApplicationCard({ entity }) {
     const navigate = useNavigate();
-    const { t } = useTranslation();
 
     return (
         <ContainerForEntity
@@ -47,7 +45,7 @@ function ApplicationCard({ entity }) {
                         {entity.practice_title}
                     </Headings>
                     <Paragraph property="text-sm text-gray-500 mt-1">
-                        {t('internships.applied_on')}: {entity.application_date}
+                        {"Datum podání"}: {entity.application_date}
                     </Paragraph>
                 </Container>
                 <Container property="shrink-0">
@@ -59,7 +57,6 @@ function ApplicationCard({ entity }) {
 }
 
 function InvitationCard({ entity, onResponse }) {
-    const { t } = useTranslation();
     const navigate = useNavigate();
     const { manageEmployerInvitation } = useStudentPracticeAPI();
     const { addMessage } = useMessage();
@@ -70,10 +67,10 @@ function InvitationCard({ entity, onResponse }) {
         setLoading(true);
         try {
             await manageEmployerInvitation(entity.invitation_id, action);
-            addMessage(action === "accept" ? t('internships.invitation_accepted') : t('internships.invitation_rejected'), "S");
+            addMessage(action === "accept" ? "Pozvánka přijata" : "Pozvánka odmítnuta", "S");
             if (onResponse) onResponse();
         } catch (error) {
-            addMessage(t('internships.invitation_error'), "E");
+            addMessage("Chyba při zpracování pozvánky", "E");
         } finally {
             setLoading(false);
         }
@@ -96,10 +93,10 @@ function InvitationCard({ entity, onResponse }) {
                 </Container>
                 <Container property="flex-1 min-w-0">
                     <Headings sizeTag="h5-bold" property="truncate text-black">
-                        {entity.practice_title || t('internships.unknown_practice')}
+                        {entity.practice_title || "Neznámá praxe"}
                     </Headings>
                     <Paragraph property="text-sm text-gray-500 mt-1">
-                        {t('internships.received')}: {entity.submission_date}
+                        {"Obdrženo"}: {entity.submission_date}
                     </Paragraph>
                 </Container>
                 <Container property="shrink-0 flex gap-2">
@@ -108,14 +105,14 @@ function InvitationCard({ entity, onResponse }) {
                         onClick={(e) => handleResponse("accept", e)}
                         property={loading ? "opacity-50" : ""}
                     >
-                        {t('internships.accept')}
+                        {"Přijmout"}
                     </Button>
                     <Button
                         variant="redSmall"
                         onClick={(e) => handleResponse("reject", e)}
                         property={loading ? "opacity-50" : ""}
                     >
-                        {t('internships.decline')}
+                        {"Odmítnout"}
                     </Button>
                 </Container>
             </Container>
@@ -124,7 +121,6 @@ function InvitationCard({ entity, onResponse }) {
 }
 
 export default function PraxePage() {
-    const { t } = useTranslation();
     const { addMessage } = useMessage();
     const nabidkaAPI = useNabidkaAPI();
     const [data, setData] = useState(null);
@@ -147,7 +143,7 @@ export default function PraxePage() {
                 setData(res);
             }
         } catch {
-            setError(t('internships.error'));
+            setError("Nepodařilo se načíst stáže. Zkuste to prosím znovu.");
         } finally {
             setLoading(false);
         }
@@ -161,14 +157,14 @@ export default function PraxePage() {
 
     const handleEdit = (entity) => {
         if (!canEditOffer(entity)) {
-            addMessage(t('internships.edit_blocked'), "W");
+            addMessage("Schválený inzerát nelze editovat", "W");
             return;
         }
         navigate(`/upravit-nabidku/${entity.practice_id}`);
     };
 
     const renderLoading = () => (
-        <Paragraph property="text-center text-gray-500 py-8">{t('internships.loading')}</Paragraph>
+        <Paragraph property="text-center text-gray-500 py-8">{"Načítání stáží..."}</Paragraph>
     );
 
     const renderError = () => (
@@ -181,7 +177,7 @@ export default function PraxePage() {
                 <BackButton />
                 <Container property={"flex items-center justify-between mb-6 mt-4"}>
                     <Headings sizeTag={"h3"} property={"mt-2"}>
-                        {t('internships.created_title')}
+                        {"Vytvořené stáže"}
                     </Headings>
                 </Container>
 
@@ -190,7 +186,7 @@ export default function PraxePage() {
                         onClick={() => navigate('/vytvorit-nabidku')}
                         icon={"plus"}
                     >
-                        {t('internships.create_new')}
+                        {"Založit stáž"}
                     </Button>
                 </Container>
 
@@ -199,10 +195,10 @@ export default function PraxePage() {
                     {!loading && error && renderError()}
                     {!loading && !error && (!data || data.length === 0) && (
                         <EmptyState
-                            title={t('internships.no_created')}
-                            description={t('internships.no_created_desc', { defaultValue: "" })}
+                            title={"Zatím nemáte žádné vytvořené stáže."}
+                            description={"Vytvořte svou první nabídku a začněte spolupracovat se studenty."}
                             icon="folder-open"
-                            actionText={t('internships.create_new')}
+                            actionText={"Založit stáž"}
                             onAction={() => navigate('/vytvorit-nabidku')}
                         />
                     )}
@@ -217,15 +213,15 @@ export default function PraxePage() {
                                         <Container property={"flex items-center gap-6 flex-1"}>
                                             <Container property={"min-w-[200px]"}>
                                                 <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                                                    {t('offers.contact_person')}
+                                                    {"Kontaktní osoba"}
                                                 </Paragraph>
                                                 <Paragraph property={"font-medium"}>
-                                                    {entity.contact_user_full_name || t('common.not_specified')}
+                                                    {entity.contact_user_full_name || "Není uvedeno"}
                                                 </Paragraph>
                                             </Container>
                                             <Container property={"flex-1"}>
                                                 <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                                                    {t('form.title')}
+                                                    {"Název"}
                                                 </Paragraph>
                                                 <Paragraph property={"font-medium"}>
                                                     {entity.title}
@@ -233,13 +229,13 @@ export default function PraxePage() {
                                             </Container>
                                             <Container property={"min-w-[120px]"}>
                                                 <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                                                    {t('common.status')}
+                                                    {"Stav"}
                                                 </Paragraph>
                                                 <StateBadge status={practiceStateName(entity.workflow_state ?? entity.approval_status)} />
                                             </Container>
                                             <Container property={"min-w-[150px]"}>
                                                 <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                                                    {t('internships.submitted_applications')}
+                                                    {"Podané přihlášky"}
                                                 </Paragraph>
                                                 <Paragraph property={"font-medium"}>
                                                     {entity.approved_applications ?? entity.approved_count ?? 0}/{entity.pending_applications ?? entity.pending_count ?? 0}/{entity.available_positions || 0}
@@ -252,7 +248,7 @@ export default function PraxePage() {
                                                     <Button
                                                         noVariant={true}
                                                         onClick={() => navigate(`/students/${entity.practice_id}?view=true`)}
-                                                        title={t('internships.view_applications')}
+                                                        title={"Zobrazit přihlášky"}
                                                         icon={"users"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
@@ -260,7 +256,7 @@ export default function PraxePage() {
                                                     <Button
                                                         noVariant={true}
                                                         onClick={() => handleEdit(entity)}
-                                                        title={t('internships.edit_internship')}
+                                                        title={"Upravit stáž"}
                                                         icon={"edit"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
@@ -274,7 +270,7 @@ export default function PraxePage() {
                                                     <Button
                                                         noVariant={true}
                                                         onClick={() => navigate(`/nabidka/${entity.practice_id}`)}
-                                                        title={t('internships.view_detail')}
+                                                        title={"Zobrazit detail"}
                                                         icon={"eye"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
@@ -282,7 +278,7 @@ export default function PraxePage() {
                                                     <Button
                                                         noVariant={true}
                                                         onClick={() => handleEdit(entity)}
-                                                        title={t('internships.edit_internship')}
+                                                        title={"Upravit stáž"}
                                                         icon={"edit"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
@@ -312,13 +308,13 @@ export default function PraxePage() {
                 {!loading && !error && data && (
                     <>
                         <Headings sizeTag={"h3"} property={"mt-2 mb-4"}>
-                            {t('internships.company_invitations')}
+                            {"Pozvánky od firem"}
                             {data.employer_invitations ? ` (${data.employer_invitations.length})` : ""}
                         </Headings>
                         {data.employer_invitations?.length === 0 ? (
                             <EmptyState
-                                title={t('internships.no_invitations')}
-                                description={t('internships.no_invitations_desc', { defaultValue: "" })}
+                                title={"Nemáte žádné pozvánky."}
+                                description={"Zatím vám žádná firma neposlala pozvánku k praxi."}
                                 icon="envelope-open"
                                 property="mb-8"
                             />
@@ -335,15 +331,15 @@ export default function PraxePage() {
                         )}
 
                         <Headings sizeTag={"h3"} property={"mt-2 mb-4"}>
-                            {t('internships.submitted_applications')}
+                            {"Podané přihlášky"}
                             {data.student_practices ? ` (${data.student_practices.length})` : ""}
                         </Headings>
                         {data.student_practices?.length === 0 ? (
                             <EmptyState
-                                title={t('internships.no_applications')}
-                                description={t('internships.no_applications_desc', { defaultValue: "" })}
+                                title={"Nemáte žádné podané přihlášky."}
+                                description={"Prohlédněte si nabídku praxí a podejte svou první přihlášku."}
                                 icon="file-signature"
-                                actionText={t('offers.title')}
+                                actionText={"Nabídka praxí"}
                                 onAction={() => navigate('/nabidka')}
                             />
                         ) : (

@@ -7,30 +7,14 @@ import { useApi } from '@hooks/useApi';
 import { useUser } from '@hooks/UserProvider';
 import { useMessage } from '@hooks/MessageContext';
 import User from '@auth/UserObj';
-import translations from '../../public/locales/cs/translation.json';
 
 jest.mock('@api/student_practice/student_practiceAPI');
 jest.mock('@hooks/useApi');
 jest.mock('@hooks/UserProvider');
 jest.mock('@hooks/MessageContext');
 
-jest.mock('react-i18next', () => {
-    const dict = require('../../public/locales/cs/translation.json');
-    const resolve = (obj, key) =>
-        key.split('.').reduce((acc, part) => (acc && typeof acc === 'object' ? acc[part] : undefined), obj);
-    return {
-        useTranslation: () => ({ t: (key) => resolve(dict, key) ?? key, i18n: { language: 'cs' } }),
-        // src/i18n.js (přes Auth → apiClient) potřebuje tyto exporty
-        initReactI18next: { type: '3rdParty', init: () => {} },
-        Trans: ({ children }) => children,
-    };
-});
 
 jest.mock('@core/Button/BackButton', () => () => <button>Back</button>);
-
-const resolve = (obj, key) =>
-    key.split('.').reduce((acc, part) => (acc && typeof acc === 'object' ? acc[part] : undefined), obj);
-const tr = (key) => resolve(translations, key) ?? key;
 
 const makeUser = (role) => {
     const user = new User();
@@ -79,9 +63,9 @@ describe('EvaluationForm — FE-014 role guard a navigace po uložení', () => {
         renderForm();
 
         await waitFor(() => {
-            expect(screen.getByText(tr('evaluation.mentor_only'))).toBeInTheDocument();
+            expect(screen.getByText("Evaluace je dostupná pouze mentorovi.")).toBeInTheDocument();
         });
-        expect(screen.queryByRole('button', { name: tr('evaluation.submit') })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: "Odeslat" })).not.toBeInTheDocument();
     });
 
     test('po úspěšném uložení naviguje na kartu praxes (ne na neexistující /praxe/:id)', async () => {
@@ -91,20 +75,20 @@ describe('EvaluationForm — FE-014 role guard a navigace po uložení', () => {
         renderForm();
 
         await waitFor(() => {
-            expect(screen.getByRole('button', { name: tr('evaluation.submit') })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: "Odeslat" })).toBeInTheDocument();
         });
 
         // PDF protokol je povinný
         const file = new File(['%PDF-1.4 test'], 'protokol.pdf', { type: 'application/pdf' });
-        const fileInput = screen.getByLabelText(tr('evaluation.pdf_upload_label'));
+        const fileInput = screen.getByLabelText("Podepsaný hodnotící arch (PDF)");
         fireEvent.change(fileInput, { target: { files: [file] } });
 
-        fireEvent.click(screen.getByRole('button', { name: tr('evaluation.submit') }));
+        fireEvent.click(screen.getByRole('button', { name: "Odeslat" }));
 
         await waitFor(() => {
             expect(mockPost).toHaveBeenCalledTimes(1);
         });
-        expect(mockAddMessage).toHaveBeenCalledWith(tr('evaluation.success'), 'S');
+        expect(mockAddMessage).toHaveBeenCalledWith("Evaluace byla úspěšně odeslána", 'S');
         // FE-014: dříve `/praxe/:id` (neexistující route → 404 stránka)
         await waitFor(() => {
             expect(screen.getByTestId('location')).toHaveTextContent('/karta-praxe/9');

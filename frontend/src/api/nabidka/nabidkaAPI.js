@@ -81,7 +81,7 @@ export const useNabidkaAPI = () => {
 
             if (response && response.data) {
                 sessionStorage.setItem("pendingMessage", JSON.stringify({
-                    text: `Nabídka byla úspěšně vytvořena`,
+                    text: "Nabídka byla úspěšně vytvořena",
                     type: "S"
                 }));
                 return response.data;
@@ -220,7 +220,7 @@ export const useNabidkaAPI = () => {
 
             if (response && response.data) {
                 sessionStorage.setItem("pendingMessage", JSON.stringify({
-                    text: `Nabídka byla úspěšně aktualizována`,
+                    text: "Nabídka byla úspěšně aktualizována",
                     type: "S"
                 }));
                 return response.data;

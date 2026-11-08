@@ -43,7 +43,7 @@ from practices.utils import calculate_end_date
 from student_practices.serializers import ListStudentPracticeSerializer
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
-from users.models import ApprovalStatus, ProfessorUser, StagRoleEnum, StudentUser
+from users.models import ApprovalStatus, StudentUser
 from users.permissions import (
     CanCancelPractice,
     IsAdminUser,
@@ -55,6 +55,7 @@ from users.permissions import (
     IsStagAdmin,
     IsStagTeacher,
 )
+from users.services import get_user_department_ids
 
 logger = logging.getLogger(__name__)
 
@@ -656,17 +657,12 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=["get"], serializer_class=RunningPracticeSerializer)
     def running(self, request):
         user = request.user
-        is_head_of_department = (
-            isinstance(user, ProfessorUser)
-            and hasattr(user, "stag_role")
-            and user.stag_role
-            and user.stag_role.role.lower() == StagRoleEnum.VK
-        )
 
-        if is_head_of_department:
-            dept_ids = Department.objects.all().values_list("department_id", flat=True).distinct()
+        # VK/HEAD vidí jen svou katedru; globální přehled zůstává superuserovi.
+        if user.is_superuser:
+            dept_ids = Department.objects.values_list("department_id", flat=True)
         else:
-            dept_ids = Department.objects.filter(subjects__user_subjects__user=user).values_list("department_id", flat=True).distinct()
+            dept_ids = get_user_department_ids(user)
 
         students = StudentUser.objects.filter(user_subjects__subject__department_id__in=dept_ids).distinct()
         practices = (
@@ -684,6 +680,7 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
                     filter=Q(student_practices__approval_status=ApprovalStatus.PENDING),
                 ),
             )
+            .order_by("-created_at")
         )
 
         ActionLogService.log(
@@ -759,14 +756,31 @@ class AdminPracticesListView(generics.ListAPIView):
 
         # Evaluate the base queryset once (avoids re-executing filter twice).
         # Materialize both subsets before serialization.
-        pending_qs = queryset.filter(approval_status=ApprovalStatus.PENDING)
-        # Schválené a aktivní nabídky musí admin vidět i po přechodu z fronty.
+        pending_qs = queryset.filter(approval_status=ApprovalStatus.PENDING).exclude(
+            workflow_state__in=[
+                PracticeWorkflowState.CONTENT_APPROVED,
+                PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+                PracticeWorkflowState.CLOSED_FOR_APPLICATIONS,
+            ]
+        )
+        # Nabídka schválená přes /transition/ má approval_status stále PENDING;
+        # zdrojem pravdy pro aktivní nabídky je workflow_state.
         active_offers_qs = queryset.filter(
-            approval_status=ApprovalStatus.APPROVED,
             workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
             is_cancelled=False,
         )
-        approved_ids = list(queryset.filter(approval_status=ApprovalStatus.APPROVED).values_list("practice_id", flat=True))
+        approved_ids = list(
+            queryset.filter(
+                Q(approval_status=ApprovalStatus.APPROVED)
+                | Q(
+                    workflow_state__in=[
+                        PracticeWorkflowState.CONTENT_APPROVED,
+                        PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+                        PracticeWorkflowState.CLOSED_FOR_APPLICATIONS,
+                    ]
+                )
+            ).values_list("practice_id", flat=True)
+        )
 
         approved_student_practices = StudentPractice.objects.filter(practice_id__in=approved_ids, is_cancelled=False).select_related(
             "user", "practice__subject__department", "practice__employer"

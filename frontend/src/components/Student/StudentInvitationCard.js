@@ -8,10 +8,8 @@ import Button from "@components/core/Button/Button";
 import { useNavigate } from "react-router-dom";
 import { useStudentPracticeAPI } from "@api/student_practice/student_practiceAPI";
 import { useMessage } from "@hooks/MessageContext";
-import { useTranslation } from "react-i18next";
 
 export default function StudentInvitationCard({ entity, onResponse }) {
-    const { t } = useTranslation();
     const navigate = useNavigate();
     const { manageEmployerInvitation } = useStudentPracticeAPI();
     const { addMessage } = useMessage();
@@ -22,10 +20,10 @@ export default function StudentInvitationCard({ entity, onResponse }) {
         setLoading(true);
         try {
             await manageEmployerInvitation(entity.invitation_id, action);
-            addMessage(action === "accept" ? t('internships.invitation_accepted') : t('internships.invitation_rejected'), "S");
+            addMessage(action === "accept" ? "Pozvánka přijata" : "Pozvánka odmítnuta", "S");
             if (onResponse) onResponse();
         } catch (error) {
-            addMessage(t('internships.invitation_error'), "E");
+            addMessage("Chyba při zpracování pozvánky", "E");
         } finally {
             setLoading(false);
         }
@@ -50,9 +48,9 @@ export default function StudentInvitationCard({ entity, onResponse }) {
                 </Container>
 
                 <Container property="flex flex-col gap-1">
-                    <Headings sizeTag="h5-bold">{entity.practice_title || t('internships.unknown_practice')}</Headings>
+                    <Headings sizeTag="h5-bold">{entity.practice_title || "Neznámá praxe"}</Headings>
                     <Paragraph variant="small" property="text-gray-500">
-                        {t('internships.received')}: {entity.submission_date}
+                        {"Obdrženo"}: {entity.submission_date}
                     </Paragraph>
                 </Container>
 
@@ -62,14 +60,14 @@ export default function StudentInvitationCard({ entity, onResponse }) {
                         onClick={(e) => handleResponse("accept", e)}
                         loading={loading}
                     >
-                        {t('internships.accept')}
+                        {"Přijmout"}
                     </Button>
                     <Button
                         variant="red"
                         onClick={(e) => handleResponse("reject", e)}
                         loading={loading}
                     >
-                        {t('internships.decline')}
+                        {"Odmítnout"}
                     </Button>
                 </Container>
             </Container>

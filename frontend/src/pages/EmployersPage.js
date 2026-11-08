@@ -9,10 +9,8 @@ import { useEmployerAPI } from "@api/employer/employerAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 import EmployerEntity from "@components/Employer/EmployerEntity";
-import { useTranslation } from "react-i18next";
 
 export default function EmployersPage() {
-    const { t } = useTranslation();
     const [employers, setEmployers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showDeletePop, setShowDeletePop] = useState(false);
@@ -28,8 +26,8 @@ export default function EmployersPage() {
             const data = await employerAPI.getAllEmployers();
             setEmployers(data || []);
         } catch (error) {
-            console.error(t('employers.load_error'), error);
-            addMessage(t('employers.load_error'), 'E');
+            console.error("Chyba při načítání zaměstnavatelů", error);
+            addMessage("Chyba při načítání zaměstnavatelů", 'E');
             setEmployers([]);
         } finally {
             setLoading(false);
@@ -58,12 +56,12 @@ export default function EmployersPage() {
 
         try {
             await employerAPI.deleteEmployer(selectedEmployer.employer_id);
-            addMessage(t('employers.delete_success'), 'S');
+            addMessage("Zaměstnavatel byl úspěšně smazán", 'S');
             setShowDeletePop(false);
             setSelectedEmployer(null);
             fetchEmployers();
         } catch (error) {
-            addMessage(t('employers.delete_error'), 'E');
+            addMessage("Chyba při mazání zaměstnavatele", 'E');
         }
     };
 
@@ -78,7 +76,7 @@ export default function EmployersPage() {
 
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    {t('employers.title')}
+                    {"Správa zaměstnavatelů"}
                 </Headings>
             </Container>
 
@@ -87,16 +85,16 @@ export default function EmployersPage() {
                     onClick={handleCreateEmployer}
                     icon={"plus"}
                 >
-                    {t('employers.add_employer')}
+                    {"Přidat zaměstnavatele"}
                 </Button>
             </Container>
 
             <Container property={"mt-4 rounded-lg"}>
                 {loading ? (
-                    <Paragraph>{t('common.loading')}</Paragraph>
+                    <Paragraph>{"Načítání..."}</Paragraph>
                 ) : employers.length === 0 ? (
                     <Paragraph property="text-center text-gray-500 py-8">
-                        {t('employers.no_employers')}
+                        {"Zatím nejsou žádní zaměstnavatelé k zobrazení."}
                     </Paragraph>
                 ) : (
                     <Container property={"grid grid-cols-1 gap-4"}>
@@ -125,12 +123,12 @@ export default function EmployersPage() {
             {showDeletePop && (
                 <PopUpCon
                     onClose={handleDeleteCancel}
-                    title={t('departments.delete_confirm_title')}
-                    text={t('departments.delete_confirm_text', { name: selectedEmployer?.employer_name })}
+                    title={"Potvrdit smazání"}
+                    text={`Opravdu chcete smazat katedru "${selectedEmployer?.employer_name}"? Tato akce je nevratná.`}
                     onSubmit={handleDeleteConfirm}
                     onReject={handleDeleteCancel}
-                    onSubmitText={t('common.delete')}
-                    onRejectText={t('common.cancel')}
+                    onSubmitText={"Smazat"}
+                    onRejectText={"Zrušit"}
                 />
             )}
         </>

@@ -6,11 +6,9 @@ import LoginSwitch from "./LoginSwitch";
 import Paragraph from "@components/core/Text/Paragraph";
 import TextField from "@core/Form/TextField";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { validateEmail, validateRequired } from "@utils/validationUtils";
 
 export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
-    const { t } = useTranslation();
     const [loginAccess, setLoginAccess] = useState({ switch: "STAG" });
 
     const [email, setEmail] = useState("");
@@ -41,13 +39,13 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
     const onOrgLogin = () => {
         const newErrors = {};
         if (!validateRequired(email)) {
-            newErrors.email = t('login.email_required');
+            newErrors.email = "E-mail je povinný";
         } else if (!validateEmail(email)) {
-            newErrors.email = t('login.invalid_email');
+            newErrors.email = "Neplatný formát e-mailu";
         }
 
         if (!validateRequired(password)) {
-            newErrors.password = t('login.password_required');
+            newErrors.password = "Heslo je povinné";
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -84,7 +82,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
         <Container property="min-h-screen flex items-center justify-center p-0 mx-auto">
             <Container property="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
                 <LoginSwitch getLoginType={handleAccess}/>
-                <Headings sizeTag="h4" property="text-center">{t('login.title')}</Headings>
+                <Headings sizeTag="h4" property="text-center">{"Přihlášení"}</Headings>
 
                { loginAccess.switch !== "STAG" ? (
                 <>
@@ -93,8 +91,8 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                     onIconClick={handleButtonClick}
                     icon="user"
                     required={true}
-                    label={t('login.email')}
-                    placeholder={t('login.email')}
+                    label={"E-mail"}
+                    placeholder={"E-mail"}
                     property="m-4"
                     value={email}
                     onChange={onEmailChange}
@@ -106,7 +104,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                     onIconClick={handleButtonClick}
                     icon="lock"
                     required={true}
-                    label={t('login.password')}
+                    label={"Heslo"}
                     placeholder="*****"
                     property="m-4"
                     value={password}
@@ -119,14 +117,14 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                         property="text-blue-600 cursor-pointer hover:underline"
                         onClick={() => navigate("/reset-password")}
                     >
-                        {t('login.forgot_password')}
+                        {"Zapomněli jste heslo?"}
                     </Paragraph>
                 </Container>
                 </>
                 ):
                 (
                     <Container property="m-4">
-                        <Paragraph property="text-center mb-16">{t('login.stag_info')}</Paragraph>
+                        <Paragraph property="text-center mb-16">{"Přihlášení pomocí systému STAG příslušné univerzity."}</Paragraph>
                     </Container>
                 )
                 }
@@ -138,7 +136,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                             property={"w-full items-center"}
                             onClick={handleSTAGLogin}
                         >
-                            {t('login.login_button')}
+                            {"Přihlaste se"}
                         </Button>
                         {process.env.NODE_ENV === 'development' && (
                             <>
@@ -151,7 +149,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
 
                                 <TextField
                                     id="studentId"
-                                    label={t('login.student_id_dev')}
+                                    label={"Zadejte osCislo studenta (nepovinné)"}
                                     placeholder="S12345"
                                     property="mt-4 mb-2"
                                     value={studentId}
@@ -166,7 +164,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
 
                                 <TextField
                                     id="teacherId"
-                                    label={t('login.teacher_id_dev')}
+                                    label={"Zadejte ucitIdno učitele (nepovinné)"}
                                     placeholder="U98765"
                                     property="mt-4 mb-2"
                                     value={teacherId}
@@ -190,7 +188,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                             property={"w-full items-center"}
                             onClick={onOrgLogin}
                         >
-                            {t('login.login_button')}
+                            {"Přihlaste se"}
                         </Button>
 
                         <Button
@@ -198,7 +196,7 @@ export default function LoginForm({handleSTAGLogin, handleOrganizationLogin}) {
                             variant="yellow"
                             onClick={() => navigate("/registrace")}
                         >
-                            {t('login.registration')}
+                            {"Registrace"}
                         </Button>
                     </>
                 )

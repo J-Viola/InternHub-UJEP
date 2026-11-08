@@ -4,10 +4,8 @@ import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Paragraph from "@components/core/Text/Paragraph";
 import Headings from "@core/Text/Headings";
-import { useTranslation } from "react-i18next";
 
 export default function SubjectEntity({entity, attributes, buttons, status="gray", onClick}) {
-    const { t } = useTranslation();
 
     return (
         <ContainerForEntity variant={status} property={"pl-8 pt-4 pb-4 pr-4 mt-2"} onClick={onClick}>
@@ -29,7 +27,7 @@ export default function SubjectEntity({entity, attributes, buttons, status="gray
                 {/* Vedoucí předmětu */}
                 <Container property="flex-shrink-0 min-w-[200px]">
                     <Paragraph>
-                        {t('subjects.teacher_in_charge')}: {entity.teacher?.full_name || "N/A"}
+                        {"Vedoucí"}: {entity.teacher?.full_name || "N/A"}
                     </Paragraph>
                 </Container>
 

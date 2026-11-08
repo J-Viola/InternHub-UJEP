@@ -3,10 +3,8 @@ import Button from "@core/Button/Button";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Paragraph from "@components/core/Text/Paragraph";
-import { useTranslation } from "react-i18next";
 
 export default function CompanyEntity({entity, buttons, onClick}) {
-    const { t } = useTranslation();
     return (
         <ContainerForEntity
             variant="gray"
@@ -24,7 +22,7 @@ export default function CompanyEntity({entity, buttons, onClick}) {
                 {/* Column 2: ICO */}
                 <Container property="text-center">
                     <Paragraph property="text-gray-600 text-sm">
-                        {t('profile.ico')}: {entity.ico}
+                        {"IČO"}: {entity.ico}
                     </Paragraph>
                 </Container>
 

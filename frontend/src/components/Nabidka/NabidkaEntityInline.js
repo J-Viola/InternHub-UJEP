@@ -7,12 +7,10 @@ import { Image } from "@components/core/Image"
 import { useNavigate } from "react-router-dom"
 import Button from "@components/core/Button/Button"
 import { useUser } from "@hooks/UserProvider"
-import { useTranslation } from "react-i18next"
 
 export default function NabidkaEntityInline({ entity, onClick, onView, isSelected = false }) {
     const navigate = useNavigate();
     const { user } = useUser();
-    const { t } = useTranslation();
 
     const handleVariant = (approval_status, buttonType=false) => {
 
@@ -29,11 +27,11 @@ export default function NabidkaEntityInline({ entity, onClick, onView, isSelecte
     const approvalTag = (approval_status) => {
         switch (approval_status) {
             case 0: // PENDING
-                return t('status.PENDING');
+                return "Čeká na schválení";
             case 1: // APPROVED
-                return t('status.APPROVED');
+                return "Schváleno";
             case 2: // REJECTED
-                return t('status.REJECTED');
+                return "Zamítnuto";
             default:
                 return;
         }
@@ -74,7 +72,7 @@ export default function NabidkaEntityInline({ entity, onClick, onView, isSelecte
                             {entity.title}
                         </Headings>
                         <Paragraph variant="small" property="text-gray-600">
-                            {entity.employer?.address || t('common.not_specified')}
+                            {entity.employer?.address || "Není uvedeno"}
                         </Paragraph>
                     </Container>
                 </Container>

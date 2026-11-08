@@ -11,10 +11,9 @@ import NabidkaEntityInline from "@components/Nabidka/NabidkaEntityInline";
 import PopUpCon from "@core/Container/PopUpCon";
 import { useStudentPracticeAPI } from "src/api/student_practice/student_practiceAPI";
 import { useMessage } from "@hooks/MessageContext";
-import { useTranslation } from "react-i18next";
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 export default function InvitationPage() {
-    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const [nabidky, setNabidky] = useState([]);
     const [selectedNabidka, setSelectedNabidka] = useState(null);
@@ -34,11 +33,11 @@ export default function InvitationPage() {
                 getOrganizationPractices().then(res => {
                     setNabidky(res || []);
                 }).catch(error => {
-                    console.error(t('offers.loading'), error);
+                    console.error("Načítání nabídek...", error);
                 });
             }
         }
-    }, [searchParams, user, getOrganizationPractices, t]);
+    }, [searchParams, user, getOrganizationPractices]);
 
 
 
@@ -70,17 +69,16 @@ export default function InvitationPage() {
         try {
             const res = await createInvitation(selectedNabidka.practice_id, studentIds);
             if (res) {
-                addMessage(t('invitations.create_success', { count: res.created }), "S");
+                addMessage(`Pozvánka pro ${res.created} studentů vytvořena.`, "S");
                 if (res.errors && res.errors.length > 0) {
-                    addMessage(`${t('invitations.errors_label')}: ${res.errors.join(", ")}`, "E");
+                    addMessage(`Chyby: ${res.errors.join(", ")}`, "E");
                 }
                 setShowConfirmPopup(false);
                 navigate('/pozvanky-list');
             }
         } catch (error) {
-            console.error(t('invitations.create_error'), error);
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(`${t('invitations.create_error')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
+            console.error("Chyba při vytváření pozvánky", error);
+            addMessage(`Chyba při vytváření pozvánky: ${getApiErrorMessage(error, error.message)}`, "E");
             setShowConfirmPopup(false);
         }
     };
@@ -94,7 +92,7 @@ export default function InvitationPage() {
             <BackButton/>
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    {type === 'create' ? t('invitations.create_title') : t('invitations.single_title')}
+                    {type === 'create' ? "Vytvořit pozvánku" : "Pozvánka"}
                 </Headings>
             </Container>
             <Container property={"mb-4"}>
@@ -104,7 +102,7 @@ export default function InvitationPage() {
                         icon={"user-plus"}
                         disabled={!selectedNabidka}
                     >
-                        {t('invitations.create_title')}
+                        {"Vytvořit pozvánku"}
                     </Button>
                 )}
             </Container>
@@ -112,7 +110,7 @@ export default function InvitationPage() {
             {type === 'create' && studentIds.length > 0 && (
                 <Container property={"bg-facultyColLight mt-2 p-4 rounded-lg border border-black"}>
                     <Paragraph variant="baseBold" property="mb-2">
-                        {t('invitations.selected_students')} ({studentIds.length}):
+                        {"Vybraní studenti"} ({studentIds.length}):
                     </Paragraph>
                     <Container property="space-y-1">
                         {studentNames.length > 0 ? (
@@ -123,7 +121,7 @@ export default function InvitationPage() {
                             ))
                         ) : (
                             <Paragraph property="text-sm text-gray-600">
-                                {t('students.personal_number')}: {studentIds.join(', ')}
+                                {"Osobní číslo"}: {studentIds.join(', ')}
                             </Paragraph>
                         )}
                     </Container>
@@ -133,7 +131,7 @@ export default function InvitationPage() {
             {type === 'create' && studentIds.length > 0 && (
                 <Container property={"mt-4 p-6 rounded-lg border border-black"}>
                     <Headings sizeTag={"h4"} property={"mb-4"}>
-                        {t('invitations.select_practice')}
+                        {"Vyberte, na jakou stáž má být pozvánka vázána"}
                     </Headings>
 
                     {nabidky.length > 0 ? (
@@ -150,7 +148,7 @@ export default function InvitationPage() {
                         </Container>
                     ) : (
                         <Container property={"bg-gray-50 p-4 rounded-lg"}>
-                            <Paragraph>{t('offers.loading')}</Paragraph>
+                            <Paragraph>{"Načítání nabídek..."}</Paragraph>
                         </Container>
                     )}
                 </Container>
@@ -158,22 +156,19 @@ export default function InvitationPage() {
 
             {(!type || !id) && (
                 <Container property={"bg-gray-50 mt-2 p-4 rounded-lg"}>
-                    <Paragraph>{t('invitations.no_params')}</Paragraph>
+                    <Paragraph>{"Žádné parametry pro vytvoření pozvánky."}</Paragraph>
                 </Container>
             )}
 
             {showConfirmPopup && (
                 <PopUpCon
-                    title={t('invitations.confirm_create_title')}
-                    text={t('invitations.confirm_create_text', {
-                        count: studentNames.length > 0 ? studentNames.length : studentIds.length,
-                        title: selectedNabidka?.title
-                    })}
+                    title={"Potvrzení vytvoření pozvánky"}
+                    text={`Opravdu chcete vytvořit pozvánku pro ${studentNames.length > 0 ? studentNames.length : studentIds.length} studentů na stáž ${selectedNabidka?.title}?`}
                     onSubmit={handleConfirmCreate}
                     onReject={handleCancelCreate}
                     onClose={handleCancelCreate}
-                    onSubmitText={t('common.confirm')}
-                    onRejectText={t('common.cancel')}
+                    onSubmitText={"Potvrdit"}
+                    onRejectText={"Zrušit"}
                     variant="blue"
                 />
             )}

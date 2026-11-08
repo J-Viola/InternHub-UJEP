@@ -20,7 +20,7 @@ class EmployerNotApproved(APIException):
 
     Vyhodí se z permission tříd; custom exception handler (api.exceptions)
     z default_code vytvoří odpověď ``{"error_code": "EMPLOYER_NOT_APPROVED"}``.
-    FE mapuje error_code na i18n klíč ``employer.not_approved``.
+    FE mapuje error_code na český text ``EMPLOYER_NOT_APPROVED``.
     """
 
     status_code = 403

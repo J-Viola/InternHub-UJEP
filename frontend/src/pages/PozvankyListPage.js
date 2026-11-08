@@ -11,11 +11,9 @@ import { usePozvankyAPI } from "@api/pozvanky/pozvankyAPI";
 import { useUser } from "@hooks/UserProvider";
 import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@components/core/Form/DropDown";
-import { useTranslation } from "react-i18next";
 
 export default function PozvankyListPage() {
 	const navigate = useNavigate();
-	const { t } = useTranslation();
 	const { getPozvankyList, getPozvankyAdminList, deleteInvitation } = usePozvankyAPI();
 	const [showPopup, setShowPopup] = useState(false);
 	const [selectedEntity, setSelectedEntity] = useState(null);
@@ -40,7 +38,7 @@ export default function PozvankyListPage() {
 			setShowPopup(false);
 			setSelectedEntity(null);
 		} catch (error) {
-			console.error(t('invitations.cancel_error'), error);
+			console.error("Chyba při zrušení pozvánky", error);
 		}
 	}
 
@@ -65,14 +63,14 @@ export default function PozvankyListPage() {
 				}
 
 			} catch (error) {
-				console.error(t('invitations.load_error'), error);
+				console.error("Chyba při načítání pozvánek", error);
 			} finally {
 				setLoading(false);
 			}
 		};
 
 		initFetch();
-	}, [user, getPozvankyAdminList, getPozvankyList, t]);
+	}, [user, getPozvankyAdminList, getPozvankyList]);
 
 	const toId = (name) => `firma-${(name || 'neznamy').toLowerCase()}`;
 
@@ -89,7 +87,7 @@ export default function PozvankyListPage() {
 		: (data || []);
 
 	const groupedByEmployer = (searchFiltered || []).reduce((acc, item) => {
-		const name = item.employer_name || t('users.unknown_company');
+		const name = item.employer_name || "Neznámá firma";
 		(acc[name] = acc[name] || []).push(item);
 		return acc;
 	}, {});
@@ -117,7 +115,7 @@ export default function PozvankyListPage() {
 	            <BackButton/>
 	            <Container property={"flex items-center justify-between mb-6 mt-4"}>
 	                <Headings sizeTag={"h3"} property={"mt-2"}>
-	                    {t('invitations.sent_title')}
+	                    {"Zaslané pozvánky"}
 	                </Headings>
 	            </Container>
 
@@ -127,7 +125,7 @@ export default function PozvankyListPage() {
 	                <SearchBar
 	                    id="search"
 	                    value={searchQuery}
-	                    placeholder={t('invitations.search_placeholder')}
+	                    placeholder={"Hledat podle projektu, jména, firmy nebo katedry..."}
 	                    onChange={(e) => setSearchQuery(e.target.value)}
 	                    onClear={() => setSearchQuery("")}
 	                />
@@ -135,7 +133,7 @@ export default function PozvankyListPage() {
 	                    <DropDown
 	                        id="company"
 	                        variant="facultyGreen"
-	                        placeholder={t('users.select_company')}
+	                        placeholder={"Vyberte organizaci pro filtrování"}
 	                        value={companySelectValue}
 	                        onChange={onCompanySelect}
 	                        options={availableOptions.map((name) => ({ label: name, value: name }))}
@@ -154,22 +152,22 @@ export default function PozvankyListPage() {
 
 	            <Container property={"mt-4 rounded-lg"}>
 	                {loading ? (
-	                    <Paragraph>{t('common.loading')}</Paragraph>
+	                    <Paragraph>{"Načítání..."}</Paragraph>
 	                ) : data.length === 0 ? (
 	                    <Paragraph property="text-center text-gray-500 py-8">
-	                        {t('invitations.no_invitations')}
+	                        {"Zatím nemáte žádné zaslané pozvánky."}
 	                    </Paragraph>
 	                ) : (
 	                    user.isAdmin() ? (
 	                        displayCompanyNames.length === 0 ? (
 	                            <Paragraph property="text-center text-gray-500 py-8">
-	                                {t('users.no_results')}
+	                                {"Žádné výsledky."}
 	                            </Paragraph>
 	                        ) : (
 	                            <Container property={"space-y-6"}>
 	                                {displayCompanyNames.map((name) => (
 	                                    <Container id={toId(name)} key={name}>
-	                                        <Headings sizeTag={"h4"}>{`${t('invitations.company_label')}: ${name}`}</Headings>
+	                                        <Headings sizeTag={"h4"}>{`Firma: ${name}`}</Headings>
 	                                        <Container property={"flex flex-wrap gap-4 mt-2"}>
 	                                            {(groupedByEmployer[name] || []).map((entity) => (
 	                                                <PozvankyEntity
@@ -202,13 +200,13 @@ export default function PozvankyListPage() {
 	            {/* Popup pro potvrzení zrušení pozvánky */}
 	            {showPopup && (
 	                <PopUpCon
-	                    title={t('invitations.cancel_confirm_title')}
-	                    text={t('invitations.cancel_confirm_text', { name: selectedEntity?.recipient_name, project: selectedEntity?.project_title })}
+	                    title={"Potvrzení zrušení pozvánky"}
+	                    text={`Opravdu chcete zrušit pozvánku pro ${selectedEntity?.recipient_name} na projekt "${selectedEntity?.project_title}"?`}
 	                    onSubmit={handleConfirmCancel}
 	                    onReject={handleClosePopup}
 	                    onClose={handleClosePopup}
-	                    onSubmitText={t('common.yes')}
-	                    onRejectText={t('common.no')}
+	                    onSubmitText={"Ano"}
+	                    onRejectText={"Ne"}
 	                />
 	            )}
 	        </>

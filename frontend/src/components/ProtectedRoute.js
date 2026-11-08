@@ -2,7 +2,6 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@services/auth/Auth';
 import { useUser } from '@hooks/UserProvider';
-import { useTranslation } from 'react-i18next';
 
 /**
  * Wraps a route so it is only accessible to authenticated users.
@@ -12,12 +11,11 @@ import { useTranslation } from 'react-i18next';
 export default function ProtectedRoute({ children, allowedRoles }) {
     const { accessToken, isInitializing } = useAuth();
     const { user } = useUser();
-    const { t } = useTranslation();
 
     if (isInitializing) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <div className="text-xl text-gray-600">{t('common.loading_app')}</div>
+                <div className="text-xl text-gray-600">{"Načítání aplikace..."}</div>
             </div>
         );
     }

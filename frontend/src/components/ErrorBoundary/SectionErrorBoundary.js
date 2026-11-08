@@ -2,7 +2,6 @@ import React from 'react';
 import Container from '@core/Container/Container';
 import Paragraph from '@core/Text/Paragraph';
 import Button from '@core/Button/Button';
-import { useTranslation } from 'react-i18next';
 
 /**
  * SectionErrorBoundary — lightweight wrapper for individual sections/cards.
@@ -11,7 +10,7 @@ import { useTranslation } from 'react-i18next';
  * Props:
  *   - children: ReactNode
  *   - onError?: (error, errorInfo) => void
- *   - sectionName?: string — shown in the error card (defaults to t('common.error_label'))
+ *   - sectionName?: string — shown in the error card (defaults to „Chyba“)
  */
 class SectionErrorBoundary extends React.Component {
     constructor(props) {
@@ -51,7 +50,6 @@ class SectionErrorBoundary extends React.Component {
 }
 
 function SectionErrorFallback({ sectionName, onRetry }) {
-    const { t } = useTranslation();
 
     return (
         <Container property="bg-red-50 border border-red-200 rounded-lg p-4 flex flex-col gap-3">
@@ -71,7 +69,7 @@ function SectionErrorFallback({ sectionName, onRetry }) {
                     />
                 </svg>
                 <Paragraph variant="baseBold" property="text-red-700">
-                    {sectionName || t('common.error_label')}
+                    {sectionName || "Chyba"}
                 </Paragraph>
             </Container>
 
@@ -84,7 +82,7 @@ function SectionErrorFallback({ sectionName, onRetry }) {
                 onClick={onRetry}
                 property="self-start"
             >
-                {t('common.retry')}
+                {"Zkusit znovu"}
             </Button>
         </Container>
     );

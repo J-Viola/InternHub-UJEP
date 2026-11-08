@@ -7,11 +7,9 @@ import { Image } from "@components/core/Image";
 import Button from "@components/core/Button/Button";
 import StateBadge from "@core/StateBadge";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 
 export default function StudentApplicationCard({ entity }) {
     const navigate = useNavigate();
-    const { t } = useTranslation();
 
     // Vlastní přihláška má jít na kartu praxes (SP detail), ne na katalog
     // nabídek — uzavřené/čekající/vlastní SP by jinak skončily 404 (FE-003).
@@ -40,7 +38,7 @@ export default function StudentApplicationCard({ entity }) {
                 {/* Column 2: Date */}
                 <Container property="text-center">
                     <Paragraph property="font-medium text-gray-500 text-sm">
-                        {t('internships.applied_on')}: {entity.application_date}
+                        {"Datum podání"}: {entity.application_date}
                     </Paragraph>
                 </Container>
 

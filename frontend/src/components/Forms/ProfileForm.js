@@ -6,7 +6,6 @@ import Button from "@components/core/Button/Button";
 import UploadFile from "@core/Form/UploadFile";
 import ProtectedImage from "@core/Image/ProtectedImage";
 import Headings from "@core/Text/Headings";
-import { useTranslation } from "react-i18next";
 
 const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -22,7 +21,6 @@ const convertToBase64 = (file) => {
 };
 
 export default function ProfileForm({ formData, handleInputChange, handleSubmit }) {
-    const { t } = useTranslation();
     const handleProfilePicChange = async (file) => {
         if (file) {
             try {
@@ -57,7 +55,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
         <>
             <Container>
                 <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                    {t('profile.profile_data')}
+                    {"Údaje profilu"}
                 </Headings>
             </Container>
 
@@ -65,8 +63,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"first_name"}
                     required={true}
-                    label={t('profile.first_name')}
-                    placeholder={t('profile.first_name_placeholder')}
+                    label={"Jméno"}
+                    placeholder={"Zadejte jméno"}
                     value={formData?.first_name || ''}
                     onChange={handleInputChange}
                 />
@@ -74,8 +72,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"last_name"}
                     required={true}
-                    label={t('profile.last_name')}
-                    placeholder={t('profile.last_name_placeholder')}
+                    label={"Příjmení"}
+                    placeholder={"Zadejte příjmení"}
                     value={formData?.last_name || ''}
                     onChange={handleInputChange}
                 />
@@ -83,8 +81,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"email"}
                     required={true}
-                    label={t('profile.email')}
-                    placeholder={t('profile.email_placeholder')}
+                    label={"Email"}
+                    placeholder={"Zadejte e-mailovou adresu"}
                     value={formData?.email || ''}
                     onChange={handleInputChange}
                 />
@@ -92,8 +90,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"phone"}
                     required={false}
-                    label={t('profile.phone')}
-                    placeholder={t('profile.phone_placeholder')}
+                    label={"Telefonní číslo"}
+                    placeholder={"Zadejte telefonní číslo"}
                     value={formData?.phone || ''}
                     onChange={handleInputChange}
                 />
@@ -101,8 +99,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"title_before"}
                     required={false}
-                    label={t('profile.title_before')}
-                    placeholder={t('profile.title_before_placeholder')}
+                    label={"Titul před"}
+                    placeholder={"např. Ing., Mgr."}
                     value={formData?.title_before || ''}
                     onChange={handleInputChange}
                 />
@@ -110,8 +108,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"title_after"}
                     required={false}
-                    label={t('profile.title_after')}
-                    placeholder={t('profile.title_after_placeholder')}
+                    label={"Titul za"}
+                    placeholder={"např. Ph.D."}
                     value={formData?.title_after || ''}
                     onChange={handleInputChange}
                 />
@@ -119,8 +117,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"street"}
                     required={false}
-                    label={`${t('profile.residence')} (${t('profile.street')})`}
-                    placeholder={t('profile.street_placeholder')}
+                    label={"Trvalé bydliště (Ulice)"}
+                    placeholder={"Zadejte ulici"}
                     value={formData?.street || ''}
                     onChange={handleInputChange}
                 />
@@ -128,8 +126,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"street_number"}
                     required={false}
-                    label={t('profile.street_number')}
-                    placeholder={t('profile.street_number_placeholder')}
+                    label={"Číslo popisné"}
+                    placeholder={"Zadejte číslo popisné"}
                     value={formData?.street_number || ''}
                     onChange={handleInputChange}
                 />
@@ -137,8 +135,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"city"}
                     required={false}
-                    label={t('profile.city')}
-                    placeholder={t('profile.city_placeholder')}
+                    label={"Město"}
+                    placeholder={"Zadejte město"}
                     value={formData?.city || ''}
                     onChange={handleInputChange}
                 />
@@ -146,8 +144,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"zip_code"}
                     required={false}
-                    label={t('profile.zip_code')}
-                    placeholder={t('profile.zip_code_placeholder')}
+                    label={"PSČ"}
+                    placeholder={"Zadejte PSČ"}
                     value={formData?.zip_code || ''}
                     onChange={handleInputChange}
                 />
@@ -155,8 +153,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"field_of_study"}
                     required={false}
-                    label={t('profile.field_of_study')}
-                    placeholder={t('profile.field_of_study_placeholder')}
+                    label={"Obor"}
+                    placeholder={"Zadejte obor studia"}
                     value={formData?.field_of_study || ''}
                     onChange={handleInputChange}
                 />
@@ -164,8 +162,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"specialization"}
                     required={false}
-                    label={t('profile.specialization')}
-                    placeholder={t('profile.specialization_placeholder')}
+                    label={"Specializace"}
+                    placeholder={"Zadejte specializaci"}
                     value={formData?.specialization || ''}
                     onChange={handleInputChange}
                 />
@@ -173,8 +171,8 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextField
                     id={"year_of_study"}
                     required={false}
-                    label={t('profile.year_of_study')}
-                    placeholder={t('profile.year_of_study_placeholder')}
+                    label={"Ročník"}
+                    placeholder={"Zadejte ročník"}
                     value={formData?.year_of_study || ''}
                     onChange={handleInputChange}
                 />
@@ -184,21 +182,21 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <TextBox
                     id={"additional_info"}
                     required={false}
-                    label={t('profile.about_me')}
-                    placeholder={t('profile.about_me_placeholder')}
+                    label={"O mně"}
+                    placeholder={"Napište něco o sobě"}
                     value={formData?.additional_info || ''}
                     onChange={handleInputChange}
                 />
 
                 <Container property="mt-4">
-                    <Headings sizeTag="h5" property="mb-2 font-bold">{t('profile.skills_limit')}</Headings>
+                    <Headings sizeTag="h5" property="mb-2 font-bold">{"Skills (maximálně 5)"}</Headings>
                     <div className="flex flex-col gap-2 mb-2">
                         {formData?.skills?.map((skill, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <input
                                     type="text"
                                     className="px-2 py-1 text-base text-gray-900 bg-gray-100 rounded-lg border-2 border-gray-300 w-full max-w-md"
-                                    placeholder={t('profile.skill_placeholder', { index: index + 1 })}
+                                    placeholder={`Dovednost ${index + 1}`}
                                     value={skill}
                                     onChange={(e) => handleSkillChange(index, e.target.value)}
                                 />
@@ -219,7 +217,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                             variant="blueSmall"
                             property="w-fit"
                         >
-                            {t('profile.add_skill')}
+                            {"Přidat dovednost"}
                         </Button>
                     )}
                 </Container>
@@ -229,12 +227,12 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 {formData?.profile_picture && (
                     <Container property="mb-4">
                         <Container property="text-sm font-medium text-gray-700 mb-2">
-                            {t('profile.current_photo')}:
+                            {"Aktuální profilový obrázek"}:
                         </Container>
                         <Container property="w-32 h-32 bg-blue-600 rounded-lg p-4 flex items-center justify-center">
                             <ProtectedImage
                                 src={formData.profile_picture}
-                                alt={t('profile.current_photo')}
+                                alt={"Aktuální profilový obrázek"}
                                 width="100%"
                                 height="100%"
                                 objectFit="cover"
@@ -247,7 +245,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
 
                 <UploadFile
                     id={"profile_picture"}
-                    label={t('profile.upload_photo')}
+                    label={"Nahrát nový profilový obrázek"}
                     accept={"image/*"}
                     onChange={handleProfilePicChange}
                 />
@@ -255,7 +253,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <Container property="mt-4">
                      <UploadFile
                         id={"cv_file"}
-                        label={t('profile.upload_cv_pdf')}
+                        label={"Nahrát CV/Životopis (PDF)"}
                         accept={".pdf"}
                         onChange={(file) => handleInputChange({ cv_file: file })}
                     />
@@ -266,7 +264,7 @@ export default function ProfileForm({ formData, handleInputChange, handleSubmit 
                 <Button
                     onClick={handleSubmit}
                 >
-                    {t('common.save')}
+                    {"Uložit"}
                 </Button>
             </Container>
         </>

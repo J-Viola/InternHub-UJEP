@@ -1,10 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useMessage } from './MessageContext';
-import { useTranslation } from 'react-i18next';
 
 export const useFormErrorHandling = () => {
     const { addMessage } = useMessage();
-    const { t } = useTranslation();
     const [formErrors, setFormErrors] = useState({});
 
     const handleError = useCallback((error) => {
@@ -17,12 +15,12 @@ export const useFormErrorHandling = () => {
             setFormErrors(apiErrors);
 
             if (apiErrors.detail) {
-                addMessage(`${t('common.error_label')}: ${apiErrors.detail}`, "E");
+                addMessage(`Chyba: ${apiErrors.detail}`, "E");
             } else if (typeof apiErrors === 'string') {
-                addMessage(`${t('common.error_label')}: ${apiErrors}`, "E");
+                addMessage(`Chyba: ${apiErrors}`, "E");
             } else {
                 // Generické hlášení chyby — field errors už jsou nastaveny
-                addMessage(`${t('registration.check_form')} ${error.details || ""}`, "E");
+                addMessage(`Zkontrolujte prosím formulář. ${error.details || ""}`, "E");
             }
         }
         // 2. Raw Axios error (fallback — např. když se nepoužívá apiClient)
@@ -31,12 +29,12 @@ export const useFormErrorHandling = () => {
             setFormErrors(apiErrors); // Set field-specific errors
 
             if (apiErrors.detail) {
-                addMessage(`${t('common.error_label')}: ${apiErrors.detail}`, "E");
+                addMessage(`Chyba: ${apiErrors.detail}`, "E");
             } else if (typeof apiErrors === 'string') {
-                addMessage(`${t('common.error_label')}: ${apiErrors}`, "E");
+                addMessage(`Chyba: ${apiErrors}`, "E");
             } else {
                 // Generické hlášení chyby, pokud nejsou specifické detaily
-                addMessage(`${t('registration.check_form')} ${error.message || ""}`, "E");
+                addMessage(`Zkontrolujte prosím formulář. ${error.message || ""}`, "E");
             }
         }
         // 3. Normalizovaná chyba bez responseData
@@ -44,13 +42,13 @@ export const useFormErrorHandling = () => {
             const details = typeof error.details === 'string'
                 ? error.details
                 : (error.details.detail || JSON.stringify(error.details));
-            addMessage(`${t('common.error_label')}: ${details}`, "E");
+            addMessage(`Chyba: ${details}`, "E");
         }
         // 4. Úplně neznámá chyba
         else {
-            addMessage(`${t('common.unexpected_error')}: ${error.message || ""}`, "E");
+            addMessage(`Došlo k neočekávané chybě: ${error.message || ""}`, "E");
         }
-    }, [addMessage, t]);
+    }, [addMessage]);
 
     return { formErrors, handleError, setFormErrors };
 };

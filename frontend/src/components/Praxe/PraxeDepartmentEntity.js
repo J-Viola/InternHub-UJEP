@@ -3,17 +3,15 @@ import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import Button from "@core/Button/Button";
-import { useTranslation } from "react-i18next";
 import { daysSinceCzechDate, isOlderThan } from "@utils/dateUtils";
 
 export default function PraxeDepartmentEntity({ type, entity, onClick, onView }) {
-    const { t } = useTranslation();
 
     const getContactName = (info) => {
-        if (!info) return t('common.not_specified');
+        if (!info) return "Není uvedeno";
         if (info.username) return info.username;
         if (info.first_name && info.last_name) return `${info.first_name} ${info.last_name}`
-        return t('common.not_specified');
+        return "Není uvedeno";
     };
 
     const bg = type === "to_approve" ? "yellow" : "gray";
@@ -36,7 +34,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
     }
 
     return (
-        <ContainerForEntity id={`practice-offer-${entity.practice_id}`} variant={bg} property={`pl-8 pt-4 pb-4 pr-4 cursor-default relative`}>
+        <ContainerForEntity id={`practice-offer-${entity.practice_id}`} variant={bg} property={"pl-8 pt-4 pb-4 pr-4 cursor-default relative"}>
             {/* Escalation warning stripe for contract pending > 7 days */}
             {isEscalated && (
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500 rounded-l" />
@@ -47,7 +45,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     {/* STUDENT / CONTACT PERSON */}
                     <Container property={"min-w-[200px]"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {type === "approved" ? t('practice_detail.student_title') : t('form.contact_user')}
+                            {type === "approved" ? "Student" : "Správce inzerátu"}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {type === "approved" ? (entity.student_full_name || "-") : getContactName(entity.contact_user_info)}
@@ -57,7 +55,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     {/* TITLE */}
                     <Container property={"flex-1"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {t('form.title')}
+                            {"Název"}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {entity.title || entity.practice_title || "-"}
@@ -67,7 +65,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     {/* SUBJECT */}
                     <Container property={"min-w-[100px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {t('subjects.code')}
+                            {"Kód"}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {subjectCode}
@@ -77,7 +75,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     {/* DATE */}
                     <Container property={"min-w-[180px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {type === "approved" ? t('students.applied_on') : t('internships.creation_date')}
+                            {type === "approved" ? "Podání" : "Datum vytvoření"}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {created}
@@ -87,7 +85,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                     {/* STATUS / STATS */}
                     <Container property={"min-w-[180px] text-center"}>
                         <Paragraph property={"text-sm text-gray-500 mb-1"}>
-                            {type === "approved" ? t('common.status') : t('internships.submitted_applications')}
+                            {type === "approved" ? "Stav" : "Podané přihlášky"}
                         </Paragraph>
                         <Paragraph property={"font-medium"}>
                             {type === "approved" ? (entity.workflow_status_label ?? "-") : (`${approved}/${pending}/${available}`)}
@@ -95,7 +93,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                         {isContractPending && (
                             <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${isEscalated ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.206 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                                {t('internships.contract_pending_badge', { days: contractPendingDays })}
+                                {`Čeká na smlouvu — ${contractPendingDays} dní`}
                             </div>
                         )}
                     </Container>
@@ -108,7 +106,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onClick(); }}
-                                title={t('internships.view_applications')}
+                                title={"Zobrazit přihlášky"}
                                 icon="users"
                                 iconColor={"gray"}
                                 iconSize={"24"}
@@ -116,7 +114,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onView(); }}
-                                title={t('practice_detail.view_card')}
+                                title={"Zobrazit kartu praxe"}
                                 icon="eye"
                                 iconColor={"gray"}
                                 iconSize={"24"}
@@ -128,7 +126,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onClick(); }}
-                                title={t('internships.change_status')}
+                                title={"Změnit stav nabídky"}
                                 icon="gear"
                                 iconColor={"gray"}
                                 iconSize={"24"}
@@ -136,7 +134,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                             <Button
                                 noVariant={true}
                                 onClick={(e) => { e.stopPropagation(); onView(); }}
-                                title={t('internships.view_detail')}
+                                title={"Zobrazit detail"}
                                 icon="eye"
                                 iconColor={"gray"}
                                 iconSize={"24"}
@@ -149,7 +147,7 @@ export default function PraxeDepartmentEntity({ type, entity, onClick, onView })
                         <Button
                             noVariant={true}
                             onClick={(e) => { e.stopPropagation(); onView(); }}
-                            title={t('internships.view_detail')}
+                            title={"Zobrazit detail"}
                             icon="eye"
                             iconColor={"gray"}
                             iconSize={"24"}

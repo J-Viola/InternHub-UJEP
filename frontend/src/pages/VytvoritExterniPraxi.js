@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Container from "@core/Container/Container";
 import BackButton from "@core/Button/BackButton";
@@ -12,8 +11,8 @@ import { validateRequired } from "@utils/validationUtils";
 import LoadingState from "@components/core/Feedback/LoadingState";
 import ErrorState from "@components/core/Feedback/ErrorState";
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 export default function VytvoritExterniPraxi() {
-    const { t } = useTranslation();
     const [ formData, setFormData ] = useState({});
     const [ subjects, setSubjects ] = useState([]);
     const [ errors, setErrors ] = useState({});
@@ -31,7 +30,7 @@ export default function VytvoritExterniPraxi() {
             const subjectsRes = await codeList.getUniqueSubjects();
             setSubjects(subjectsRes);
         } catch (error) {
-            addMessage(t('form.load_error'), "E");
+            addMessage("Chyba při načítání dat pro formulář", "E");
             setLoadError(true);
         } finally {
             setLoading(false);
@@ -67,13 +66,13 @@ export default function VytvoritExterniPraxi() {
 
         required.forEach(field => {
             if (!validateRequired(formData[field])) {
-                newErrors[field] = t('form.field_required');
+                newErrors[field] = "Toto pole je povinné.";
             }
         });
 
         // dokument s detaily praxe je povinný (accept.pdf/.docx)
         if (!formData.external_details_file) {
-            newErrors.external_details_file = t('external.details_required');
+            newErrors.external_details_file = "Nahrání dokumentu s detaily praxe je povinné";
         }
 
         setErrors(newErrors);
@@ -82,7 +81,7 @@ export default function VytvoritExterniPraxi() {
 
     const handleCreation = async () => {
         if (!validateForm()) {
-            addMessage(t('form.validation_error'), "W");
+            addMessage("Zkontrolujte prosím chyby ve formuláři.", "W");
             return;
         }
 
@@ -92,7 +91,7 @@ export default function VytvoritExterniPraxi() {
             // interně přepne payload na multipart/FormData.
             const res = await nabidkaAPI.createExternalPractice(formData);
             if (res) {
-                addMessage(t('external_practice.create_success'), "S");
+                addMessage("Mimosystémová praxe byla úspěšně vytvořena.", "S");
                 navigate('/nabidka');
             }
         } catch (error) {
@@ -102,10 +101,9 @@ export default function VytvoritExterniPraxi() {
             } else if (error.response?.data) {
                 setErrors(error.response.data);
             }
-            const errorCode = error.code;
             const detail = error.response?.data?.detail;
-            const fallback = detail || t('external_practice.create_error_unknown');
-            const message = errorCode ? t(`api_errors.${errorCode}`, { defaultValue: fallback }) : fallback;
+            const fallback = detail || "Došlo k chybě při vytváření mimosystémové praxe.";
+            const message = getApiErrorMessage(error, fallback);
             addMessage(message, "E");
         }
     };
@@ -121,18 +119,18 @@ export default function VytvoritExterniPraxi() {
         <div className="page-container" style={{ maxWidth: "800px", margin: "0 auto" }}>
             <BackButton />
             {loading && (
-                <LoadingState message={t('form.loading_form')} />
+                <LoadingState message={"Načítání formuláře..."} />
             )}
             {!loading && loadError && (
                 <ErrorState
-                    description={t('form.load_error')}
+                    description={"Chyba při načítání dat pro formulář"}
                     onRetry={fetchInitData}
                 />
             )}
             {!loading && !loadError && (
                 <Container property="bg-white mt-2 p-8 rounded-lg shadow-sm">
                     <Headings sizeTag="h2" property="text-2xl font-bold mb-6">
-                        {t('external_practice.title')}
+                        {"Vytvořit mimosystémovou praxi"}
                     </Headings>
                     <ExternalPracticeForm
                         formData={formData}

@@ -3,10 +3,8 @@ import Button from "@core/Button/Button";
 import Container from "@core/Container/Container";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
 import Paragraph from "@components/core/Text/Paragraph";
-import { useTranslation } from "react-i18next";
 
 export default function UserEntity({entity, attributes, buttons, status="gray", onClick, statusView = true}) {
-    const { t } = useTranslation();
 
     const getStatusColor = (status) => {
         switch (status) {

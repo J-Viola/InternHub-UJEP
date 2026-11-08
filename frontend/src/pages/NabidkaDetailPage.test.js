@@ -6,12 +6,6 @@ import { useNabidkaAPI } from '@api/nabidka/nabidkaAPI';
 import { useUser } from '@hooks/UserProvider';
 import { useMessage } from '@hooks/MessageContext';
 
-// Mock i18n — component uses t() throughout
-// Spread actual module so initReactI18next (used by src/i18n.js dependency chain) is available
-jest.mock('react-i18next', () => ({
-  ...jest.requireActual('react-i18next'),
-  useTranslation: () => ({ t: (key) => key }),
-}));
 
 // Mock hooks
 jest.mock('@api/nabidka/nabidkaAPI');
@@ -120,10 +114,10 @@ describe('NabidkaDetailPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('offers.apply')).toBeInTheDocument();
+            expect(screen.getByText("Podat přihlášku")).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByText('offers.apply'));
+        fireEvent.click(screen.getByText("Podat přihlášku"));
         expect(screen.getByTestId('popup')).toBeInTheDocument();
 
         mockApplyNabidka.mockResolvedValue({ status: 201 });
@@ -149,10 +143,10 @@ describe('NabidkaDetailPage', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('offers.view_applicants')).toBeInTheDocument();
+            expect(screen.getByText("Zobrazit přihlášené")).toBeInTheDocument();
         });
         await waitFor(() => {
-            expect(screen.getByText('offers.edit_offer')).toBeInTheDocument();
+            expect(screen.getByText("Upravit nabídku")).toBeInTheDocument();
         });
     });
 });

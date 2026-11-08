@@ -15,12 +15,10 @@ import DepartmentForm from "@components/Forms/DepartmentForm";
 import CompanyForm from "@components/Forms/CompanyForm";
 import EmployerForm from "@components/Forms/EmployerForm";
 import ProfessorForm from "@components/Forms/ProfessorForm";
-import { useTranslation } from "react-i18next";
 import { useMessage } from "@hooks/MessageContext";
 import { useUser } from "@hooks/UserProvider";
 
 export default function FormPage() {
-    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { user } = useUser();
@@ -42,7 +40,7 @@ export default function FormPage() {
             if (Array.isArray(firstError)) return firstError[0];
             if (typeof firstError === "string") return firstError;
         }
-        return t("form.save_error");
+        return "Chyba při ukládání";
     };
 
     const handleCreate = (createApi) => async (data) => {
@@ -142,7 +140,7 @@ export default function FormPage() {
             default:
                 return (
                     <Paragraph>
-                        {t('form.unknown_type')}
+                        {"Neznámý typ formuláře"}
                         {type ? `: ${type}` : ''}
                     </Paragraph>
                 );

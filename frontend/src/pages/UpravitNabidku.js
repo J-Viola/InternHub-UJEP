@@ -9,14 +9,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useUser } from "@hooks/UserProvider";
 import ContainerForEntity from "@core/Container/ContainerForEntity";
-import { useTranslation } from "react-i18next";
 import { validateRequired } from "@utils/validationUtils";
 import getApiErrorMessage from "@utils/apiErrorUtils";
 import { useMessage } from "@hooks/MessageContext";
 
 
 export default function UpravitNabidku() {
-    const { t } = useTranslation();
     const [ formData, setFormData ] = useState({})
     const [ subjects, setSubjects ] = useState([])
     const [ organizationUsers, setOrganizationUsers ] = useState([]);
@@ -80,7 +78,7 @@ export default function UpravitNabidku() {
                     setFormData(transformedData);
                 }
             } catch (error) {
-                console.error(t('form.load_error'), error);
+                console.error("Chyba při načítání dat pro formulář", error);
                 navigate(-1)
             } finally {
                 setLoading(false);
@@ -88,7 +86,7 @@ export default function UpravitNabidku() {
             }
         }
         initFetch();
-    },[id, codeList, userAPI, nabidkaAPI, navigate, t]);
+    },[id, codeList, userAPI, nabidkaAPI, navigate]);
 
 
     const validateForm = () => {
@@ -99,7 +97,7 @@ export default function UpravitNabidku() {
 
         required.forEach(field => {
             if (!validateRequired(formData[field])) {
-                newErrors[field] = t('form.field_required');
+                newErrors[field] = "Toto pole je povinné.";
             }
         });
 
@@ -123,7 +121,7 @@ export default function UpravitNabidku() {
 
     const handleUpdate = async () => {
         if (!validateForm()) {
-            addMessage(t('form.validation_error'), "W");
+            addMessage("Zkontrolujte prosím chyby ve formuláři.", "W");
             return;
         }
 
@@ -137,7 +135,7 @@ export default function UpravitNabidku() {
             const fieldErrors = extractFieldErrors(error);
             if (fieldErrors) {
                 setErrors(fieldErrors);
-                addMessage(t('form.validation_error'), "E");
+                addMessage("Zkontrolujte prosím chyby ve formuláři.", "E");
                 return;
             }
             // Resolver dostane i raw axios tvar (response.data), aby se zachovala
@@ -149,8 +147,7 @@ export default function UpravitNabidku() {
                         details: error?.details ?? (typeof error?.response?.data?.detail === "string" ? error.response.data.detail : undefined),
                         responseData: error?.responseData ?? error?.response?.data ?? null,
                     },
-                    t,
-                    'form.create_error_unknown'
+                    "Nastala neočekávaná chyba při ukládání nabídky."
                 ),
                 "E"
             );
@@ -204,7 +201,7 @@ export default function UpravitNabidku() {
             <ContainerForEntity property={"pl-8 pr-8 pt-4 pb-8"}>
                 <BackButton/>
                 <Container property="text-center py-8">
-                    <Paragraph>{t('form.loading_form')}</Paragraph>
+                    <Paragraph>{"Načítání formuláře..."}</Paragraph>
                 </Container>
             </ContainerForEntity>
         );
@@ -214,7 +211,7 @@ export default function UpravitNabidku() {
         <>
             <BackButton/>
             <Container property={"bg-white mt-2 p-8 rounded-lg shadow-sm"}>
-                {user.isDepartmentMg() && t('form.role_edit_warning')}
+                {user.isDepartmentMg() && "Editace nabídky nefunguje pro Vaší roli správně.."}
                 <NabidkaForm
                     formData={formData}
                     organizationUsers={organizationUsers}

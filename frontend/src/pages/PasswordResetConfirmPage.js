@@ -7,10 +7,9 @@ import Button from "@core/Button/Button";
 import { useUserAPI } from "@api/user/userAPI";
 import { useMessage } from "@hooks/MessageContext";
 import { useParams, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 export default function PasswordResetConfirmPage() {
-    const { t } = useTranslation();
     const { confirmPasswordReset } = useUserAPI();
     const { addMessage } = useMessage();
     const { uid, token } = useParams();
@@ -36,7 +35,7 @@ export default function PasswordResetConfirmPage() {
 
     const handleSubmit = async () => {
         if (formData.new_password !== formData.new_password_confirm) {
-            setErrors({ new_password_confirm: [t('employer.password_mismatch')] });
+            setErrors({ new_password_confirm: ["Hesla se neshodují"] });
             return;
         }
 
@@ -47,29 +46,28 @@ export default function PasswordResetConfirmPage() {
                 new_password: formData.new_password,
                 new_password_confirm: formData.new_password_confirm
             });
-            addMessage(t('password_reset.reset_success'), "S");
+            addMessage("Heslo bylo úspěšně změněno. Nyní se můžete přihlásit.", "S");
             navigate("/");
         } catch (error) {
             console.error("Reset hesla selhal:", error?.response?.status || error?.code || "UNKNOWN_ERROR");
             if (error.details) {
                 setErrors(error.details);
             }
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('password_reset.reset_error') }), "E");
+            addMessage(getApiErrorMessage(error, "Chyba při změně hesla. Odkaz může být neplatný nebo vypršel."), "E");
         }
     };
 
     return (
         <Container property="flex items-center justify-center">
             <ContainerForEntity property="w-full max-w-md p-8">
-                <Headings sizeTag="h2" property="mb-6 text-center">{t('password_reset.confirm_title')}</Headings>
+                <Headings sizeTag="h2" property="mb-6 text-center">{"Nastavení nového hesla"}</Headings>
 
                 <Container property="space-y-4">
                     <TextField
                         id="new_password"
                         type="password"
-                        label={t('password_reset.new_password')}
-                        placeholder={t('password_reset.new_password_placeholder')}
+                        label={"Nové heslo"}
+                        placeholder={"Zadejte nové heslo"}
                         value={formData.new_password}
                         onChange={handleInputChange}
                         error={errors.new_password?.[0]}
@@ -79,8 +77,8 @@ export default function PasswordResetConfirmPage() {
                     <TextField
                         id="new_password_confirm"
                         type="password"
-                        label={t('password_reset.confirm_new_password')}
-                        placeholder={t('password_reset.password_confirm_placeholder')}
+                        label={"Potvrzení nového hesla"}
+                        placeholder={"Zadejte heslo znovu"}
                         value={formData.new_password_confirm}
                         onChange={handleInputChange}
                         error={errors.new_password_confirm?.[0]}
@@ -89,7 +87,7 @@ export default function PasswordResetConfirmPage() {
 
                     <Container property="flex justify-center mt-6">
                         <Button onClick={handleSubmit} property="w-full">
-                            {t('password_reset.change_password_button')}
+                            {"Změnit heslo"}
                         </Button>
                     </Container>
                 </Container>

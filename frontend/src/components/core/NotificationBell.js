@@ -2,11 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FiBell } from "react-icons/fi";
 import { useNotifications } from '@hooks/useNotifications';
 import Paragraph from '@core/Text/Paragraph';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 const NotificationBell = () => {
-    const { t, i18n } = useTranslation();
     const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
@@ -48,16 +46,12 @@ const NotificationBell = () => {
         setIsOpen(false);
     };
 
-    const getMessage = (n) => i18n.language === 'en'
-        ? (n.message_en || n.message)
-        : (n.message_cz || n.message);
-
     return (
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={toggleDropdown}
                 className="relative p-2 text-gray-600 hover:text-blue-600 focus:outline-none transition-colors"
-                aria-label={t('notifications.label')}
+                aria-label={"Oznámení"}
             >
                 <FiBell size={20} />
                 {unreadCount > 0 && (
@@ -70,13 +64,13 @@ const NotificationBell = () => {
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden">
                     <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                        <span className="font-bold text-gray-800">{t('nav.notifications')}</span>
+                        <span className="font-bold text-gray-800">{"Oznámení"}</span>
                         {unreadCount > 0 && (
                             <button
                                 onClick={markAllAsRead}
                                 className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
                             >
-                                {t('notifications.mark_all_read')}
+                                {"Označit vše jako přečtené"}
                             </button>
                         )}
                     </div>
@@ -84,7 +78,7 @@ const NotificationBell = () => {
                     <div className="max-h-96 overflow-y-auto">
                         {notifications.length === 0 ? (
                             <div className="p-4 text-center text-gray-500 italic">
-                                {t('notifications.no_notifications')}
+                                {"Žádná nová oznámení"}
                             </div>
                         ) : (
                             notifications.map((notification) => (
@@ -112,7 +106,7 @@ const NotificationBell = () => {
                                         </div>
                                     )}
                                     <Paragraph property="text-sm leading-snug">
-                                        {getMessage(notification)}
+                                        {notification.message}
                                     </Paragraph>
                                 </div>
                             ))
@@ -123,7 +117,7 @@ const NotificationBell = () => {
                         onClick={() => { navigate('/notifikace'); setIsOpen(false); }}
                         className="w-full p-2 text-sm text-center text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all font-medium border-t border-gray-100"
                     >
-                        {t('notifications.view_all')}
+                        {"Zobrazit všechna oznámení"}
                     </button>
                 </div>
             )}

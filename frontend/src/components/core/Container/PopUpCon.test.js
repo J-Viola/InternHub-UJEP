@@ -2,7 +2,6 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import PopUpCon from "./PopUpCon";
 
-jest.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key) => key }) }));
 
 test("dialog closes with Escape and restores focus to opener", () => {
   const Harness = () => {

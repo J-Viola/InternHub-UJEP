@@ -8,10 +8,9 @@ import BackButton from "@core/Button/BackButton";
 import { useUserAPI } from "@api/user/userAPI";
 import { useAuth } from "@auth/Auth";
 import { useMessage } from "@hooks/MessageContext";
-import { useTranslation } from "react-i18next";
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 export default function ChangePasswordPage() {
-    const { t } = useTranslation();
     const { changePassword } = useUserAPI();
     const { logout } = useAuth();
     const { addMessage } = useMessage();
@@ -38,7 +37,7 @@ export default function ChangePasswordPage() {
 
     const handleSubmit = async () => {
         if (formData.new_password !== formData.new_password_confirm) {
-            setErrors({ new_password_confirm: t('password_change.mismatch') });
+            setErrors({ new_password_confirm: "Nová hesla se neshodují." });
             return;
         }
 
@@ -49,12 +48,11 @@ export default function ChangePasswordPage() {
             if (error.details) {
                 setErrors(error.details);
             }
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('password_change.error') }), "E");
+            addMessage(getApiErrorMessage(error, "Chyba při změně hesla"), "E");
             return;
         }
 
-        addMessage(t('password_change.success_relogin'), "S");
+        addMessage("Heslo bylo úspěšně změněno. Přihlaste se prosím znovu.", "S");
         // Backend zneplatnil všechny refresh tokeny i cookie; logout vyčistí lokální stav.
         try {
             await logout();
@@ -67,14 +65,14 @@ export default function ChangePasswordPage() {
         <Container property="max-w-md mx-auto">
             <ContainerForEntity property="p-8">
                 <BackButton />
-                <Headings sizeTag="h2" property="mb-6 mt-4 text-center">{t('password_change.title')}</Headings>
+                <Headings sizeTag="h2" property="mb-6 mt-4 text-center">{"Změna hesla"}</Headings>
 
                 <Container property="space-y-4">
                     <TextField
                         id="old_password"
                         type="password"
-                        label={t('password_change.old_password')}
-                        placeholder={t('password_change.old_password_placeholder')}
+                        label={"Staré heslo"}
+                        placeholder={"Zadejte staré heslo"}
                         value={formData.old_password}
                         onChange={handleInputChange}
                         error={errors.old_password?.[0]}
@@ -84,8 +82,8 @@ export default function ChangePasswordPage() {
                     <TextField
                         id="new_password"
                         type="password"
-                        label={t('password_reset.new_password')}
-                        placeholder={t('password_change.new_password_placeholder')}
+                        label={"Nové heslo"}
+                        placeholder={"Zadejte nové heslo"}
                         value={formData.new_password}
                         onChange={handleInputChange}
                         error={errors.new_password?.[0]}
@@ -95,8 +93,8 @@ export default function ChangePasswordPage() {
                     <TextField
                         id="new_password_confirm"
                         type="password"
-                        label={t('password_reset.confirm_new_password')}
-                        placeholder={t('password_change.confirm_new_placeholder')}
+                        label={"Potvrzení nového hesla"}
+                        placeholder={"Zadejte nové heslo znovu"}
                         value={formData.new_password_confirm}
                         onChange={handleInputChange}
                         error={errors.new_password_confirm || errors.non_field_errors?.[0]}
@@ -105,7 +103,7 @@ export default function ChangePasswordPage() {
 
                     <Container property="flex justify-end mt-8">
                         <Button onClick={handleSubmit} icon="save">
-                            {t('form.save_changes')}
+                            {"Uložit změny"}
                         </Button>
                     </Container>
                 </Container>

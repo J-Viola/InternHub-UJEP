@@ -6,9 +6,9 @@ import { useAuth } from "@auth/Auth";
 import { useUser } from "@hooks/UserProvider";
 import { useMessage } from "@hooks/MessageContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 function cleanUrlFromStagParams() {
     const url = new URL(window.location.href);
     let changed = false;
@@ -25,7 +25,6 @@ function cleanUrlFromStagParams() {
 
 
 export default function LoginPage() {
-    const { t } = useTranslation();
     const [ticket, setTicket] = useState(null);
     const [stagUserInfo, setStagUserInfo] = useState(null);
     const { login, isInitializing } = useAuth();
@@ -60,7 +59,7 @@ export default function LoginPage() {
             // rozhoduje aktuální adresa, jinak by se chyba „Invalid state“ přidala dvakrát.
             const stagUserTicket = new URLSearchParams(window.location.search).get("stagUserTicket");
             if (stagUserTicket) {
-                addMessage(t('login.error_stag') + ": Invalid state", "E");
+                addMessage("Chyba při STAG přihlášení" + ": Invalid state", "E");
                 cleanUrlFromStagParams();
             }
         }
@@ -85,13 +84,12 @@ export default function LoginPage() {
                 await login(payload);
             } catch (error) {
                 console.error("Error during STAG login:", error?.response?.status || error?.code || "UNKNOWN_ERROR");
-                const errorCode = error.code || "UNKNOWN_ERROR";
-                addMessage(`${t('login.error_stag')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
+                addMessage(`Chyba při STAG přihlášení: ${getApiErrorMessage(error, error.message)}`, "E");
             }
         };
 
         handleSTAGLogin();
-    }, [ticket, login, addMessage, stagUserInfo, t]);
+    }, [ticket, login, addMessage, stagUserInfo]);
 
     const handleOrganizationLogin = async (loginData) => {
         try{
@@ -100,8 +98,7 @@ export default function LoginPage() {
             // Po úspěšném loginu se přesměruje na /nabidka (handled in useAuth or useEffect above)
         } catch (error) {
             console.error("Error during organization login:", error?.response?.status || error?.code || "UNKNOWN_ERROR");
-            const errorCode = error.code || "UNKNOWN_ERROR";
-            addMessage(`${t('login.error_login')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
+            addMessage(`Chyba při přihlášení: ${getApiErrorMessage(error, error.message)}`, "E");
         }
     }
 
@@ -111,7 +108,7 @@ export default function LoginPage() {
             await STAGLogin();
         } catch (error) {
             console.error("Error initiating STAG login:", error);
-            addMessage(`${t('login.error_init_stag')}: ${error.message}`, "E");
+            addMessage(`Chyba při iniciaci STAG přihlášení: ${error.message}`, "E");
         }
     }
 

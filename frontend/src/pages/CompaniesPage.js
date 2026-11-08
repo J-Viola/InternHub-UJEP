@@ -8,10 +8,8 @@ import { useCompanyAPI } from "@api/company/companyAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 import CompanyEntity from "@components/Company/CompanyEntity";
-import { useTranslation } from "react-i18next";
 
 export default function CompaniesPage() {
-    const { t } = useTranslation();
     const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -25,8 +23,8 @@ export default function CompaniesPage() {
             const data = await companyAPI.getAllCompanies();
             setCompanies(data || []);
         } catch (error) {
-            console.error(t('companies.load_error'), error);
-            addMessage(t('companies.load_error'), 'error');
+            console.error("Chyba při načítání společností", error);
+            addMessage("Chyba při načítání společností", 'error');
             setCompanies([]);
         } finally {
             setLoading(false);
@@ -57,7 +55,7 @@ export default function CompaniesPage() {
 
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    {t('companies.title')}
+                    {"Správa společností"}
                 </Headings>
             </Container>
 
@@ -66,16 +64,16 @@ export default function CompaniesPage() {
                     onClick={handleCreateCompany}
                     icon={"plus"}
                 >
-                    {t('companies.add_company')}
+                    {"Přidat společnost"}
                 </Button>
             </Container>
 
             <Container property={"mt-4 rounded-lg"}>
                 {loading ? (
-                    <Paragraph>{t('common.loading')}</Paragraph>
+                    <Paragraph>{"Načítání..."}</Paragraph>
                 ) : companies.length === 0 ? (
                     <Paragraph property="text-center text-gray-500 py-8">
-                        {t('companies.no_companies')}
+                        {"Zatím nejsou žádné společnosti k zobrazení."}
                     </Paragraph>
                 ) : (
                     <Container property={"grid grid-cols-1 gap-4"}>

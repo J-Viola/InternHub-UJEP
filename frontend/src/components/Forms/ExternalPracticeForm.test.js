@@ -6,7 +6,6 @@ import { useAresAPI } from "@api/ARES/aresJusticeAPI";
 jest.mock("@api/ARES/aresJusticeAPI");
 jest.mock("@hooks/useApi", () => ({ useApi: () => ({}) }));
 jest.mock("@hooks/useDebounce", () => (value) => value);
-jest.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key) => key }) }));
 jest.mock("@core/Form/TextField", () => ({ id, value, onChange, label }) => <input aria-label={id} value={value || ""} onChange={(e) => onChange({ [id]: e.target.value })} />);
 jest.mock("@core/Form/DropDown", () => () => null);
 jest.mock("@core/Form/TextBox", () => () => null);
@@ -32,12 +31,12 @@ describe("ExternalPracticeForm file and ARES race guards", () => {
     const handleChange = jest.fn();
     const handleSubmit = jest.fn();
     const { rerender } = render(<ExternalPracticeForm {...baseProps} formData={{ external_details_file: fileA }} handleChange={handleChange} handleSubmit={handleSubmit} />);
-    const fileInput = screen.getByLabelText(/external.details_label/);
+    const fileInput = screen.getByLabelText(/Dokument s detaily praxe/);
     const invalidFile = new File(["bad"], "details.exe", { type: "application/octet-stream" });
     fireEvent.change(fileInput, { target: { files: [invalidFile] } });
     expect(handleChange).toHaveBeenCalledWith({ external_details_file: null });
     rerender(<ExternalPracticeForm {...baseProps} formData={{ external_details_file: null }} handleChange={handleChange} handleSubmit={handleSubmit} />);
-    fireEvent.click(screen.getByRole("button", { name: "external_practice.create" }));
+    fireEvent.click(screen.getByRole("button", { name: "Vytvořit praxi" }));
     expect(handleSubmit).not.toHaveBeenCalled();
   });
 
@@ -45,7 +44,7 @@ describe("ExternalPracticeForm file and ARES race guards", () => {
     const handleChange = jest.fn();
     const priorFile = new File(["ok"], "prior.pdf", { type: "application/pdf" });
     render(<ExternalPracticeForm {...baseProps} formData={{ external_details_file: priorFile }} handleChange={handleChange} />);
-    const input = screen.getByLabelText(/external.details_label/);
+    const input = screen.getByLabelText(/Dokument s detaily praxe/);
     const huge = new File(["x"], "huge.pdf", { type: "application/pdf" });
     Object.defineProperty(huge, "size", { value: 11 * 1024 * 1024 });
     fireEvent.change(input, { target: { files: [huge] } });

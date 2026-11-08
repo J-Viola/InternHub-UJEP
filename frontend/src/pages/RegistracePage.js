@@ -5,11 +5,10 @@ import CompanyForm from "@components/Forms/CompanyForm";
 import { useUserAPI } from "@api/user/userAPI";
 import { useAuth } from "@auth/Auth";
 import { useMessage } from "@hooks/MessageContext";
-import { useTranslation } from "react-i18next";
 
 
+import getApiErrorMessage from "@utils/apiErrorUtils";
 export default function RegistracePage() {
-    const { t } = useTranslation();
     const user = useUserAPI();
     const { addMessage } = useMessage();
     const [errors, setErrors] = useState({});
@@ -19,7 +18,7 @@ export default function RegistracePage() {
         setErrors({});
         try {
             await user.postRegister(companyData);
-            addMessage(t('registration.success'), "S");
+            addMessage("Registrace úspěšná", "S");
 
             const logData = {
                 "email": companyData.executiveEmail,
@@ -34,10 +33,9 @@ export default function RegistracePage() {
             } else if (error.response?.data) {
                 setErrors(error.response.data);
             }
-            const errorCode = error.code;
             const detail = error.response?.data?.detail;
-            const fallback = detail || t('registration.check_form');
-            const message = errorCode ? t(`api_errors.${errorCode}`, { defaultValue: fallback }) : fallback;
+            const fallback = detail || "Zkontrolujte prosím formulář.";
+            const message = getApiErrorMessage(error, fallback);
             addMessage(message, "E");
         }
     }

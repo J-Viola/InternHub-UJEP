@@ -1,15 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import StateBadge, { getStateLabelKey, getStateVariant } from './StateBadge';
+import StateBadge, { getStateLabel, getStateVariant } from './StateBadge';
 
-jest.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (key) => key }),
-}));
 
 describe('StateBadge — mapování stavů (BL-04)', () => {
     test('DOCUMENTS_RESUBMITTED (13 i string) má vlastní label klíč', () => {
-        expect(getStateLabelKey(13)).toBe('state_badge.DOCUMENTS_RESUBMITTED');
-        expect(getStateLabelKey('DOCUMENTS_RESUBMITTED')).toBe('state_badge.DOCUMENTS_RESUBMITTED');
+        expect(getStateLabel(13)).toBe("Opravené dokumenty čekají na kontrolu");
+        expect(getStateLabel('DOCUMENTS_RESUBMITTED')).toBe("Opravené dokumenty čekají na kontrolu");
     });
 
     test('DOCUMENTS_RESUBMITTED se zobrazuje jako varování (review pending)', () => {
@@ -18,21 +15,21 @@ describe('StateBadge — mapování stavů (BL-04)', () => {
     });
 
     test('ostatní opravné stavy zůstávají beze změny', () => {
-        expect(getStateLabelKey(9)).toBe('state_badge.DOCUMENTS_REJECTED');
+        expect(getStateLabel(9)).toBe("Dokumenty zamítnuty");
         expect(getStateVariant(9)).toBe('red');
-        expect(getStateLabelKey('DOCUMENTS_REJECTED')).toBe('state_badge.DOCUMENTS_REJECTED');
-        expect(getStateLabelKey('AWAITING_CONTENT_APPROVAL')).toBe('state_badge.AWAITING_CONTENT_APPROVAL');
-        expect(getStateLabelKey('CANCELLED')).toBe('state_badge.CANCELLED');
+        expect(getStateLabel('DOCUMENTS_REJECTED')).toBe("Dokumenty zamítnuty");
+        expect(getStateLabel('AWAITING_CONTENT_APPROVAL')).toBe("Čeká na schválení obsahu");
+        expect(getStateLabel('CANCELLED')).toBe("Stornováno");
     });
 
     test('neznámý stav padá na UNKNOWN klíč', () => {
-        expect(getStateLabelKey(undefined)).toBe('state_badge.UNKNOWN');
-        expect(getStateLabelKey(null)).toBe('state_badge.UNKNOWN');
+        expect(getStateLabel(undefined)).toBe("Neznámý");
+        expect(getStateLabel(null)).toBe("Neznámý");
     });
 
     test('komponenta vyrenderuje label klíče nového stavu', () => {
         render(<StateBadge status="DOCUMENTS_RESUBMITTED" />);
-        expect(screen.getByText('state_badge.DOCUMENTS_RESUBMITTED')).toBeInTheDocument();
+        expect(screen.getByText("Opravené dokumenty čekají na kontrolu")).toBeInTheDocument();
     });
 });
 

@@ -47,18 +47,7 @@ function MessageToast() {
         </Container>
       ))}
       <style>
-        {`
-          @keyframes slideDown {
-            0% {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}
+        {"\n          @keyframes slideDown {\n            0% {\n              opacity: 0;\n              transform: translateY(-10px);\n            }\n            100% {\n              opacity: 1;\n              transform: translateY(0);\n            }\n          }\n        "}
       </style>
     </Container>
   );

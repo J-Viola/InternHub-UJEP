@@ -37,8 +37,8 @@ describe('LoginPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('login.stag_info')).toBeInTheDocument();
-        expect(screen.getAllByText('login.login_button')[0]).toBeInTheDocument();
+        expect(screen.getByText("Přihlášení pomocí systému STAG příslušné univerzity.")).toBeInTheDocument();
+        expect(screen.getAllByText("Přihlaste se")[0]).toBeInTheDocument();
     });
 
     test('initiates STAG login on button click', async () => {
@@ -50,7 +50,7 @@ describe('LoginPage', () => {
             </MemoryRouter>
         );
 
-        fireEvent.click(screen.getAllByText('login.login_button')[0]);
+        fireEvent.click(screen.getAllByText("Přihlaste se")[0]);
         expect(STAGLogin).toHaveBeenCalled();
     });
 
@@ -64,17 +64,17 @@ describe('LoginPage', () => {
         );
 
         // Switch to "Jsem firma" (using its translation key)
-        fireEvent.click(screen.getByText('login.i_am_firma'));
+        fireEvent.click(screen.getByText("Jsem firma"));
 
-        expect(screen.getByLabelText('login.email')).toBeInTheDocument();
-        expect(screen.getByLabelText('login.password')).toBeInTheDocument();
+        expect(screen.getByLabelText("E-mail")).toBeInTheDocument();
+        expect(screen.getByLabelText("Heslo")).toBeInTheDocument();
 
-        fireEvent.change(screen.getByLabelText('login.email'), { target: { value: 'org@test.com' } });
-        fireEvent.change(screen.getByLabelText('login.password'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: 'org@test.com' } });
+        fireEvent.change(screen.getByLabelText("Heslo"), { target: { value: 'password123' } });
 
         mockLogin.mockResolvedValue({ status: 200 });
 
-        fireEvent.click(screen.getAllByText('login.login_button')[0]);
+        fireEvent.click(screen.getAllByText("Přihlaste se")[0]);
 
         await waitFor(() => {
             expect(mockLogin).toHaveBeenCalledWith({ email: 'org@test.com', password: 'password123' });

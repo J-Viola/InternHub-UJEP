@@ -292,7 +292,7 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
     STAG_RETRY_COOLDOWN seconds, fails fast without making a network request.
     """
     if stag_user_info and not getattr(settings, "STAG_MOCK", False):
-        raise AuthenticationFailed("stag_user_info is only allowed in mock/development mode")
+        raise AuthenticationFailed("stag_user_info je povolen pouze v mock/development režimu")
 
     from users.stag_api.mock_client import MockStagClient
 
@@ -324,10 +324,10 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
     stagUserInfos = details.get("stagUserInfo")
 
     if not stagUserInfos or len(stagUserInfos) == 0:
-        raise AuthenticationFailed("No user information returned by STAG")
+        raise AuthenticationFailed("STAG nevrátil informace o uživateli")
 
     if not email:
-        raise AuthenticationFailed("Email not returned by STAG")
+        raise AuthenticationFailed("STAG nevrátil e-mail uživatele")
 
     return {
         "email": email,
@@ -346,7 +346,7 @@ def get_or_create_stag_user(stag_data: dict, ticket: str):
         with transaction.atomic():
             return _get_or_create_stag_user_inner(stag_data, ticket)
     except IntegrityError:
-        raise AuthenticationFailed("Concurrent STAG login conflict. Please try again.")
+        raise AuthenticationFailed("Souběžné přihlášení přes STAG. Zkuste to prosím znovu.")
 
 
 def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
@@ -703,7 +703,7 @@ def fetch_student_data_from_stag(student, ticket=None):
         ValueError: if student has no os_cislo
     """
     if not student.os_cislo:
-        raise ValueError("Student has no os_cislo — cannot fetch from STAG")
+        raise ValueError("Student nemá osCislo — data nelze načíst ze STAGu")
 
     from django.conf import settings
 

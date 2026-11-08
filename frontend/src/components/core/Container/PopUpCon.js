@@ -4,7 +4,6 @@ import Container from "./Container";
 import Button from "@core/Button/Button";
 import Headings from "@core/Text/Headings";
 import Paragraph from "../Text/Paragraph";
-import { useTranslation } from "react-i18next";
 
 export default function PopUpCon({
     children,
@@ -19,7 +18,6 @@ export default function PopUpCon({
     useCustomContainer = false,
     customContainer = null
 }) {
-    const { t } = useTranslation();
     const dialogRef = useRef(null);
     const returnFocusRef = useRef(null);
 
@@ -45,8 +43,8 @@ export default function PopUpCon({
         }
     };
 
-    const displaySubmitText = onSubmitText || t('common.yes');
-    const displayRejectText = onRejectText || t('common.no');
+    const displaySubmitText = onSubmitText || "Ano";
+    const displayRejectText = onRejectText || "Ne";
 
     // Custom container variant
     if (useCustomContainer) {
@@ -64,7 +62,7 @@ export default function PopUpCon({
                         {/* TEXT BOXU */}
                         <Container property={"mb-8 mt-8"}>
                             <Paragraph property={"text-center"}>
-                                {text || t('practice_detail.docs_check_not_defined')}
+                                {text || "Proces není definován"}
                             </Paragraph>
                         </Container>
 

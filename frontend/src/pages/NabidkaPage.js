@@ -11,14 +11,12 @@ import { useMessage } from "@hooks/MessageContext";
 import Pagination from "@components/core/Pagination";
 import useDebounce from "@hooks/useDebounce";
 import { useUser } from "@hooks/UserProvider";
-import { useTranslation } from "react-i18next";
 import EmptyState from "@core/Feedback/EmptyState";
 
 
 const PAGE_SIZE = 10;
 
 export default function NabidkaPage() {
-    const { t } = useTranslation();
     const currentUrl = useCurrentUrl();
     const setParams = useSetParams();
     const fullUrl = useFullUrl();
@@ -51,11 +49,11 @@ export default function NabidkaPage() {
             setData(result.results);
             setCount(result.count);
         } catch {
-            setError(t('common.error'));
+            setError("Něco se pokazilo");
         } finally {
             setLoading(false);
         }
-    }, [t]);
+    }, []);
 
     const initFilterOptions = async () => {
         try {
@@ -152,7 +150,7 @@ export default function NabidkaPage() {
     return (
         <>
             <Container property={"flex items-center justify-between mb-4 mt-4"}>
-                <Headings sizeTag={"h3"}>{t('offers.title')}</Headings>
+                <Headings sizeTag={"h3"}>{"Nabídka praxí"}</Headings>
             </Container>
 
             <FilterNabidka
@@ -177,14 +175,14 @@ export default function NabidkaPage() {
                         }`}
                     >
                         <span>{isShowingFavorites ? "♥" : "♡"}</span>
-                        {isShowingFavorites ? t('offers.showing_favorites') : t('offers.favorites_only')}
+                        {isShowingFavorites ? "Zobrazuji oblíbené" : "Pouze oblíbené"}
                     </button>
                 </Container>
             )}
 
             {loading && (
                 <Container property="flex justify-center py-12">
-                    <Paragraph property="text-gray-500">{t('offers.loading')}</Paragraph>
+                    <Paragraph property="text-gray-500">{"Načítání nabídek..."}</Paragraph>
                 </Container>
             )}
 
@@ -196,8 +194,8 @@ export default function NabidkaPage() {
 
             {!loading && !error && data.length === 0 && (
                 <EmptyState
-                    title={t('offers.no_results')}
-                    description={t('offers.no_results_desc', { defaultValue: "" })}
+                    title={"Žádné nabídky neodpovídají zadaným filtrům"}
+                    description={"Zkuste upravit filtry nebo vyhledávací dotaz."}
                     icon="search"
                 />
             )}

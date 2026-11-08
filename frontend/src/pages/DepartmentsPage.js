@@ -9,10 +9,8 @@ import { useDepartmentAPI } from "@api/department/departmentAPI";
 import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 import DepartmentEntity from "@components/Department/DepartmentEntity";
-import { useTranslation } from "react-i18next";
 
 export default function DepartmentsPage() {
-    const { t } = useTranslation();
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showDeletePop, setShowDeletePop] = useState(false);
@@ -28,8 +26,8 @@ export default function DepartmentsPage() {
             const data = await departmentAPI.getAllDepartments();
             setDepartments(data || []);
         } catch (error) {
-            console.error(t('departments.load_error'), error);
-            addMessage(t('departments.load_error'), 'error');
+            console.error("Chyba při načítání kateder", error);
+            addMessage("Chyba při načítání kateder", 'error');
             setDepartments([]);
         } finally {
             setLoading(false);
@@ -57,12 +55,12 @@ export default function DepartmentsPage() {
 
         try {
             await departmentAPI.deleteDepartment(selectedDepartment.department_id);
-            addMessage(t('departments.delete_success'), 'success');
+            addMessage("Katedra byla úspěšně smazána", 'success');
             setShowDeletePop(false);
             setSelectedDepartment(null);
             fetchDepartments();
         } catch (error) {
-            addMessage(t('departments.delete_error'), 'error');
+            addMessage("Chyba při mazání katedry", 'error');
         }
     };
 
@@ -77,7 +75,7 @@ export default function DepartmentsPage() {
 
             <Container property={"flex items-center justify-between mb-6 mt-4"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    {t('departments.title')}
+                    {"Správa kateder"}
                 </Headings>
             </Container>
 
@@ -86,16 +84,16 @@ export default function DepartmentsPage() {
                     onClick={handleCreateDepartment}
                     icon={"plus"}
                 >
-                    {t('departments.create_new')}
+                    {"Založit katedru"}
                 </Button>
             </Container>
 
             <Container property={"mt-4 rounded-lg"}>
                 {loading ? (
-                    <Paragraph>{t('common.loading')}</Paragraph>
+                    <Paragraph>{"Načítání..."}</Paragraph>
                 ) : departments.length === 0 ? (
                     <Paragraph property="text-center text-gray-500 py-8">
-                        {t('departments.no_departments')}
+                        {"Zatím nejsou žádné katedry k zobrazení."}
                     </Paragraph>
                 ) : (
                     <Container property={"grid grid-cols-1 gap-4"}>
@@ -123,12 +121,12 @@ export default function DepartmentsPage() {
             {showDeletePop && (
                 <PopUpCon
                     onClose={handleDeleteCancel}
-                    title={t('departments.delete_confirm_title')}
-                    text={t('departments.delete_confirm_text', { name: selectedDepartment?.department_name })}
+                    title={"Potvrdit smazání"}
+                    text={`Opravdu chcete smazat katedru "${selectedDepartment?.department_name}"? Tato akce je nevratná.`}
                     onSubmit={handleDeleteConfirm}
                     onReject={handleDeleteCancel}
-                    onSubmitText={t('common.delete')}
-                    onRejectText={t('common.cancel')}
+                    onSubmitText={"Smazat"}
+                    onRejectText={"Zrušit"}
                 />
             )}
         </>

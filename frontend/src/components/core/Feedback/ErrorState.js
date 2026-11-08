@@ -3,10 +3,8 @@ import Container from "@core/Container/Container";
 import Headings from "@core/Text/Headings";
 import Paragraph from "@core/Text/Paragraph";
 import Button from "@core/Button/Button";
-import { useTranslation } from "react-i18next";
 
 const ErrorState = ({ title, description, onRetry, property = "" }) => {
-    const { t } = useTranslation();
 
     return (
         <Container property={`flex flex-col items-center justify-center py-16 px-4 text-center ${property}`}>
@@ -15,16 +13,16 @@ const ErrorState = ({ title, description, onRetry, property = "" }) => {
             </Container>
 
             <Headings sizeTag="h4" property="text-gray-900 font-bold mb-2">
-                {title || t('common.error')}
+                {title || "Něco se pokazilo"}
             </Headings>
 
             <Paragraph property="text-gray-500 max-w-md mb-6">
-                {description || t('common.unexpected_error')}
+                {description || "Došlo k neočekávané chybě"}
             </Paragraph>
 
             {onRetry && (
                 <Button variant="primary" onClick={onRetry} property="px-8" icon="refresh">
-                    {t('common.retry')}
+                    {"Zkusit znovu"}
                 </Button>
             )}
         </Container>

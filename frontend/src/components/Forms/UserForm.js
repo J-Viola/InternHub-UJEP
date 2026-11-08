@@ -6,10 +6,8 @@ import Button from "@components/core/Button/Button";
 import Headings from "@core/Text/Headings";
 import { useUserAPI } from "@api/user/userAPI";
 import { useCompanyAPI } from "@api/company/companyAPI";
-import { useTranslation } from "react-i18next";
 
 export default function UserForm({ organizationUser = false, action, id, handleCreate, handleUpdate }) {
-    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         name: "",
         surname: "",
@@ -44,7 +42,7 @@ export default function UserForm({ organizationUser = false, action, id, handleC
             }));
             setCompanies(options);
         } catch (error) {
-            console.error(t('companies.load_error'), error);
+            console.error("Chyba při načítání společností", error);
         }
     };
 
@@ -67,7 +65,7 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 });
             }
         } catch (error) {
-            console.error(t('users.load_error'), error);
+            console.error("Chyba při načítání uživatelů", error);
         } finally {
             setLoading(false);
         }
@@ -83,7 +81,7 @@ export default function UserForm({ organizationUser = false, action, id, handleC
     const handleSubmit = () => {
         // Validation for passwords
         if (!isEditing && formData.password !== formData.passwordConfirm) {
-            console.error(t('password_change.mismatch'));
+            console.error("Nová hesla se neshodují.");
             return;
         }
 
@@ -113,14 +111,14 @@ export default function UserForm({ organizationUser = false, action, id, handleC
     };
 
     if (loading) {
-        return <Container property={"text-center py-4"}>{t('common.loading')}</Container>;
+        return <Container property={"text-center py-4"}>{"Načítání..."}</Container>;
     }
 
     return(
         <>
         <Container property={"mb-6"}>
             <Headings sizeTag={"h4"} property={"mb-4 font-bold"}>
-                {isEditing ? t('users.edit_title') : t('users.data_title')}
+                {isEditing ? "Upravit uživatele" : "Údaje uživatele"}
             </Headings>
         </Container>
         {/* Osobní údaje sekce */}
@@ -129,24 +127,24 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 <TextField
                     id={"name"}
                     required={true}
-                    label={t('profile.first_name')}
-                    placeholder={t('profile.first_name')}
+                    label={"Jméno"}
+                    placeholder={"Jméno"}
                     value={formData.name}
                     onChange={(value) => handleInputChange('name', value.name)}
                 />
                 <TextField
                     id={"surname"}
                     required={true}
-                    label={t('profile.last_name')}
-                    placeholder={t('profile.last_name')}
+                    label={"Příjmení"}
+                    placeholder={"Příjmení"}
                     value={formData.surname}
                     onChange={(value) => handleInputChange('surname', value.surname)}
                 />
                 <DropDown
                     id={"titleBefore"}
                     required={false}
-                    label={t('profile.title_before')}
-                    placeholder={t('profile.title_before')}
+                    label={"Titul před"}
+                    placeholder={"Titul před"}
                     value={formData.titleBefore}
                     options={[
                         { value: "Ing.", label: "Ing." },
@@ -161,8 +159,8 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 <DropDown
                     id={"titleAfter"}
                     required={false}
-                    label={t('profile.title_after')}
-                    placeholder={t('profile.title_after')}
+                    label={"Titul za"}
+                    placeholder={"Titul za"}
                     value={formData.titleAfter}
                     options={[
                         { value: "MBA", label: "MBA" },
@@ -176,8 +174,8 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 <TextField
                     id={"email"}
                     required={true}
-                    label={t('profile.email')}
-                    placeholder={t('profile.email')}
+                    label={"Email"}
+                    placeholder={"Email"}
                     value={formData.email}
                     onChange={(value) => handleInputChange('email', value.email)}
                 />
@@ -185,8 +183,8 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 <TextField
                     id={"phone"}
                     required={true}
-                    label={t('profile.phone')}
-                    placeholder={t('profile.phone')}
+                    label={"Telefonní číslo"}
+                    placeholder={"Telefonní číslo"}
                     value={formData.phone}
                     onChange={(value) => handleInputChange('phone', value.phone)}
                 />
@@ -194,8 +192,8 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 <DropDown
                     id={"company"}
                     required={true}
-                    label={t('users.assign_to_company')}
-                    placeholder={t('profile.organization')}
+                    label={"Přiřadit ke společnosti"}
+                    placeholder={"Organizace"}
                     value={formData.company}
                     options={companies}
                     onChange={(value) => handleInputChange('company', value.company)}
@@ -204,12 +202,12 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 <DropDown
                     id={"role"}
                     required={true}
-                    label={t('users.role')}
-                    placeholder={t('users.role')}
+                    label={"Role"}
+                    placeholder={"Role"}
                     value={formData.role}
                     options={[
-                        { value: "OWNER", label: t('profile.roles.OWNER') },
-                        { value: "INSERTER", label: t('profile.roles.INSERTER') }
+                        { value: "OWNER", label: "Majitel organizace" },
+                        { value: "INSERTER", label: "Referent organizace" }
                     ]}
                     onChange={(value) => handleInputChange('role', value.role)}
                 />
@@ -219,7 +217,7 @@ export default function UserForm({ organizationUser = false, action, id, handleC
         {/* Heslo sekce */}
         <Container property={"mb-6"}>
             <Headings sizeTag={"h5"} property={"mb-4 font-bold"}>
-                {isEditing ? t('users.password_change_optional') : t('users.password_section')}
+                {isEditing ? "Změna hesla (volitelné)" : "Heslo"}
             </Headings>
 
             <Container property={"grid gap-4 grid-cols-2"}>
@@ -227,7 +225,7 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                     id={"password"}
                     required={!isEditing}
                     placeholder={"*********"}
-                    label={t('login.password')}
+                    label={"Heslo"}
                     type={"password"}
                     value={formData.password}
                     onChange={(value) => handleInputChange('password', value.password)}
@@ -237,7 +235,7 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                     id={"passwordConfirm"}
                     required={!isEditing}
                     placeholder={"*********"}
-                    label={t('users.confirm_password')}
+                    label={"Potvrdit heslo"}
                     type={"password"}
                     value={formData.passwordConfirm}
                     onChange={(value) => handleInputChange('passwordConfirm', value.passwordConfirm)}
@@ -250,7 +248,7 @@ export default function UserForm({ organizationUser = false, action, id, handleC
                 property={"px-16 py-2"}
                 onClick={handleSubmit}
             >
-                {isEditing ? t('form.save_changes') : t('form.create')}
+                {isEditing ? "Uložit změny" : "Vytvořit"}
             </Button>
         </Container>
         </>

@@ -5,31 +5,29 @@ import Paragraph from "@components/core/Text/Paragraph"
 import Headings from "@core/Text/Headings"
 import Button from "@core/Button/Button";
 import { useUser } from "@hooks/UserProvider";
-import { useTranslation } from "react-i18next";
 import Icon from "@components/core/Icon/Icon";
 import EmptyState from "@core/Feedback/EmptyState";
 
 
 function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isProfessor}) {
-    const { t } = useTranslation();
 
     const renderTitle = () => {
         if(doc_info.type === "contract") {
-            return t('docs.contract_draft')
+            return "Návrh smlouvy"
         }
         else if(doc_info.type === "content") {
-            return t('docs.internship_content')
+            return "Náplň stáže"
         }
         else if(doc_info.type === "feedback") {
-            return t('docs.feedback')
+            return "Zpětná vazba"
         }
     }
 
     const getStatusLabel = (status) => {
         switch(status) {
-            case 1: return { label: t('docs.status_approved'), color: 'text-green-600', bg: 'bg-green-50' };
-            case 2: return { label: t('docs.status_rejected'), color: 'text-red-600', bg: 'bg-red-50' };
-            default: return { label: t('docs.status_pending'), color: 'text-yellow-600', bg: 'bg-yellow-50' };
+            case 1: return { label: "Schváleno", color: 'text-green-600', bg: 'bg-green-50' };
+            case 2: return { label: "Vráceno k opravě", color: 'text-red-600', bg: 'bg-red-50' };
+            default: return { label: "Čeká na kontrolu", color: 'text-yellow-600', bg: 'bg-yellow-50' };
         }
     }
 
@@ -50,7 +48,7 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
                     <Container property="flex items-center gap-2 flex-wrap justify-end">
                         {doc_info.late_submission && (
                             <Container property="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
-                                {t('documents.late')}
+                                {"Odevzdáno po termínu"}
                             </Container>
                         )}
                         <Container property={`${statusInfo.bg.replace('50', '200')} ${statusInfo.color} px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider`}>
@@ -61,14 +59,14 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
 
                 {doc_info.uploaded_at && (
                     <Paragraph property="text-sm text-gray-500">
-                        {t('docs.uploaded_at')}: {formatUploadedAt(doc_info.uploaded_at)}
+                        {"Nahráno"}: {formatUploadedAt(doc_info.uploaded_at)}
                     </Paragraph>
                 )}
 
                 {doc_info.review_note && (
                     <Container property="p-3 bg-white bg-opacity-60 rounded-md text-sm border border-gray-100">
                         <Paragraph property="text-gray-600 leading-relaxed">
-                            <strong className="text-gray-700 block mb-1 underline">{t('docs.note')}:</strong> {doc_info.review_note}
+                            <strong className="text-gray-700 block mb-1 underline">{"Poznámka"}:</strong> {doc_info.review_note}
                         </Paragraph>
                     </Container>
                 )}
@@ -81,7 +79,7 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
                         disabled={!doc_info.id}
                         variant={doc_info.id ? "primary" : "secondary"}
                     >
-                        {t('docs.download_file')}
+                        {"Stáhnout soubor"}
                     </Button>
 
                     {/*NAHRÁT SOUBOR - Student or not approved */}
@@ -92,7 +90,7 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
                             disabled={!doc_info.id}
                             variant="secondary"
                         >
-                            {t('docs.upload_file')}
+                            {"Nahrát soubor"}
                         </Button>
                     )}
 
@@ -105,7 +103,7 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
                                 property="flex-1 shadow-sm"
                                 disabled={doc_info.status === 1}
                             >
-                                {t('common.approve')}
+                                {"Schválit"}
                             </Button>
                             <Button
                                 variant="redSmall"
@@ -113,7 +111,7 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
                                 property="flex-1 shadow-sm"
                                 disabled={doc_info.status === 2}
                             >
-                                {t('common.reject')}
+                                {"Zamítnout"}
                             </Button>
                         </Container>
                     )}
@@ -125,7 +123,6 @@ function DocContainer({doc_info, handleDownload, handleUpload, handleReview, isP
 
 
 export default function DocsPanel({ entity, docData, handleDownload, handleUpload, handleManage, handleReview }) {
-    const { t } = useTranslation();
     const STATUS = entity.progress_status;
     const { user } = useUser();
 
@@ -140,32 +137,32 @@ export default function DocsPanel({ entity, docData, handleDownload, handleUploa
                 <Container property="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-r-lg shadow-sm flex items-start gap-3">
                     <Icon name="info-circle" size={20} color="text-blue-500" property="mt-0.5" />
                     <Paragraph property="text-blue-800 font-medium">
-                        {t('docs.waiting_for_approval_banner')}
+                        {"Vaše praxe byla schválena, ale může začít až po nahrání a schválení smlouvy a náplně praxe."}
                     </Paragraph>
                 </Container>
             )}
 
             <Container property={"flex items-center gap-3 mb-4"}>
-                <Paragraph>{t('docs.check_status')}:</Paragraph>
+                <Paragraph>{"Kontrola dokumentu"}:</Paragraph>
                 {STATUS ?
                     <Container property="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold border border-green-200 shadow-sm">
-                        {t('docs.checked')}
+                        {"PROBĚHLA"}
                     </Container>
                     :
                     <Container property="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold border border-red-200 shadow-sm">
-                        {t('docs.not_checked')}
+                        {"NEPROBĚHLA"}
                     </Container>
                 }
 
             </Container>
-            <Headings sizeTag="h3">{t('docs.title')}</Headings>
+            <Headings sizeTag="h3">{"Dokumenty"}</Headings>
 
             {/* CONTAINERY DOKUMENTŮ / EMPTY STATE */}
             {docData.length === 0 ? (
                 <Container property="py-8">
                     <EmptyState
-                        title={t('docs.no_documents_title')}
-                        description={t('docs.no_documents_desc')}
+                        title={"Žádné dokumenty k dispozici"}
+                        description={"Pro tuto praxi zatím nebyly vygenerovány nebo nahrány žádné dokumenty."}
                         icon="file-circle-xmark"
                     />
                 </Container>
@@ -192,7 +189,7 @@ export default function DocsPanel({ entity, docData, handleDownload, handleUploa
                         handleManage();
 
                     }}>
-                        {t('docs.doc_check')}
+                        {"Kontrola dokumentů"}
                     </Button>
                 )}
             </Container>

@@ -11,10 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { useMessage } from "@hooks/MessageContext";
 import SearchBar from "@components/Filter/SearchBar";
 import DropDown from "@core/Form/DropDown";
-import { useTranslation } from "react-i18next";
 
 export default function UserCRUDPage() {
-    const { t } = useTranslation();
     const { type } = useParams("type");
 
     const [data, setData] = useState([]);
@@ -27,10 +25,10 @@ export default function UserCRUDPage() {
     const navigate = useNavigate();
     const { addMessage } = useMessage();
 
-    const rolesTranslator = {"OWNER" : t('profile.roles.OWNER'), "INSERTER" : t('profile.roles.INSERTER')};
+    const rolesTranslator = {"OWNER" : "Majitel organizace", "INSERTER" : "Referent organizace"};
     const headings = {
-        "org_users": t('users.org_accounts'),
-        "department_users": t('users.user_accounts')
+        "org_users": "Účty organizací",
+        "department_users": "Uživatelské účty"
     };
 
     const translateRoles = (dataArr) => {
@@ -58,8 +56,8 @@ export default function UserCRUDPage() {
                 setData(translateRoles(res));
             }
         } catch (error) {
-            console.error(t('users.load_error'), error);
-            addMessage(t('users.load_error'), 'E');
+            console.error("Chyba při načítání uživatelů", error);
+            addMessage("Chyba při načítání uživatelů", 'E');
             setData([]);
         } finally {
             setLoading(false);
@@ -77,10 +75,10 @@ export default function UserCRUDPage() {
 
     const handleCreateUser = () => {
         if (userType === 'org') {
-            navigate(`/formular?type=org_users&action=create`);
+            navigate("/formular?type=org_users&action=create");
         } else {
             // Katederní uživatelé se vytvářejí přes STAG
-            addMessage(t('users.stag_notice'), 'info');
+            addMessage("Katederní uživatelé se vytvářejí přes IS STAG", 'info');
         }
     };
 
@@ -121,7 +119,7 @@ export default function UserCRUDPage() {
 
     // Group by employer_name pro org uživatele
     const groupedByEmployer = (userType === 'org' ? (searchFiltered || []) : []).reduce((acc, item) => {
-        const name = item.employer_name || t('users.unknown_company');
+        const name = item.employer_name || "Neznámá firma";
         (acc[name] = acc[name] || []).push(item);
         return acc;
     }, {});
@@ -151,7 +149,7 @@ export default function UserCRUDPage() {
                     <SearchBar
                         id={"name"}
                         value={searchTerm}
-                        placeholder={userType === 'org' ? t('users.search_placeholder_org') : t('users.search_placeholder_dept')}
+                        placeholder={userType === 'org' ? "Zadejte jméno uživatele" : "Zadejte jméno, předmět, název katedry"}
                         onChange={handleSearchChange}
                         onClear={handleSearchClear}
                     />
@@ -161,7 +159,7 @@ export default function UserCRUDPage() {
                         <DropDown
                             id="company"
                             variant="facultyGreen"
-                            placeholder={t('users.select_company')}
+                            placeholder={"Vyberte organizaci pro filtrování"}
                             value={companySelectValue}
                             onChange={onCompanySelect}
                             options={availableOptions.map((name) => ({ label: name, value: name }))}
@@ -179,7 +177,7 @@ export default function UserCRUDPage() {
 
             <Container property={"flex items-center justify-between mb-6"}>
                 <Headings sizeTag={"h3"} property={"mt-2"}>
-                    {type ? (headings[type]) : t('users.title')}
+                    {type ? (headings[type]) : "Správa uživatelů"}
                 </Headings>
             </Container>
 
@@ -189,22 +187,22 @@ export default function UserCRUDPage() {
                         onClick={handleCreateUser}
                         icon={"plus"}
                     >
-                        {t('users.create_account')}
+                        {"Založit účet"}
                     </Button>
                 </Container>
             )}
 
             <Container property={"mt-4 rounded-lg"}>
                 {loading ? (
-                    <Paragraph>{t('common.loading')}</Paragraph>
+                    <Paragraph>{"Načítání..."}</Paragraph>
                 ) : data.length === 0 ? (
                     <Paragraph property="text-center text-gray-500 py-8">
-                        {t('users.no_users')}
+                        {"Zatím nejsou žádní uživatelé k zobrazení."}
                     </Paragraph>
                 ) : (
                     userType === 'org' ? (
                         displayCompanyNames.length === 0 ? (
-                            <Paragraph property="text-center text-gray-500 py-8">{t('users.no_results')}</Paragraph>
+                            <Paragraph property="text-center text-gray-500 py-8">{"Žádné výsledky."}</Paragraph>
                         ) : (
                             <Container property={"space-y-6"}>
                                 {displayCompanyNames.map((name) => (
@@ -215,7 +213,7 @@ export default function UserCRUDPage() {
                                                 <UserEntity
                                                     key={entity.id}
                                                     entity={entity}
-                                                    attributes={{ [t('users.role')]: "roleText" }}
+                                                    attributes={{ ["Role"]: "roleText" }}
                                                     statusView={false}
                                                     buttons={[
                                                         {
@@ -236,7 +234,7 @@ export default function UserCRUDPage() {
                                 <UserEntity
                                     key={entity.id}
                                     entity={entity}
-                                    attributes={{ [t('users.department')]: "department", [t('users.subject')]: "subjects[0].subject_name" }}
+                                    attributes={{ ["Katedra"]: "department", ["Předmět"]: "subjects[0].subject_name" }}
                                     statusView={false}
                                     buttons={[
                                         {
