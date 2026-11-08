@@ -374,7 +374,7 @@ class PracticeViewTests(TestCase):
         )
         third_user, response = apply_as("cap3@test.com")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("CAPACITY_FULL", str(response.data.get("detail", "")))
+        self.assertEqual(response.data.get("error_code"), "CAPACITY_FULL")
         self.assertFalse(StudentPractice.objects.filter(user=third_user, practice=self.practice).exists())
 
         # 4) stornované umístění se NEpočítá (T2a) → žádost zase projde

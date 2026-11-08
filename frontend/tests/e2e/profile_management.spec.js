@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 
 test.describe('Student Profile Management (E2E)', () => {
-  test.use({ storageState: 'playwright/.auth/student.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
 
   test('can edit student profile, add skills, and upload CV', async ({ page }) => {
     await page.goto('/');
@@ -39,7 +39,7 @@ test.describe('Student Profile Management (E2E)', () => {
     // 4. Upload CV
     // Create a dummy pdf file if it doesn't exist
     const filePath = path.join(__dirname, 'test-cv.pdf');
-    fs.writeFileSync(filePath, 'dummy pdf content');
+    fs.writeFileSync(filePath, '%PDF-1.4\ndummy pdf content');
 
     const fileChooserPromise = page.waitForEvent('filechooser');
     await page.getByText('Nahrát CV/Životopis (PDF)').click();

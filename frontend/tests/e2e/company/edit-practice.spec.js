@@ -2,14 +2,14 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad, checkHeading } from '../helpers';
 
 test.describe('Edit practice offer', () => {
-  test.use({ storageState: 'playwright/.auth/company.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
   test.setTimeout(60000);
 
   // Store the practice ID from the scenario for direct navigation
   let practiceId = null;
 
   test.beforeAll(async ({ request }) => {
-    const resp = await request.post('http://localhost:8000/api/test/scenario/application-ready/');
+    const resp = await request.post(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/test/scenario/practice-editable/`);
     const data = await resp.json();
     practiceId = data.result.practice_id;
     console.log(`Practice ${practiceId} ready for edit tests`);
@@ -20,7 +20,9 @@ test.describe('Edit practice offer', () => {
    * Navigates directly to avoid event bubbling / API resource issues.
    */
   async function findAndEditFirstPractice(page) {
-    // Navigate directly to the edit page
+    // Nejdřív seznam (aby navigate(-1) po uložení vrátil na /praxe), pak editace.
+    await page.goto('/praxe');
+    await waitForAppLoad(page);
     await page.goto(`/upravit-nabidku/${practiceId}`);
     console.log(`Navigated to /upravit-nabidku/${practiceId}`);
 

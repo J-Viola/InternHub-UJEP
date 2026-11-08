@@ -15,6 +15,12 @@ if env_bool "$MIGRATE_DEMO" && ! env_bool "$DEBUG"; then
     exit 1
 fi
 
+# 0b. Volitelné přeskočení migrací (např. celery worker běží vedle webu)
+if env_bool "$SKIP_MIGRATIONS"; then
+    echo "Migrace přeskočeny (SKIP_MIGRATIONS)."
+    exec "$@"
+fi
+
 # 1. Spustit migrace (vytvoří tabulky, pokud neexistují)
 echo "Spouštím migrace..."
 python manage.py migrate

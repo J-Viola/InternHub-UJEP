@@ -26,6 +26,15 @@ class RealStagClient(StagDataProvider):
 
         return resp.json()
 
+    def invalidate_ticket(self, ticket: str) -> None:
+        url = f"{settings.STAG_WS_URL}/services/rest2/help/invalidateTicket"
+        try:
+            response = requests.get(url, params={"ticket": ticket}, timeout=(2, 5))
+        except requests.RequestException:
+            raise StagUnreachableError()
+        if response.status_code != 200:
+            raise StagUnreachableError()
+
     def get_student_subjects(self, ticket: str, os_cislo: str):
         url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
         params = {

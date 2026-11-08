@@ -79,7 +79,7 @@ class SeedDemoCommandTests(TestCase):
         org_user = OrganizationUser.objects.get(email="demo.org@test.local")
         employer = org_user.employer_profile  # A-18: vazba přes FK, PK se nevynucuje
         self.assertTrue(employer.company_name.startswith("SYNTHETIC DEMO DATA"))
-        self.assertEqual(employer.ico, "00000000")
+        self.assertEqual(employer.ico, "99999999")
 
         st = StudentPracticeWorkflowState
         # F1: CONTRACTED obsazuje jediné místo

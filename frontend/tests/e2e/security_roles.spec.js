@@ -4,7 +4,7 @@ import { waitForAppLoad } from './helpers';
 test.describe('Security and Role Boundaries (E2E)', () => {
 
   test('Student cannot access admin routes', async ({ browser }) => {
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     // Attempt to visit admin-only pages
@@ -21,7 +21,7 @@ test.describe('Security and Role Boundaries (E2E)', () => {
   });
 
   test('Professor cannot access company-only routes', async ({ browser }) => {
-    const profContext = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
     const profPage = await profContext.newPage();
 
     // Company only routes
@@ -40,7 +40,7 @@ test.describe('Security and Role Boundaries (E2E)', () => {
     // New context with NO storage state
     await page.goto('/nabidka');
     // React Router redirects to root '/'
-    await expect(page).toHaveURL('http://localhost:3000/');
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { name: 'Přihlášení' })).toBeVisible();
   });
 });

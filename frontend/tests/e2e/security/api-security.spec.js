@@ -29,7 +29,7 @@ test.describe('API security tests', () => {
 
     // The student should NOT be redirected to the login page
     // (they stay authenticated even if the profile doesn't exist)
-    expect(currentUrl).not.toBe('http://localhost:3000/');
+    expect(currentUrl).not.toMatch(/\/$/);
     expect(currentUrl).not.toContain('login');
 
     // The page should show some meaningful content, not a blank login page
@@ -92,7 +92,7 @@ test.describe('API security tests', () => {
     // Select options
     await page.locator('select[id="coefficient"]').selectOption('1');
     await page.locator('select[id="contact_user"]').selectOption({ index: 1 });
-    await page.locator('select[id="subject_id"]').selectOption({ index: 1 });
+    await page.locator('select[id="subject_id"]').selectOption({ label: 'KI/PRAX1 - Odborná praxe 1' });
     await page.locator('select[id="available_positions"]').selectOption('2');
 
     // Click title field to trigger end_date calculation

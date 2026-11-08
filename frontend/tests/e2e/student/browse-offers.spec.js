@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink } from '../helpers';
 
 test.describe('Browse internship offers', () => {
-  test.use({ storageState: 'playwright/.auth/student.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
   test.setTimeout(60000);
 
   test.beforeEach(async ({ page }) => {

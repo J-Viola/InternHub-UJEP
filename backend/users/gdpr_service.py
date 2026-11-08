@@ -5,6 +5,7 @@ from django.db import transaction
 
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
+from users.tokens import revoke_refresh_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,7 @@ class GDPRService:
             user.employer_profile.save()
 
         user.save()
+        revoke_refresh_tokens(user)
 
         ActionLogService.log(
             user=None,

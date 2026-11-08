@@ -14,20 +14,16 @@ test.describe('Evaluace Lifecycle (E2E)', () => {
     // Dřívější inline `shell -c` (nové řádky složené na jednu) byl neplatný
     // a běžel s výchozím nastavením → hrozil zápis mimo disposable DB.
     // Nyní: DJANGO_SETTINGS_MODULE + povinné E2E_DB_NAME + guard v helperu.
-    const backendDir = process.env.E2E_BACKEND_DIR || '/media/F/Github/InternHub-UJEP/backend';
     const helperScript = path.join(__dirname, 'helpers', 'seed_ended_practice.py');
-    const fixtureEnv = {
-      ...process.env,
-      DJANGO_SETTINGS_MODULE: process.env.E2E_FIXTURE_SETTINGS || 'app.test_settings',
-      E2E_DB_NAME: process.env.E2E_DB_NAME || process.env.PG_DB || '',
-      E2E_PRACTICE_TITLE: practiceTitle,
-    };
-    const shellOutput = execSync(`python manage.py shell --no-startup < "${helperScript}"`, {
-      cwd: backendDir,
-      encoding: 'utf-8',
-      env: fixtureEnv,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    // Fixture se pouští v izolovaném backend kontejneru (hostitelský python
+    // nemá Django závislosti). Kontejner i disposable DB jsou konfigurovatelné.
+    const container = process.env.E2E_BACKEND_CONTAINER || 'internhub-e2e-backend';
+    const e2eDbName = process.env.E2E_DB_NAME || 'internhub_e2e_test';
+    const shellOutput = execSync(
+      `docker exec -i -e DJANGO_SETTINGS_MODULE=app.e2e_settings -e E2E_DB_NAME=${e2eDbName} ` +
+        `-e E2E_PRACTICE_TITLE="${practiceTitle}" ${container} python manage.py shell --no-startup < "${helperScript}"`,
+      { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] }
+    );
     const spId = shellOutput
       .trim()
       .split('\n')
@@ -39,7 +35,7 @@ test.describe('Evaluace Lifecycle (E2E)', () => {
     }
 
     // --- STEP 1: Login jako mentor (professor) ---
-    const profContext = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
     const profPage = await profContext.newPage();
 
     await profPage.goto(`/evaluace/${spId}`);

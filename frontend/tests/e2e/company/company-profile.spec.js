@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink } from '../helpers';
 
 test.describe('Company profile management', () => {
-  test.use({ storageState: 'playwright/.auth/company.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
   test.setTimeout(60000);
 
   test('CMP01 - displays company profile', async ({ page }) => {

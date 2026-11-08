@@ -55,7 +55,7 @@ test.describe('Critical path smoke tests', () => {
 
   test('SM03 - profile page loads for student', async ({ browser }) => {
     console.log('--- Testing student profile page ---');
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     await studentPage.goto('/profil');
@@ -83,7 +83,7 @@ test.describe('Critical path smoke tests', () => {
 
   test('SM05 - student sees correct nav items', async ({ browser }) => {
     console.log('--- Testing student navigation items ---');
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     await studentPage.goto('/');

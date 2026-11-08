@@ -53,8 +53,12 @@ export default function LoginPage() {
             if (params.service_ticket) {
                 setTicket(params.service_ticket);
             }
+            // Ticket nesmí zůstat v adrese (historie prohlížeče, logy) — čistíme hned po přečtení.
+            cleanUrlFromStagParams();
         } else {
-            const stagUserTicket = searchParams.get("stagUserTicket");
+            // Po okamžitém vyčištění URL už router může držet starý searchParams;
+            // rozhoduje aktuální adresa, jinak by se chyba „Invalid state“ přidala dvakrát.
+            const stagUserTicket = new URLSearchParams(window.location.search).get("stagUserTicket");
             if (stagUserTicket) {
                 addMessage(t('login.error_stag') + ": Invalid state", "E");
                 cleanUrlFromStagParams();
@@ -79,16 +83,10 @@ export default function LoginPage() {
                 const payload = { service_ticket: ticket };
                 if (stagUserInfo) payload.stag_user_info = stagUserInfo;
                 await login(payload);
-                // Po úspěchu smažeme STAG parametry z URL, aby refresh nezpůsobil opakování
-                cleanUrlFromStagParams();
-
             } catch (error) {
-                console.error("Error during STAG login:", error);
+                console.error("Error during STAG login:", error?.response?.status || error?.code || "UNKNOWN_ERROR");
                 const errorCode = error.code || "UNKNOWN_ERROR";
                 addMessage(`${t('login.error_stag')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
-                // Po neúspěchu také smažeme STAG parametry — ticket je jednorázový,
-                // znovu použít stejný ticket už nedává smysl
-                cleanUrlFromStagParams();
             }
         };
 
@@ -101,7 +99,7 @@ export default function LoginPage() {
 
             // Po úspěšném loginu se přesměruje na /nabidka (handled in useAuth or useEffect above)
         } catch (error) {
-            console.error("Error during organization login:", error);
+            console.error("Error during organization login:", error?.response?.status || error?.code || "UNKNOWN_ERROR");
             const errorCode = error.code || "UNKNOWN_ERROR";
             addMessage(`${t('login.error_login')}: ${t(`api_errors.${errorCode}`, { defaultValue: error.message })}`, "E");
         }

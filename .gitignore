@@ -42,3 +42,9 @@ frontend/test-results/
 .docker_data/
 postgres_data/
 .slim/deepwork/
+
+# Playwright přihlašovací stavy (obsahují živé tokeny)
+frontend/playwright/.auth/
+frontend/playwright/.auth-e2e/
+# OpenChamber lokální artefakty (screenshoty, sessions)
+.openchamber/

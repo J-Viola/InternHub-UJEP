@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, checkHeading } from '../helpers';
 
+const API_URL = process.env.E2E_API_URL || 'http://localhost:8000';
+
 test.describe('Manage school users', () => {
   test.setTimeout(60000);
-  test.use({ storageState: 'playwright/.auth/admin.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/admin.json` });
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -93,7 +95,7 @@ test.describe('Manage school users', () => {
     // Fetch department professors via API
     console.log('Fetching department professors from API...');
     const usersResponse = await page.request.get(
-      'http://localhost:8000/api/departments/department-professor/'
+      `${API_URL}/api/departments/department-professor/`
     );
     expect(usersResponse.status()).toBe(200);
     const users = await usersResponse.json();
@@ -110,14 +112,14 @@ test.describe('Manage school users', () => {
 
     // Deactivate: set is_active = false
     const deactivateResponse = await page.request.patch(
-      `http://localhost:8000/api/departments/department-professor/${targetUser.id}/`,
+      `${API_URL}/api/departments/department-professor/${targetUser.id}/`,
       { data: { is_active: false } }
     );
     expect(deactivateResponse.status()).toBe(200);
 
     // Verify deactivation
     const verifyResponse = await page.request.get(
-      `http://localhost:8000/api/departments/department-professor/${targetUser.id}/`
+      `${API_URL}/api/departments/department-professor/${targetUser.id}/`
     );
     const userData = await verifyResponse.json();
     expect(userData.is_active).toBe(false);
@@ -126,7 +128,7 @@ test.describe('Manage school users', () => {
     // Reactivate to keep state clean
     console.log('Reactivating user...');
     await page.request.patch(
-      `http://localhost:8000/api/departments/department-professor/${targetUser.id}/`,
+      `${API_URL}/api/departments/department-professor/${targetUser.id}/`,
       { data: { is_active: true } }
     );
     console.log('User reactivated — test cleanup complete');

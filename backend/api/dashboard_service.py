@@ -14,11 +14,17 @@ class DashboardService:
         today = date.today()
         qs = StudentPractice.objects.filter(is_cancelled=False)
 
-        # Department scoping if professor
-        if not user.is_superuser and hasattr(user, "user_subjects"):
-            dept_ids = user.user_subjects.values_list("subject__department_id", flat=True)
+        # Department scoping: superuser vidí vše, ostatní jen své katedry.
+        # Bez UserSubject dříve garant viděl globální data; nyní
+        # fail-closed (prázdný seznam = žádná data).
+        if not user.is_superuser:
+            from users.services import get_user_department_ids
+
+            dept_ids = get_user_department_ids(user)
             if dept_ids:
                 qs = qs.filter(practice__subject__department_id__in=dept_ids)
+            else:
+                qs = qs.none()
 
         # Aggregations by workflow_state
         state_counts = dict(qs.values("workflow_state").annotate(count=Count("student_practice_id")).values_list("workflow_state", "count"))

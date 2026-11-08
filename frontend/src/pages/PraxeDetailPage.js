@@ -241,7 +241,7 @@ export default function PraxeDetailPage() {
 
   const handleRejectWithReason = async () => {
     if (rejectReason.trim().length < 10) {
-      addMessage(t("practice_detail.reject_reason_required"), "E");
+      addMessage(t(rejectReason.trim() ? "practice_detail.reject_reason_required" : "practice_detail.reject_reason_empty"), "E");
       return;
     }
     try {
@@ -396,7 +396,7 @@ export default function PraxeDetailPage() {
                   {entity?.student_practice_status?.student_info?.full_name}
                 </Paragraph>
                 <Paragraph>
-                  {`${t("students.personal_number")}: ${entity?.student_practice_status?.student_info?.os_cislo}`}
+                  {`${t("students.personal_number")}: ${entity?.student_practice_status?.student_info?.os_cislo || t("common.not_specified")}`}
                 </Paragraph>
                 <Paragraph>
                   {`${t("profile.email")}: ${entity?.student_practice_status?.student_info?.email}`}
@@ -727,7 +727,7 @@ export default function PraxeDetailPage() {
                   </Container>
                 )}
 
-              {/* STORNO - vlastník-student ze stavu CONTRACTED, okamžité a nevratné (A-12) */}
+              {/* STORNO - vlastník-student z aktivního stavu, okamžité a nevratné (A-12) */}
               {canRequestCancellation(entity, user) && (
                 <Container property="flex justify-end">
                   <Button
@@ -845,7 +845,12 @@ export default function PraxeDetailPage() {
               {/* Potvrzení smlouvy organizací nebo jejího přijetí studentem. */}
               {user &&
                 (user.isOrganizationUser() || user.isStudent() || user.isProfessor() || user.isDepartmentUser() || user.isAdmin()) &&
-                ["AWAITING_CONTRACT", "AWAITING_DOCUMENTS"].includes(entity?.student_practice_status?.workflow_status) && (
+                // D-1: u individuální (externí) praxe se smlouva potvrzuje i z „Obsah praxe schválen“.
+                ([
+                  "AWAITING_CONTRACT",
+                  "AWAITING_DOCUMENTS",
+                  ...(entity?.is_external ? ["CONTENT_APPROVED"] : []),
+                ].includes(entity?.student_practice_status?.workflow_status)) && (
                   <Container property="flex gap-4 justify-end">
                     <Button
                       variant="greenSmall"

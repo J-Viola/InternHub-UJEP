@@ -17,7 +17,7 @@ def validate_file_size(value):
     limit = SystemSettings.get_solo().max_upload_size
     if value is not None and getattr(value, "size", None) is not None and value.size > limit:
         mb = limit // (1024 * 1024)
-        raise ValidationError(f"Soubor přesahuje maximální povolenou velikost {mb} MB.")
+        raise ValidationError(f"Soubor překračuje maximální povolenou velikost {mb} MB.")
 
 
 def validate_file_content(value):

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, checkHeading } from '../helpers';
 
 test.describe('Manage departments', () => {
-  test.use({ storageState: 'playwright/.auth/admin.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/admin.json` });
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -126,7 +126,7 @@ test.describe('Manage departments', () => {
     } else {
       console.log('Updated name NOT found on page — using API to verify...');
       // Verify via API that the update actually happened
-      const resp = await page.request.get('http://localhost:8000/api/departments/admin-departments/');
+      const resp = await page.request.get(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/departments/admin-departments/`);
       const data = await resp.json();
       const names = (data.results || []).map(d => d.department_name);
       console.log(`Department names from API: ${JSON.stringify(names)}`);

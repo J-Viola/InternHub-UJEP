@@ -203,14 +203,17 @@ export default function SpravaStaziPage() {
         }
     };
 
+    // ID rizikových přihlášek přicházejí ve statistikách; seznam je používá pro filtr.
+    const atRiskIds = useMemo(
+        () => new Set((stats?.at_risk_items || []).map((item) => item.student_practice_id)),
+        [stats]
+    );
+
     // Filter approved practices based on URL state param
     const filteredApproved = useMemo(() => {
         if (activeFilter === "ALL") return approved;
         if (activeFilter === "AT_RISK") {
-            // AT_RISK is computed from stats, but we don't have individual risk flags
-            // on each entity in the list. For now, show all and let the KPI card
-            // handle the at-risk panel.
-            return approved;
+            return approved.filter((e) => atRiskIds.has(e.student_practice_id));
         }
         if (activeFilter === "CONTRACT_PENDING") {
             return approved.filter(
@@ -218,7 +221,7 @@ export default function SpravaStaziPage() {
             );
         }
         return approved.filter((e) => e.workflow_state === activeFilter);
-    }, [approved, activeFilter]);
+    }, [approved, activeFilter, atRiskIds]);
 
     // Escalation: practices in PRELIMINARY_APPROVED > 7 days without contract
     const escalatedPractices = useMemo(() => {

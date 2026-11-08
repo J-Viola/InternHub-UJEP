@@ -16,7 +16,6 @@ from users.models import (
     ApprovalStatus,
     DepartmentRole,
     EmployerProfile,
-    InvalidStagTicketError,
     OrganizationRole,
     OrganizationUser,
     ProfessorUser,
@@ -239,8 +238,18 @@ def fetch_ares_data(ico: str) -> EkonomickySubjektDTO | None:
     # Vrací None = „v ARES nenalezeno" → volající dostane konzervativní
     # fallback (manuální vstup), údaje subjektu se NIKDY nevymýšlí.
     if getattr(settings, "ARES_MOCK", False):
+        # Deterministická mock data pro testovací IČO (TC-02-01 v prostředí A).
+        # Ostatní IČO = nenalezeno, konzervativní fallback na ruční vstup.
+        mock_subjects = {
+            "44555601": {
+                "ico": 44555601,
+                "obchodniJmeno": "Univerzita Jana Evangelisty Purkyně v Ústí nad Labem",
+                "sidlo": {"textovaAdresa": "Pasteurova 3544/1, 400 96 Ústí nad Labem"},
+            }
+        }
         logger.info("ARES mock mode — outbound lookup skipped for IČO %s", ico)
-        return None
+        data = mock_subjects.get(ico)
+        return EkonomickySubjektDTO.model_validate(data) if data else None
 
     try:
         url = f"{settings.ARES_API_URL}/{ico}"
@@ -433,7 +442,6 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
             user.first_name = first_name
             user.last_name = last_name
             user.os_cislo = osCislo
-            user.stag_ticket = ticket
             user.save()
         else:
             user = StudentUser.objects.create(
@@ -442,7 +450,6 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
                 first_name=first_name,
                 last_name=last_name,
                 os_cislo=osCislo,
-                stag_ticket=ticket,
                 is_active=True,
             )
 
@@ -514,7 +521,6 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
             # Update basic info
             user.first_name = first_name
             user.last_name = last_name
-            user.stag_ticket = ticket
             user.save()
         else:
             katedra = info.get("katedra")
@@ -534,7 +540,6 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
                 first_name=first_name,
                 last_name=last_name,
                 ucit_idno=ucitIdno,
-                stag_ticket=ticket,
                 is_active=True,
                 department=department,
                 department_role=department_role,
@@ -688,16 +693,14 @@ def fetch_student_data_from_stag(student, ticket=None):
     Fetch detailed student personal data from STAG and update the StudentUser model.
 
     Args:
-        student: StudentUser instance (must have os_cislo and stagUser model for STAG ticket)
-        ticket: Optional fresh STAG ticket. If not provided, uses the stored ticket
-                from student.stag_user_ptr.stag_ticket.
+        student: StudentUser instance (must have os_cislo).
+        ticket: STAG ticket z šifrovaného JWT claimu. Bez něj se STAG nevolá.
 
     Returns:
         dict with the fetched student data, or empty dict on failure.
 
     Raises:
         ValueError: if student has no os_cislo
-        InvalidStagTicketError: uložený ticket nemá platný podpis (A-10, fail-closed)
     """
     if not student.os_cislo:
         raise ValueError("Student has no os_cislo — cannot fetch from STAG")
@@ -706,16 +709,9 @@ def fetch_student_data_from_stag(student, ticket=None):
 
     if getattr(settings, "STAG_MOCK", False) or getattr(settings, "DEMO_LOGIN", False):
         ticket = f"mock-student:{student.os_cislo}"
-    else:
-        if not ticket:
-            try:
-                ticket = student.get_ticket()
-            except InvalidStagTicketError:
-                # A-10: fail-closed — STAG se nevolá, v logu není obsah ticketu
-                logger.warning("STAG ticket uživatele %s má neplatný podpis — nutné nové přihlášení.", student.pk)
-                raise
-        if not ticket:
-            return {}
+    elif not ticket:
+        # A-10: ticket je jen v JWT claimu; bez něj se STAG nevolá a použijí se uložená data.
+        return {}
 
     client = get_stag_client()
     data = client.get_student_info(ticket, student.os_cislo)

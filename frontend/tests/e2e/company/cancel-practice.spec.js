@@ -2,12 +2,12 @@ import { test, expect, request } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, checkHeading, confirmPopup } from '../helpers';
 
 test.describe('Cancel practice offer', () => {
-  test.use({ storageState: 'playwright/.auth/company.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
   test.setTimeout(60000);
 
   test.beforeAll(async () => {
     const ctx = await request.newContext();
-    await ctx.post('http://localhost:8000/api/test/scenario/application-ready/');
+    await ctx.post(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/test/scenario/application-ready/`);
     await ctx.dispose();
   });
 

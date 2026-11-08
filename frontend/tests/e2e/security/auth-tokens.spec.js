@@ -45,7 +45,7 @@ test.describe('JWT token management', () => {
   test('AT04 - API returns 401 for protected endpoints without auth', async ({ page }) => {
     // No storage state — fully unauthenticated
     // Hit a protected API endpoint directly
-    const response = await page.request.get('http://localhost:8000/api/student-practices/');
+    const response = await page.request.get(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/student-practices/`);
 
     console.log(`API response status: ${response.status()}`);
     expect(response.status()).toBe(401);

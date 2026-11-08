@@ -4,12 +4,12 @@ import path from 'path';
 import fs from 'fs';
 
 test.describe('Student document management', () => {
-  test.use({ storageState: 'playwright/.auth/student.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
   test.setTimeout(90000);
 
   test.beforeAll(async () => {
     const ctx = await request.newContext();
-    const resp = await ctx.post('http://localhost:8000/api/test/scenario/student-has-documents/');
+    const resp = await ctx.post(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/test/scenario/student-has-documents/`);
     if (!resp.ok()) {
       console.log('Warning: could not prepare scenario data');
     }

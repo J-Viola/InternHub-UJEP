@@ -505,6 +505,7 @@ class StudentPractice(CancellationMixin, models.Model):
             "AWAITING_CONTRACT": "Čeká na zasmluvnění",
             "AWAITING_DOCUMENTS": "Čeká na schválení dokumentů",
             "DOCUMENTS_REJECTED": "Dokumenty zamítnuty",
+            "DOCUMENTS_RESUBMITTED": "Opravené dokumenty čekají na kontrolu",
             "AWAITING_CONTENT_APPROVAL": "Čeká na schválení obsahu",
             "CONTENT_APPROVED": "Obsah praxe schválen",
             "CONTENT_REJECTED": "Zamítnutí obsahu",

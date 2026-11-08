@@ -9,6 +9,7 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from api.helpers import Base64ImageField
+from users.jwt_tokens import RedactedRefreshToken
 from users.messages import UserMessages
 from users.models import (
     ApprovalStatus,
@@ -25,6 +26,7 @@ from users.services import (
     validate_stag_ticket,
 )
 from users.stag_api.exceptions import StagUnreachableError
+from users.stag_ticket import CLAIM_NAME, encrypt_ticket
 
 User = get_user_model()
 
@@ -34,6 +36,8 @@ class AresRequestSerializer(serializers.Serializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    token_class = RedactedRefreshToken
+
     service_ticket = serializers.CharField(write_only=True, required=False)
     stag_user_info = serializers.JSONField(write_only=True, required=False)
 
@@ -65,6 +69,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
                 refresh = self.get_token(user)
                 refresh["type"] = UserType.STAG.value
+                # Ticket nikdy do DB — jen šifrovaný claim; access token ho převezme.
+                refresh[CLAIM_NAME] = encrypt_ticket(ticket)
                 return {
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),

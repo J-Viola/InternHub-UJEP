@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
@@ -19,9 +21,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import StandardResultsSetPagination
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
+from users.jwt_tokens import RedactedTokenRefreshSerializer
 from users.messages import UserMessages
 from users.models import (
     EmployerProfile,
+    InvalidStagTicketError,
     OrganizationUser,
     ProfessorUser,
     StagUser,
@@ -37,7 +41,10 @@ from users.permissions import (
     IsStagTeacher,
 )
 from users.services import AresUnavailableError, fetch_ares_data, update_organization_from_ares
+from users.stag_api import get_stag_client
+from users.stag_ticket import ticket_from_token
 from users.throttling import AresThrottle, LoginThrottle, PasswordResetThrottle, StagTicketThrottle
+from users.tokens import revoke_refresh_tokens
 
 from .serializers import (
     AdminOrganizationSerializer,
@@ -59,6 +66,8 @@ from .serializers import (
     UserInfoSerializer,
     UserProfileSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _set_refresh_cookie(response, refresh_token):
@@ -187,6 +196,7 @@ class PasswordResetConfirmView(APIView):
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
+        revoke_refresh_tokens(user)
 
         EmailService.notify_password_changed(user)
 
@@ -233,6 +243,7 @@ class ChangePasswordView(APIView):
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
+        revoke_refresh_tokens(user)
 
         EmailService.notify_password_changed(user)
 
@@ -244,7 +255,10 @@ class ChangePasswordView(APIView):
             description="Změna hesla",
         )
 
-        return Response({"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK)
+        response = Response({"message": "PASSWORD_CHANGED_SUCCESS"}, status=status.HTTP_200_OK)
+        # Všechny relace jsou zneplatněné; cookie pro aktuální relaci smažeme také.
+        _clear_refresh_cookie(response)
+        return response
 
 
 class LogoutView(generics.GenericAPIView):
@@ -269,6 +283,21 @@ class LogoutView(generics.GenericAPIView):
 
         try:
             token = RefreshToken(refresh_token)
+            try:
+                ticket = ticket_from_token(token)
+            except InvalidStagTicketError:
+                # Poškozený claim nesmí zablokovat odhlášení; ticket se do logu nezapisuje.
+                ticket = ""
+                logger.warning("STAG ticket v refresh tokenu nelze dešifrovat — odhlášení pokračuje.")
+
+            if ticket:
+                try:
+                    get_stag_client().invalidate_ticket(ticket)
+                except Exception:
+                    # Odhlášení nesmí selhat kvůli výpadku STAGu. Zkoušíme ještě před
+                    # blacklistem, aby po něm už nešlo token znovu použít k invalidaci.
+                    logger.warning("STAG ticket se nepodařilo zneplatnit při odhlášení.")
+
             token.blacklist()
 
             ActionLogService.log(
@@ -441,6 +470,8 @@ class CookieTokenRefreshView(TokenRefreshView):
     Reads refresh token from HttpOnly cookie instead of request body.
     Returns new access token in body, sets new refresh token in cookie.
     """
+
+    serializer_class = RedactedTokenRefreshSerializer
 
     @extend_schema(
         summary="Refresh JWT token",
@@ -747,6 +778,17 @@ class UserAnonymizeView(APIView):
     )
     def delete(self, request):
         from users.gdpr_service import GDPRService
+
+        # Před anonymizací se pokusíme zneplatnit STAG ticket z aktuální relace.
+        try:
+            ticket = ticket_from_token(request.auth)
+        except InvalidStagTicketError:
+            ticket = ""
+        if ticket:
+            try:
+                get_stag_client().invalidate_ticket(ticket)
+            except Exception:
+                logger.warning("STAG ticket se nepodařilo zneplatnit při anonymizaci.")
 
         GDPRService.anonymize_user(request.user)
         return Response(

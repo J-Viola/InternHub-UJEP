@@ -70,7 +70,7 @@ class PracticeService:
                 "practice_id": sp.practice.practice_id,
                 "practice_title": sp.practice.title,
                 "company_logo": sp.practice.image_base64,
-                "application_date": sp.application_date,
+                "application_date": sp.application_date.strftime("%d.%m.%Y") if sp.application_date else "",
                 "status": sp.approval_status,
                 # Additive (BL-04): autoritativní stav pro FE (pending vs rejected …)
                 "workflow_status": sp.workflow_status,
@@ -88,7 +88,7 @@ class PracticeService:
                 "practice_id": ei.practice.practice_id if ei.practice else None,
                 "practice_title": ei.practice.title if ei.practice else None,
                 "company_logo": ei.practice.image_base64 if ei.practice else None,
-                "submission_date": ei.submission_date,
+                "submission_date": ei.submission_date.strftime("%d.%m.%Y") if ei.submission_date else "",
                 "status": ei.status,
             }
             for ei in invitations
@@ -352,6 +352,12 @@ class PracticeService:
             if current_state != PracticeWorkflowState.CONTENT_APPROVED:
                 raise ValueError("OTEVRENI_VYHRADUJE_SCHVALENEMU_OBSAHU")
             practice.is_active = True
+
+        # Návrat k přepracování (CONTENT_REJECTED -> PENDING_CONTENT_APPROVAL):
+        # inzerát se vrací do schvalovacího kolečka, takže i starý approval_status
+        # musí být PENDING (jinak ho garant neuvidí a approve vrátí ALREADY_APPROVED).
+        if target_state == PracticeWorkflowState.PENDING_CONTENT_APPROVAL:
+            practice.approval_status = ApprovalStatus.PENDING
 
         # CLOSED_FOR_APPLICATIONS must set closure metadata (was bypassed)
         if target_state == PracticeWorkflowState.CLOSED_FOR_APPLICATIONS:

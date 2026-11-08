@@ -58,11 +58,10 @@ class Phase2Tests(APITestCase):
         )
 
     def test_dashboard_stats_endpoint(self):
+        # F-13: dashboard je agenda garanta/admina; student nesmí vidět globální data.
         self.client.force_authenticate(user=self.student)
         res = self.client.get("/api/dashboard/stats/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("total_active", res.data)
-        self.assertIn("state_counts", res.data)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_data_export_endpoint_xlsx(self):
         from api.export_service import ExportService

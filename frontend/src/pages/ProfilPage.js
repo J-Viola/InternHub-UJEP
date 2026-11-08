@@ -286,7 +286,7 @@ export default function ProfilPage() {
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-3 bg-gray-50 hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg border border-gray-200 transition-colors shadow-sm"
                                     >
-                                        <Button icon="download" noVariant={true} iconColor="text-blue-600" />
+                                        <Button title={t('profile.download_cv')} icon="download" noVariant={true} iconColor="text-blue-600" />
                                         {t('profile.download_cv')}
                                     </a>
                                 </Container>

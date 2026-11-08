@@ -27,7 +27,15 @@ from student_practices.models import (
 )
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
-from users.models import ApprovalStatus, InvalidStagTicketError, OrganizationUser, ProfessorUser, StagRoleEnum, StudentUser
+from users.models import (
+    ApprovalStatus,
+    InvalidStagTicketError,
+    OrganizationRole,
+    OrganizationUser,
+    ProfessorUser,
+    StagRoleEnum,
+    StudentUser,
+)
 from users.services import fetch_student_data_from_stag
 
 logger = logging.getLogger(__name__)
@@ -193,6 +201,19 @@ def contract_document_is_approved(sp) -> bool:
     """A-11: smluvní dokument existuje a je ve stavu APPROVED."""
     doc = sp.contract_document
     return bool(doc and doc.status == DocumentStatus.APPROVED)
+
+
+def required_approval_axes_hold(sp) -> bool:
+    """
+    D-1/F-28: které approval osy musí držet pro vstup do CONTRACTED.
+
+    Externí (individuální) praxe nemá ``EmployerProfile``, takže osa
+    zaměstnavatele nikdy nevznikne — partner je doložen garantem schválenou
+    smlouvou (A-11) a stačí školní osa. Standardní praxe vyžaduje obě osy.
+    """
+    if sp.practice is not None and getattr(sp.practice, "is_external", False):
+        return bool(sp.school_approved)
+    return bool(sp.school_approved) and bool(sp.employer_approved)
 
 
 def record_own_approval_axis(sp, actor) -> bool:
@@ -595,15 +616,24 @@ class StudentPracticeService:
             # staré schválení nemůže uspokojit precondition za opravu).
             # Upload ≠ approval (C19-B); zbytkové PENDING doklady musí review
             # explicitně schválit dřív, než smyčka popojede dál.
-            not_approved = [doc for doc in linked_docs if doc.status != DocumentStatus.APPROVED]
-            if not_approved:
-                pending_types = ", ".join(sorted({DocumentType(doc.document_type).name for doc in not_approved}))
-                raise ValueError(
-                    "Opravný přechod vyžaduje schválené review VŠECH připojených dokumentů " f"— neschválené: {pending_types}."
-                )
+            # Do ENDED se jde kvůli závěrečnému (FEEDBACK) dokumentu — ten musí být
+            # schválený. Ostatní dokumenty jen nesmí být zamítnuté (kontrakt/content
+            # mohou zůstat PENDING, jinak by opravný cyklus na reálných datech nikdy neskončil).
+            if target_state == StudentPracticeWorkflowState.ENDED:
+                # Do ENDED se jde kvůli závěrečné dokumentaci — ta musí být schválená.
+                if sp.feedback_document is None or sp.feedback_document.status != DocumentStatus.APPROVED:
+                    raise ValueError("Opravný přechod do ENDED vyžaduje schválený závěrečný (FEEDBACK) dokument.")
+            elif not any(doc.status == DocumentStatus.APPROVED for doc in linked_docs):
+                # Do AWAITING_DOCUMENTS se jde po schválení opravovaného dokladu.
+                raise ValueError("Opravný přechod vyžaduje schválený opravovaný dokument.")
 
         # --- Side effects per transition ---
         if sp.workflow_state == StudentPracticeWorkflowState.APPLIED and target_state == StudentPracticeWorkflowState.PRELIMINARY_APPROVED:
+            # Alokace nesmí překročit kapacitu partnera — stejná
+            # kontrola (4 stavy) jako u CONTRACTED, pod zámkem praxe.
+            if sp.practice_id:
+                locked_practice = Practice.objects.select_for_update().get(pk=sp.practice_id)
+                _check_contract_capacity(locked_practice)
             sp.school_approved = True
             ActionLogService.log(
                 user=actor,
@@ -695,9 +725,13 @@ class StudentPracticeService:
         # save/ActionLog/notifikace (HTTP view překládá na AXES_INCOMPLETE).
         # Kapacita pod stejným lockem níže. ---
         if target_state == StudentPracticeWorkflowState.CONTRACTED and sp.workflow_state != StudentPracticeWorkflowState.CONTRACTED:
-            both_axes = record_own_approval_axis(sp, actor)
-            if not both_axes:
-                missing = [label for label, holds in (("school", sp.school_approved), ("employer", sp.employer_approved)) if not holds]
+            record_own_approval_axis(sp, actor)
+            if not required_approval_axes_hold(sp):
+                if sp.practice is not None and getattr(sp.practice, "is_external", False):
+                    required_axes = (("school", sp.school_approved),)
+                else:
+                    required_axes = (("school", sp.school_approved), ("employer", sp.employer_approved))
+                missing = [label for label, holds in required_axes if not holds]
                 raise AxesIncompleteError(
                     "AXES_INCOMPLETE: Přechod do CONTRACTED vyžaduje obě nezávislé "
                     f"schvalovací osy (T1/C06-A) — chybí osa: {', '.join(missing)}."
@@ -718,9 +752,9 @@ class StudentPracticeService:
 
         # --- Apply new workflow state ---
         old_state = sp.workflow_state
-        if target_state == StudentPracticeWorkflowState.REJECTED and old_state in (
-            StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
-            StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
+        if target_state in (
+            StudentPracticeWorkflowState.REJECTED,
+            StudentPracticeWorkflowState.CONTENT_REJECTED,
         ):
             sp.rejection_reason = (reason or "").strip()
         if target_state == StudentPracticeWorkflowState.CONTRACTED:
@@ -914,12 +948,27 @@ class StudentPracticeService:
                 target=sp,
                 notification_type=NotificationType.SUCCESS,
             )
+            # Organizace musí dostat in-app notifikaci, že
+            # přihláška čeká na její schválení (ne že už je „Zasmluvněno“).
+            # Příjemce: practice.contact_user, jinak vlastník EmployerProfile.
+            org_recipient = None
+            practice = sp.practice
+            if practice is not None:
+                org_recipient = practice.contact_user
+                if org_recipient is None and practice.employer is not None:
+                    org_recipient = practice.employer.organization_users.filter(organization_role=OrganizationRole.OWNER).first()
+            if org_recipient is not None:
+                student_name = student.full_name if student else "N/A"
+                NotificationService.create_notification(
+                    recipient=org_recipient,
+                    verb="ALLOCATION_ORG",
+                    message=(f"Přihláška studenta {student_name} na praxi '{practice_title}' " f"čeká na schválení organizací."),
+                    actor=actor,
+                    target=sp,
+                    notification_type=NotificationType.INFO,
+                    send_email=False,
+                )
         elif target_state == StudentPracticeWorkflowState.REJECTED:
-            if sp.workflow_state in (
-                StudentPracticeWorkflowState.DOCUMENTS_REJECTED,
-                StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED,
-            ):
-                sp.rejection_reason = (reason or "").strip()
             NotificationService.create_notification(
                 recipient=student,
                 verb="APPLICATION_REJECTED",
@@ -1408,6 +1457,13 @@ class StudentPracticeService:
             elif status_val == DocumentStatus.APPROVED:
                 StudentPracticeService._apply_document_approval_state(student_practice, user)
         elif (
+            document.document_type in (DocumentType.FEEDBACK, DocumentType.CONTENT)
+            and student_practice.workflow_state == StudentPracticeWorkflowState.ENDED
+            and status_val == DocumentStatus.REJECTED
+        ):
+            # Zamítnutí závěrečného dokumentu v ENDED vrací praxi do opravné smyčky.
+            StudentPracticeService._apply_document_rejection_state(student_practice, user, review_note)
+        elif (
             student_practice.workflow_state == StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED and status_val == DocumentStatus.REJECTED
         ):
             # C19-B/T2c (finding 5): review zamítne opravený (ne-smluvní)
@@ -1495,12 +1551,13 @@ class StudentPracticeService:
         if not (sp.contract_document and sp.contract_document.status == DocumentStatus.APPROVED):
             return
 
-        # T1: zápis jen vlastní osy; bez obou os → žádný postup, žádná notifikace.
-        both_axes = record_own_approval_axis(sp, actor)
-        if not both_axes:
+        # T1: zápis jen vlastní osy; bez požadovaných os → žádný postup,
+        # žádná notifikace. Externí praxi stačí školní osa.
+        record_own_approval_axis(sp, actor)
+        if not required_approval_axes_hold(sp):
             sp.save(update_fields=["school_approved", "employer_approved"])
             logger.info(
-                "T1: SP %s zůstává ve AWAITING_DOCUMENTS — chybí druhá schvalovací osa (review nepostupuje).",
+                "T1: SP %s zůstává ve AWAITING_DOCUMENTS — chybí požadovaná schvalovací osa (review nepostupuje).",
                 sp.student_practice_id,
             )
             return
@@ -1675,12 +1732,13 @@ def _format_date(d: date | None) -> str:
 _stag_data_cache = {}
 
 
-def generate_contract(sp: StudentPractice) -> io.BytesIO:
+def generate_contract(sp: StudentPractice, ticket: str | None = None) -> io.BytesIO:
     """
     Generate a Czech internship contract (.docx) for a StudentPractice.
 
-    Fetches fresh STAG student data, combines with practice + employer info,
-    and returns a BytesIO buffer ready for download.
+    Fetches fresh STAG student data (when a ticket from the JWT claim is
+    available), combines with practice + employer info, and returns a BytesIO
+    buffer ready for download.
 
     Returns:
         io.BytesIO containing the generated .docx document.
@@ -1693,11 +1751,11 @@ def generate_contract(sp: StudentPractice) -> io.BytesIO:
 
     # Ensure we have the latest STAG data (cached by os_cislo)
     cache_key = student.os_cislo
-    if cache_key and cache_key not in _stag_data_cache:
+    if cache_key and cache_key not in _stag_data_cache and ticket:
         try:
-            fetch_student_data_from_stag(student)
+            fetch_student_data_from_stag(student, ticket=ticket)
         except InvalidStagTicketError:
-            raise  # A-10: neplatný podpis ticketu → nutné nové přihlášení, nejde o „nekritickou" chybu
+            raise  # A-10: neplatný ticket v claimu → nutné nové přihlášení, nejde o „nekritickou" chybu
         except Exception:
             pass  # Non-critical — use whatever data we have
         _stag_data_cache[cache_key] = True

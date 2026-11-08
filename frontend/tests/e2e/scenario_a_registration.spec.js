@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad } from './helpers';
 
 test.describe('Scenario A: Company Registration Flow', () => {
-  test('Complete registration and profile verification', async ({ page }) => {
+  // Registrace firmy je pokrytá auth/registration.spec.js; tento scénář používá
+  // odstraněnou routu /login a starý ARES tok.
+  test.skip('Complete registration and profile verification', async ({ page }) => {
     const uniqueId = Date.now().toString();
     const email = `test_org_${uniqueId}@example.com`;
     const password = 'Password123!';

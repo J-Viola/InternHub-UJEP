@@ -12,3 +12,5 @@
 0 5 * * * python manage.py notify_practice_deadlines
 # Retence auditního logu (365 dní), neděle 01:30
 30 1 * * 0 python manage.py cleanup_old_action_logs --days 365
+# Úklid expirovaných refresh tokenů z blacklistu, pondělí 01:30
+30 1 * * 1 python manage.py flushexpiredtokens

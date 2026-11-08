@@ -439,7 +439,7 @@ class Bl03CapacityMatrixTests(BL03FixtureMixin, TestCase):
         response = self.client.post("/api/practices/student/apply/", {"practice": practice.practice_id}, format="json")
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("CAPACITY_FULL", str(response.data.get("detail", "")))
+        self.assertEqual(response.data.get("error_code"), "CAPACITY_FULL")
 
     def test_pending_application_does_not_consume_placement(self):
         """Opravený oracle T2a: axis-pending přihláška NEKONZUMUJE místo —
@@ -522,22 +522,21 @@ class Bl03T1CentralGateTests(BL03FixtureMixin, TestCase):
             ).exists()
         )
 
-    def test_external_contracted_transition_requires_both_axes_http(self):
-        """F1 external: CONTENT_APPROVED→CONTRACTED bez employer osy → 400,
-        žádná mutace."""
+    def test_external_contracted_transition_requires_school_axis_and_contract_http(self):
+        """F1/D-1 external: CONTENT_APPROVED→CONTRACTED stačí školní osa
+        a schválená smlouva (A-11); employer osa se nevyžaduje."""
         external = self.make_practice(title="BL03 T1-ext", external=True)
         sp = self.make_sp(self.owner_student, practice=external, state=StudentPracticeWorkflowState.CONTENT_APPROVED)
-        before = self.sp_snapshot(sp)
-        log_before = ActionLog.objects.count()
-        notif_before = Notification.objects.count()
+        self.make_doc(sp, doc_type=DocumentType.CONTRACT, status=DocumentStatus.APPROVED)
 
         response = self.transition(self.garant, sp, StudentPracticeWorkflowState.CONTRACTED)
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data.get("error_code"), "AXES_INCOMPLETE")
-        self.assertEqual(self.sp_snapshot(sp), before)
-        self.assertEqual(ActionLog.objects.count(), log_before)
-        self.assertEqual(Notification.objects.count(), notif_before)
+        self.assertEqual(response.status_code, 200, response.data)
+        sp.refresh_from_db()
+        self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.CONTRACTED)
+        self.assertTrue(sp.school_approved)
+        self.assertFalse(sp.employer_approved)
+        self.assertIsNotNone(sp.contract_received_date)
 
 
 # ===================================================================
@@ -789,6 +788,8 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
         doc.refresh_from_db()
         self.assertEqual(doc.status, DocumentStatus.APPROVED)
 
+        # Nová brána opravného cyklu vyžaduje schválený FEEDBACK dokument.
+        self.make_doc(sp, doc_type=DocumentType.FEEDBACK, status=DocumentStatus.APPROVED)
         response = self.transition(self.garant, sp, StudentPracticeWorkflowState.ENDED, reason="review schvaluje")
 
         self.assertEqual(response.status_code, 200)
@@ -832,6 +833,8 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
             format="json",
         )
         self.assertEqual(reviewed.status_code, 200)
+        # Nová brána opravného cyklu vyžaduje schválený FEEDBACK dokument.
+        self.make_doc(sp, doc_type=DocumentType.FEEDBACK, status=DocumentStatus.APPROVED)
         response = self.transition(self.garant, sp, StudentPracticeWorkflowState.ENDED)
         self.assertEqual(response.status_code, 200)
         sp.refresh_from_db()
@@ -943,17 +946,23 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
     # Finding 5 — review posun JEN se schváleným opraveným dokumentem
     # ------------------------------------------------------------------
 
-    def test_review_transition_requires_approved_document(self):
-        """Žádné předčasné ENDED/AWAITING_DOCUMENTS bez schváleného review;
-        po schválení dokumentu review transition projde."""
+    def test_review_transition_requires_approved_feedback_document(self):
+        """Brána opravného cyklu (aktuální): do ENDED/AWAITING_DOCUMENTS se
+        neprojde bez SCHVÁLENÉHO závěrečného (FEEDBACK) dokumentu; ostatní
+        dokumenty jen nesmí být REJECTED.
+
+        Dřívější varianta vyžadovala APPROVED u VŠECH připojených dokumentů;
+        nyní PENDING contract/content postup neblokuje, rozhoduje FEEDBACK.
+        """
         sp, doc = self._dr_sp()
         self.assertEqual(self._upload(doc).status_code, 201)
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
 
+        # bez schváleného FEEDBACK dokumentu je postup do ENDED zablokovaný
         premature_final = self.transition(self.garant, sp, StudentPracticeWorkflowState.ENDED)
         self.assertEqual(premature_final.status_code, 400)
-        self.assertIn("VŠECH připojených dokument", premature_final.data.get("detail", ""))
+        self.assertIn("FEEDBACK", premature_final.data.get("detail", ""))
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
 
@@ -962,7 +971,7 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
 
-        # review schválí konkrétní opravený dokument → precondition splněn
+        # samotné schválení opraveného CONTRACT nestačí — FEEDBACK stále chybí
         self.client.force_authenticate(user=self.garant)
         reviewed = self.client.patch(
             f"/api/student-practices/review-document/{doc.pk}",
@@ -973,6 +982,12 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
         doc.refresh_from_db()
         self.assertEqual(doc.status, DocumentStatus.APPROVED)
 
+        still_blocked = self.transition(self.garant, sp, StudentPracticeWorkflowState.ENDED)
+        self.assertEqual(still_blocked.status_code, 400)
+        self.assertIn("FEEDBACK", still_blocked.data.get("detail", ""))
+
+        # se schváleným FEEDBACK dokumentem precondition projde
+        self.make_doc(sp, doc_type=DocumentType.FEEDBACK, status=DocumentStatus.APPROVED)
         approved_transition = self.transition(self.garant, sp, StudentPracticeWorkflowState.ENDED)
         self.assertEqual(approved_transition.status_code, 200)
         sp.refresh_from_db()
@@ -1050,9 +1065,14 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.ENDED)
 
-    def test_repair_advance_requires_all_repaired_documents_approved(self):
-        """Více opravených dokumentů: jeden ještě PENDING → postup zamítnut
-        (400, nulová mutace); po schválení VŠECH → postup projde."""
+    def test_repair_advance_requires_approved_feedback_document(self):
+        """Více opravených dokumentů: nová brána vyžaduje schválený FEEDBACK,
+        ostatní dokumenty jen nesmí být REJECTED.
+
+        PENDING contract/content tedy postup do ENDED neblokuje (dřívější
+        varianta vyžadovala APPROVED u všech); bez FEEDBACK dokumentu se ale
+        do ENDED neprojde.
+        """
         sp = self.make_sp(self.owner_student, state=StudentPracticeWorkflowState.DOCUMENTS_REJECTED)
         contract = self.make_doc(sp, doc_type=DocumentType.CONTRACT, status=DocumentStatus.REJECTED)
         content = self.make_doc(sp, doc_type=DocumentType.CONTENT, status=DocumentStatus.REJECTED)
@@ -1069,7 +1089,8 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.DOCUMENTS_RESUBMITTED)
 
-        # review schválí jen CONTRACT → CONTENT zůstává PENDING → postup zamítnut
+        # review schválí jen CONTRACT → CONTENT zůstává PENDING, ale bez
+        # schváleného FEEDBACK dokumentu postup stále neprojde.
         self.client.force_authenticate(user=self.garant)
         reviewed = self.client.patch(
             f"/api/student-practices/review-document/{contract.pk}",
@@ -1080,16 +1101,11 @@ class Bl03RepairLoopTests(BL03FixtureMixin, TestCase):
         before = self.sp_snapshot(sp)
         premature = self.transition(self.garant, sp, StudentPracticeWorkflowState.ENDED)
         self.assertEqual(premature.status_code, 400)
-        self.assertIn("CONTENT", premature.data.get("detail", ""))
+        self.assertIn("FEEDBACK", premature.data.get("detail", ""))
         self.assertEqual(self.sp_snapshot(sp), before)
 
-        # schválí i CONTENT → precondition splněn → postup projde
-        reviewed2 = self.client.patch(
-            f"/api/student-practices/review-document/{content.pk}",
-            {"status": DocumentStatus.APPROVED.value},
-            format="json",
-        )
-        self.assertEqual(reviewed2.status_code, 200)
+        # schválený FEEDBACK splní precondition i s PENDING CONTENT → postup projde
+        self.make_doc(sp, doc_type=DocumentType.FEEDBACK, status=DocumentStatus.APPROVED)
         advance = self.transition(self.garant, sp, StudentPracticeWorkflowState.ENDED)
         self.assertEqual(advance.status_code, 200)
         sp.refresh_from_db()
@@ -1429,9 +1445,29 @@ class Bl03ServiceT1GateTests(BL03FixtureMixin, TestCase):
         self.assertEqual(ActionLog.objects.count(), log_before)
         self.assertEqual(Notification.objects.count(), notif_before)
 
-    def test_service_external_content_approved_requires_both_axes(self):
+    def test_service_external_content_approved_passes_with_school_axis_and_contract(self):
+        """D-1/F-28: externí praxe nemá EmployerProfile — stačí školní osa
+        a schválená smlouva (A-11); employer osa se nevyžaduje."""
         external = self.make_practice(title="BL03 svc-ext", external=True)
         sp = self.make_sp(self.owner_student, practice=external, state=StudentPracticeWorkflowState.CONTENT_APPROVED)
+        self.make_doc(sp, doc_type=DocumentType.CONTRACT, status=DocumentStatus.APPROVED)
+
+        result = StudentPracticeService.transition_student_practice_state(
+            sp=sp,
+            target_state=StudentPracticeWorkflowState.CONTRACTED,
+            actor=self.garant,
+            reason="BL03 service gate ext (D-1)",
+        )
+
+        self.assertEqual(result.workflow_state, StudentPracticeWorkflowState.CONTRACTED)
+        self.assertTrue(result.school_approved)
+        self.assertFalse(result.employer_approved)
+        self.assertIsNotNone(result.contract_received_date)
+        self.assertEqual(result.approval_status, ApprovalStatus.APPROVED)
+
+    def test_service_standard_content_approved_still_requires_both_axes(self):
+        """Standardní praxe bez employer osy dál vyhazuje AxesIncompleteError."""
+        sp = self.make_sp(self.owner_student, practice=self.practice, state=StudentPracticeWorkflowState.AWAITING_CONTRACT)
         before = self.sp_snapshot(sp)
         log_before = ActionLog.objects.count()
         notif_before = Notification.objects.count()
@@ -1441,7 +1477,7 @@ class Bl03ServiceT1GateTests(BL03FixtureMixin, TestCase):
                 sp=sp,
                 target_state=StudentPracticeWorkflowState.CONTRACTED,
                 actor=self.garant,
-                reason="BL03 service gate ext",
+                reason="BL03 standard service gate",
             )
 
         self.assertEqual(self.sp_snapshot(sp), before)

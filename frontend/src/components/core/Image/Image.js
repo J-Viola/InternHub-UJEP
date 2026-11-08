@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Container from "@core/Container/Container";
 import Paragraph from "@components/core/Text/Paragraph";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,13 @@ export default function Image({
 }) {
     const { t } = useTranslation();
     const [imageError, setImageError] = useState(false);
-    const [imageLoading, setImageLoading] = useState(true);
+    // bez zdroje není co načítat — jinak zůstane trvale skeleton „Načítání…"
+    const [imageLoading, setImageLoading] = useState(Boolean(src || fallbackSrc));
+
+    useEffect(() => {
+        setImageError(false);
+        setImageLoading(Boolean(src || fallbackSrc));
+    }, [src, fallbackSrc]);
 
     const handleImageLoad = () => {
         setImageLoading(false);

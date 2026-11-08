@@ -1,109 +1,56 @@
 import { test, expect } from '@playwright/test';
-import { waitForAppLoad, clickNavLink, confirmPopup, safeClick } from './helpers';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 
+/**
+ * Auto-close inzerátu (D-06): v den start_date přejde do CLOSED_FOR_APPLICATIONS.
+ *
+ * Data a přechody se připravují přes API (izolovaný stack), takže test
+ * nezávisí na UI formuláři ani na hostitelském Pythonu.
+ */
 test.describe('Auto-Close Practices (E2E)', () => {
-  test.setTimeout(120000);
+  test('auto_close_practices uzavře inzerát v den start_date', async ({ request }) => {
+    const api = process.env.E2E_API_URL || 'http://localhost:8000';
 
-  test('Auto-close uzavře praxi 14 dní před start_date', async ({ browser }) => {
-    const uniqueId = Date.now().toString();
-    const practiceTitle = `E2E AutoClose ${uniqueId}`;
+    // 1) Inzerát ve stavu PENDING (scénář zakládá kompletní nabídku).
+    const scenario = await request.post(`${api}/api/test/scenario/practice-editable/`);
+    expect(scenario.ok()).toBeTruthy();
+    const practiceId = (await scenario.json()).result.practice_id;
+    expect(practiceId).toBeTruthy();
 
-    // --- STEP 1: COMPANY vytvoří praxi se start_date za 5 dní ---
-    const companyContext = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
-    const companyPage = await companyContext.newPage();
+    // 2) start_date = dnes, dokud je inzerát editovatelný (PENDING).
+    const today = new Date();
+    const d = `${String(today.getDate()).padStart(2, '0')}.${String(today.getMonth() + 1).padStart(2, '0')}.${today.getFullYear()}`;
+    const companyLogin = await request.post(`${api}/api/users/login/`, {
+      data: { email: 'hr@techcorp.cz', password: 'password123' },
+    });
+    const companyToken = (await companyLogin.json()).access;
+    expect(companyToken).toBeTruthy();
+    const patch = await request.patch(`${api}/api/practices/employer/${practiceId}/`, {
+      headers: { Authorization: `Bearer ${companyToken}` },
+      data: { start_date: d },
+    });
+    expect(patch.ok()).toBeTruthy();
 
-    await companyPage.goto('/');
-    await waitForAppLoad(companyPage);
-    await clickNavLink(companyPage, 'Správa organizace', 'Stáže');
+    // 3) Schválit obsah a otevřít inzerát (admin).
+    const adminLogin = await request.post(`${api}/api/users/login/`, {
+      data: { email: 'admin@admin.com', password: 'demodemo' },
+    });
+    const adminToken = (await adminLogin.json()).access;
+    const headers = { Authorization: `Bearer ${adminToken}` };
+    expect((await request.post(`${api}/api/practices/${practiceId}/transition/`, { headers, data: { target_state: 1 } })).ok()).toBeTruthy();
+    expect((await request.post(`${api}/api/practices/${practiceId}/transition/`, { headers, data: { target_state: 3 } })).ok()).toBeTruthy();
 
-    await safeClick(companyPage.getByText('Založit stáž'));
-    await companyPage.waitForURL('**/vytvorit-nabidku');
+    // 4) Cron příkaz v izolovaném backendu.
+    execSync('docker exec internhub-e2e-backend python manage.py auto_close_practices --settings=app.e2e_settings', {
+      encoding: 'utf-8',
+    });
 
-    await companyPage.getByLabel('Název').fill(practiceTitle);
-    await companyPage.getByLabel('Popis stáže').fill('Auto-close test practice.');
-    await companyPage.getByLabel('Náplň práce').fill('Testing auto-close management command.');
-
-    await expect(companyPage.locator('select[id="contact_user"] option').nth(1)).toBeAttached({ timeout: 10000 });
-    await expect(companyPage.locator('select[id="subject_id"] option').nth(1)).toBeAttached({ timeout: 10000 });
-
-    const dateInputs = companyPage.locator('.react-datepicker__input-container input');
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 5);
-    const dateStr = futureDate.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    await dateInputs.nth(0).fill(dateStr);
-    await dateInputs.nth(0).press('Enter');
-
-    await companyPage.locator('select[id="coefficient"]').selectOption('1');
-    await companyPage.locator('select[id="contact_user"]').selectOption({ index: 1 });
-    await companyPage.locator('select[id="subject_id"]').selectOption({ index: 1 });
-    await companyPage.locator('select[id="available_positions"]').selectOption('2');
-
-    await companyPage.getByLabel('Název').click();
-
-    await expect(companyPage.locator('input[id="end_date"]')).not.toHaveValue('', { timeout: 15000 });
-    await safeClick(companyPage.getByRole('button', { name: 'Vytvořit' }));
-    await expect(companyPage).toHaveURL(/.*\/praxe/, { timeout: 20000 });
-    await companyContext.close();
-
-    // --- STEP 2: PROFESSOR schválí obsah praxe ---
-    const profContext = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
-    const profPage = await profContext.newPage();
-
-    await profPage.goto('/');
-    await waitForAppLoad(profPage);
-    await clickNavLink(profPage, null, 'Správa stáží');
-    await waitForAppLoad(profPage);
-    await expect(profPage.getByText('Načítání stáží...')).not.toBeVisible({ timeout: 15000 });
-
-    const practiceCard = profPage.locator('div[id^="practice-offer-"]').filter({ hasText: practiceTitle }).first();
-    await expect(practiceCard).toBeVisible({ timeout: 15000 });
-    const gearBtn = practiceCard.getByTitle('Změnit stav nabídky');
-    await expect(gearBtn).toBeVisible();
-    await gearBtn.click();
-    await confirmPopup(profPage, 'změnit stav nabídky');
-    await profContext.close();
-
-    // --- STEP 3: Transition na OPEN_FOR_APPLICATIONS přes API ---
-    // (Starý approve endpoint dává CONTENT_APPROVED; pro auto-close potřebujeme OPEN_FOR_APPLICATIONS)
-    const adminContext = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
-    const adminPage = await adminContext.newPage();
-    const res = await adminPage.request.get('http://localhost:8000/api/practices/?search=' + encodeURIComponent(practiceTitle));
-    const data = await res.json();
-    const practiceId = data.results?.[0]?.practice_id;
-    if (!practiceId) throw new Error('Practice not found via API');
-
-    // BL-07/FE-004: schválení garantem nabídku automaticky aktivuje
-    // (SRS analysis.txt:2248 → OPEN_FOR_APPLICATIONS), takže pomocný přechod
-    // přes API už obvykle není potřeba; ponechán jen jako fallback.
-    if (Number(data.results?.[0]?.workflow_state) !== 3) {
-      const transitionRes = await adminPage.request.post(
-        `http://localhost:8000/api/practices/${practiceId}/transition/`,
-        { data: { target_state: 3 } } // OPEN_FOR_APPLICATIONS = 3
-      );
-      if (transitionRes.status() !== 200) {
-        throw new Error(`Fallback transition to OPEN_FOR_APPLICATIONS failed: ${transitionRes.status()}`);
-      }
-    }
-    await adminContext.close();
-
-    // --- STEP 4: Spustit auto_close management command ---
-    execSync(
-      'cd /media/F/Github/InternHub-UJEP/backend && python manage.py auto_close_practices',
-      { encoding: 'utf-8' }
-    );
-
-    // --- STEP 5: Ověřit CLOSED_FOR_APPLICATIONS v UI ---
-    const companyContext2 = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
-    const companyPage2 = await companyContext2.newPage();
-    await companyPage2.goto('/praxe');
-    await waitForAppLoad(companyPage2);
-
-    const card = companyPage2.locator('div').filter({ hasText: practiceTitle }).first();
-    await expect(card).toBeVisible();
-    await expect(
-      card.getByText('Uzavřeno pro přihlášky').or(card.getByText('CLOSED_FOR_APPLICATIONS'))
-    ).toBeVisible();
-    await companyContext2.close();
+    // 5) Stav přímo z DB (employer endpoint je pro admina 404).
+    const state = execSync(
+      `docker exec internhub-e2e-backend python manage.py shell --settings=app.e2e_settings -c ` +
+        `"from practices.models import Practice; print(Practice.objects.get(pk=${practiceId}).workflow_state.name)"`,
+      { encoding: "utf-8" }
+    ).trim().split("\n").pop();
+    expect(state).toBe("CLOSED_FOR_APPLICATIONS");
   });
 });

@@ -2,16 +2,8 @@ import { test, expect, request } from '@playwright/test';
 import { waitForAppLoad } from '../helpers';
 
 test.describe('Apply to practice', () => {
-  test.use({ storageState: 'playwright/.auth/student.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
   test.setTimeout(60000);
-
-  test.beforeAll(async () => {
-    const ctx = await request.newContext();
-    const resp = await ctx.post('http://localhost:8000/api/test/scenario/application-ready/');
-    if (!resp.ok()) {
-      console.log('Warning: could not prepare scenario data');
-    }
-  });
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/nabidka');
@@ -21,8 +13,19 @@ test.describe('Apply to practice', () => {
   });
 
   test('AP01 - can apply to a practice', async ({ page }) => {
-    // Click on the first visible practice card
-    const firstCard = page.locator('[data-testid="nabidka-entity"]').first();
+    // Vyber nabídku s volnou kapacitou (první karta může být plná).
+    const cards = page.locator('[data-testid="nabidka-entity"]');
+    const cardCount = await cards.count();
+    let firstCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const candidate = cards.nth(i);
+      const text = await candidate.innerText();
+      if (!text.includes('PLNÁ')) {
+        firstCard = candidate;
+        break;
+      }
+    }
+    expect(firstCard).not.toBeNull();
     await expect(firstCard).toBeVisible({ timeout: 10000 });
     await firstCard.click();
 

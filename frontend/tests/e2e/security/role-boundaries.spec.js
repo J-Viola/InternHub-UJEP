@@ -58,7 +58,7 @@ test.describe('Role-based access boundaries', () => {
     await page.goto('/nabidka');
 
     // React Router should redirect to root /
-    await expect(page).toHaveURL('http://localhost:3000/');
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { name: 'Přihlášení' })).toBeVisible();
   });
 });

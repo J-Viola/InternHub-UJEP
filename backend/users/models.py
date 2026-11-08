@@ -192,17 +192,11 @@ class OrganizationUser(User):
 
 
 class InvalidStagTicketError(ValueError):
-    """A-10: uložený STAG ticket nemá platný podpis — požadavek se odmítá, je třeba nové přihlášení."""
+    """A-10: STAG ticket v JWT claimu chybí nebo není platný — je třeba nové přihlášení."""
 
 
 class StagUser(User):
     stag_role = models.ForeignKey(StagRole, models.PROTECT, blank=True, null=True, related_name="stag_users")
-    stag_ticket = models.CharField(
-        max_length=700,
-        blank=True,
-        default="",
-        help_text="Šifrovaný dočasný STAG ticket (uložen při loginu pro on-demand fetch student info).",
-    )
 
     class Meta:
         db_table = "stag_users"
@@ -213,74 +207,6 @@ class StagUser(User):
     @property
     def role(self):
         return self.stag_role.role if self.stag_role else None
-
-    # ------------------------------------------------------------------
-    # stag_ticket encryption helpers
-    # ------------------------------------------------------------------
-
-    def get_ticket(self):
-        """
-        Vrátí STAG ticket s ověřeným podpisem (A-10, fail-closed).
-
-        Prázdný ticket → ``""``. Ticket s neplatným podpisem (úprava, plaintext
-        z doby před podepisováním) → ``InvalidStagTicketError``; nikdy se nevrací surová hodnota.
-        """
-        if not self.stag_ticket:
-            return ""
-        return self._unsign_ticket(self.stag_ticket)
-
-    @classmethod
-    def from_db(cls, db, field_names, values):
-        instance = super().from_db(db, field_names, values)
-        # A-10: hodnotu načtenou z DB nikdy znovu nepodepisovat (poškozený ticket by se „legitimizoval").
-        instance._loaded_stag_ticket = instance.__dict__.get("stag_ticket")
-        return instance
-
-    def save(self, *args, **kwargs):
-        """Podepíše NOVĚ nastavený stag_ticket před uložením; beze změny načtenou hodnotu nechá být."""
-        if self.stag_ticket and self.stag_ticket != getattr(self, "_loaded_stag_ticket", None):
-            # Skip if the value is already signed
-            if not self._is_ticket_encrypted(self.stag_ticket):
-                self.stag_ticket = self._sign_ticket(self.stag_ticket)
-        super().save(*args, **kwargs)
-        self._loaded_stag_ticket = self.__dict__.get("stag_ticket")
-
-    # --- static helpers (no side effects) ----------------------------------
-
-    @staticmethod
-    def _sign_ticket(plain_text):
-        """Podepíše ticket (Django ``Signer`` — integrita, NE šifrování; ticket je v DB čitelný)."""
-        from django.core.signing import Signer
-
-        signer = Signer(salt="stag_ticket_encryption")
-        return signer.sign(plain_text)
-
-    @staticmethod
-    def _unsign_ticket(signed_text):
-        """Ověří podpis a vrátí původní ticket; při neplatném podpisu vyhodí ``InvalidStagTicketError`` (fail-closed)."""
-        from django.core.signing import BadSignature, Signer
-
-        signer = Signer(salt="stag_ticket_encryption")
-        try:
-            return signer.unsign(signed_text)
-        except BadSignature as exc:
-            raise InvalidStagTicketError("STAG ticket má neplatný podpis.") from exc
-
-    # zpětně kompatibilní aliasy (zavádějící původní názvy)
-    _encrypt_ticket = _sign_ticket
-    _decrypt_ticket = _unsign_ticket
-
-    @staticmethod
-    def _is_ticket_encrypted(value):
-        """Returns True if *value* is already signed (encrypted)."""
-        from django.core.signing import BadSignature, Signer
-
-        signer = Signer(salt="stag_ticket_encryption")
-        try:
-            signer.unsign(value)
-            return True
-        except BadSignature:
-            return False
 
 
 class StudentUser(StagUser):

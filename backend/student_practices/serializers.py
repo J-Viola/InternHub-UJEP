@@ -470,9 +470,13 @@ class TransitionStudentPracticeSerializer(serializers.Serializer):
 
     def validate(self, data):
         target_state = data.get("target_state")
-        if target_state in ("REJECTED", "CONTENT_REJECTED", "DOCUMENTS_REJECTED"):
-            if not data.get("reason", "").strip():
-                raise serializers.ValidationError({"reason": "Důvod je povinný při zamítnutí nebo vrácení."})
+        rejecting = (
+            StudentPracticeWorkflowState.REJECTED.value,
+            StudentPracticeWorkflowState.CONTENT_REJECTED.value,
+            StudentPracticeWorkflowState.DOCUMENTS_REJECTED.value,
+        )
+        if target_state in rejecting and not data.get("reason", "").strip():
+            raise serializers.ValidationError({"reason": "Důvod zamítnutí je povinný."})
         return data
 
 
@@ -501,7 +505,11 @@ class ActionLogSerializer(serializers.ModelSerializer):
 class EvaluationSerializer(serializers.ModelSerializer):
     student_practice_id = serializers.IntegerField(write_only=True)
     evaluated_by_name = serializers.CharField(source="evaluated_by.full_name", read_only=True)
-    pdf_file = serializers.FileField(required=False, allow_null=True, validators=[FileExtensionValidator(allowed_extensions=["pdf"])])
+    pdf_file = serializers.FileField(
+        required=False,
+        allow_null=True,
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"], message="Povolený formát je pouze PDF")],
+    )
 
     class Meta:
         model = Evaluation
@@ -546,7 +554,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
                     request = self.context.get("request")
                     has_file = bool(data.get("pdf_file")) or (request and request.FILES.get("pdf_file"))
                     if not has_file:
-                        raise serializers.ValidationError({"pdf_file": "PDF je povinný pro ukončené praxe."})
+                        raise serializers.ValidationError({"pdf_file": "Nahrání podepsaného hodnotícího archu je povinné"})
             except StudentPractice.DoesNotExist:
                 pass
         return data

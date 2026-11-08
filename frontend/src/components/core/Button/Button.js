@@ -6,7 +6,7 @@ import { RxCross1, RxCheck } from "react-icons/rx";
 import { FaAngleDown, FaAngleUp, FaRegFileAlt, FaLock, FaUser, FaArrowLeft, FaSave, FaDownload, FaUpload, FaCalendarAlt, FaHeart, FaRegHeart } from "react-icons/fa";
 import { MdOutlineManageAccounts, MdPersonOutline  } from "react-icons/md";
 
-export default function Button({id, children, text, property, onClick, title, textSize = "base", hover=true ,pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false, type = "button" }) {
+export default function Button({id, children, text, property, onClick, title, textSize = "base", hover=true ,pointer = true, variant = "primary", buttonSize = "big", noVariant = false, icon = null, iconSize = "14", iconColor = "text-white", disabled = false, ariaDisabled = false, type = "button" }) {
 
     const baseClassBig = "px-4 py-2 rounded-lg transition-colors duration-200";
     const baseClassSmall = "px-2 py-1 rounded-lg transition-colors duration-200";
@@ -66,6 +66,7 @@ export default function Button({id, children, text, property, onClick, title, te
             title={title}
             aria-label={title}
             disabled={disabled}
+            aria-disabled={ariaDisabled || undefined}
             className={`
                 ${noVariant ? "" : variants[variant]}
                 ${!noVariant && (buttonSize === "big" ? baseClassBig : baseClassSmall)}

@@ -7,7 +7,7 @@ import { useSubjectAPI } from "src/api/subject/subjectAPI";
 import { useDepartmentAPI } from "src/api/department/departmentAPI";
 import { useCompanyAPI } from "src/api/company/companyAPI";
 import { useEmployerAPI } from "src/api/employer/employerAPI";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import Paragraph from "@components/core/Text/Paragraph";
 import SubjectForm from "@components/Forms/SubjectForm";
 import UserForm from "@components/Forms/UserForm";
@@ -17,11 +17,13 @@ import EmployerForm from "@components/Forms/EmployerForm";
 import ProfessorForm from "@components/Forms/ProfessorForm";
 import { useTranslation } from "react-i18next";
 import { useMessage } from "@hooks/MessageContext";
+import { useUser } from "@hooks/UserProvider";
 
 export default function FormPage() {
     const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { user } = useUser();
     const { addMessage } = useMessage();
 
     // API hooks
@@ -63,6 +65,21 @@ export default function FormPage() {
 
     const renderForm = () => {
         const type = searchParams.get('type');
+        // F-31: administrativní formuláře nesmí otevřít běžný uživatel (backend je chrání,
+        // zde jen UI, aby student neviděl formulář pro správu předmětů/kateder).
+        // F-31: každý typ formuláře má jiný okruh rolí (nejde jen o studenty).
+        const formTypeAllowed = {
+            subject: () => user?.isDepartmentUser?.() || user?.isAdmin?.(),
+            department: () => user?.isAdmin?.(),
+            department_users: () => user?.isDepartmentMg?.() || user?.isAdmin?.(),
+            employer: () => user?.isAdmin?.(),
+            org_users: () => user?.isOrganizationUser?.() || user?.isAdmin?.(),
+            org_form: () => user?.isOrganizationUser?.() || user?.isAdmin?.(),
+        };
+        const allowed = formTypeAllowed[type];
+        if (type && allowed && !allowed()) {
+            return <Navigate to="/forbidden" replace />;
+        }
         const action = searchParams.get('action');
         const id = searchParams.get('id');
 
@@ -123,7 +140,12 @@ export default function FormPage() {
                     />
                 );
             default:
-                return <Paragraph>{t('form.unknown_type')}: {type}</Paragraph>;
+                return (
+                    <Paragraph>
+                        {t('form.unknown_type')}
+                        {type ? `: ${type}` : ''}
+                    </Paragraph>
+                );
         }
     };
 

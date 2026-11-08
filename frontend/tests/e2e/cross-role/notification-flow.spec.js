@@ -7,7 +7,7 @@ test.describe('Notification flow across roles', () => {
   test('NF01 - notification bell is visible for logged-in user', async ({ browser }) => {
     // Use student context to verify the notification bell is visible
     console.log('--- Setting up student context ---');
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     await studentPage.goto('/');
@@ -22,8 +22,8 @@ test.describe('Notification flow across roles', () => {
     const notificationBell = studentPage.getByRole('button', { name: 'Oznámení' });
     await expect(notificationBell).toBeVisible({ timeout: 10000 });
 
-    // Also verify the bell icon is present inside the button
-    const bellIcon = notificationBell.locator('i.fa-bell');
+    // Ikona je dnes SVG (react-icons), ne <i class="fa-bell">.
+    const bellIcon = notificationBell.locator('svg');
     await expect(bellIcon).toBeVisible({ timeout: 5000 });
 
     console.log('Notification bell is visible for logged-in student');

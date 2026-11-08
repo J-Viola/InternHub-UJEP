@@ -19,14 +19,18 @@ export function isCancellationPending(entity) {
 }
 
 /**
- * Student může praxi stornovat jen ze stavu CONTRACTED; z APPLIED /
- * PRELIMINARY_APPROVED má vlastní akci „stáhnout přihlášku“ (withdraw).
+ * Student může praxi stornovat z libovolného aktivního stavu před finálním uzavřením
+ * (analýza §4.2, D-05). Z APPLIED / PRELIMINARY_APPROVED má vlastní akci „stáhnout
+ * přihlášku“ (withdraw); REJECTED a COMPLETED jsou konečné stavy.
  * Storno je nevratné (RF-16) a okamžité (BDD UC05 AC-02).
  */
+const NO_STUDENT_CANCEL_STATES = ["APPLIED", "PRELIMINARY_APPROVED", "REJECTED", "COMPLETED"];
+
 export function canRequestCancellation(entity, user) {
     if (!entity?.student_practice_status || !user?.isStudent?.()) return false;
     if (entity.is_cancelled) return false;
-    return entity.student_practice_status.workflow_status === "CONTRACTED";
+    const state = entity.student_practice_status.workflow_status;
+    return Boolean(state) && !NO_STUDENT_CANCEL_STATES.includes(state);
 }
 
 /**

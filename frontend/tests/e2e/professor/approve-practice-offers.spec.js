@@ -2,12 +2,12 @@ import { test, expect, request } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, confirmPopup } from '../helpers';
 
 test.describe('Approve practice offers', () => {
-  test.use({ storageState: 'playwright/.auth/professor.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
   test.setTimeout(90000);
 
   test.beforeAll(async () => {
     const ctx = await request.newContext();
-    const resp = await ctx.post('http://localhost:8000/api/test/scenario/practice-pending-approval/');
+    const resp = await ctx.post(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/test/scenario/practice-pending-approval/`);
     if (!resp.ok()) console.log('Warning: could not prepare scenario');
   });
 
@@ -30,7 +30,7 @@ test.describe('Approve practice offers', () => {
     console.log(`Found ${cardCount} practice card(s) in approval queue.`);
 
     // Use the first available practice card
-    const firstCard = practiceCards.first();
+    const firstCard = practiceCards.filter({ hasText: 'E2E Pending Practice' }).first();
     await expect(firstCard).toBeVisible({ timeout: 10000 });
 
     // Find and click the gear/settings button to change state

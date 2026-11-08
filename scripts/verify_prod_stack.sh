@@ -46,6 +46,8 @@ STAG_WS_URL=https://stag-demo.zcu.cz/ws
 DJANGO_SECRET_KEY=smoke-secret-key-0123456789-abcdefghijklmnopqrstuvwxyz
 JWT_SECRET_KEY=smoke-jwt-secret-0123456789-abcdefghijklmnop
 JWT_ACCESS_TOKEN_REFRESH_TIME=300
+# Platný Fernet klíč (32 nulových bajtů) — produkce ho vyžaduje.
+STAG_TICKET_ENCRYPTION_KEY=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
 ALLOWED_HOSTS=$SMOKE_HOST
 FRONTEND_URL=http://localhost:$PORT
 REDIS_URL=redis://redis:6379/0

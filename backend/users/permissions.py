@@ -316,7 +316,7 @@ class CanCancelStudentPractice(permissions.BasePermission):
     - Vedoucí katedry (DepartmentRole.HEAD) daného subjectu
     - Garant Praxe (is_garant_praxe flag)
     - Zaměstnavatel (OrganizationUser) — vlastník praxe
-    - Student (vlastník přihlášky) — POUZE do stavu PRELIMINARY_APPROVED (včetně)
+    - Student (vlastník přihlášky) — z libovolného aktivního stavu (ne REJECTED, COMPLETED)
 
     """
 
@@ -356,18 +356,16 @@ class CanCancelStudentPractice(permissions.BasePermission):
                 if practice.employer == user.employer_profile:
                     return True
 
-        # Student who owns the SP — only up to PRELIMINARY_APPROVED (N10)
-        # + CONTRACTED (BE-014/REQ-010: oprávněný vlastník MUSÍ moci
-        # stornovat praxi i ze Zasmluvněno; foreign aktéři zůstávají deny).
+        # Student vlastník: storno z jakéhokoliv aktivního stavu před finálním uzavřením
+        # (analýza §4.2, D-05). Konečné stavy REJECTED a COMPLETED stornovat nelze.
         if isinstance(user, StudentUser) and obj.user == user:
             from student_practices.models import StudentPracticeWorkflowState
 
-            allowed_states = (
-                StudentPracticeWorkflowState.APPLIED,
-                StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
-                StudentPracticeWorkflowState.CONTRACTED,
+            final_states = (
+                StudentPracticeWorkflowState.REJECTED,
+                StudentPracticeWorkflowState.COMPLETED,
             )
-            if obj.workflow_state in allowed_states:
+            if obj.workflow_state is not None and obj.workflow_state not in final_states:
                 return True
 
         return False

@@ -6,15 +6,15 @@ import TextField from "@core/Form/TextField";
 import Button from "@core/Button/Button";
 import BackButton from "@core/Button/BackButton";
 import { useUserAPI } from "@api/user/userAPI";
+import { useAuth } from "@auth/Auth";
 import { useMessage } from "@hooks/MessageContext";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 export default function ChangePasswordPage() {
     const { t } = useTranslation();
     const { changePassword } = useUserAPI();
+    const { logout } = useAuth();
     const { addMessage } = useMessage();
-    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         old_password: "",
@@ -44,15 +44,22 @@ export default function ChangePasswordPage() {
 
         try {
             await changePassword(formData);
-            addMessage(t('password_change.success'), "S");
-            navigate("/profil");
         } catch (error) {
-            console.error(error);
+            console.error("Změna hesla selhala:", error?.response?.status || error?.code || "UNKNOWN_ERROR");
             if (error.details) {
                 setErrors(error.details);
             }
             const errorCode = error.code || "UNKNOWN_ERROR";
             addMessage(t(`api_errors.${errorCode}`, { defaultValue: t('password_change.error') }), "E");
+            return;
+        }
+
+        addMessage(t('password_change.success_relogin'), "S");
+        // Backend zneplatnil všechny refresh tokeny i cookie; logout vyčistí lokální stav.
+        try {
+            await logout();
+        } catch {
+            // Cookie už je smazaná — logout v finally vyčistí stav a přesměruje na úvod.
         }
     };
 

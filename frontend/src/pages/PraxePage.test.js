@@ -40,9 +40,12 @@ const offer = (id, workflow_state) => ({
   available_positions: 1,
 });
 
+const mockAddMessage = jest.fn();
+
 beforeEach(() => {
   mockNavigate.mockClear();
-  useMessage.mockReturnValue({ addMessage: jest.fn() });
+  mockAddMessage.mockClear();
+  useMessage.mockReturnValue({ addMessage: mockAddMessage });
   useStudentPracticeAPI.mockReturnValue({ manageEmployerInvitation: jest.fn() });
 });
 
@@ -72,6 +75,33 @@ describe("PraxePage - tlačítko Upravit (F-6)", () => {
     const editButton = await screen.findByLabelText("internships.edit_internship");
     const isDisabled = editButton.disabled === true || editButton.getAttribute("aria-disabled") === "true";
     expect(isDisabled).toBe(!editable);
+  });
+});
+
+describe("PraxePage - klik na Upravit (TC-11-03/04)", () => {
+  const renderOffer = async (state) => {
+    useUser.mockReturnValue({ user: orgUser() });
+    useNabidkaAPI.mockReturnValue({
+      getOrganizationPractices: jest.fn().mockResolvedValue({ results: [offer(7, state)], count: 1 }),
+    });
+    render(
+      <MemoryRouter>
+        <PraxePage />
+      </MemoryRouter>,
+    );
+    return screen.findByLabelText("internships.edit_internship");
+  };
+
+  test("zablokovaný inzerát: klik zobrazí upozornění a nenaviguje", async () => {
+    fireEvent.click(await renderOffer(3));
+    expect(mockAddMessage).toHaveBeenCalledWith("internships.edit_blocked", "W");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test("editovatelný inzerát: klik naviguje na editaci", async () => {
+    fireEvent.click(await renderOffer(0));
+    expect(mockNavigate).toHaveBeenCalledWith("/upravit-nabidku/7");
+    expect(mockAddMessage).not.toHaveBeenCalled();
   });
 });
 

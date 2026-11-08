@@ -38,7 +38,7 @@ function ApplicationCard({ entity }) {
                     <Image
                         src={entity.company_logo}
                         alt={entity.practice_title}
-                        className="w-full h-full"
+                        property="w-full h-full"
                         objectFit="contain"
                     />
                 </Container>
@@ -159,6 +159,14 @@ export default function PraxePage() {
 
     const canEditOffer = (entity) => EDITABLE_OFFER_STATES.includes(entity?.workflow_state);
 
+    const handleEdit = (entity) => {
+        if (!canEditOffer(entity)) {
+            addMessage(t('internships.edit_blocked'), "W");
+            return;
+        }
+        navigate(`/upravit-nabidku/${entity.practice_id}`);
+    };
+
     const renderLoading = () => (
         <Paragraph property="text-center text-gray-500 py-8">{t('internships.loading')}</Paragraph>
     );
@@ -251,12 +259,14 @@ export default function PraxePage() {
                                                     />
                                                     <Button
                                                         noVariant={true}
-                                                        onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
+                                                        onClick={() => handleEdit(entity)}
                                                         title={t('internships.edit_internship')}
                                                         icon={"edit"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
-                                                        disabled={!canEditOffer(entity)}
+                                                        ariaDisabled={!canEditOffer(entity)}
+                                                        pointer={canEditOffer(entity)}
+                                                        property={canEditOffer(entity) ? "" : "opacity-50"}
                                                     />
                                                 </>
                                             ) : (
@@ -271,12 +281,14 @@ export default function PraxePage() {
                                                     />
                                                     <Button
                                                         noVariant={true}
-                                                        onClick={() => navigate(`/upravit-nabidku/${entity.practice_id}`)}
+                                                        onClick={() => handleEdit(entity)}
                                                         title={t('internships.edit_internship')}
                                                         icon={"edit"}
                                                         iconColor={"gray"}
                                                         iconSize={"24"}
-                                                        disabled={!canEditOffer(entity)}
+                                                        ariaDisabled={!canEditOffer(entity)}
+                                                        pointer={canEditOffer(entity)}
+                                                        property={canEditOffer(entity) ? "" : "opacity-50"}
                                                     />
                                                 </>
                                             )}

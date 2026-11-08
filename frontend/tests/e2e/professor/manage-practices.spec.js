@@ -2,11 +2,11 @@ import { test, expect, request } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, checkHeading } from '../helpers';
 
 test.describe('Manage practices overview', () => {
-  test.use({ storageState: 'playwright/.auth/professor.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
 
   test.beforeAll(async () => {
     const ctx = await request.newContext();
-    const resp = await ctx.post('http://localhost:8000/api/test/scenario/practice-pending-approval/');
+    const resp = await ctx.post(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/test/scenario/practice-pending-approval/`);
     if (!resp.ok()) console.log('Warning: could not prepare scenario');
   });
 

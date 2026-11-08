@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad } from '../helpers';
 
 test.describe('Professor profile', () => {
-  test.use({ storageState: 'playwright/.auth/professor.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
 
   test('PP01 - shows professor profile', async ({ page }) => {
     console.log('Navigating to /profil...');

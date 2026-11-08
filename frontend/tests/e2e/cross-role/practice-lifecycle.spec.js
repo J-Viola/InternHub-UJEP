@@ -11,7 +11,7 @@ test.describe('Practice cancellation cascade', () => {
 
     // --- STEP 1: COMPANY CREATES PRACTICE ---
     console.log('--- Step 1: Company creating practice ---');
-    const companyContext = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
+    const companyContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
     const companyPage = await companyContext.newPage();
 
     await companyPage.goto('/');
@@ -44,7 +44,7 @@ test.describe('Practice cancellation cascade', () => {
     // Select options
     await companyPage.locator('select[id="coefficient"]').selectOption('1');
     await companyPage.locator('select[id="contact_user"]').selectOption({ index: 1 });
-    await companyPage.locator('select[id="subject_id"]').selectOption({ index: 1 });
+    await companyPage.locator('select[id="subject_id"]').selectOption({ label: 'KI/PRAX1 - Odborná praxe 1' });
     await companyPage.locator('select[id="available_positions"]').selectOption('2');
 
     await companyPage.getByLabel('Název').click(); // to blur and trigger end_date calc
@@ -69,7 +69,7 @@ test.describe('Practice cancellation cascade', () => {
 
     // --- STEP 2: PROFESSOR APPROVES PRACTICE ---
     console.log('--- Step 2: Professor approving practice ---');
-    const profContext1 = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profContext1 = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
     const profPage1 = await profContext1.newPage();
 
     await profPage1.goto('/');
@@ -99,7 +99,7 @@ test.describe('Practice cancellation cascade', () => {
 
     // --- STEP 3: STUDENT APPLIES ---
     console.log('--- Step 3: Student applying ---');
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     await studentPage.goto('/');
@@ -126,7 +126,7 @@ test.describe('Practice cancellation cascade', () => {
     // končila 400 PRACTICE_ALREADY_FINALIZED a žádné UI pro storno neexistovalo
     // (PBUG-BL07-07).
     console.log('--- Step 4: Admin cancelling the offer ---');
-    const adminContext = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
+    const adminContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/admin.json` });
     const adminPage = await adminContext.newPage();
 
     await adminPage.goto('/');
@@ -156,7 +156,7 @@ test.describe('Practice cancellation cascade', () => {
 
     // --- STEP 5: VERIFY STUDENT SEES CANCELLED STATUS ---
     console.log('--- Step 5: Verify student sees cancellation ---');
-    const studentContext2 = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext2 = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage2 = await studentContext2.newPage();
 
     await studentPage2.goto('/');

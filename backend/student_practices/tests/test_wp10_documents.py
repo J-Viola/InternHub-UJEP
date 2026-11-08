@@ -332,6 +332,11 @@ class ManualCycleEdgeTests(TestCase):
             format="json",
         )
         self.assertEqual(reviewed.status_code, status.HTTP_200_OK)
+        # Brána do ENDED vyžaduje schválenou závěrečnou dokumentaci; tento scénář
+        # opravuje smlouvu, takže závěrečný doklad doplníme až před přechodem.
+        feedback = UploadedDocument.objects.create(document_type=DocumentType.FEEDBACK, status=DocumentStatus.APPROVED)
+        sp.feedback_document = feedback
+        sp.save(update_fields=["feedback_document"])
         self._transition(self.professor, sp, StudentPracticeWorkflowState.ENDED)
         sp.refresh_from_db()
         self.assertEqual(sp.workflow_state, StudentPracticeWorkflowState.ENDED)

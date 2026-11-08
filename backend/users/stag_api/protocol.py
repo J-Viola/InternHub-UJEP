@@ -13,6 +13,13 @@ class StagDataProvider(Protocol):
         """
         ...
 
+    def invalidate_ticket(self, ticket: str) -> None:
+        """
+        Invalidates the ticket in STAG (logout). May raise StagUnreachableError
+        on network failure or a non-2xx response; the caller must handle it.
+        """
+        ...
+
     def get_student_subjects(self, ticket: str, os_cislo: str) -> list[dict[str, Any]]:
         """
         Returns list of subjects for a student.

@@ -13,11 +13,12 @@ from datetime import date, timedelta
 from django.contrib.auth.hashers import make_password
 
 from department.models import Department
-from practices.models import Practice, ProgressStatus
+from practices.models import Practice, PracticeWorkflowState, ProgressStatus
 from student_practices.models import (
     DocumentStatus,
     DocumentType,
     StudentPractice,
+    StudentPracticeWorkflowState,
     UploadedDocument,
 )
 from subject.models import Subject
@@ -143,6 +144,10 @@ class ScenarioBuilder:
             "progress_status": ProgressStatus.NOT_STARTED,
             "available_positions": 2,
             "is_active": True,
+            "subject": self._get_first_subject(),
+            "contact_user": self._get_or_create_employer()[1],
+            "mentor_name": "E2E Mentor",
+            "contact_email": "mentor@e2e.test",
         }
         defaults.update(kwargs)
         practice, _ = Practice.objects.get_or_create(
@@ -151,6 +156,24 @@ class ScenarioBuilder:
             defaults=defaults,
         )
         return practice
+
+    def practice_editable(self):
+        """Nabídka ve stavu PENDING_CONTENT_APPROVAL s vyplněnými povinnými poli."""
+        practice = self._get_or_create_practice(
+            self._get_or_create_employer()[0],
+            title="E2E Editable Practice",
+            workflow_state=PracticeWorkflowState.PENDING_CONTENT_APPROVAL,
+            approval_status=ApprovalStatus.PENDING,
+        )
+        # Fixture je sdílená testy editace a auto-close; při opakovaném volání
+        # vrátíme nabídku do editovatelného stavu (jinak záleží na pořadí testů).
+        practice.workflow_state = PracticeWorkflowState.PENDING_CONTENT_APPROVAL
+        practice.approval_status = ApprovalStatus.PENDING
+        practice.is_active = True
+        practice.start_date = date.today() + timedelta(days=30)
+        practice.end_date = date.today() + timedelta(days=120)
+        practice.save(update_fields=["workflow_state", "approval_status", "is_active", "start_date", "end_date"])
+        return {"practice_id": practice.practice_id, "title": practice.title}
 
     def _get_first_subject(self):
         subject = Subject.objects.first()
@@ -297,18 +320,45 @@ class ScenarioBuilder:
             practice=practice,
             defaults={
                 "school_approved": True,
+                "workflow_state": StudentPracticeWorkflowState.PRELIMINARY_APPROVED,
                 "approval_status": ApprovalStatus.PENDING,
                 "progress_status": ProgressStatus.NOT_STARTED,
                 "start_date": practice.start_date or date.today() + timedelta(days=30),
                 "end_date": practice.end_date or date.today() + timedelta(days=120),
             },
         )
-        # Reset to PENDING in case a previous call already approved this SP
-        if sp.approval_status != ApprovalStatus.PENDING or sp.employer_approved:
-            sp.approval_status = ApprovalStatus.PENDING
-            sp.employer_approved = False
-            sp.school_approved = True
-            sp.save(update_fields=["approval_status", "employer_approved", "school_approved"])
+        # Plný reset: scénář používají testy, které SP i praxi schválí nebo stornují.
+        sp.approval_status = ApprovalStatus.PENDING
+        sp.progress_status = ProgressStatus.NOT_STARTED
+        sp.workflow_state = StudentPracticeWorkflowState.PRELIMINARY_APPROVED
+        sp.school_approved = True
+        sp.employer_approved = False
+        sp.is_cancelled = False
+        sp.cancelled_from_state = None
+        sp.cancelled_at = None
+        sp.cancelled_by = None
+        sp.cancellation_reason = ""
+        sp.contract_received_date = None
+        sp.save(
+            update_fields=[
+                "approval_status",
+                "progress_status",
+                "workflow_state",
+                "school_approved",
+                "employer_approved",
+                "is_cancelled",
+                "cancelled_from_state",
+                "cancelled_at",
+                "cancelled_by",
+                "cancellation_reason",
+                "contract_received_date",
+            ]
+        )
+        practice.workflow_state = PracticeWorkflowState.OPEN_FOR_APPLICATIONS
+        practice.approval_status = ApprovalStatus.APPROVED
+        practice.is_active = True
+        practice.is_cancelled = False
+        practice.save(update_fields=["workflow_state", "approval_status", "is_active", "is_cancelled"])
         return {"sp_id": sp.student_practice_id, "practice_id": practice.practice_id}
 
     def capacity_full(self):
@@ -321,7 +371,13 @@ class ScenarioBuilder:
         student = self._get_or_create_student()
         student2 = self._get_or_create_student(email="e2e-student2@test.cz", os_cislo="SE2E02")
         profile, employer = self._get_or_create_employer()
-        practice = self._get_or_create_practice(profile, title="E2E Capacity Full", available_positions=1)
+        practice = self._get_or_create_practice(
+            profile,
+            title="E2E Capacity Full",
+            available_positions=1,
+            workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+            approval_status=ApprovalStatus.APPROVED,
+        )
         subject = self._get_first_subject()
         if subject:
             for s in [student, student2]:
@@ -330,12 +386,14 @@ class ScenarioBuilder:
                     subject=subject,
                     defaults={"role": UserSubjectType.Student},
                 )
+        # Kapacitu obsazuje druhý student, aby přihlášený E2E student mohl zkusit apply.
         StudentPractice.objects.get_or_create(
-            user=student,
+            user=student2,
             practice=practice,
             defaults={
                 "school_approved": True,
                 "employer_approved": True,
+                "workflow_state": StudentPracticeWorkflowState.CONTRACTED,
                 "approval_status": ApprovalStatus.APPROVED,
                 "progress_status": ProgressStatus.NOT_STARTED,
                 "start_date": practice.start_date or date.today() + timedelta(days=30),

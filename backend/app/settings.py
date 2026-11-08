@@ -10,9 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import base64
+import hashlib
 import os
 from datetime import timedelta
 from pathlib import Path
+
+from cryptography.fernet import Fernet
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -316,6 +321,28 @@ if DEBUG:
 else:
     JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
     ACCESS_TOKEN_REFRESH_TIME = int(os.environ["JWT_ACCESS_TOKEN_REFRESH_TIME"])
+
+# STAG ticket se neukládá do DB; server ho nese jen jako šifrovaný claim v JWT.
+# V produkci je klíč povinný, v DEBUG se deterministicky odvozuje ze SECRET_KEY,
+# aby tokeny přežily restart i běh více pracovních procesů.
+if DEBUG:
+    STAG_TICKET_ENCRYPTION_KEY = (
+        os.environ.get("STAG_TICKET_ENCRYPTION_KEY")
+        or base64.urlsafe_b64encode(hashlib.sha256(f"{SECRET_KEY}:stag-ticket".encode()).digest()).decode()
+    )
+else:
+    STAG_TICKET_ENCRYPTION_KEY = os.environ.get("STAG_TICKET_ENCRYPTION_KEY", "")
+
+if not STAG_TICKET_ENCRYPTION_KEY:
+    raise ImproperlyConfigured(
+        "STAG_TICKET_ENCRYPTION_KEY is required. Generate one with: "
+        'python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+    )
+
+try:
+    Fernet(STAG_TICKET_ENCRYPTION_KEY.encode())
+except (TypeError, ValueError) as exc:
+    raise ImproperlyConfigured("STAG_TICKET_ENCRYPTION_KEY must be a valid Fernet key.") from exc
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=ACCESS_TOKEN_REFRESH_TIME),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),

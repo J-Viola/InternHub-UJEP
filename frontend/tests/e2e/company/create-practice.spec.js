@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, checkHeading } from '../helpers';
 
 test.describe('Create internship offer', () => {
-  test.use({ storageState: 'playwright/.auth/company.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
   test.setTimeout(90000);
 
   test('CP01 - creates a new practice successfully', async ({ page }) => {
@@ -28,6 +28,9 @@ test.describe('Create internship offer', () => {
     await page.getByLabel('Název').fill(practiceTitle);
     await page.getByLabel('Popis stáže').fill(`Popis stáže pro E2E test ${uniqueId}`);
     await page.getByLabel('Náplň práce').fill(`Náplň práce pro E2E test ${uniqueId}`);
+    // RF-04: mentor a kontaktní e-mail jsou povinné.
+    await page.locator('#mentor_name').fill('E2E Mentor');
+    await page.locator('#contact_email').fill('mentor@e2e.test');
 
     // Wait for dropdowns to be populated
     await expect(page.locator('select[id="contact_user"] option').nth(1)).toBeAttached({ timeout: 10000 });
@@ -41,7 +44,7 @@ test.describe('Create internship offer', () => {
     // Select options
     await page.locator('select[id="coefficient"]').selectOption('1');
     await page.locator('select[id="contact_user"]').selectOption({ index: 1 });
-    await page.locator('select[id="subject_id"]').selectOption({ index: 1 });
+    await page.locator('select[id="subject_id"]').selectOption({ label: 'KI/PRAX1 - Odborná praxe 1' });
     await page.locator('select[id="available_positions"]').selectOption('2');
 
     // Click title field to trigger end_date calculation

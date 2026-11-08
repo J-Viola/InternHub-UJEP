@@ -4,11 +4,13 @@ import { waitForAppLoad, clickNavLink, confirmPopup, safeClick } from './helpers
 test.describe('Invitation Flow (E2E)', () => {
   test.setTimeout(90000);
 
-  test('Company invites student -> Student accepts', async ({ browser }) => {
+  // Nahrazeno testy student/manage-invitations.spec.js (MI01/MI02) a CI01; tento scénář
+  // pracuje s odstraněnými selektory (nav 'Studenti', konkrétní jméno a název praxe).
+  test.skip('Company invites student -> Student accepts', async ({ browser }) => {
 
     // --- STEP 1: COMPANY SENDS INVITATION ---
     console.log('--- Step 1: Company sending invitation ---');
-    const companyContext = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
+    const companyContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
     const companyPage = await companyContext.newPage();
 
     await companyPage.goto('/');
@@ -56,7 +58,7 @@ test.describe('Invitation Flow (E2E)', () => {
 
     // --- STEP 2: STUDENT ACCEPTS INVITATION ---
     console.log('--- Step 2: Student accepting invitation ---');
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     await studentPage.goto('/');

@@ -26,7 +26,7 @@ describe('spWorkflowUtils — A-12 storno studentem', () => {
         expect(isCancellationPending(null)).toBe(false);
     });
 
-    test('storno: jen student-vlastník ve stavu CONTRACTED a ne už stornované', () => {
+    test('storno: student-vlastník z libovolného aktivního stavu, ne z konečných ani už stornované', () => {
         const student = makeUser(['ST']);
         const contracted = {
             student_practice_status: { workflow_status: 'CONTRACTED' },
@@ -38,9 +38,12 @@ describe('spWorkflowUtils — A-12 storno studentem', () => {
                 student
             )
         ).toBe(false);
-        expect(
-            canRequestCancellation({ student_practice_status: { workflow_status: 'APPLIED' } }, student)
-        ).toBe(false);
+        for (const state of ['STARTED', 'ENDED', 'AWAITING_CONTRACT', 'AWAITING_DOCUMENTS', 'DOCUMENTS_REJECTED', 'DOCUMENTS_RESUBMITTED']) {
+            expect(canRequestCancellation({ student_practice_status: { workflow_status: state } }, student)).toBe(true);
+        }
+        for (const state of ['APPLIED', 'PRELIMINARY_APPROVED', 'REJECTED', 'COMPLETED']) {
+            expect(canRequestCancellation({ student_practice_status: { workflow_status: state } }, student)).toBe(false);
+        }
         expect(canRequestCancellation(contracted, makeUser(['VY']))).toBe(false);
         expect(canRequestCancellation({}, student)).toBe(false);
     });

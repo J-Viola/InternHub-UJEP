@@ -50,7 +50,7 @@ export default function PasswordResetConfirmPage() {
             addMessage(t('password_reset.reset_success'), "S");
             navigate("/");
         } catch (error) {
-            console.error(error);
+            console.error("Reset hesla selhal:", error?.response?.status || error?.code || "UNKNOWN_ERROR");
             if (error.details) {
                 setErrors(error.details);
             }

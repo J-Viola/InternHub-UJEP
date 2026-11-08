@@ -431,9 +431,8 @@ class TransitionPracticeSerializer(serializers.Serializer):
 
     def validate(self, data):
         target_state = data.get("target_state")
-        if target_state in ("REJECTED", "CONTENT_REJECTED", "DOCUMENTS_REJECTED"):
-            if not data.get("reason", "").strip():
-                raise serializers.ValidationError({"reason": "Důvod je povinný při zamítnutí nebo vrácení."})
+        if target_state == PracticeWorkflowState.CONTENT_REJECTED.value and not data.get("reason", "").strip():
+            raise serializers.ValidationError({"reason": "Důvod zamítnutí je povinný."})
         return data
 
 

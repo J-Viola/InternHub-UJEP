@@ -82,7 +82,7 @@ export default function PrihlaskyPage() {
 
 	const handleReject = async () => {
 		if (rejectReason.trim().length < 10) {
-			addMessage(t('practice_detail.reject_reason_required'), "E");
+			addMessage(t(rejectReason.trim() ? 'practice_detail.reject_reason_required' : 'practice_detail.reject_reason_empty'), "E");
 			return;
 		}
 		try {

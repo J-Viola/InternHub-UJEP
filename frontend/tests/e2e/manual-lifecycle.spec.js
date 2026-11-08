@@ -9,7 +9,7 @@ test.describe('Manual External Practice Lifecycle (E2E)', () => {
     const practiceTitle = `E2E External ${uniqueId}`;
 
     // --- STEP 1: STUDENT vytvoří externí praxi ---
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     await studentPage.goto('/vytvorit-externi-praxi');
@@ -21,7 +21,7 @@ test.describe('Manual External Practice Lifecycle (E2E)', () => {
     await studentPage.getByLabel('Kontaktní telefon').fill('123456789');
 
     await expect(studentPage.locator('select[id="subject_id"] option').nth(1)).toBeAttached({ timeout: 10000 });
-    await studentPage.locator('select[id="subject_id"]').selectOption({ index: 1 });
+    await studentPage.locator('select[id="subject_id"]').selectOption({ label: 'KI/PRAX1 - Odborná praxe 1' });
 
     // BL-07/PBUG-02: 'Název' musí být exact — na stránce je i 'Název organizace'
     // (getByLabel s podřetězcem matchoval 2 elementy → strict-mode violation).
@@ -64,7 +64,7 @@ test.describe('Manual External Practice Lifecycle (E2E)', () => {
     await studentContext.close();
 
     // --- STEP 2: PROFESSOR schválí obsah praxe ---
-    const profContext = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
     const profPage = await profContext.newPage();
 
     await profPage.goto('/');
@@ -95,7 +95,7 @@ test.describe('Manual External Practice Lifecycle (E2E)', () => {
     //    OPEN_FOR_APPLICATIONS, takže samotná přítomnost karty = důkaz aktivace
     //    (StateBadge se studentům v katalogu nezobrazí — NabidkaEntity jej
     //    renderuje jen pro department/admin/org role).
-    const studentCtx2 = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentCtx2 = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage2 = await studentCtx2.newPage();
     await studentPage2.goto('/');
     await waitForAppLoad(studentPage2);

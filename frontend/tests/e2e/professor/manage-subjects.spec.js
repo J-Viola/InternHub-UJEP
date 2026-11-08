@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink } from '../helpers';
 
 test.describe('Manage subjects', () => {
-  test.use({ storageState: 'playwright/.auth/professor.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');

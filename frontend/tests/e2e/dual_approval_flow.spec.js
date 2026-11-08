@@ -13,7 +13,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
 
     // --- STEP 1: COMPANY CREATES PRACTICE ---
     console.log('--- Step 1: Company creating practice ---');
-    const companyContext = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
+    const companyContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
     const companyPage = await companyContext.newPage();
 
     await companyPage.goto('/');
@@ -45,7 +45,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
     await companyPage.locator('select[id="coefficient"]').selectOption('1');
     await companyPage.locator('select[id="contact_user"]').selectOption({ index: 1 });
     // Select first available subject option
-    await companyPage.locator('select[id="subject_id"]').selectOption({ index: 1 });
+    await companyPage.locator('select[id="subject_id"]').selectOption({ label: 'KI/PRAX1 - Odborná praxe 1' });
     await companyPage.locator('select[id="available_positions"]').selectOption('2');
 
     await companyPage.getByLabel('Název').click(); // to blur and trigger end_date calc
@@ -70,7 +70,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
 
     // --- STEP 2: PROFESSOR APPROVES PRACTICE ---
     console.log('--- Step 2: Professor approving practice ---');
-    const profContext1 = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profContext1 = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
     const profPage1 = await profContext1.newPage();
 
     await profPage1.goto('/');
@@ -100,7 +100,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
 
     // --- STEP 3: STUDENT APPLIES ---
     console.log('--- Step 3: Student applying ---');
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
 
     await studentPage.goto('/');
@@ -126,7 +126,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
     // (student_practices docstring + services.py:334); organizace může až
     // z PRELIMINARY_APPROVED (→ AWAITING_CONTRACT).
     console.log('--- Step 4: Professor (katedra) approving application ---');
-    const profContext2 = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profContext2 = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
     const profPage2 = await profContext2.newPage();
 
     await profPage2.goto('/');
@@ -168,7 +168,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
 
     // --- STEP 5: ORGANIZACE (COMPANY) APPROVES APP — druhá osa ---
     console.log('--- Step 5: Company approving application ---');
-    const companyContext2 = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
+    const companyContext2 = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
     const companyPage2 = await companyContext2.newPage();
 
     await companyPage2.goto('/');
@@ -188,7 +188,7 @@ test.describe('Dual Approval Flow (E2E)', () => {
 
     // --- VERIFY: STUDENT SEES APPROVED STATE ---
     console.log('--- Verification: Student sees approved state ---');
-    const studentContext2 = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext2 = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage2 = await studentContext2.newPage();
 
     await studentPage2.goto('/');

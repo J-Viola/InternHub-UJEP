@@ -19,7 +19,7 @@ test.describe('Scenario B: Document Lifecycle Flow', () => {
     // We'll follow the dual approval flow pattern but streamlined
 
     console.log('--- Step 1: Setting up approved practice ---');
-    const companyContext = await browser.newContext({ storageState: 'playwright/.auth/company.json' });
+    const companyContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
     const companyPage = await companyContext.newPage();
     await companyPage.goto('/');
     await waitForAppLoad(companyPage);
@@ -36,7 +36,7 @@ test.describe('Scenario B: Document Lifecycle Flow', () => {
     await companyPage.locator('.react-datepicker__input-container input').nth(0).press('Enter');
     await companyPage.locator('select[id="coefficient"]').selectOption('1');
     await companyPage.locator('select[id="contact_user"]').selectOption({ index: 1 });
-    await companyPage.locator('select[id="subject_id"]').selectOption({ index: 1 });
+    await companyPage.locator('select[id="subject_id"]').selectOption({ label: 'KI/PRAX1 - Odborná praxe 1' });
     await companyPage.locator('select[id="available_positions"]').selectOption('2');
     await companyPage.getByLabel('Název').click();
     await expect(companyPage.locator('input[id="end_date"]')).not.toHaveValue('', { timeout: 15000 });
@@ -44,7 +44,7 @@ test.describe('Scenario B: Document Lifecycle Flow', () => {
     await expect(companyPage).toHaveURL(/.*\/praxe/);
     await companyContext.close();
 
-    const profContext = await browser.newContext({ storageState: 'playwright/.auth/professor.json' });
+    const profContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/professor.json` });
     const profPage = await profContext.newPage();
     await profPage.goto('/');
     await waitForAppLoad(profPage);
@@ -53,7 +53,7 @@ test.describe('Scenario B: Document Lifecycle Flow', () => {
     await gearBtn.click();
     await confirmPopup(profPage, 'změnit stav nabídky');
 
-    const studentContext = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    const studentContext = await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/student.json` });
     const studentPage = await studentContext.newPage();
     await studentPage.goto('/');
     await waitForAppLoad(studentPage);
@@ -93,7 +93,7 @@ test.describe('Scenario B: Document Lifecycle Flow', () => {
 
     // 2) ORGANIZACE (company): PRELIMINARY_APPROVED → AWAITING_CONTRACT.
     //    (bez této opravy pořadí končil první pokus 400 — osa katedry)
-    const companyPage2 = await (await browser.newContext({ storageState: 'playwright/.auth/company.json' })).newPage();
+    const companyPage2 = await (await browser.newContext({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` })).newPage();
     await companyPage2.goto('/');
     await clickNavLink(companyPage2, 'Správa organizace', 'Přihlášky');
     await companyPage2.locator('div[id^="application-entity-"]').filter({ hasText: practiceTitle }).locator('button').first().click();

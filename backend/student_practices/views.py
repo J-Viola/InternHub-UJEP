@@ -49,6 +49,7 @@ from student_practices.services import (
     _enter_contracted,
     contract_document_is_approved,
     record_own_approval_axis,
+    required_approval_axes_hold,
 )
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
@@ -64,6 +65,7 @@ from users.permissions import (
     IsStudentOwner,
     IsStudentPracticeAccessible,
 )
+from users.stag_ticket import ticket_from_token
 
 from .serializers import (
     ActionLogSerializer,
@@ -537,9 +539,9 @@ class StudentPracticeUploadDocumentView(APIView):
 
             # Extension and MIME validation
             ext = os.path.splitext(file_obj.name)[1].lower()
-            if ext not in [".pdf", ".docx", ".doc", ".xlsx", ".png", ".jpg", ".jpeg"]:
+            if ext not in [".pdf", ".docx", ".doc", ".xlsx"]:
                 return Response(
-                    {"detail": "Nepovolený typ souboru. Povolené formáty jsou PDF, DOCX, XLSX, PNG, JPG."},
+                    {"detail": "Nepodporovaný formát souboru. Povolené formáty: PDF, DOCX, XLSX."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -760,8 +762,11 @@ class TransitionStudentPracticeView(APIView):
                 isinstance(actor, OrganizationUser) or isinstance(actor, StudentUser)
             )
             would_employer = bool(student_practice.employer_approved) or isinstance(actor, OrganizationUser)
-            if not (would_school and would_employer):
-                missing = [label for label, holds in (("school", would_school), ("employer", would_employer)) if not holds]
+            # Externí praxe nemá EmployerProfile — stačí školní osa.
+            is_external = student_practice.practice is not None and getattr(student_practice.practice, "is_external", False)
+            required_axes = (("school", would_school),) if is_external else (("school", would_school), ("employer", would_employer))
+            if not all(holds for _label, holds in required_axes):
+                missing = [label for label, holds in required_axes if not holds]
                 return Response(
                     {
                         "error_code": "AXES_INCOMPLETE",
@@ -965,7 +970,10 @@ class StudentPracticeContractDownloadView(APIView):
         from student_practices.services import generate_contract
 
         try:
-            buffer = generate_contract(sp)
+            # Ticket je jen v šifrovaném JWT claimu a má ho pouze student.
+            # Organizace a garant použijí data uložená při jeho posledním přihlášení.
+            ticket = ticket_from_token(request.auth) if request.user.pk == sp.user_id else ""
+            buffer = generate_contract(sp, ticket=ticket or None)
         except InvalidStagTicketError:
             # A-10: fail-closed — STAG se nevolá, uživatel se musí znovu přihlásit
             return Response(
@@ -1185,7 +1193,7 @@ class EvaluationViewSet(ModelViewSet):
             return Response(
                 {
                     "error_code": "EVALUATION_NOT_ENDED",
-                    "detail": "Evaluaci lze podat pouze u praxe ve stavu ENDED.",
+                    "detail": "Evaluace je dostupná až po ukončení praxe",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -1213,6 +1221,16 @@ class EvaluationViewSet(ModelViewSet):
             object_id=evaluation.evaluation_id,
             description=f"Mentorská evaluace vytvořena pro SP #{sp.student_practice_id}",
         )
+
+        # Garant se musí dozvědět o odeslané evaluaci.
+        # In-app notifikace se vytváří přímo (ne v on_commit), aby vznikla i v transakci/testu;
+        # e-mail si služba posílá sama přes on_commit.
+        try:
+            from notifications.services import NotificationService
+
+            NotificationService.notify_garant_evaluation_submitted(evaluation)
+        except Exception:
+            logger.exception("Notifikace garanta o evaluaci se nepodařila")
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -1265,9 +1283,10 @@ class ConfirmContractView(APIView):
     T1 (C06-A nezávislé osy, rozhodnutí 2026-10-09): aktér zapíše JEN svou
     vlastní approval osu (OrganizationUser → employer; pedagog/admin →
     school; owner-student → pouze potvrzení přijetí, žádná osa). CONTRACTED
-    + approval_status=APPROVED postupuje JEN při obou osách schválených
-    touto akcí (nebo již dříve); jinak stav i approval_status zůstávají
-    nezměněny. Kapacita počítá jen CONTRACTED (pending aplikace nekonzumují
+    + approval_status=APPROVED postupuje JEN při požadovaných osách
+    schválených touto akcí (nebo již dříve) a schválené smlouvě (A-11);
+    u externí praxe stačí školní osa (D-1/F-28), jinak stav i approval_status
+    zůstávají nezměněny. Kapacita počítá jen CONTRACTED (pending aplikace nekonzumují
     místo). Jiné řádky tabulky (povolené zdrojové stavy, one-shot/C04 data,
     C15 doklad podpisu) zůstávají BL-03/06.
     """
@@ -1306,10 +1325,11 @@ class ConfirmContractView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         # T2b (finding 6): idempotence stejné osy — OPAKOVÁNÍ potvrzení je
-        # vždy 200 no-op bez zápisu/ActionLog/notifikace, NEZÁVISLE na tom,
-        # zda druhá osa už drží (žádný „re-write" data, žádná duplicitní
-        # ALLOCATION notifikace). Smír předem schválených, ale ne-CONTRACTED
-        # řádků patří do výslovně autorizovaného transition (T1 brána).
+        # 200 no-op bez zápisu/ActionLog/notifikace, pokud řádek už nemá kam
+        # postoupit. F-28: garant u externí praxe nejdřív schválí dokument
+        # (školní osa), takže no-op nesmí spolknout první confirm, který má
+        # přejít do CONTRACTED; no-op jen pro CONTRACTED nebo nedokončitelný
+        # přechod (chybí osa/dokument).
         user = request.user
         if isinstance(user, OrganizationUser):
             own_axis_done = sp.employer_approved
@@ -1317,23 +1337,25 @@ class ConfirmContractView(APIView):
             own_axis_done = sp.contract_received_date is not None
         else:
             own_axis_done = sp.school_approved
-        if own_axis_done and not (
-            sp.workflow_state == StudentPracticeWorkflowState.AWAITING_CONTRACT and sp.employer_approved and sp.school_approved
-        ):
-            return Response(
-                {
-                    "detail": "Potvrzení již bylo zaznamenáno — opakované potvrzení je idempentní.",
-                    "contract_received_date": sp.contract_received_date,
-                },
-                status=status.HTTP_200_OK,
-            )
+        if own_axis_done:
+            can_advance = required_approval_axes_hold(sp) and contract_document_is_approved(sp)
+            if sp.workflow_state == StudentPracticeWorkflowState.CONTRACTED or not can_advance:
+                return Response(
+                    {
+                        "detail": "Potvrzení již bylo zaznamenáno — opakované potvrzení je idempotentní.",
+                        "contract_received_date": sp.contract_received_date,
+                    },
+                    status=status.HTTP_200_OK,
+                )
 
         # T2b: potvrzení jen z pre-kontrakčních stavů — AWAITING_CONTRACT,
-        # u externí praxe i APPLIED (externí cesta). Jinak 400 bez mutace.
+        # u externí praxe i APPLIED a CONTENT_APPROVED (externí cesta).
+        # Jinak 400 bez mutace.
         # A-03: organizace potvrzuje i po nahrání smlouvy (AWAITING_DOCUMENTS) — BP, krok 5.
         allowed_source_states = {StudentPracticeWorkflowState.AWAITING_CONTRACT, StudentPracticeWorkflowState.AWAITING_DOCUMENTS}
         if sp.practice is not None and sp.practice.is_external:
             allowed_source_states.add(StudentPracticeWorkflowState.APPLIED)
+            allowed_source_states.add(StudentPracticeWorkflowState.CONTENT_APPROVED)
         if sp.workflow_state not in allowed_source_states:
             state_name = sp.workflow_state.name if sp.workflow_state else "None"
             return Response(
@@ -1346,8 +1368,9 @@ class ConfirmContractView(APIView):
         # T1/C06-A (centrální helper): aktér zapíše JEN svou vlastní osu
         # (OrganizationUser → employer; škola → school; student → receipt
         # only, žádná osa); druhou osu může nastavit jen její vlastní role.
-        was_already_contract_approved = sp.employer_approved and sp.school_approved
-        both_axes_approved = record_own_approval_axis(sp, request.user) or was_already_contract_approved
+        # D-1/F-28: externí praxi stačí školní osa + schválená smlouva.
+        record_own_approval_axis(sp, request.user)
+        both_axes_approved = required_approval_axes_hold(sp)
         # A-11: bez schváleného smluvního dokumentu zůstává stav beze změny (osa se zapíše).
         both_axes_approved = both_axes_approved and contract_document_is_approved(sp)
 

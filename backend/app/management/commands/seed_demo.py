@@ -46,6 +46,8 @@ from users.models import (
     OrganizationRole,
     OrganizationUser,
     ProfessorUser,
+    StagRole,
+    StagRoleEnum,
     StudentUser,
 )
 
@@ -62,7 +64,7 @@ CANCEL_REQUEST_FIXED = datetime(2026, 1, 15, 10, 0, tzinfo=UTC)
 MARKER_DATE = datetime(2027, 1, 1, 0, 0, tzinfo=UTC)
 
 ORG_COMPANY = "SYNTHETIC DEMO DATA — Demo Firma Demo s.r.o."
-ORG_ICO = "00000000"  # syntetické; checksum neodpovídá reálnému IČO
+ORG_ICO = "99999999"  # syntetické; "00000000" je rezervované pro negativní ARES test (TC-02-02)
 DEMO_SUBJECT_CODE = "DEMO-PRAXE"
 DEMO_DEPARTMENT_CODES = ["DEMO-KI", "DEMO-MA"]
 DEMO_CANCELLATION_REASON = "SYNTHETIC DEMO: storno studentem (minulý rok, vzato na vědomí — A-12)."
@@ -208,6 +210,18 @@ class Command(BaseCommand):
             if role == "VY":
                 defaults["is_garant_praxe"] = True
             user, created = ProfessorUser.objects.get_or_create(email=email, defaults=defaults)
+            # IsStagTeacher vyžaduje StagRole "vy", IsStagAdmin "vk"/HEAD.
+            # Doplní i existujícím účtům (idempotentní seed bez --reset).
+            stag_role, _ = StagRole.objects.get_or_create(
+                role=StagRoleEnum.VK if role == "VK" else StagRoleEnum.VY,
+                defaults={
+                    "role_name": "Vedení katedry" if role == "VK" else "Vyučující",
+                    "description": "Vedoucí nebo tajemník" if role == "VK" else "Vyučující na katedře",
+                },
+            )
+            if user.stag_role_id != stag_role.pk:
+                user.stag_role = stag_role
+                user.save(update_fields=["stag_role"])
         elif role == "OWNER":
             user, created = OrganizationUser.objects.get_or_create(
                 email=email,

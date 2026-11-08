@@ -2,6 +2,10 @@ import { useApi } from "@hooks/useApi";
 import { buildFormData } from "@utils/formDataUtils";
 import { useCallback, useRef } from "react";
 
+// Axios error nese v config.data i hesla; do konzole jde jen stav/kód.
+const logApiError = (context, error) =>
+    console.error(context, error?.response?.status || error?.code || "UNKNOWN_ERROR");
+
 export const useUserAPI = () => {
     const api = useApi();
 
@@ -32,7 +36,7 @@ export const useUserAPI = () => {
             });
             return response.data;
         } catch (error) {
-            console.error("Chyba při registraci organizace:", error);
+            logApiError("Chyba při registraci organizace:", error);
             throw error;
         }
     };
@@ -53,7 +57,7 @@ export const useUserAPI = () => {
                 return data;
             }
         } catch (error) {
-            console.error('Chyba při získávání uživatelů organizace:', error);
+            logApiError('Chyba při získávání uživatelů organizace:', error);
             throw error;
         }
     };
@@ -63,7 +67,7 @@ export const useUserAPI = () => {
             const response = await api.get('/users/profile/');
             return response.data;
         } catch (error) {
-            console.error('Chyba při získávání profilu uživatele:', error);
+            logApiError('Chyba při získávání profilu uživatele:', error);
             throw error;
         }
     };
@@ -73,7 +77,7 @@ export const useUserAPI = () => {
             const response = await api.get(`/users/student-profile/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Chyba při získávání profilu uživatele:', error);
+            logApiError('Chyba při získávání profilu uživatele:', error);
             throw error;
         }
     };
@@ -112,7 +116,7 @@ export const useUserAPI = () => {
             });
             return response.data;
         } catch (error) {
-            console.error("Chyba při vytváření uživatele:", error);
+            logApiError("Chyba při vytváření uživatele:", error);
             throw error;
         }
     };
@@ -128,7 +132,7 @@ export const useUserAPI = () => {
             });
             return response.data;
         } catch (error) {
-            console.error("Chyba při aktualizaci uživatele:", error);
+            logApiError("Chyba při aktualizaci uživatele:", error);
             throw error;
         }
     };
@@ -138,7 +142,7 @@ export const useUserAPI = () => {
             const response = await api.get(`/users/organization-users/${id}/`);
             return response.data;
         } catch (error) {
-            console.error('Chyba při získávání uživatele:', error);
+            logApiError('Chyba při získávání uživatele:', error);
             throw error;
         }
     };
@@ -168,7 +172,7 @@ export const useUserAPI = () => {
             });
             return response.data;
         } catch (error) {
-            console.error('Chyba při aktualizaci profilu:', error);
+            logApiError('Chyba při aktualizaci profilu:', error);
             throw error;
         }
     };
@@ -178,7 +182,7 @@ export const useUserAPI = () => {
             const response = await api.post('/users/change-password/', passwordData);
             return response.data;
         } catch (error) {
-            console.error('Chyba při změně hesla:', error);
+            logApiError('Chyba při změně hesla:', error);
             throw error;
         }
     };
@@ -188,7 +192,7 @@ export const useUserAPI = () => {
             const response = await api.post('/users/password-reset/', { email });
             return response.data;
         } catch (error) {
-            console.error('Chyba při žádosti o reset hesla:', error);
+            logApiError('Chyba při žádosti o reset hesla:', error);
             throw error;
         }
     };
@@ -198,7 +202,7 @@ export const useUserAPI = () => {
             const response = await api.post('/users/password-reset-confirm/', data);
             return response.data;
         } catch (error) {
-            console.error('Chyba při potvrzení resetu hesla:', error);
+            logApiError('Chyba při potvrzení resetu hesla:', error);
             throw error;
         }
     };

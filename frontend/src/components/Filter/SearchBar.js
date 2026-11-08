@@ -32,6 +32,7 @@ export default function SearchBar({ id = "title", value, placeholder, onChange, 
             <Container property="absolute right-4 top-1/2 -translate-y-1/2">
                 {value !== "" && (
                     <Button
+                        title={t('common.clear')}
                         noVariant={true}
                         icon={"cross"}
                         iconColor="text-black"

@@ -9,6 +9,10 @@ class MockStagClient(StagDataProvider):
     Supports dynamic mock tickets like 'mock-student:S12345' or 'mock-teacher:U98765'.
     """
 
+    def invalidate_ticket(self, ticket: str):
+        # V mock režimu není co zneplatňovat.
+        return None
+
     def validate_ticket(self, ticket: str):
         # Handle generic mock student login
         if ticket == "student-ticket":

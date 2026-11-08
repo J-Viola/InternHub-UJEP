@@ -101,12 +101,20 @@ test.describe('Login scenarios', () => {
   test('L10 (P2) - logout clears session', async ({ browser }) => {
     test.setTimeout(60000);
 
-    console.log('Creating authenticated context for student');
-    const context = await browser.newContext({ storageState: 'playwright/.auth/student.json' });
+    // Vlastní přihlášení: logout blacklistuje refresh token, takže nesmíme
+    // použít sdílený storage state (zneplatnilo by session ostatním testům).
+    console.log('Creating a fresh student session for logout test');
+    const context = await browser.newContext();
     const page = await context.newPage();
 
     try {
-      await page.goto('/nabidka');
+      await page.goto('/');
+      await page.waitForSelector('#root', { state: 'attached' });
+      await page.locator('#Department').click();
+      await page.locator('input[id="email"]').fill('tsedlacek@example.org');
+      await page.locator('input[id="password"]').fill('password123');
+      await page.locator('button', { hasText: 'Přihlaste se' }).click();
+      await page.waitForURL('**/nabidka', { timeout: 20000 });
       await waitForAppLoad(page);
       console.log('App loaded, user is logged in');
 
@@ -115,7 +123,7 @@ test.describe('Login scenarios', () => {
       console.log('Clicked Odhlásit se');
 
       // Verify redirect to /
-      await page.waitForURL('http://localhost:3000/', { timeout: 15000 });
+      await page.waitForURL(/\/$/, { timeout: 15000 });
       console.log('Redirected to / after logout');
 
       // Verify localStorage is cleared

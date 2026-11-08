@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, checkHeading } from '../helpers';
 
+const API_URL = process.env.E2E_API_URL || 'http://localhost:8000';
+
 test.describe('Manage companies', () => {
   test.setTimeout(60000);
-  test.use({ storageState: 'playwright/.auth/admin.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/admin.json` });
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -48,7 +50,7 @@ test.describe('Manage companies', () => {
 
     // Fetch companies via API to find a pending one
     console.log('Fetching companies from API...');
-    const companiesResponse = await page.request.get('http://localhost:8000/api/users/companies/');
+    const companiesResponse = await page.request.get(`${API_URL}/api/users/companies/`);
     expect(companiesResponse.status()).toBe(200);
     const companiesData = await companiesResponse.json();
     const companies = companiesData.results || companiesData;
@@ -66,7 +68,7 @@ test.describe('Manage companies', () => {
 
     // Update approval_status to APPROVED (1)
     const updateResponse = await page.request.patch(
-      `http://localhost:8000/api/users/companies/${pendingCompany.employer_id}/`,
+      `${API_URL}/api/users/companies/${pendingCompany.employer_id}/`,
       { data: { approval_status: 1 } }
     );
     expect(updateResponse.status()).toBe(200);
@@ -78,7 +80,7 @@ test.describe('Manage companies', () => {
     // Restore the status back to PENDING to keep test idempotent
     console.log('Restoring approval status to PENDING...');
     await page.request.patch(
-      `http://localhost:8000/api/users/companies/${pendingCompany.employer_id}/`,
+      `${API_URL}/api/users/companies/${pendingCompany.employer_id}/`,
       { data: { approval_status: 0 } }
     );
     console.log('Status restored');

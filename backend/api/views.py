@@ -2,6 +2,7 @@
 Infrastructure views: file serving, health checks, utility endpoints.
 """
 
+import logging
 from pathlib import Path
 
 from django.conf import settings
@@ -11,7 +12,7 @@ from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -27,10 +28,18 @@ from users.models import (
     ActionLog,
     EmployerProfile,
 )
+from users.permissions import (
+    IsAdminUser,
+    IsGarantPraxe,
+    IsStagAdmin,
+    IsStagTeacher,
+)
 
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
 
 
 def _media_rel(full_path: Path) -> str:
@@ -190,6 +199,17 @@ class TestResetDBView(APIView):
             reset_e2e_database(using="default")
             management.call_command("seed_db")
             self._create_e2e_test_users()
+            # E2E scénáře počítají s katalogem aktivních nabídek; legacy seed_db
+            # je zakládá bez workflow_state (NULL), takže katalog zůstane prázdný.
+            # Deterministický demo seed doplní 11 nabídek v OPEN_FOR_APPLICATIONS.
+            try:
+                management.call_command("seed_demo", password="password123")
+            except Exception as exc:
+                logger.exception("E2E: seed_demo selhal")
+                return JsonResponse(
+                    {"status": "error", "detail": f"seed_demo failed: {exc}"},
+                    status=500,
+                )
 
             # Disable token rotation so the SAME refresh token works across
             # multiple Playwright test contexts (each loads storage state with
@@ -336,6 +356,7 @@ class TestScenarioView(APIView):
             "invitation-exists": builder.invitation_exists,
             "practice-has-favorites": builder.practice_has_favorites,
             "practice-pending-approval": builder.practice_pending_approval,
+            "practice-editable": builder.practice_editable,
             "application-ready": builder.application_ready,
             "capacity-full": builder.capacity_full,
             "dual-approval-completed": builder.dual_approval_completed,
@@ -390,7 +411,7 @@ class DashboardStatsView(APIView):
     Monitoring dashboard stats endpoint.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (IsStagTeacher | IsStagAdmin | IsGarantPraxe | IsAdminUser)]
 
     def get(self, request):
         from api.dashboard_service import DashboardService
@@ -489,14 +510,17 @@ class DataExportView(APIView):
                 from api.tasks import export_data_async
 
                 export_id = str(uuid.uuid4())
-                export_data_async.delay(export_id, filters, fmt, user.pk)
                 from django.core.cache import cache
 
                 # TTL 7200: user_id cache musí přežít data cache (3600), jinak by
                 # legitimní vlastník dostal 404 při zpožděném exportu (review A2).
                 cache.set(f"export_{export_id}_user_id", user.pk, timeout=7200)
-                # stavový marker pro DataExportStatusView (PENDING/SUCCESS/FAILURE)
+                # Stav se musí zapsat PŘED spuštěním tasku. V DEBUG režimu je
+                # CELERY_TASK_ALWAYS_EAGER=True a task doběhne synchronně; kdyby
+                # se "pending" zapsal po něm, přepsal by výsledek a export by
+                # zůstal navždy "pending".
                 cache.set(f"export_{export_id}_status", "pending", timeout=3600)
+                export_data_async.delay(export_id, filters, fmt, user.pk)
                 return Response(
                     {
                         "export_id": export_id,

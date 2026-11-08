@@ -29,6 +29,13 @@ module.exports = defineConfig({
       name: 'setup',
       testMatch: 'auth.setup.js',
     },
+    // Firefox smoke
+    {
+      name: 'Firefox Smoke',
+      testMatch: /smoke\/critical-paths\.spec\.js/,
+      use: { ...devices['Desktop Firefox'] },
+      dependencies: ['setup'],
+    },
     // Admin Tests
     {
       name: 'Admin Role',

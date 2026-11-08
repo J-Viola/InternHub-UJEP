@@ -67,6 +67,7 @@ export default function NabidkaEntity({ entity }) {
     return(
         <ContainerForEntity
             id={entity.practice_id}
+            data-testid="nabidka-entity"
             variant="white"
             onClick={handleClick}
             property="p-6 mt-4 border border-black rounded-[10px] shadow-md hover:shadow-lg transition-all duration-200 relative"
@@ -100,6 +101,7 @@ export default function NabidkaEntity({ entity }) {
 
                             {user.isStudent() && (
                                 <Button
+                                    title={isFavorite ? t('offers.favorite_remove') : t('offers.favorite_add')}
                                     icon={isFavorite ? "heart-filled" : "heart"}
                                     iconColor={isFavorite ? "text-red-500" : "text-gray-400"}
                                     onClick={handleHeartClick}

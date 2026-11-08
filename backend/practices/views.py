@@ -52,6 +52,7 @@ from users.permissions import (
     IsNotCancelled,
     IsOrganizationOrReadOnly,
     IsOrganizationOwner,
+    IsStagAdmin,
     IsStagTeacher,
 )
 
@@ -155,6 +156,12 @@ class StudentPracticeViewSet(viewsets.ReadOnlyModelViewSet):
         try:
             data = PracticeService.apply_student_practice(user, practice_id)
         except ValueError as e:
+            # Kapacitu vracíme jako error_code (FE má překlad), ne jako syrový kód v detail.
+            if str(e) == "CAPACITY_FULL":
+                return Response(
+                    {"error_code": "CAPACITY_FULL", "detail": "Kapacita partnera je plně obsazena"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(data, status=status.HTTP_201_CREATED)
 
@@ -383,7 +390,7 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
         ]
         if instance.workflow_state in blocked_states:
             return Response(
-                {"detail": "Úprava není povolena pro aktivní inzerát."},
+                {"detail": "Schválený inzerát nelze editovat."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         # 3.6: Blokace editace — pouze PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED
@@ -399,9 +406,24 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
         # proto ho doplníme z instance (stejně jako ve create).
         data = request.data.copy()
         data["employer_id"] = instance.employer_id
+        was_content_rejected = instance.workflow_state == PracticeWorkflowState.CONTENT_REJECTED
         serializer = self.get_serializer(instance, data=data, partial=kwargs.pop("partial", False))
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        try:
+            with transaction.atomic():
+                self.perform_update(serializer)
+                # Přepracovaný zamítnutý inzerát se vrací do schvalovacího kolečka.
+                if was_content_rejected:
+                    instance = PracticeService.transition_practice_state(
+                        instance,
+                        PracticeWorkflowState.PENDING_CONTENT_APPROVAL,
+                        request.user,
+                        reason="Inzerát upraven organizací po zamítnutí — vráceno ke schválení.",
+                    )
+                    # nový stav se musí promítnout i do odpovědi
+                    serializer = self.get_serializer(instance)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         response = Response(serializer.data)
 
         ActionLogService.log(
@@ -423,7 +445,7 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
         ]
         if instance.workflow_state in blocked_states:
             return Response(
-                {"detail": "Úprava není povolena pro aktivní inzerát."},
+                {"detail": "Schválený inzerát nelze editovat."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         # 3.6: Blokace editace — pouze PENDING_CONTENT_APPROVAL nebo CONTENT_REJECTED
@@ -489,9 +511,13 @@ class StaffPracticeViewSet(viewsets.GenericViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_permissions(self):
+        # Staff přehledy (/sprava-stazi) potřebují vedle učitele (VY) i
+        # vedoucího katedry (VK -> IsStagAdmin), garanta praxe a admina.
+        # ``approve`` zůstává beze změny (IsStagTeacher | IsAdminUser) — rozšíření
+        # o VK/garanta by změnilo okruh schvalovatelů inzerátů, což není součástí F-18.
         if self.action == "approve":
             return [IsAuthenticated(), (IsStagTeacher | IsAdminUser)()]
-        return [IsAuthenticated(), IsStagTeacher()]
+        return [IsAuthenticated(), (IsStagTeacher | IsStagAdmin | IsGarantPraxe | IsAdminUser)()]
 
     @extend_schema(summary="List practices waiting for approval")
     @action(detail=False, methods=["get"], serializer_class=PracticeApprovalSerializer)
@@ -734,6 +760,12 @@ class AdminPracticesListView(generics.ListAPIView):
         # Evaluate the base queryset once (avoids re-executing filter twice).
         # Materialize both subsets before serialization.
         pending_qs = queryset.filter(approval_status=ApprovalStatus.PENDING)
+        # Schválené a aktivní nabídky musí admin vidět i po přechodu z fronty.
+        active_offers_qs = queryset.filter(
+            approval_status=ApprovalStatus.APPROVED,
+            workflow_state=PracticeWorkflowState.OPEN_FOR_APPLICATIONS,
+            is_cancelled=False,
+        )
         approved_ids = list(queryset.filter(approval_status=ApprovalStatus.APPROVED).values_list("practice_id", flat=True))
 
         approved_student_practices = StudentPractice.objects.filter(practice_id__in=approved_ids, is_cancelled=False).select_related(
@@ -746,6 +778,7 @@ class AdminPracticesListView(generics.ListAPIView):
                     approved_student_practices, many=True, context={"request": request}
                 ).data,
                 "to_approve_practices": self.get_serializer(pending_qs, many=True).data,
+                "active_offers": self.get_serializer(active_offers_qs, many=True).data,
             }
         )
 

@@ -43,6 +43,8 @@ class ProductionGuardsTests(SimpleTestCase):
         env.update(
             {
                 "DJANGO_SECRET_KEY": "x" * 40,
+                # Platný Fernet klíč (32 nulových bajtů) — produkce ho vyžaduje.
+                "STAG_TICKET_ENCRYPTION_KEY": "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=",
                 "DEBUG": "False",
                 "ALLOWED_HOSTS": "example.org",
                 **extra,
@@ -58,6 +60,16 @@ class ProductionGuardsTests(SimpleTestCase):
 
     def test_secure_configuration_starts(self):
         self.assertEqual(self._import_settings().returncode, 0)
+
+    def test_missing_stag_ticket_encryption_key_blocked(self):
+        result = self._import_settings(STAG_TICKET_ENCRYPTION_KEY="")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("STAG_TICKET_ENCRYPTION_KEY", result.stderr)
+
+    def test_invalid_stag_ticket_encryption_key_blocked(self):
+        result = self._import_settings(STAG_TICKET_ENCRYPTION_KEY="not-a-fernet-key")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("STAG_TICKET_ENCRYPTION_KEY", result.stderr)
 
     def test_stag_mock_and_demo_login_blocked_in_any_truthy_form(self):
         for name in ("STAG_MOCK", "DEMO_LOGIN"):

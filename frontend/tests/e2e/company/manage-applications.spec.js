@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForAppLoad, clickNavLink, checkHeading, confirmPopup } from '../helpers';
 
 test.describe('Manage practice applications', () => {
-  test.use({ storageState: 'playwright/.auth/company.json' });
+  test.use({ storageState: `${process.env.E2E_AUTH_DIR || 'playwright/.auth'}/company.json` });
   test.setTimeout(90000);
 
   // ------------------------------------------------------------------
@@ -13,8 +13,8 @@ test.describe('Manage practice applications', () => {
   // page (the GET /api/student-practices/organization-applications/ endpoint
   // filters by approval_status=PENDING).
   // ------------------------------------------------------------------
-  test.beforeAll(async ({ request }) => {
-    const resp = await request.post('http://localhost:8000/api/test/scenario/application-ready/');
+  test.beforeEach(async ({ request }) => {
+    const resp = await request.post(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/test/scenario/application-ready/`);
     if (!resp.ok()) {
       const body = await resp.text().catch(() => '(no body)');
       console.log(`Warning: scenario creation returned ${resp.status()} – ${body}`);
@@ -47,7 +47,10 @@ test.describe('Manage practice applications', () => {
     await navigateToApplications(page);
 
     // Wait for application cards to load
-    const appCard = page.locator('div[id^="application-entity-"]').first();
+    const appCard = page
+      .locator('div[id^="application-entity-"]')
+      .filter({ has: page.getByLabel('Spravovat přihlášku') })
+      .first();
     await expect(appCard).toBeVisible({ timeout: 20000 });
     console.log('Application card found');
 
@@ -84,7 +87,7 @@ test.describe('Manage practice applications', () => {
     // by posting to the scenario endpoint — the scenario creates data for
     // the same known employer + student, and the practice/SP will exist
     // from CMA02's beforeAll call.
-    const scResp = await page.request.post('http://localhost:8000/api/test/scenario/application-ready/');
+    const scResp = await page.request.post(`${process.env.E2E_API_URL || 'http://localhost:8000'}/api/test/scenario/application-ready/`);
     if (!scResp.ok()) {
       console.log(`Warning: scenario returned ${scResp.status()}`);
     } else {
@@ -94,7 +97,10 @@ test.describe('Manage practice applications', () => {
     await navigateToApplications(page);
 
     // Wait for application cards to load
-    const appCard = page.locator('div[id^="application-entity-"]').first();
+    const appCard = page
+      .locator('div[id^="application-entity-"]')
+      .filter({ has: page.getByLabel('Spravovat přihlášku') })
+      .first();
     await expect(appCard).toBeVisible({ timeout: 20000 });
     console.log('Application card found for rejection test');
 
