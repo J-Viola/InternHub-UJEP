@@ -291,9 +291,6 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
     Implements a circuit-breaker: if STAG was unreachable within the last
     STAG_RETRY_COOLDOWN seconds, fails fast without making a network request.
     """
-    if stag_user_info and not getattr(settings, "STAG_MOCK", False):
-        raise AuthenticationFailed("stag_user_info je povolen pouze v mock/development režimu")
-
     from users.stag_api.mock_client import MockStagClient
 
     client = get_stag_client()
@@ -308,6 +305,8 @@ def validate_stag_ticket(ticket: str, stag_user_info: dict | None = None):
         # Dev/mock mode: trust the stagUserInfo sent by the STAG server in the redirect URL
         details = stag_user_info
     else:
+        # Reálný režim: stagUserInfo z URL je vstup od klienta, proto se zahazuje.
+        # Rozhoduje výhradně odpověď STAGu na ticket.
         try:
             details = client.validate_ticket(ticket)
             # Success — clear any active circuit breaker

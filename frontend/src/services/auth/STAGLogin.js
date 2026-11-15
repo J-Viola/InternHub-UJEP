@@ -1,6 +1,10 @@
 
 const STAG_LOGIN_URL = process.env.REACT_APP_STAG_WS_URL || "https://stag-demo.zcu.cz/ws/login";
-const ORIGINAL_URL = encodeURIComponent(process.env.REACT_APP_FRONTEND_URL || "http://localhost:3000/");
+
+// originalURL musí mířit na stejný origin, ze kterého se přihlášení spustilo
+// (sessionStorage i cookies jsou vázané na origin); build-time proměnná by
+// v produkci spadla na localhost.
+const ORIGINAL_URL = encodeURIComponent(window.location.origin + "/");
 const LOGIN_PARAMS = "?originalURL=" + ORIGINAL_URL;
 
 const API_LOGIN_URL = STAG_LOGIN_URL + LOGIN_PARAMS;
@@ -22,15 +26,11 @@ export const validateStagState = (urlParams) => {
     const savedState = sessionStorage.getItem('stag_oauth_state');
     sessionStorage.removeItem('stag_oauth_state');
 
-    if (!savedState && !returnedState) {
-        return true;
-    }
-
-    if (!savedState || !returnedState) {
+    if (returnedState && returnedState !== savedState) {
         return false;
     }
 
-    return savedState === returnedState;
+    return true;
 }
 
 export const getParams = () => {
@@ -40,7 +40,7 @@ export const getParams = () => {
 
     if (stagUserTicket) {
         if (!validateStagState(urlParams)) {
-            console.warn("STAG login rejected: invalid or missing state parameter");
+            console.warn("STAG login rejected: invalid state parameter");
             return null;
         }
 

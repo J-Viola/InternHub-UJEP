@@ -2,6 +2,7 @@
 
 from unittest import mock
 
+from django.core.cache import cache
 from django.core.exceptions import FieldDoesNotExist
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -12,7 +13,8 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from users.jwt_tokens import REDACTED_TOKEN, RedactedRefreshToken, RedactedTokenRefreshSerializer
 from users.models import InvalidStagTicketError, StagUser, StudentUser, User
 from users.serializers import CustomTokenObtainPairSerializer
-from users.services import fetch_student_data_from_stag
+from users.services import fetch_student_data_from_stag, validate_stag_ticket
+from users.stag_api.mock_client import MockStagClient
 from users.stag_ticket import CLAIM_NAME, decrypt_ticket, encrypt_ticket, ticket_from_token
 from users.tokens import revoke_refresh_tokens
 
@@ -83,6 +85,48 @@ class StagLoginClaimTests(TestCase):
         self.assertNotIn("valid-ticket", result["refresh"])
         self.assertEqual(ticket_from_token(RefreshToken(result["refresh"])), "valid-ticket")
         self.assertEqual(ticket_from_token(AccessToken(result["access"])), "valid-ticket")
+
+
+@override_settings(STAG_MOCK=False, DEMO_LOGIN=False)
+class StagUserInfoNotTrustedTests(TestCase):
+    """stagUserInfo z redirectu je vstup od klienta — v reálném režimu se ignoruje."""
+
+    def setUp(self):
+        cache.clear()
+
+    @mock.patch("users.services.get_stag_client")
+    def test_real_mode_validates_ticket_and_ignores_client_info(self, get_client):
+        get_client.return_value.validate_ticket.return_value = {
+            "email": "real@ujep.cz",
+            "jmeno": "Real",
+            "prijmeni": "User",
+            "stagUserInfo": [{"role": "ST", "osCislo": "R1"}],
+        }
+
+        details = validate_stag_ticket(
+            "ticket-1",
+            stag_user_info={"email": "utocnik@example.com", "stagUserInfo": [{"role": "ST"}]},
+        )
+
+        self.assertEqual(details["email"], "real@ujep.cz")
+        get_client.return_value.validate_ticket.assert_called_once_with("ticket-1")
+
+    @override_settings(STAG_MOCK=True, DEMO_LOGIN=True)
+    @mock.patch("users.services.get_stag_client")
+    def test_mock_mode_uses_client_info(self, get_client):
+        get_client.return_value = MockStagClient()
+
+        details = validate_stag_ticket(
+            "real-stag-ticket",
+            stag_user_info={
+                "email": "mock@ujep.cz",
+                "jmeno": "Mock",
+                "prijmeni": "Student",
+                "stagUserInfo": [{"role": "ST", "osCislo": "M1"}],
+            },
+        )
+
+        self.assertEqual(details["email"], "mock@ujep.cz")
 
 
 class StagLogoutInvalidationTests(TestCase):

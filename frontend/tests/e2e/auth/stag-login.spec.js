@@ -114,4 +114,32 @@ test.describe('STAG login scenarios', () => {
     console.log('User still logged in');
   });
 
+  test('ST06 - callback bez vráceného state (reálný STAG) projde', async ({ page }) => {
+    test.setTimeout(60000);
+
+    // Reálný STAG WS login `state` nevrací; uložený nonce nesmí přihlášení zablokovat.
+    await page.goto('/');
+    await page.evaluate(() => sessionStorage.setItem('stag_oauth_state', 'nonce-abc'));
+
+    await page.goto('/?stagUserTicket=student-ticket');
+    await page.waitForURL('**/nabidka', { timeout: 20000 });
+
+    const userStr = await page.evaluate(() => localStorage.getItem('user'));
+    expect(JSON.parse(userStr).email).toBe('jan.novak@ujep.cz');
+    expect(await page.evaluate(() => sessionStorage.getItem('stag_oauth_state'))).toBeNull();
+  });
+
+  test('ST07 - callback s cizím state se odmítne', async ({ page }) => {
+    test.setTimeout(60000);
+
+    await page.goto('/');
+    await page.evaluate(() => sessionStorage.setItem('stag_oauth_state', 'nonce-abc'));
+
+    await page.goto('/?stagUserTicket=student-ticket&state=cizi-nonce');
+
+    await expect(page).not.toHaveURL(/nabidka/, { timeout: 15000 });
+    await expect(page.getByText(/Invalid state/i)).toBeVisible({ timeout: 15000 });
+    expect(await page.evaluate(() => localStorage.getItem('user'))).toBeNull();
+  });
+
 });
