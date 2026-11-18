@@ -108,6 +108,29 @@ echo "== A-23: statika admina"
 check "admin CSS" 200 "$(code -H "$H" "$BASE/static/django/admin/css/base.css")"
 check "/admin/login/" 200 "$(code -H "$H" "$BASE/admin/login/")"
 
+echo "== A-31: CSP (SPA z nginx, administrace a dokumentace z Djanga)"
+csp_of() { curl -s -D - -o /dev/null -H "Host: $SMOKE_HOST" -H "$H" "$1" | tr -d '\r' | sed -n 's/^[Cc]ontent-[Ss]ecurity-[Pp]olicy: //p'; }
+directive() { DIRECTIVES="$1" python3 -c "
+import os, sys
+for part in os.environ['DIRECTIVES'].split(';'):
+    tokens = part.split()
+    if tokens and tokens[0] == '$2':
+        print(' '.join(tokens[1:]))
+        break
+"; }
+SPA_CSP="$(csp_of "$BASE/")"
+check "SPA script-src" "'self'" "$(directive "$SPA_CSP" script-src)"
+check "SPA style-src-elem" "'self' https://fonts.googleapis.com" "$(directive "$SPA_CSP" style-src-elem)"
+check "SPA style-src-attr" "'unsafe-inline'" "$(directive "$SPA_CSP" style-src-attr)"
+check "SPA: jedna CSP hlavička" 1 "$(csp_of "$BASE/" | wc -l)"
+ADMIN_CSP="$(csp_of "$BASE/admin/login/")"
+check "admin script-src" "'self'" "$(directive "$ADMIN_CSP" script-src)"
+check "admin style-src-elem" "'self' https://fonts.googleapis.com" "$(directive "$ADMIN_CSP" style-src-elem)"
+DOCS_CSP="$(csp_of "$BASE/api/docs/")"
+check "docs script-src" "'self'" "$(directive "$DOCS_CSP" script-src)"
+check "docs style-src-elem" "'self' https://fonts.googleapis.com" "$(directive "$DOCS_CSP" style-src-elem)"
+check "dokumentace API bez vloženého <script>" 0 "$(curl -s -H "Host: $SMOKE_HOST" -H "$H" "$BASE/api/docs/" | grep -c '<script>' || true)"
+
 echo "== A-22/A-01: /storage (200 / 404 (A-20) / nikdy 500)"
 docker exec smoke-backend sh -c "mkdir -p storage/images/logos storage/documents && echo x > storage/images/logos/t.png && echo x > storage/documents/t.docx"
 docker exec smoke-backend python manage.py shell -c "

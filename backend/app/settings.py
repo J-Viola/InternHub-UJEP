@@ -238,9 +238,20 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
+# A-31: CSP má dvě vrstvy. SPA (HTML a statiku Reactu) obsluhuje nginx a hlavičku jí nastavuje
+# .docker/Frontend/nginx.conf; Django nastavuje CSP pro administraci, dokumentaci API a API odpovědi.
+# Obě vrstvy zakazují vložené skripty i vložené <style> bloky; shodu obou konfigurací hlídá test
+# app/tests/test_csp.py.
+#
+# Vložené skripty Django nepotřebuje: administrace (Django 6) načítá veškerý JavaScript jako externí
+# soubory a data předává v neaktivních <script type="application/json">, dokumentace API používá
+# SpectacularSwaggerSplitView s inicializačním skriptem jako samostatným souborem (app/urls.py).
+# Vložené styly jako atributy style="..." zůstávají povolené (widgety administrace, React); vložené
+# <style> bloky ne — Swagger UI a prohlížeč API DRF tím přijdou jen o kosmetický styl.
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_SCRIPT_SRC = ("'self'",)
+CSP_STYLE_SRC_ELEM = ("'self'", "https://fonts.googleapis.com")
+CSP_STYLE_SRC_ATTR = ("'unsafe-inline'",)
 CSP_IMG_SRC = ("'self'", "data:", "https:")
 CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
 CSP_FRAME_ANCESTORS = ("'self'",)
@@ -248,9 +259,8 @@ CSP_BASE_URI = ("'self'",)
 CSP_FORM_ACTION = ("'self'",)
 
 if DEBUG:
-    # Dev: allow direct backend connections (REACT_APP_API_URL) and eval for CRA source maps
+    # Dev: přímé spojení na backend (REACT_APP_API_URL) z prohlížeče; ostatní direktivy jsou shodné s produkcí.
     CSP_CONNECT_SRC = ("'self'", "http://localhost:8000", "http://0.0.0.0:8000")
-    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
 else:
     CSP_CONNECT_SRC = ("'self'",)
 

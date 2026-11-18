@@ -1,7 +1,7 @@
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerSplitView
 
 from api.views import (
     ActionLogListView,
@@ -40,7 +40,7 @@ urlpatterns = [
     path("api/audit-logs/", ActionLogListView.as_view(), name="audit-logs"),
     # OpenAPI schema and Swagger UI
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/docs/", SpectacularSwaggerSplitView.as_view(url_name="schema"), name="swagger-ui"),
 ]
 
 if settings.DEBUG:
