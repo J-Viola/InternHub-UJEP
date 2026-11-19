@@ -38,15 +38,14 @@ urlpatterns = [
     path("api/health/", HealthCheckView.as_view(), name="health-check"),
     path("api/dashboard/stats/", DashboardStatsView.as_view(), name="dashboard-stats"),
     path("api/audit-logs/", ActionLogListView.as_view(), name="audit-logs"),
-    # OpenAPI schema and Swagger UI
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/docs/", SpectacularSwaggerSplitView.as_view(url_name="schema"), name="swagger-ui"),
 ]
 
 if settings.DEBUG:
     from api.views import TestResetDBView, TestScenarioView
 
     urlpatterns += [
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path("api/docs/", SpectacularSwaggerSplitView.as_view(url_name="schema"), name="swagger-ui"),
         path("api/test/reset-db/", TestResetDBView.as_view(), name="test-reset-db"),
         path("api/test/scenario/<str:name>/", TestScenarioView.as_view(), name="test-scenario"),
     ]

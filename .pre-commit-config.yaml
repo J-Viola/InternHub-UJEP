@@ -27,3 +27,12 @@ repos:
         entry: bash -c 'cd frontend && npx eslint src --ext .js,.jsx'
         files: ^frontend/src/.*\.(js|jsx)$
         pass_filenames: false
+    # Runs the schema generator in a one-off backend container (needs `make build`);
+    # the hook rewrites openapi.yaml and fails the commit with the diff,
+    # stage the file and commit again.
+    -   id: openapi-schema
+        name: OpenAPI schema up to date
+        language: system
+        entry: make -s openapi
+        files: ^backend/.*\.py$
+        pass_filenames: false

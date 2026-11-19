@@ -84,7 +84,7 @@ Spuštění migrací lze vypnout nastavením `MIGRATE_DEMO=0` v `.env`.
 ### 4. Přístup k aplikaci
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
-- **Dokumentace API (Swagger)**: http://localhost:8000/api/schema/swagger-ui
+- **Dokumentace API (Swagger)**: http://localhost:8000/api/docs/ (jen ve vývojovém režimu)
 - **PgAdmin**: http://localhost:5050
 
 ## Testovací účty
@@ -190,6 +190,11 @@ Projekt obsahuje rozsáhlou dokumentaci v adresáři `Tests/`:
 - **UML diagramy** - Architektura systému
 - **Use Cases** - Případy použití
 - **SRS dokumentace** - Software Requirements Specification
+
+OpenAPI 3.0 specifikace API je uložená v kořeni repozitáře v souboru `openapi.yaml`, takže do API lze nahlédnout
+i bez spuštění aplikace. Aktuální podobu vygeneruje `make openapi` (vyžaduje sestavený backend image, `make build`);
+`make openapi-check` ověří, že soubor odpovídá kódu. Swagger UI a `/api/schema/` jsou dostupné jen ve vývojovém
+režimu, v produkci se neexponují.
 
 ## Licence
 

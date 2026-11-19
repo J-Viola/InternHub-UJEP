@@ -1,0 +1,5875 @@
+openapi: 3.0.3
+info:
+  title: InternHub UJEP API
+  version: 1.0.0
+  description: API pro správu studentských praxí na UJEP (InternHub). Umožňuje správu
+    organizací, praxí a přihlášek studentů.
+paths:
+  /api/audit-logs/:
+    get:
+      operationId: audit_logs_list
+      description: Global audit log API — admin only.
+      tags:
+      - audit-logs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActionLog'
+          description: ''
+  /api/auth/check/:
+    get:
+      operationId: auth_check_retrieve
+      description: |-
+        Auth gate pro nginx ``auth_request`` na ``/storage/`` (A-01).
+
+        Nginx předá původní URI v ``X-Original-URI``; stejná autorizační funkce jako
+        ``ServeStorageFileView``. Chybějící hlavička, neznámý soubor, traversal i
+        nedostatečné oprávnění → **403** (``auth_request`` rozumí jen 2xx/401/403,
+        cokoli jiného by Nginx změnil na 500). Nepřihlášený → 401 (DRF).
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/code-lists/locations/:
+    get:
+      operationId: code_lists_locations_retrieve
+      description: De-duplicated set of cities + addresses for the listing-page location
+        filter.
+      summary: Get unique practice locations
+      tags:
+      - Utils
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: List of unique locations
+  /api/dashboard/stats/:
+    get:
+      operationId: dashboard_stats_retrieve
+      description: Monitoring dashboard stats endpoint.
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/departments/admin-departments/:
+    get:
+      operationId: departments_admin_departments_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - departments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminDepartmentList'
+          description: ''
+    post:
+      operationId: departments_admin_departments_create
+      tags:
+      - departments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminDepartmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminDepartmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminDepartmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDepartment'
+          description: ''
+  /api/departments/admin-departments/{department_id}/:
+    get:
+      operationId: departments_admin_departments_retrieve
+      parameters:
+      - in: path
+        name: department_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - departments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDepartment'
+          description: ''
+    put:
+      operationId: departments_admin_departments_update
+      parameters:
+      - in: path
+        name: department_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - departments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminDepartmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminDepartmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminDepartmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDepartment'
+          description: ''
+    patch:
+      operationId: departments_admin_departments_partial_update
+      parameters:
+      - in: path
+        name: department_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - departments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminDepartmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminDepartmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminDepartmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDepartment'
+          description: ''
+    delete:
+      operationId: departments_admin_departments_destroy
+      parameters:
+      - in: path
+        name: department_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - departments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/departments/department-professor/:
+    get:
+      operationId: departments_department_professor_list
+      description: 'Returns a list of professors belonging to the same department
+        as the logged-in user. **Permissions: Authenticated User**'
+      summary: List professors in department
+      tags:
+      - Department
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProfessorDetail'
+          description: ''
+  /api/departments/department-professor/{user_id}/:
+    get:
+      operationId: departments_department_professor_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this professor user.
+        required: true
+      tags:
+      - departments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfessorUserProfile'
+          description: ''
+    put:
+      operationId: departments_department_professor_update
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this professor user.
+        required: true
+      tags:
+      - departments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfessorUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProfessorUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProfessorUserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfessorUserProfile'
+          description: ''
+    patch:
+      operationId: departments_department_professor_partial_update
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this professor user.
+        required: true
+      tags:
+      - departments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfessorUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfessorUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfessorUserProfileRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfessorUserProfile'
+          description: ''
+    delete:
+      operationId: departments_department_professor_destroy
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this professor user.
+        required: true
+      tags:
+      - departments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/departments/department-professor/all/:
+    get:
+      operationId: departments_department_professor_all_list
+      description: 'Returns a comprehensive list of all professors in the system.
+        **Permissions: Authenticated User**'
+      summary: List all professors across all departments
+      tags:
+      - Department
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProfessorDetail'
+          description: ''
+  /api/departments/department-students/:
+    get:
+      operationId: departments_department_students_list
+      description: 'Returns a list of students belonging to the same department as
+        the logged-in user. **Permissions: Authenticated User**'
+      summary: List students in department
+      tags:
+      - Department
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentDetail'
+          description: ''
+  /api/departments/department-users/:
+    get:
+      operationId: departments_department_users_list
+      description: 'Returns a list of students belonging to the same department as
+        the logged-in user. **Permissions: Authenticated User**'
+      summary: List students in department
+      tags:
+      - Department
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentDetail'
+          description: ''
+  /api/documents/{path}/:
+    get:
+      operationId: documents_retrieve
+      description: Zpětně kompatibilní trasa ``/api/documents/<path>/`` (kořen ``documents/``).
+      parameters:
+      - in: path
+        name: path
+        schema:
+          type: string
+        required: true
+      tags:
+      - documents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/export-data/:
+    get:
+      operationId: export_data_retrieve
+      description: |-
+        Bulk data export endpoint for practices.
+        Pro >500 záznamů spouští asynchronní Celery task.
+      tags:
+      - export-data
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/export/download/{export_id}/:
+    get:
+      operationId: export_download_retrieve
+      description: Endpoint pro stažení hotového asynchronního exportu.
+      parameters:
+      - in: path
+        name: export_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - export
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/export/status/{export_id}/:
+    get:
+      operationId: export_status_retrieve
+      description: |-
+        Endpoint pro kontrolu stavu asynchronního exportu (polling).
+
+        odpověď ``{"state": "PENDING|SUCCESS|FAILURE",
+        "download_url": ...}`` — download_url je naplněna cestou
+        ``/api/export/download/{export_id}/`` při SUCCESS, jinak ``null``.
+      parameters:
+      - in: path
+        name: export_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - export
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/files/{path}/:
+    get:
+      operationId: files_retrieve
+      description: |-
+        Serve a file from ``STORAGE_ROOT`` with authentication and path validation.
+
+        A-25: oprávnění rozhoduje jediná funkce ``api.file_access.check_storage_access``
+        (stejná jako v ``StorageAuthCheckView`` a ``DocumentPermissionMiddleware``):
+          - Superuser → always allowed
+          - CV / profilová fotka: owner / employer who received application / professor
+            teaching the student's subject / department head
+          - Practice docs: delegated to ``UploadedDocument.user_has_permission()``
+          - Firemní loga: veřejná
+
+        Replace ``/storage/`` direct Nginx serve with ``X-Accel-Redirect`` in production
+        to bypass Django for the actual byte stream.
+      parameters:
+      - in: path
+        name: path
+        schema:
+          type: string
+        required: true
+      tags:
+      - files
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: |-
+        K8s liveness/readiness probe.
+        200 + ``{"db":"ok"}`` when DB reachable, 503 otherwise.
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/{id}/read/:
+    patch:
+      operationId: notifications_read_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/read_all/:
+    post:
+      operationId: notifications_read_all_create
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/unread_count/:
+    get:
+      operationId: notifications_unread_count_retrieve
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/practices/{id}/cancel/:
+    post:
+      operationId: practices_cancel_create
+      description: Stornuje nabídku praxe — deaktivuje ji a zaznamená důvod storna.
+      summary: Cancel a practice
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Practices - Staff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelPracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelPracticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelPracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/{id}/close-applications/:
+    post:
+      operationId: practices_close_applications_create
+      description: Uzavře sběr přihlášek na nabídku praxe (manuálně).
+      summary: Close practice for applications
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Practices - Staff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseApplicationsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CloseApplicationsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CloseApplicationsRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/{id}/transition/:
+    post:
+      operationId: practices_transition_create
+      description: Provede přechod stavu nabídky praxe podle definovaného state machine.
+      summary: Transition practice workflow state
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Practices - Staff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionPracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransitionPracticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransitionPracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/admin-practices/:
+    get:
+      operationId: practices_admin_practices_list
+      summary: List all practices grouped by status (Admin)
+      tags:
+      - Practices - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationPractice'
+          description: ''
+  /api/practices/employer/:
+    get:
+      operationId: practices_employer_list
+      description: ViewSet for employers to manage their own practices.
+      summary: List organization practices
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Practices - Employer
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrganizationPracticeList'
+          description: ''
+    post:
+      operationId: practices_employer_create
+      description: ViewSet for employers to manage their own practices.
+      summary: Create a new practice
+      tags:
+      - Practices - Employer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/employer/{id}/:
+    get:
+      operationId: practices_employer_retrieve
+      description: ViewSet for employers to manage their own practices.
+      summary: Get organization practice detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practices - Employer
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationPractice'
+          description: ''
+    put:
+      operationId: practices_employer_update
+      description: ViewSet for employers to manage their own practices.
+      summary: Update an organization practice
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practices - Employer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+    patch:
+      operationId: practices_employer_partial_update
+      description: ViewSet for employers to manage their own practices.
+      summary: Partially update an organization practice
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practices - Employer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPracticeRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPracticeRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+    delete:
+      operationId: practices_employer_destroy
+      description: ViewSet for employers to manage their own practices.
+      summary: Delete an organization practice
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practices - Employer
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/practices/external/:
+    post:
+      operationId: practices_external_create
+      description: Vytvoří mimosystémovou praxi — pro studenty nebo školy, kde firma
+        není registrována v systému.
+      summary: Create external practice
+      tags:
+      - Practices - External
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalPracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExternalPracticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExternalPracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/get-end-date/:
+    post:
+      operationId: practices_get_end_date_create
+      summary: Calculate end date of practice
+      tags:
+      - Utils
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/practices/staff/{id}/approve/:
+    post:
+      operationId: practices_staff_approve_create
+      description: |-
+        ViewSet for teachers and department heads to manage and approve practices.
+        Admins (OrganizationUser with is_superuser) can also approve practices.
+      summary: Change approval status of a practice
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practices - Staff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PracticeApprovalStatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PracticeApprovalStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PracticeApprovalStatusRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PracticeApprovalStatus'
+          description: ''
+  /api/practices/staff/department_overview/:
+    get:
+      operationId: practices_staff_department_overview_retrieve
+      description: |-
+        ViewSet for teachers and department heads to manage and approve practices.
+        Admins (OrganizationUser with is_superuser) can also approve practices.
+      summary: Get practices by user department (Approved vs Pending)
+      tags:
+      - Practices - Staff
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/practices/staff/pending/:
+    get:
+      operationId: practices_staff_pending_retrieve
+      description: |-
+        ViewSet for teachers and department heads to manage and approve practices.
+        Admins (OrganizationUser with is_superuser) can also approve practices.
+      summary: List practices waiting for approval
+      tags:
+      - Practices - Staff
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PracticeApproval'
+          description: ''
+  /api/practices/staff/running/:
+    get:
+      operationId: practices_staff_running_retrieve
+      description: |-
+        ViewSet for teachers and department heads to manage and approve practices.
+        Admins (OrganizationUser with is_superuser) can also approve practices.
+      summary: List running practices for department
+      tags:
+      - Practices - Staff
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunningPractice'
+          description: ''
+  /api/practices/student/:
+    get:
+      operationId: practices_student_list
+      description: ViewSet for students to view active practices and apply for them.
+      parameters:
+      - in: query
+        name: active_only
+        schema:
+          type: boolean
+      - in: query
+        name: address
+        schema:
+          type: string
+      - in: query
+        name: approval_status
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+          - 2
+        description: |-
+          * `0` - PENDING
+          * `1` - APPROVED
+          * `2` - REJECTED
+      - in: query
+        name: city
+        schema:
+          type: string
+      - in: query
+        name: company_name
+        schema:
+          type: string
+      - in: query
+        name: employment_type
+        schema:
+          type: string
+        description: Typ úvazku
+      - in: query
+        name: favorites
+        schema:
+          type: boolean
+      - in: query
+        name: has_capacity
+        schema:
+          type: boolean
+      - in: query
+        name: max_duration
+        schema:
+          type: number
+      - in: query
+        name: methodologies
+        schema:
+          type: string
+      - in: query
+        name: min_duration
+        schema:
+          type: number
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: progress_status
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        description: |-
+          * `0` - NOT_STARTED
+          * `1` - IN_PROGRESS
+          * `2` - COMPLETED
+          * `3` - CANCELLED
+      - in: query
+        name: region
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: semester
+        schema:
+          type: string
+      - in: query
+        name: skills
+        schema:
+          type: string
+      - in: query
+        name: subject
+        schema:
+          type: integer
+      - in: query
+        name: technologies
+        schema:
+          type: string
+      - in: query
+        name: title
+        schema:
+          type: string
+      - in: query
+        name: tools
+        schema:
+          type: string
+      tags:
+      - Practices - Student
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPracticeList'
+          description: ''
+  /api/practices/student/{id}/:
+    get:
+      operationId: practices_student_retrieve
+      description: ViewSet for students to view active practices and apply for them.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practices - Student
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/student/{id}/toggle_favorite/:
+    post:
+      operationId: practices_student_toggle_favorite_create
+      description: ViewSet for students to view active practices and apply for them.
+      summary: Toggle favorite practice
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Practices - Student
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/student/apply/:
+    post:
+      operationId: practices_student_apply_create
+      description: ViewSet for students to view active practices and apply for them.
+      summary: Apply for a practice (student)
+      tags:
+      - Practices - Student
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/student/by_subject/:
+    get:
+      operationId: practices_student_by_subject_retrieve
+      description: ViewSet for students to view active practices and apply for them.
+      summary: Get practices by subject
+      tags:
+      - Practices - Student
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/student/get_practice_user_relations/:
+    get:
+      operationId: practices_student_get_practice_user_relations_retrieve
+      description: ViewSet for students to view active practices and apply for them.
+      summary: Get user's practices and invitations
+      tags:
+      - Practices - Student
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/practices/student/upcoming/:
+    get:
+      operationId: practices_student_upcoming_retrieve
+      description: ViewSet for students to view active practices and apply for them.
+      summary: Get upcoming practices
+      tags:
+      - Practices - Student
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Practice'
+          description: ''
+  /api/student-practices/{id}/confirm-contract/:
+    post:
+      operationId: student_practices_confirm_contract_create
+      description: Zapíše vlastní approval osu aktéra; do stavu CONTRACTED s approval_status=APPROVED
+        přepne jen při obou schválených osách (s kapacitní kontrolou).
+      summary: Confirm contract receipt
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Contract confirmed
+        '400':
+          description: CAPACITY_FULL — kapacita partnera je plně obsazena
+  /api/student-practices/{student_practice_id}:
+    get:
+      operationId: student_practices_retrieve
+      description: 'Returns detailed information about a specific student practice.
+        **Permissions: Authenticated User**'
+      summary: Get student practice card
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        description: ID of the student practice
+        required: true
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentPracticeCard'
+          description: Student practice details
+        '404':
+          description: StudentPractice not found
+  /api/student-practices/{student_practice_id}/cancel/:
+    post:
+      operationId: student_practices_cancel_create
+      description: Stornuje studentskou praxi a zaznamená důvod storna.
+      summary: Cancel a student practice
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Practices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelStudentPracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelStudentPracticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelStudentPracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListStudentPractice'
+          description: ''
+  /api/student-practices/{student_practice_id}/content/:
+    get:
+      operationId: student_practices_content_retrieve
+      description: Generates a Pracovní náplň (.docx) document.
+      summary: Download work content description
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Documents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+  /api/student-practices/{student_practice_id}/contract/:
+    get:
+      operationId: student_practices_contract_retrieve
+      description: Generates a Czech internship contract (.docx) from STAG data +
+        template.
+      summary: Download generated contract
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        description: StudentPractice ID
+        required: true
+      tags:
+      - Documents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: Generated .docx file
+        '403':
+          description: Permission denied
+        '404':
+          description: StudentPractice not found
+  /api/student-practices/{student_practice_id}/feedback/:
+    get:
+      operationId: student_practices_feedback_retrieve
+      description: Generates a Hodnocení odborné praxe (.docx) document.
+      summary: Download evaluation form
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Documents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+  /api/student-practices/{student_practice_id}/history/:
+    get:
+      operationId: student_practices_history_list
+      description: Returns a chronological list of ActionLog entries for the given
+        StudentPractice.
+      summary: Get ActionLog history for a student practice
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActionLog'
+          description: ''
+  /api/student-practices/{student_practice_id}/report/:
+    get:
+      operationId: student_practices_report_retrieve
+      description: Generates a Výkaz odborné praxe (.docx) document.
+      summary: Download practice report/log
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Documents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+  /api/student-practices/{student_practice_id}/resolve-cancellation/:
+    post:
+      operationId: student_practices_resolve_cancellation_create
+      description: 'Garant vezme storno přihlášky studenta na vědomí (nastaví cancellation_resolved_at).
+        Storno se tím nemění (je nevratné); student může podat novou žádost. **Permissions:
+        Garant praxe (VY/VK profesor nebo is_garant_praxe) dané katedry, Admin**'
+      summary: Acknowledge (take note of) a cancelled student practice
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListStudentPractice'
+          description: ''
+        '400':
+          description: Storno neexistuje nebo je již vyřešeno
+        '403':
+          description: Permission denied
+        '404':
+          description: StudentPractice not found
+  /api/student-practices/{student_practice_id}/transition/:
+    post:
+      operationId: student_practices_transition_create
+      description: Provede přechod stavu studentské praxe podle definovaného state
+        machine.
+      summary: Transition student practice workflow state
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Practices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionStudentPracticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransitionStudentPracticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransitionStudentPracticeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListStudentPractice'
+          description: ''
+  /api/student-practices/{student_practice_id}/withdraw/:
+    post:
+      operationId: student_practices_withdraw_create
+      description: Student stáhne svou žádost o praxi. Povoleno pouze ve stavu APPLIED
+        nebo PRELIMINARY_APPROVED. Stav se změní na REJECTED.
+      summary: Withdraw a student application
+      parameters:
+      - in: path
+        name: student_practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListStudentPractice'
+          description: ''
+  /api/student-practices/admin-view/pending-practices/:
+    get:
+      operationId: student_practices_admin_view_pending_practices_list
+      description: 'Returns a list of all student practices with PENDING approval
+        status. **Permissions: Admin/Staff**'
+      summary: List pending student practices (Admin)
+      tags:
+      - Student Practices - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListStudentPractice'
+          description: ''
+  /api/student-practices/by-practice/{practice_id}:
+    get:
+      operationId: student_practices_by_practice_list
+      description: 'Returns all student practices (applications) for a specific practice.
+        **Permissions: Authenticated User**'
+      summary: List student practices by practice ID
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListStudentPracticeList'
+          description: ''
+  /api/student-practices/download-document/{document_id}:
+    get:
+      operationId: student_practices_download_document_retrieve
+      description: 'Streams the file associated with the given UploadedDocument ID.
+        **Permissions: Owner or Authorized Personnel**'
+      summary: Download a document
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        description: ID of the uploaded document
+        required: true
+      tags:
+      - Documents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: Binary stream of the requested file
+        '403':
+          description: Permission denied
+        '404':
+          description: UploadedDocument not found
+  /api/student-practices/employer-invitation/approve/:
+    post:
+      operationId: student_practices_employer_invitation_approve_create
+      description: 'Processes a student''s response to an employer invitation (ACCEPT/REJECT).
+        **Permissions: Authenticated Student**'
+      summary: Approve or reject an employer invitation
+      tags:
+      - Student Practices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationApprovalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationApprovalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationApprovalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Invitation processed
+  /api/student-practices/employer-invitation/create/:
+    post:
+      operationId: student_practices_employer_invitation_create_create
+      description: 'Creates pending invitations for specified students to a specific
+        practice. **Permissions: Organization Owner**'
+      summary: Create employer invitations for students
+      tags:
+      - Student Practices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvitationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateInvitationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateInvitationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Invitations created successfully
+  /api/student-practices/evaluations/:
+    get:
+      operationId: student_practices_evaluations_list
+      description: |-
+        API ViewSet for mentor evaluations.
+
+        Autorizace (BE-002): queryset je scopovaný na přihlášky přístupné
+        žadateli + objektový ``CanAccessEvaluation`` — cizí aktér nečte ani
+        nemutuje cizí evaluace (žádná cizí identita v odpovědi, žádná mutace).
+      tags:
+      - student-practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Evaluation'
+          description: ''
+    post:
+      operationId: student_practices_evaluations_create
+      description: |-
+        API ViewSet for mentor evaluations.
+
+        Autorizace (BE-002): queryset je scopovaný na přihlášky přístupné
+        žadateli + objektový ``CanAccessEvaluation`` — cizí aktér nečte ani
+        nemutuje cizí evaluace (žádná cizí identita v odpovědi, žádná mutace).
+      tags:
+      - student-practices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+          description: ''
+  /api/student-practices/evaluations/{evaluation_id}/:
+    get:
+      operationId: student_practices_evaluations_retrieve
+      description: |-
+        API ViewSet for mentor evaluations.
+
+        Autorizace (BE-002): queryset je scopovaný na přihlášky přístupné
+        žadateli + objektový ``CanAccessEvaluation`` — cizí aktér nečte ani
+        nemutuje cizí evaluace (žádná cizí identita v odpovědi, žádná mutace).
+      parameters:
+      - in: path
+        name: evaluation_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this evaluation.
+        required: true
+      tags:
+      - student-practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+          description: ''
+    put:
+      operationId: student_practices_evaluations_update
+      description: |-
+        API ViewSet for mentor evaluations.
+
+        Autorizace (BE-002): queryset je scopovaný na přihlášky přístupné
+        žadateli + objektový ``CanAccessEvaluation`` — cizí aktér nečte ani
+        nemutuje cizí evaluace (žádná cizí identita v odpovědi, žádná mutace).
+      parameters:
+      - in: path
+        name: evaluation_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this evaluation.
+        required: true
+      tags:
+      - student-practices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+          description: ''
+    patch:
+      operationId: student_practices_evaluations_partial_update
+      description: |-
+        API ViewSet for mentor evaluations.
+
+        Autorizace (BE-002): queryset je scopovaný na přihlášky přístupné
+        žadateli + objektový ``CanAccessEvaluation`` — cizí aktér nečte ani
+        nemutuje cizí evaluace (žádná cizí identita v odpovědi, žádná mutace).
+      parameters:
+      - in: path
+        name: evaluation_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this evaluation.
+        required: true
+      tags:
+      - student-practices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEvaluationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEvaluationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEvaluationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+          description: ''
+    delete:
+      operationId: student_practices_evaluations_destroy
+      description: |-
+        API ViewSet for mentor evaluations.
+
+        Autorizace (BE-002): queryset je scopovaný na přihlášky přístupné
+        žadateli + objektový ``CanAccessEvaluation`` — cizí aktér nečte ani
+        nemutuje cizí evaluace (žádná cizí identita v odpovědi, žádná mutace).
+      parameters:
+      - in: path
+        name: evaluation_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this evaluation.
+        required: true
+      tags:
+      - student-practices
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/student-practices/invitations/:
+    get:
+      operationId: student_practices_invitations_list
+      summary: List all employer invitations
+      tags:
+      - Employer Invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmployerInvitation'
+          description: ''
+    post:
+      operationId: student_practices_invitations_create
+      summary: Create an employer invitation
+      tags:
+      - Employer Invitations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerInvitation'
+          description: ''
+  /api/student-practices/invitations/{id}/:
+    get:
+      operationId: student_practices_invitations_retrieve
+      summary: Get employer invitation detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Employer Invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerInvitation'
+          description: ''
+    put:
+      operationId: student_practices_invitations_update
+      summary: Update an employer invitation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Employer Invitations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployerInvitationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerInvitation'
+          description: ''
+    patch:
+      operationId: student_practices_invitations_partial_update
+      summary: Partial update an employer invitation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Employer Invitations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployerInvitationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployerInvitationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployerInvitationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerInvitation'
+          description: ''
+    delete:
+      operationId: student_practices_invitations_destroy
+      summary: Delete an employer invitation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Employer Invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/student-practices/organization-applications/:
+    get:
+      operationId: student_practices_organization_applications_list
+      description: 'Returns a list of all pending student applications for the practices
+        belonging to the logged-in organization. **Permissions: Organization User**'
+      summary: Get pending applications for organization
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListStudentPracticeList'
+          description: ''
+  /api/student-practices/professor-applications/:
+    get:
+      operationId: student_practices_professor_applications_list
+      description: 'Returns a list of all pending student applications that the logged-in
+        professor is authorized to approve (as department head, subject manager, or
+        teacher). **Permissions: Professor User**'
+      summary: Get pending applications for professor
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Student Practices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListStudentPracticeList'
+          description: ''
+  /api/student-practices/reapply/{practice_id}/:
+    post:
+      operationId: student_practices_reapply_create
+      description: Creates a new student practice application after a previous one
+        was rejected or cancelled.
+      summary: Re-apply to practice
+      parameters:
+      - in: path
+        name: practice_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentPracticeCard'
+          description: ''
+        '400':
+          description: Validation error (capacity, duplicate, state)
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+  /api/student-practices/review-document/{document_id}:
+    patch:
+      operationId: student_practices_review_document_partial_update
+      description: 'Allows a professor or admin to approve or reject a document with
+        a note. **Permissions: Subject Teacher, Head, or Admin**'
+      summary: Review a document
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDocumentReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDocumentReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDocumentReviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentReview'
+          description: ''
+  /api/student-practices/upload-document/{document_id}:
+    post:
+      operationId: student_practices_upload_document_create
+      description: 'Uploads a file and attaches it to the specified StudentPractice
+        record. **Permissions: Student (Owner) or Authorized Personnel**'
+      summary: Upload a document for a student practice
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        description: ID of the student practice
+        required: true
+      tags:
+      - Documents
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentPracticeUploadDocumentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudentPracticeUploadDocumentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Document successfully uploaded
+        '400':
+          description: Bad request
+        '403':
+          description: Permission denied
+        '404':
+          description: StudentPractice not found
+  /api/subjects/:
+    get:
+      operationId: subjects_list
+      description: ViewSet for managing subjects.
+      summary: List all subjects
+      parameters:
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: subject_code
+        schema:
+          type: string
+      tags:
+      - Subjects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+          description: ''
+    post:
+      operationId: subjects_create
+      description: ViewSet for managing subjects.
+      summary: Create a new subject
+      tags:
+      - Subjects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubjectRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+          description: ''
+  /api/subjects/{subject_id}/:
+    get:
+      operationId: subjects_retrieve
+      description: ViewSet for managing subjects.
+      summary: Get subject detail
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subject.
+        required: true
+      tags:
+      - Subjects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+          description: ''
+    put:
+      operationId: subjects_update
+      description: ViewSet for managing subjects.
+      summary: Update a subject
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subject.
+        required: true
+      tags:
+      - Subjects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubjectRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+          description: ''
+    patch:
+      operationId: subjects_partial_update
+      description: ViewSet for managing subjects.
+      summary: Partial update a subject
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subject.
+        required: true
+      tags:
+      - Subjects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSubjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSubjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSubjectRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+          description: ''
+    delete:
+      operationId: subjects_destroy
+      description: ViewSet for managing subjects.
+      summary: Delete a subject
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subject.
+        required: true
+      tags:
+      - Subjects
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/subjects/department-subjects/:
+    get:
+      operationId: subjects_department_subjects_list
+      description: 'Returns all subjects belonging to the department(s) associated
+        with the logged-in professor. **Permissions: Authenticated Professor**'
+      summary: Get department-specific subjects
+      parameters:
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: subject_code
+        schema:
+          type: string
+      tags:
+      - Subjects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+          description: ''
+        '400':
+          description: User has no assigned department
+  /api/subjects/my-subjects/:
+    get:
+      operationId: subjects_my_subjects_list
+      description: Returns all subjects where the logged-in user has an active UserSubject
+        record. Works for both students and professors.
+      summary: Get subjects for the current user
+      parameters:
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: subject_code
+        schema:
+          type: string
+      tags:
+      - Subjects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+          description: ''
+  /api/users/all-students/:
+    get:
+      operationId: users_all_students_list
+      description: 'Returns a paginated list of all active students in the system.
+        **Permissions: Authenticated User**'
+      summary: List all students (paginated)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAllStudentsListList'
+          description: ''
+  /api/users/ares-justice/:
+    post:
+      operationId: users_ares_justice_create
+      description: 'Fetches organization details from the ARES database using IČO.
+        **Permissions: Allow Any**'
+      summary: Fetch data from ARES
+      tags:
+      - Utils
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AresJusticeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AresJusticeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AresJusticeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: Data fetched successfully
+  /api/users/ares/update/:
+    post:
+      operationId: users_ares_update_create
+      description: Updates the organization details (name, address) using the provided
+        IČO and ARES API.
+      summary: Update organization info from ARES
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AresRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AresRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AresRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUserProfile'
+          description: ''
+  /api/users/change-password/:
+    post:
+      operationId: users_change_password_create
+      description: 'Changes the password for the currently logged-in user. **Permissions:
+        Authenticated User (Non-STAG)**'
+      summary: Change user password
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Password changed successfully
+  /api/users/companies/:
+    get:
+      operationId: users_companies_list
+      summary: List all organizations (Admin)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminOrganizationList'
+          description: ''
+    post:
+      operationId: users_companies_create
+      summary: Register a new organization (Admin)
+      tags:
+      - users
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrganizationRegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizationRegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrganization'
+          description: ''
+  /api/users/companies/{employer_id}/:
+    get:
+      operationId: users_companies_retrieve
+      summary: Get organization detail (Admin)
+      parameters:
+      - in: path
+        name: employer_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employer profile.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrganization'
+          description: ''
+    put:
+      operationId: users_companies_update
+      summary: Update organization detail (Admin/Garant)
+      parameters:
+      - in: path
+        name: employer_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employer profile.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminOrganizationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminOrganizationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrganization'
+          description: ''
+    patch:
+      operationId: users_companies_partial_update
+      summary: Update organization detail (Admin/Garant)
+      parameters:
+      - in: path
+        name: employer_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employer profile.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminOrganizationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminOrganizationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrganization'
+          description: ''
+    delete:
+      operationId: users_companies_destroy
+      summary: Delete an organization (Admin)
+      parameters:
+      - in: path
+        name: employer_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employer profile.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/login/:
+    post:
+      operationId: users_login_create
+      description: 'Authenticates a user and returns access and refresh JWT tokens
+        along with user info. **Permissions: Allow Any**'
+      summary: Login / Obtain JWT Token
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          description: ''
+  /api/users/logout/:
+    post:
+      operationId: users_logout_create
+      description: 'Blacklists the provided refresh token to log out the user. **Permissions:
+        Authenticated User**'
+      summary: Logout user
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+  /api/users/me/anonymize/:
+    delete:
+      operationId: users_me_anonymize_destroy
+      description: Anonymizes personal data and deactivates account per GDPR Article
+        17.
+      summary: Anonymize user profile (GDPR Right to Erasure)
+      tags:
+      - GDPR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: User anonymized successfully
+  /api/users/me/export/:
+    get:
+      operationId: users_me_export_retrieve
+      description: Returns a JSON dump of all personal data per GDPR Article 20.
+      summary: Export user data (GDPR Right to Data Portability)
+      tags:
+      - GDPR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: JSON data export
+  /api/users/organization-users/:
+    get:
+      operationId: users_organization_users_list
+      description: 'Returns a list of all users associated with the same organization
+        as the current user.**Permissions: Organization User or Admin**'
+      summary: List users in organization
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUserList'
+          description: ''
+    post:
+      operationId: users_organization_users_create
+      summary: Create organization user
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUserList'
+          description: ''
+  /api/users/organization-users/{id}/:
+    get:
+      operationId: users_organization_users_retrieve
+      summary: Get organization user detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUserList'
+          description: ''
+    put:
+      operationId: users_organization_users_update
+      summary: Update organization user
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUserList'
+          description: ''
+    patch:
+      operationId: users_organization_users_partial_update
+      summary: Partial update organization user
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUserList'
+          description: ''
+    delete:
+      operationId: users_organization_users_destroy
+      summary: Delete organization user
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/password-reset/:
+    post:
+      operationId: users_password_reset_create
+      summary: Request password reset email
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: If email exists, reset link was sent
+  /api/users/password-reset-confirm/:
+    post:
+      operationId: users_password_reset_confirm_create
+      summary: Confirm password reset
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Password reset successful
+  /api/users/profile/:
+    get:
+      operationId: users_profile_retrieve
+      description: 'Returns the profile details of the currently logged-in user (Student,
+        Professor, or Organization).**Permissions: Authenticated User**'
+      summary: Get current user profile
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    patch:
+      operationId: users_profile_partial_update
+      description: 'Updates the profile details of the currently logged-in user. **Permissions:
+        Authenticated User**'
+      summary: Update current user profile
+      tags:
+      - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/users/register/:
+    post:
+      operationId: users_register_create
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationRegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizationRegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrganizationRegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationRegister'
+          description: ''
+  /api/users/student-profile/{student_id}/:
+    get:
+      operationId: users_student_profile_retrieve
+      summary: Get student profile detail
+      parameters:
+      - in: path
+        name: student_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentProfile'
+          description: ''
+        '404':
+          description: Student not found
+  /api/users/token/refresh/:
+    post:
+      operationId: users_token_refresh_create
+      description: Refreshes the access token using the HttpOnly refresh token cookie.
+      summary: Refresh JWT token
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedactedTokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RedactedTokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RedactedTokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          description: Token refreshed successfully
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - accept
+      - reject
+      type: string
+      description: |-
+        * `accept` - accept
+        * `reject` - reject
+    ActionLog:
+      type: object
+      properties:
+        action_id:
+          type: integer
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+          default: ''
+        action_type:
+          type: string
+          maxLength: 50
+        action_description:
+          type: string
+        action_date:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - action_id
+      - user_name
+    AdminDepartment:
+      type: object
+      description: |-
+        Serializer pro model Department
+        - department_id: primární klíč (read-only)
+        - department_name: název oddělení
+        - description: popis oddělení
+      properties:
+        department_id:
+          type: integer
+          readOnly: true
+        department_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        department_code:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+      required:
+      - department_id
+    AdminDepartmentRequest:
+      type: object
+      description: |-
+        Serializer pro model Department
+        - department_id: primární klíč (read-only)
+        - department_name: název oddělení
+        - description: popis oddělení
+      properties:
+        department_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        department_code:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+    AdminOrganization:
+      type: object
+      properties:
+        employer_id:
+          type: integer
+          readOnly: true
+        ico:
+          type: string
+          nullable: true
+          maxLength: 15
+        dic:
+          type: string
+          nullable: true
+          maxLength: 15
+        company_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+        zip_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        legal_form:
+          type: string
+          description: Právní forma organizace z ARES (pravniForma)
+          maxLength: 255
+        manual_ares_entry:
+          type: boolean
+          description: True pokud byl profil vytvořen bez ověření v ARES (výpadek
+            ARES) — údaje zadány ručně (fallback)
+        owner:
+          type: string
+          readOnly: true
+      required:
+      - approval_status
+      - employer_id
+      - owner
+    AdminOrganizationRequest:
+      type: object
+      properties:
+        ico:
+          type: string
+          nullable: true
+          maxLength: 15
+        dic:
+          type: string
+          nullable: true
+          maxLength: 15
+        company_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+        zip_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        logo:
+          type: string
+          format: binary
+          nullable: true
+        legal_form:
+          type: string
+          description: Právní forma organizace z ARES (pravniForma)
+          maxLength: 255
+        manual_ares_entry:
+          type: boolean
+          description: True pokud byl profil vytvořen bez ověření v ARES (výpadek
+            ARES) — údaje zadány ručně (fallback)
+      required:
+      - approval_status
+    AllStudentsList:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        full_name:
+          type: string
+          readOnly: true
+        department:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+        date_joined:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - department
+      - email
+      - first_name
+      - full_name
+      - last_name
+      - user_id
+    ApprovalStatus579Enum:
+      enum:
+      - 0
+      - 1
+      - 2
+      type: integer
+      description: |-
+        * `0` - PENDING
+        * `1` - APPROVED
+        * `2` - REJECTED
+    AresJusticeRequest:
+      type: object
+      properties:
+        ico:
+          type: string
+          minLength: 1
+          pattern: ^\d{8}$
+      required:
+      - ico
+    AresRequestRequest:
+      type: object
+      properties:
+        ico:
+          type: string
+          minLength: 1
+          pattern: ^\d{8}$
+      required:
+      - ico
+    BlankEnum:
+      enum:
+      - ''
+    CancelPracticeRequest:
+      type: object
+      description: Request serializer pro POST /api/practices/{id}/cancel.
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          description: Důvod storna (povinný).
+      required:
+      - reason
+    CancelStudentPracticeRequest:
+      type: object
+      description: Request serializer pro POST /api/student-practices/{id}/cancel.
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          description: Důvod storna (povinný).
+      required:
+      - reason
+    CancelledFromStateEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      type: integer
+      description: |-
+        * `0` - APPLIED
+        * `1` - PRELIMINARY_APPROVED
+        * `2` - REJECTED
+        * `3` - CONTRACTED
+        * `4` - STARTED
+        * `5` - ENDED
+        * `6` - COMPLETED
+        * `7` - AWAITING_CONTRACT
+        * `8` - AWAITING_DOCUMENTS
+        * `9` - DOCUMENTS_REJECTED
+        * `10` - AWAITING_CONTENT_APPROVAL
+        * `11` - CONTENT_REJECTED
+        * `12` - CONTENT_APPROVED
+        * `13` - DOCUMENTS_RESUBMITTED
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          minLength: 1
+        new_password_confirm:
+          type: string
+          minLength: 1
+      required:
+      - new_password
+      - new_password_confirm
+      - old_password
+    CloseApplicationsRequest:
+      type: object
+      description: |-
+        Request serializer pro POST /api/practices/{id}/close-applications.
+
+        důvod je nepovinný — manuální uzavření vždy zapisuje
+        ``closed_reason=ApplicationClosureReason.MANUAL``, hodnota z requestu
+        se nebere.
+      properties:
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          description: |-
+            Důvod uzávěrky přihlášek (nepovinné — vždy se zapíše MANUAL).
+
+            * `0` - TIME
+            * `1` - CAPACITY
+            * `2` - MANUAL
+    CreateInvitationRequest:
+      type: object
+      properties:
+        practice_id:
+          type: integer
+        student_ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 50
+      required:
+      - practice_id
+      - student_ids
+    CustomTokenObtainPairRequest:
+      type: object
+      properties:
+        service_ticket:
+          type: string
+          writeOnly: true
+          minLength: 1
+        stag_user_info:
+          writeOnly: true
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+    Department:
+      type: object
+      description: |-
+        Serializer pro model Department
+        - department_id: primární klíč (read-only)
+        - department_name: název oddělení
+        - description: popis oddělení
+      properties:
+        department_id:
+          type: integer
+          readOnly: true
+        department_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        department_code:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+      required:
+      - department_id
+    DepartmentRequest:
+      type: object
+      description: |-
+        Serializer pro model Department
+        - department_id: primární klíč (read-only)
+        - department_name: název oddělení
+        - description: popis oddělení
+      properties:
+        department_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        department_code:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+    DocumentReview:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        review_note:
+          type: string
+    EmployerInvitation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        invitation_id:
+          type: integer
+          readOnly: true
+        recipient_name:
+          type: string
+          readOnly: true
+        employer_name:
+          type: string
+          readOnly: true
+        department:
+          type: string
+          readOnly: true
+        project_title:
+          type: string
+          readOnly: true
+        recipient_id:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusF79Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        submission_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - department
+      - employer_name
+      - id
+      - invitation_id
+      - project_title
+      - recipient_id
+      - recipient_name
+      - status
+    EmployerInvitationApprovalRequest:
+      type: object
+      properties:
+        invitation_id:
+          type: integer
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+      required:
+      - action
+      - invitation_id
+    EmployerInvitationRequest:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusF79Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        submission_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - status
+    EmployerProfile:
+      type: object
+      properties:
+        employer_id:
+          type: integer
+          readOnly: true
+        ico:
+          type: string
+          nullable: true
+          maxLength: 15
+        dic:
+          type: string
+          nullable: true
+          maxLength: 15
+        company_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+        company_profile:
+          type: string
+        zip_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        legal_form:
+          type: string
+          description: Právní forma organizace z ARES (pravniForma)
+          maxLength: 255
+        manual_ares_entry:
+          type: boolean
+          description: True pokud byl profil vytvořen bez ověření v ARES (výpadek
+            ARES) — údaje zadány ručně (fallback)
+      required:
+      - approval_status
+      - employer_id
+    EmployerProfileRequest:
+      type: object
+      properties:
+        ico:
+          type: string
+          nullable: true
+          maxLength: 15
+        dic:
+          type: string
+          nullable: true
+          maxLength: 15
+        company_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+        company_profile:
+          type: string
+        zip_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        logo:
+          type: string
+          format: binary
+          nullable: true
+        legal_form:
+          type: string
+          description: Právní forma organizace z ARES (pravniForma)
+          maxLength: 255
+        manual_ares_entry:
+          type: boolean
+          description: True pokud byl profil vytvořen bez ověření v ARES (výpadek
+            ARES) — údaje zadány ručně (fallback)
+      required:
+      - approval_status
+    EmploymentTypeEnum:
+      enum:
+      - uvazek_0_5
+      - uvazek_1_0
+      type: string
+      description: |-
+        * `uvazek_0_5` - Úvazek 0,5
+        * `uvazek_1_0` - Úvazek 1,0
+    Evaluation:
+      type: object
+      properties:
+        evaluation_id:
+          type: integer
+          readOnly: true
+        expertise_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Odbornost (1-5)
+        expertise_comment:
+          type: string
+        communication_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Komunikace (1-5)
+        communication_comment:
+          type: string
+        initiative_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Iniciativa (1-5)
+        initiative_comment:
+          type: string
+        overall_comment:
+          type: string
+        pdf_file:
+          type: string
+          format: uri
+          nullable: true
+          pattern: (?:pdf)$
+        pdf_protokol:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        evaluated_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        evaluated_by_name:
+          type: string
+          readOnly: true
+        evaluated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - evaluated_at
+      - evaluated_by
+      - evaluated_by_name
+      - evaluation_id
+      - pdf_protokol
+    EvaluationRequest:
+      type: object
+      properties:
+        student_practice_id:
+          type: integer
+          writeOnly: true
+        expertise_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Odbornost (1-5)
+        expertise_comment:
+          type: string
+        communication_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Komunikace (1-5)
+        communication_comment:
+          type: string
+        initiative_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Iniciativa (1-5)
+        initiative_comment:
+          type: string
+        overall_comment:
+          type: string
+        pdf_file:
+          type: string
+          format: binary
+          nullable: true
+          pattern: (?:pdf)$
+      required:
+      - student_practice_id
+    ExternalPracticeRequest:
+      type: object
+      description: Serializer pro vytvoření mimosystémové praxe (studenti/škola bez
+        registrované firmy).
+      properties:
+        employer_name:
+          type: string
+          minLength: 1
+          description: Název externí organizace.
+        contact_person:
+          type: string
+          description: Kontaktní osoba v externí organizaci.
+        contact_email:
+          description: Kontaktní email externí organizace.
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
+        ico:
+          type: string
+          description: IČO externí organizace.
+        address:
+          type: string
+          description: Adresa externí organizace.
+        contact_phone:
+          type: string
+          description: Telefonní kontakt externí organizace.
+        external_details_file:
+          type: string
+          format: binary
+          nullable: true
+          description: Soubor s detaily mimosystémové praxe (PDF/DOCX, max 10 MB)
+            — povinné.
+          pattern: (?:pdf|docx)$
+        subject_id:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        responsibilities:
+          type: string
+        available_positions:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        skills: {}
+        semester:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SemesterEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        coefficient:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - employer_name
+      - start_date
+    ListStudentPractice:
+      type: object
+      description: |-
+        Serializer pro model StudentPractice
+        - student_practice_id: primární klíč (read-only)
+        - practice_id: PK praxe (read-only)
+        - practice_title: název praxe (read-only)
+        - application_date: datum podání žádosti (read-only)
+        - approval_status: nested Status (read-only)
+        - progress_status: nested Status (read-only)
+        - hours_completed: počet dokončených hodin
+      properties:
+        practice_id:
+          type: integer
+        student_practice_id:
+          type: integer
+          readOnly: true
+        department_name:
+          type: string
+          readOnly: true
+        student_full_name:
+          type: string
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        practice_title:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        application_date:
+          type: string
+          format: date
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        progress_status:
+          allOf:
+          - $ref: '#/components/schemas/ProgressStatusEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        workflow_status:
+          type: string
+          readOnly: true
+        workflow_status_label:
+          type: string
+          readOnly: true
+        workflow_state:
+          type: string
+          readOnly: true
+        contract_received_date:
+          type: string
+          readOnly: true
+        updated_at:
+          type: string
+          readOnly: true
+        contract_overdue:
+          type: boolean
+          readOnly: true
+        hours_completed:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        employer_id:
+          type: string
+          readOnly: true
+        employer_name:
+          type: string
+          readOnly: true
+        can_approve:
+          type: string
+          readOnly: true
+        is_cancelled:
+          type: boolean
+          readOnly: true
+          description: Příznak, zda byl záznam stornován. Idempotentní — nelze vrátit
+            zpět.
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp okamžiku stornování.
+        cancellation_reason:
+          type: string
+          readOnly: true
+          description: Povinný důvod storna (zadáván uživatelem v UI).
+        cancelled_from_state:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CancelledFromStateEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        rejection_reason:
+          type: string
+          readOnly: true
+          description: Důvod zamítnutí přihlášky nebo obsahu praxe (min 10 znaků)
+        cancelled_by_info:
+          type: string
+          readOnly: true
+        cancellation_requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        cancellation_resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - application_date
+      - approval_status
+      - can_approve
+      - cancellation_reason
+      - cancellation_requested_at
+      - cancellation_resolved_at
+      - cancelled_at
+      - cancelled_by_info
+      - cancelled_from_state
+      - contract_overdue
+      - contract_received_date
+      - department_name
+      - employer_id
+      - employer_name
+      - is_cancelled
+      - practice_id
+      - practice_title
+      - progress_status
+      - rejection_reason
+      - student_full_name
+      - student_practice_id
+      - title
+      - updated_at
+      - user_id
+      - workflow_state
+      - workflow_status
+      - workflow_status_label
+    LogoutRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+          description: Refresh token to invalidate
+      required:
+      - refresh
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        actor:
+          type: integer
+          nullable: true
+          description: User who performed the action (null for system events).
+        actor_name:
+          type: string
+          readOnly: true
+        verb:
+          type: string
+          description: Machine event name, e.g. PRACTICE_APPROVED, APPLICATION_REJECTED.
+          maxLength: 255
+        message:
+          type: string
+          description: Human-readable notification text (Czech).
+        url:
+          type: string
+          description: Cílová (navigační) URL notifikace — FE na ni přesměruje po
+            kliku (např. download URL pro EXPORT_READY).
+          maxLength: 500
+        target_url:
+          type: string
+          readOnly: true
+        notification_type:
+          allOf:
+          - $ref: '#/components/schemas/NotificationTypeEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        content_type:
+          type: integer
+          nullable: true
+        object_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+      required:
+      - actor_name
+      - created_at
+      - id
+      - message
+      - target_url
+      - verb
+    NotificationRequest:
+      type: object
+      properties:
+        actor:
+          type: integer
+          nullable: true
+          description: User who performed the action (null for system events).
+        verb:
+          type: string
+          minLength: 1
+          description: Machine event name, e.g. PRACTICE_APPROVED, APPLICATION_REJECTED.
+          maxLength: 255
+        message:
+          type: string
+          minLength: 1
+          description: Human-readable notification text (Czech).
+        url:
+          type: string
+          description: Cílová (navigační) URL notifikace — FE na ni přesměruje po
+            kliku (např. download URL pro EXPORT_READY).
+          maxLength: 500
+        notification_type:
+          allOf:
+          - $ref: '#/components/schemas/NotificationTypeEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        is_read:
+          type: boolean
+        content_type:
+          type: integer
+          nullable: true
+        object_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+      required:
+      - message
+      - verb
+    NotificationTypeEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      type: integer
+      description: |-
+        * `0` - INFO
+        * `1` - SUCCESS
+        * `2` - WARNING
+        * `3` - ERROR
+    NullEnum:
+      enum:
+      - null
+    OrganizationPractice:
+      type: object
+      description: Serializer pro zobrazení praxí organizace
+      properties:
+        practice_id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 100
+        contact_user_full_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date
+          readOnly: true
+        available_positions:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        approved_count:
+          type: string
+          readOnly: true
+        pending_count:
+          type: string
+          readOnly: true
+        approved_applications:
+          type: string
+          readOnly: true
+        pending_applications:
+          type: string
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        workflow_state:
+          nullable: true
+          description: |-
+            Stavový automat nabídky. Po data migraci (1.10) nenullable.
+
+            * `0` - PENDING_CONTENT_APPROVAL
+            * `1` - CONTENT_APPROVED
+            * `2` - CONTENT_REJECTED
+            * `3` - OPEN_FOR_APPLICATIONS
+            * `4` - CLOSED_FOR_APPLICATIONS
+          minimum: -2147483648
+          maximum: 2147483647
+          oneOf:
+          - $ref: '#/components/schemas/WorkflowStateEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        workflow_status_label:
+          type: string
+          readOnly: true
+        progress_status:
+          allOf:
+          - $ref: '#/components/schemas/ProgressStatusEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        mentor_name:
+          type: string
+          description: Jméno mentora praxe
+          maxLength: 255
+        contact_email:
+          description: Kontaktní e-mail nabídky
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        region:
+          description: |-
+            Kraj, kde se praxe koná
+
+            * `PHA` - Hlavní město Praha
+            * `STC` - Středočeský kraj
+            * `JHC` - Jihočeský kraj
+            * `PLK` - Plzeňský kraj
+            * `KVK` - Karlovarský kraj
+            * `ULK` - Ústecký kraj
+            * `LBK` - Liberecký kraj
+            * `HKK` - Královéhradecký kraj
+            * `PAK` - Pardubický kraj
+            * `OLK` - Olomoucký kraj
+            * `MSK` - Moravskoslezský kraj
+            * `JHM` - Jihomoravský kraj
+            * `ZLK` - Zlínský kraj
+            * `VYS` - Kraj Vysočina
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+      required:
+      - approval_status
+      - approved_applications
+      - approved_count
+      - contact_user_full_name
+      - created_at
+      - pending_applications
+      - pending_count
+      - practice_id
+      - progress_status
+      - workflow_status_label
+    OrganizationRegister:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+      required:
+      - first_name
+      - last_name
+    OrganizationRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          writeOnly: true
+          minLength: 1
+        phone:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password2:
+          type: string
+          writeOnly: true
+          minLength: 1
+        ico:
+          type: string
+          writeOnly: true
+          minLength: 1
+          pattern: ^\d{8}$
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        logo:
+          type: string
+          format: binary
+          writeOnly: true
+        companyName:
+          type: string
+          writeOnly: true
+          minLength: 1
+        address:
+          type: string
+          writeOnly: true
+          minLength: 1
+        dic:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - first_name
+      - ico
+      - last_name
+      - password
+      - password2
+      - phone
+    OrganizationUserList:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        employer_name:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - employer_name
+      - id
+      - name
+      - role
+    OrganizationUserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 15
+        full_name:
+          type: string
+          readOnly: true
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        user_type:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        employer_profile:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - employer_profile
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - role
+      - user_type
+    PaginatedAdminDepartmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminDepartment'
+    PaginatedAdminOrganizationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOrganization'
+    PaginatedAllStudentsListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllStudentsList'
+    PaginatedListStudentPracticeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListStudentPractice'
+    PaginatedOrganizationPracticeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationPractice'
+    PaginatedPracticeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Practice'
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        uidb64:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          minLength: 1
+        new_password_confirm:
+          type: string
+          minLength: 1
+      required:
+      - new_password
+      - new_password_confirm
+      - token
+      - uidb64
+    PasswordResetRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    PatchedAdminDepartmentRequest:
+      type: object
+      description: |-
+        Serializer pro model Department
+        - department_id: primární klíč (read-only)
+        - department_name: název oddělení
+        - description: popis oddělení
+      properties:
+        department_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        department_code:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+    PatchedAdminOrganizationRequest:
+      type: object
+      properties:
+        ico:
+          type: string
+          nullable: true
+          maxLength: 15
+        dic:
+          type: string
+          nullable: true
+          maxLength: 15
+        company_name:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+        zip_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        logo:
+          type: string
+          format: binary
+          nullable: true
+        legal_form:
+          type: string
+          description: Právní forma organizace z ARES (pravniForma)
+          maxLength: 255
+        manual_ares_entry:
+          type: boolean
+          description: True pokud byl profil vytvořen bez ověření v ARES (výpadek
+            ARES) — údaje zadány ručně (fallback)
+    PatchedDocumentReviewRequest:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        review_note:
+          type: string
+    PatchedEmployerInvitationRequest:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusF79Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        submission_date:
+          type: string
+          format: date
+          nullable: true
+    PatchedEvaluationRequest:
+      type: object
+      properties:
+        student_practice_id:
+          type: integer
+          writeOnly: true
+        expertise_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Odbornost (1-5)
+        expertise_comment:
+          type: string
+        communication_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Komunikace (1-5)
+        communication_comment:
+          type: string
+        initiative_rating:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Iniciativa (1-5)
+        initiative_comment:
+          type: string
+        overall_comment:
+          type: string
+        pdf_file:
+          type: string
+          format: binary
+          nullable: true
+          pattern: (?:pdf)$
+    PatchedNotificationRequest:
+      type: object
+      properties:
+        actor:
+          type: integer
+          nullable: true
+          description: User who performed the action (null for system events).
+        verb:
+          type: string
+          minLength: 1
+          description: Machine event name, e.g. PRACTICE_APPROVED, APPLICATION_REJECTED.
+          maxLength: 255
+        message:
+          type: string
+          minLength: 1
+          description: Human-readable notification text (Czech).
+        url:
+          type: string
+          description: Cílová (navigační) URL notifikace — FE na ni přesměruje po
+            kliku (např. download URL pro EXPORT_READY).
+          maxLength: 500
+        notification_type:
+          allOf:
+          - $ref: '#/components/schemas/NotificationTypeEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        is_read:
+          type: boolean
+        content_type:
+          type: integer
+          nullable: true
+        object_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+    PatchedPracticeRequest:
+      type: object
+      description: Serializer pro model Practice
+      properties:
+        employer_id:
+          type: integer
+          writeOnly: true
+        subject_id:
+          type: integer
+          writeOnly: true
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        responsibilities:
+          type: string
+          minLength: 1
+        available_positions:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          nullable: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        contact_user:
+          type: integer
+          writeOnly: true
+        image_base64:
+          type: string
+        is_external:
+          type: boolean
+          description: True = mimosystémová praxe (firma není registrovaná v systému).
+        skills: {}
+        semester:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SemesterEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        city:
+          type: string
+          description: Město, kde se praxe koná
+          maxLength: 100
+        mentor_name:
+          type: string
+          minLength: 1
+          description: Jméno mentora praxe
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Kontaktní e-mail nabídky
+        region:
+          default: ''
+          description: |-
+            Kraj, kde se praxe koná
+
+            * `PHA` - Hlavní město Praha
+            * `STC` - Středočeský kraj
+            * `JHC` - Jihočeský kraj
+            * `PLK` - Plzeňský kraj
+            * `KVK` - Karlovarský kraj
+            * `ULK` - Ústecký kraj
+            * `LBK` - Liberecký kraj
+            * `HKK` - Královéhradecký kraj
+            * `PAK` - Pardubický kraj
+            * `OLK` - Olomoucký kraj
+            * `MSK` - Moravskoslezský kraj
+            * `JHM` - Jihomoravský kraj
+            * `ZLK` - Zlínský kraj
+            * `VYS` - Kraj Vysočina
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        employment_type:
+          description: |-
+            Typ úvazku nabídky. Závazný číselník dle rozhodnutí garantů/vlastníka (guarantor-values.md, 2026-10-11).
+
+            * `uvazek_0_5` - Úvazek 0,5
+            * `uvazek_1_0` - Úvazek 1,0
+          oneOf:
+          - $ref: '#/components/schemas/EmploymentTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+    PatchedProfessorUserProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        phone:
+          type: string
+          maxLength: 15
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        ucit_idno:
+          type: string
+          nullable: true
+          maxLength: 64
+    PatchedSubjectRequest:
+      type: object
+      properties:
+        subject_code:
+          type: string
+          nullable: true
+          maxLength: 50
+        subject_name:
+          type: string
+          maxLength: 100
+        hours_required:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        min_hours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Minimální počet hodin praxe pro splnění předmětu (default 480
+            dle KI/BOP).
+        teacher_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+    PatchedUserProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        phone:
+          type: string
+          maxLength: 15
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+    Practice:
+      type: object
+      description: Serializer pro model Practice
+      properties:
+        practice_id:
+          type: integer
+          readOnly: true
+        employer:
+          allOf:
+          - $ref: '#/components/schemas/EmployerProfile'
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/Subject'
+          readOnly: true
+        title:
+          type: string
+        description:
+          type: string
+        responsibilities:
+          type: string
+        available_positions:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          nullable: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        progress_status:
+          allOf:
+          - $ref: '#/components/schemas/ProgressStatusEnum'
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          readOnly: true
+        workflow_state:
+          readOnly: true
+          nullable: true
+          description: |-
+            Stavový automat nabídky. Po data migraci (1.10) nenullable.
+
+            * `0` - PENDING_CONTENT_APPROVAL
+            * `1` - CONTENT_APPROVED
+            * `2` - CONTENT_REJECTED
+            * `3` - OPEN_FOR_APPLICATIONS
+            * `4` - CLOSED_FOR_APPLICATIONS
+          oneOf:
+          - $ref: '#/components/schemas/WorkflowStateEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        contact_user_info:
+          type: string
+          readOnly: true
+        student_practice_documents:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+          nullable: true
+        image_base64:
+          type: string
+        coefficient:
+          type: number
+          format: double
+          readOnly: true
+          description: 'TODO: DEPRECATED — field bude odstraněn v budoucí verzi. Použijte
+            Subject.min_hours (480 default).'
+        student_practice_status:
+          type: string
+          readOnly: true
+        is_external:
+          type: boolean
+          description: True = mimosystémová praxe (firma není registrovaná v systému).
+        external_employer:
+          type: integer
+          readOnly: true
+        external_employer_info:
+          type: string
+          readOnly: true
+        skills: {}
+        semester:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SemesterEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        city:
+          type: string
+          description: Město, kde se praxe koná
+          maxLength: 100
+        mentor_name:
+          type: string
+          description: Jméno mentora praxe
+        contact_email:
+          type: string
+          format: email
+          description: Kontaktní e-mail nabídky
+        region:
+          default: ''
+          description: |-
+            Kraj, kde se praxe koná
+
+            * `PHA` - Hlavní město Praha
+            * `STC` - Středočeský kraj
+            * `JHC` - Jihočeský kraj
+            * `PLK` - Plzeňský kraj
+            * `KVK` - Karlovarský kraj
+            * `ULK` - Ústecký kraj
+            * `LBK` - Liberecký kraj
+            * `HKK` - Královéhradecký kraj
+            * `PAK` - Pardubický kraj
+            * `OLK` - Olomoucký kraj
+            * `MSK` - Moravskoslezský kraj
+            * `JHM` - Jihomoravský kraj
+            * `ZLK` - Zlínský kraj
+            * `VYS` - Kraj Vysočina
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        employment_type:
+          description: |-
+            Typ úvazku nabídky. Závazný číselník dle rozhodnutí garantů/vlastníka (guarantor-values.md, 2026-10-11).
+
+            * `uvazek_0_5` - Úvazek 0,5
+            * `uvazek_1_0` - Úvazek 1,0
+          oneOf:
+          - $ref: '#/components/schemas/EmploymentTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        workflow_status_label:
+          type: string
+          readOnly: true
+        approved_applications:
+          type: string
+          readOnly: true
+        pending_applications:
+          type: string
+          readOnly: true
+      required:
+      - approval_status
+      - approved_applications
+      - coefficient
+      - contact_email
+      - contact_user_info
+      - description
+      - employer
+      - external_employer
+      - external_employer_info
+      - is_active
+      - mentor_name
+      - pending_applications
+      - practice_id
+      - progress_status
+      - responsibilities
+      - start_date
+      - student_practice_documents
+      - student_practice_status
+      - subject
+      - title
+      - workflow_state
+      - workflow_status_label
+    PracticeApproval:
+      type: object
+      properties:
+        practice_id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date
+          readOnly: true
+        subject_name:
+          type: string
+          readOnly: true
+        subject_code:
+          type: string
+          readOnly: true
+        department_name:
+          type: string
+          readOnly: true
+        contact_user_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        contact_user_email:
+          type: string
+          readOnly: true
+        contact_user_full_name:
+          type: string
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+      required:
+      - approval_status
+      - contact_user_email
+      - contact_user_full_name
+      - contact_user_id
+      - created_at
+      - department_name
+      - practice_id
+      - subject_code
+      - subject_name
+    PracticeApprovalStatus:
+      type: object
+      properties:
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/PracticeApprovalStatusApprovalStatusEnum'
+          description: |-
+            Status schválení praxe (pouze pro schválení nebo zamítnutí)
+
+            * `APPROVED` - APPROVED
+            * `REJECTED` - REJECTED
+      required:
+      - approval_status
+    PracticeApprovalStatusApprovalStatusEnum:
+      enum:
+      - 1
+      - 2
+      type: integer
+      description: |-
+        * `APPROVED` - APPROVED
+        * `REJECTED` - REJECTED
+    PracticeApprovalStatusRequest:
+      type: object
+      properties:
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/PracticeApprovalStatusApprovalStatusEnum'
+          description: |-
+            Status schválení praxe (pouze pro schválení nebo zamítnutí)
+
+            * `APPROVED` - APPROVED
+            * `REJECTED` - REJECTED
+      required:
+      - approval_status
+    PracticeRequest:
+      type: object
+      description: Serializer pro model Practice
+      properties:
+        employer_id:
+          type: integer
+          writeOnly: true
+        subject_id:
+          type: integer
+          writeOnly: true
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        responsibilities:
+          type: string
+          minLength: 1
+        available_positions:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          nullable: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        contact_user:
+          type: integer
+          writeOnly: true
+        image_base64:
+          type: string
+        is_external:
+          type: boolean
+          description: True = mimosystémová praxe (firma není registrovaná v systému).
+        skills: {}
+        semester:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SemesterEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        city:
+          type: string
+          description: Město, kde se praxe koná
+          maxLength: 100
+        mentor_name:
+          type: string
+          minLength: 1
+          description: Jméno mentora praxe
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Kontaktní e-mail nabídky
+        region:
+          default: ''
+          description: |-
+            Kraj, kde se praxe koná
+
+            * `PHA` - Hlavní město Praha
+            * `STC` - Středočeský kraj
+            * `JHC` - Jihočeský kraj
+            * `PLK` - Plzeňský kraj
+            * `KVK` - Karlovarský kraj
+            * `ULK` - Ústecký kraj
+            * `LBK` - Liberecký kraj
+            * `HKK` - Královéhradecký kraj
+            * `PAK` - Pardubický kraj
+            * `OLK` - Olomoucký kraj
+            * `MSK` - Moravskoslezský kraj
+            * `JHM` - Jihomoravský kraj
+            * `ZLK` - Zlínský kraj
+            * `VYS` - Kraj Vysočina
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        employment_type:
+          description: |-
+            Typ úvazku nabídky. Závazný číselník dle rozhodnutí garantů/vlastníka (guarantor-values.md, 2026-10-11).
+
+            * `uvazek_0_5` - Úvazek 0,5
+            * `uvazek_1_0` - Úvazek 1,0
+          oneOf:
+          - $ref: '#/components/schemas/EmploymentTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+      required:
+      - contact_email
+      - description
+      - employer_id
+      - mentor_name
+      - responsibilities
+      - start_date
+      - subject_id
+      - title
+    ProfessorDetail:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        department:
+          type: string
+          readOnly: true
+        subjects:
+          type: string
+          readOnly: true
+      required:
+      - department
+      - email
+      - first_name
+      - last_name
+      - subjects
+      - user_id
+    ProfessorUserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 15
+        full_name:
+          type: string
+          readOnly: true
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        user_type:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        ucit_idno:
+          type: string
+          nullable: true
+          maxLength: 64
+      required:
+      - email
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - role
+      - user_type
+    ProfessorUserProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        phone:
+          type: string
+          maxLength: 15
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        ucit_idno:
+          type: string
+          nullable: true
+          maxLength: 64
+      required:
+      - email
+      - first_name
+      - last_name
+    ProgressStatusEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      type: integer
+      description: |-
+        * `0` - NOT_STARTED
+        * `1` - IN_PROGRESS
+        * `2` - COMPLETED
+        * `3` - CANCELLED
+    ReasonEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      type: integer
+      description: |-
+        * `0` - TIME
+        * `1` - CAPACITY
+        * `2` - MANUAL
+    RedactedTokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    RegionEnum:
+      enum:
+      - PHA
+      - STC
+      - JHC
+      - PLK
+      - KVK
+      - ULK
+      - LBK
+      - HKK
+      - PAK
+      - OLK
+      - MSK
+      - JHM
+      - ZLK
+      - VYS
+      type: string
+      description: |-
+        * `PHA` - Hlavní město Praha
+        * `STC` - Středočeský kraj
+        * `JHC` - Jihočeský kraj
+        * `PLK` - Plzeňský kraj
+        * `KVK` - Karlovarský kraj
+        * `ULK` - Ústecký kraj
+        * `LBK` - Liberecký kraj
+        * `HKK` - Královéhradecký kraj
+        * `PAK` - Pardubický kraj
+        * `OLK` - Olomoucký kraj
+        * `MSK` - Moravskoslezský kraj
+        * `JHM` - Jihomoravský kraj
+        * `ZLK` - Zlínský kraj
+        * `VYS` - Kraj Vysočina
+    RunningPractice:
+      type: object
+      properties:
+        practice_id:
+          type: integer
+          readOnly: true
+        subject_code:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 100
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        contact_user_name:
+          type: string
+          readOnly: true
+        student_count:
+          type: string
+          readOnly: true
+        approved_student_count:
+          type: string
+          readOnly: true
+        pending_student_count:
+          type: string
+          readOnly: true
+        available_positions:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        skills: {}
+      required:
+      - approved_student_count
+      - contact_user_name
+      - end_date
+      - pending_student_count
+      - practice_id
+      - start_date
+      - student_count
+      - subject_code
+    SemesterEnum:
+      enum:
+      - ZS
+      - LS
+      type: string
+      description: |-
+        * `ZS` - Zimní semestr
+        * `LS` - Letní semestr
+    Status579Enum:
+      enum:
+      - 0
+      - 1
+      - 2
+      type: integer
+      description: |-
+        * `0` - PENDING
+        * `1` - APPROVED
+        * `2` - REJECTED
+    StatusF79Enum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      type: integer
+      description: |-
+        * `0` - PENDING
+        * `1` - ACCEPTED
+        * `2` - REJECTED
+        * `3` - CANCELLED
+        * `4` - EXPIRED
+    StudentDetail:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+        surname:
+          type: string
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        os_cislo:
+          type: string
+          nullable: true
+          maxLength: 64
+        student_practice:
+          type: string
+          readOnly: true
+        department:
+          type: string
+          readOnly: true
+        approved_practice:
+          type: string
+          readOnly: true
+      required:
+      - approved_practice
+      - department
+      - email
+      - first_name
+      - last_name
+      - name
+      - student_practice
+      - surname
+      - user_id
+    StudentPracticeCard:
+      type: object
+      properties:
+        employer:
+          type: string
+          readOnly: true
+        subject:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        responsibilities:
+          type: string
+          readOnly: true
+        available_positions:
+          type: integer
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        end_date:
+          type: string
+          format: date
+          readOnly: true
+        progress_status:
+          allOf:
+          - $ref: '#/components/schemas/ProgressStatusEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatus579Enum'
+          minimum: -2147483648
+          maximum: 2147483647
+        workflow_status:
+          type: string
+          readOnly: true
+        workflow_status_label:
+          type: string
+          readOnly: true
+        contact_user_info:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        image_base64:
+          type: string
+          readOnly: true
+        student_practice_status:
+          type: string
+          readOnly: true
+        student_practice_documents:
+          type: string
+          readOnly: true
+        can_approve:
+          type: string
+          readOnly: true
+        is_cancelled:
+          type: boolean
+          description: Příznak, zda byl záznam stornován. Idempotentní — nelze vrátit
+            zpět.
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp okamžiku stornování.
+        cancellation_reason:
+          type: string
+          description: Povinný důvod storna (zadáván uživatelem v UI).
+        cancelled_from_state:
+          type: string
+          readOnly: true
+        rejection_reason:
+          description: Důvod zamítnutí přihlášky nebo obsahu praxe (min 10 znaků)
+          oneOf:
+          - type: string
+            minLength: 10
+          - type: string
+            maxLength: 0
+        contract_received_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Datum doručení / podpisu smlouvy
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Poslední změna záznamu (včetně přechodů stavu)
+        cancellation_requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        cancellation_resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_external:
+          type: boolean
+          readOnly: true
+      required:
+      - approval_status
+      - available_positions
+      - can_approve
+      - cancellation_requested_at
+      - cancellation_resolved_at
+      - cancelled_from_state
+      - contact_user_info
+      - description
+      - employer
+      - end_date
+      - image_base64
+      - is_active
+      - is_external
+      - progress_status
+      - responsibilities
+      - start_date
+      - student_practice_documents
+      - student_practice_status
+      - subject
+      - title
+      - updated_at
+      - workflow_status
+      - workflow_status_label
+    StudentPracticeUploadDocumentRequest:
+      type: object
+      properties:
+        document:
+          type: string
+          format: binary
+          nullable: true
+    StudentProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 15
+        full_name:
+          type: string
+          readOnly: true
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        user_type:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+        resume:
+          type: string
+        additional_info:
+          type: string
+        street:
+          type: string
+          maxLength: 100
+        street_number:
+          type: string
+          maxLength: 10
+        zip_code:
+          type: string
+          maxLength: 10
+        city:
+          type: string
+          maxLength: 100
+        specialization:
+          type: string
+          maxLength: 100
+        os_cislo:
+          type: string
+          nullable: true
+          maxLength: 64
+        skills: {}
+        cv_file:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+      required:
+      - cv_file
+      - email
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - role
+      - user_type
+    Subject:
+      type: object
+      properties:
+        subject_id:
+          type: integer
+          readOnly: true
+        subject_code:
+          type: string
+          nullable: true
+          maxLength: 50
+        subject_name:
+          type: string
+          maxLength: 100
+        department:
+          allOf:
+          - $ref: '#/components/schemas/Department'
+          readOnly: true
+        hours_required:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        min_hours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Minimální počet hodin praxe pro splnění předmětu (default 480
+            dle KI/BOP).
+        teacher:
+          type: string
+          readOnly: true
+      required:
+      - department
+      - subject_id
+      - teacher
+    SubjectRequest:
+      type: object
+      properties:
+        subject_code:
+          type: string
+          nullable: true
+          maxLength: 50
+        subject_name:
+          type: string
+          maxLength: 100
+        hours_required:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        min_hours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Minimální počet hodin praxe pro splnění předmětu (default 480
+            dle KI/BOP).
+        teacher_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+    TokenResponse:
+      type: object
+      properties:
+        refresh:
+          type: string
+        access:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserInfo'
+      required:
+      - access
+      - refresh
+      - user
+    TransitionPracticeRequest:
+      type: object
+      description: Request serializer pro POST /api/practices/{id}/transition.
+      properties:
+        target_state:
+          allOf:
+          - $ref: '#/components/schemas/TransitionPracticeTargetStateEnum'
+          description: |-
+            Cílový stav workflow (číselná hodnota enumu).
+
+            * `0` - PENDING_CONTENT_APPROVAL
+            * `1` - CONTENT_APPROVED
+            * `2` - CONTENT_REJECTED
+            * `3` - OPEN_FOR_APPLICATIONS
+            * `4` - CLOSED_FOR_APPLICATIONS
+        reason:
+          type: string
+          description: Důvod přechodu (nepovinný).
+      required:
+      - target_state
+    TransitionPracticeTargetStateEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      type: integer
+      description: |-
+        * `0` - PENDING_CONTENT_APPROVAL
+        * `1` - CONTENT_APPROVED
+        * `2` - CONTENT_REJECTED
+        * `3` - OPEN_FOR_APPLICATIONS
+        * `4` - CLOSED_FOR_APPLICATIONS
+    TransitionStudentPracticeRequest:
+      type: object
+      description: Request serializer pro POST /api/student-practices/{id}/transition.
+      properties:
+        target_state:
+          allOf:
+          - $ref: '#/components/schemas/TransitionStudentPracticeTargetStateEnum'
+          description: |-
+            Cílový stav workflow (číselná hodnota enumu).
+
+            * `0` - APPLIED
+            * `1` - PRELIMINARY_APPROVED
+            * `2` - REJECTED
+            * `3` - CONTRACTED
+            * `4` - STARTED
+            * `5` - ENDED
+            * `6` - COMPLETED
+            * `7` - AWAITING_CONTRACT
+            * `8` - AWAITING_DOCUMENTS
+            * `9` - DOCUMENTS_REJECTED
+            * `10` - AWAITING_CONTENT_APPROVAL
+            * `11` - CONTENT_REJECTED
+            * `12` - CONTENT_APPROVED
+            * `13` - DOCUMENTS_RESUBMITTED
+        reason:
+          type: string
+          description: Důvod přechodu (nepovinný).
+      required:
+      - target_state
+    TransitionStudentPracticeTargetStateEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      type: integer
+      description: |-
+        * `0` - APPLIED
+        * `1` - PRELIMINARY_APPROVED
+        * `2` - REJECTED
+        * `3` - CONTRACTED
+        * `4` - STARTED
+        * `5` - ENDED
+        * `6` - COMPLETED
+        * `7` - AWAITING_CONTRACT
+        * `8` - AWAITING_DOCUMENTS
+        * `9` - DOCUMENTS_REJECTED
+        * `10` - AWAITING_CONTENT_APPROVAL
+        * `11` - CONTENT_REJECTED
+        * `12` - CONTENT_APPROVED
+        * `13` - DOCUMENTS_RESUBMITTED
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          type: string
+          readOnly: true
+        firstName:
+          type: string
+        lastName:
+          type: string
+        department:
+          type: string
+          readOnly: true
+        favorite_practices:
+          type: string
+          readOnly: true
+      required:
+      - department
+      - email
+      - favorite_practices
+      - firstName
+      - id
+      - lastName
+      - role
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 15
+        full_name:
+          type: string
+          readOnly: true
+        title_before:
+          type: string
+          maxLength: 50
+        title_after:
+          type: string
+          maxLength: 50
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        user_type:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - role
+      - user_type
+    WorkflowStateEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      type: integer
+      description: |-
+        * `0` - PENDING_CONTENT_APPROVAL
+        * `1` - CONTENT_APPROVED
+        * `2` - CONTENT_REJECTED
+        * `3` - OPEN_FOR_APPLICATIONS
+        * `4` - CLOSED_FOR_APPLICATIONS
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

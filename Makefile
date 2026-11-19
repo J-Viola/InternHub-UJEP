@@ -44,6 +44,20 @@ migrate: ## Runs Django migrations inside the backend container
 seed: ## Seeds the database with demo data inside the backend container
 	docker container exec internhub-backend python manage.py seed_db --settings=app.settings
 
+openapi: ## Generates openapi.yaml (OpenAPI 3.0) from the backend image
+	@tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; \
+	docker compose --progress quiet run --rm -T --no-deps --entrypoint python \
+		-e DEBUG=False -e STAG_MOCK=False -e DEMO_LOGIN=0 \
+		django manage.py spectacular --validate > "$$tmp" && \
+	mv "$$tmp" openapi.yaml && chmod 644 openapi.yaml && echo "openapi.yaml updated"
+
+openapi-check: ## Fails if openapi.yaml is out of date (used by pre-commit)
+	@tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; \
+	docker compose --progress quiet run --rm -T --no-deps --entrypoint python \
+		-e DEBUG=False -e STAG_MOCK=False -e DEMO_LOGIN=0 \
+		django manage.py spectacular --validate > "$$tmp" && \
+	diff -u openapi.yaml "$$tmp"
+
 lint-frontend: ## Runs ESLint on the frontend source
 	docker container exec internhub-frontend npx eslint src --ext .js,.jsx
 

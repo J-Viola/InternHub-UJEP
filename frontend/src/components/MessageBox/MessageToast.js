@@ -27,10 +27,7 @@ function MessageToast() {
       {messages.map(msg => (
         <Container
           key={msg.id}
-          property={`${getTypeStyles(msg.type)} text-white px-6 py-4 rounded-lg shadow-lg flex items-center min-w-[300px]`}
-          style={{
-            animation: 'slideDown 0.3s ease-out',
-          }}
+          property={`${getTypeStyles(msg.type)} text-white px-6 py-4 rounded-lg shadow-lg flex items-center min-w-[300px] animate-toast-in`}
         >
           <Container property="flex-1 flex items-center justify-center gap-3">
             <FaInfo size={24} />
@@ -46,9 +43,6 @@ function MessageToast() {
           </Button>
         </Container>
       ))}
-      <style>
-        {"\n          @keyframes slideDown {\n            0% {\n              opacity: 0;\n              transform: translateY(-10px);\n            }\n            100% {\n              opacity: 1;\n              transform: translateY(0);\n            }\n          }\n        "}
-      </style>
     </Container>
   );
 }
