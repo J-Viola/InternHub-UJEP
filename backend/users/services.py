@@ -557,6 +557,24 @@ def _get_or_create_stag_user_inner(stag_data: dict, ticket: str):
     return user
 
 
+def _subject_codes_with_ongoing_practice(user=None) -> set[str]:
+    """
+    Kódy předmětů, na které navazuje rozběhnutá přihláška (nestornovaná, ne REJECTED/COMPLETED).
+
+    STAG vrací předměty jen z aktuálního akademického roku; vazby na předměty
+    z dřívějšího roku s rozběhnutou praxí se proto při synchronizaci nedeaktivují.
+    S `user` jen přihlášky daného studenta, bez něj všechny (vazby vyučujících).
+    """
+    from student_practices.models import StudentPractice, StudentPracticeWorkflowState
+
+    ongoing = StudentPractice.objects.filter(is_cancelled=False, practice__subject__isnull=False).exclude(
+        workflow_state__in=[StudentPracticeWorkflowState.REJECTED, StudentPracticeWorkflowState.COMPLETED]
+    )
+    if user is not None:
+        ongoing = ongoing.filter(user=user)
+    return set(ongoing.values_list("practice__subject__subject_code", flat=True))
+
+
 def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: StudentUser):
     """
     Synchronizes STAG subjects with the database for student.
@@ -615,7 +633,8 @@ def sync_stag_subjects_for_student(stag_ticket: str, osCislo: str, user: Student
                     },
                 )
 
-        # Soft-delete subjects the user is no longer enrolled in
+        # Soft-delete subjects the user is no longer enrolled in (kromě předmětů s rozběhnutou praxí)
+        valid_subject_codes |= _subject_codes_with_ongoing_practice(user=user)
         UserSubject.objects.filter(user=user, role=UserSubjectType.Student, is_active=True).exclude(
             subject__subject_code__in=valid_subject_codes
         ).update(is_active=False)
@@ -673,7 +692,8 @@ def sync_stag_roles_for_teacher(stag_ticket: str, ucitIdno: str, user: Professor
                     },
                 )
 
-        # Soft-delete subjects the teacher is no longer assigned to
+        # Soft-delete subjects the teacher is no longer assigned to (kromě předmětů s rozběhnutou praxí)
+        valid_subject_codes |= _subject_codes_with_ongoing_practice()
         UserSubject.objects.filter(user=user, role=UserSubjectType.Professor, is_active=True).exclude(
             subject__subject_code__in=valid_subject_codes
         ).update(is_active=False)

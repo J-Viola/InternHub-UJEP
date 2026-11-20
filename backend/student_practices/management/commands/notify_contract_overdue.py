@@ -6,6 +6,7 @@ from django.utils import timezone
 from notifications.services import NotificationService
 
 from api.models import SystemSettings
+from student_practices.locking import lock_student_practice
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
 
@@ -32,7 +33,7 @@ class Command(BaseCommand):
 
         for sp in candidates:
             with transaction.atomic():
-                sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+                sp = lock_student_practice(sp.pk)
                 if sp.contract_overdue and sp.contract_overdue_notified_at is None:
                     # Idempotence: flag se nastaví vždy, ať už mají garanti e-mail či ne
                     # (retry by bez příjemců nic nepřidal).

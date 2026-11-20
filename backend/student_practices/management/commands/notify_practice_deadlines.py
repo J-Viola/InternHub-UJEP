@@ -8,6 +8,7 @@ from notifications.models import Notification, NotificationType
 from notifications.services import NotificationService
 
 from api.models import SystemSettings
+from student_practices.locking import lock_student_practice
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 
 
@@ -66,7 +67,7 @@ class Command(BaseCommand):
                 continue  # tato úroveň už byla odeslána
 
             with transaction.atomic():
-                sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+                sp = lock_student_practice(sp.pk)
                 if sp.urgency_level >= selected_level:
                     continue
                 sp.urgency_level = selected_level
@@ -121,7 +122,7 @@ class Command(BaseCommand):
                 continue
 
             with transaction.atomic():
-                sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+                sp = lock_student_practice(sp.pk)
                 if sp.workflow_state != StudentPracticeWorkflowState.ENDED:
                     continue
                 practice_title = sp.practice.title if sp.practice else "N/A"

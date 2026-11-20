@@ -24,6 +24,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from api.views import StandardResultsSetPagination
 from practices.models import Practice
+from student_practices.locking import lock_document, lock_student_practice, retry_on_deadlock
 from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
@@ -511,14 +512,13 @@ class StudentPracticeUploadDocumentView(APIView):
             404: OpenApiResponse(description="StudentPractice not found"),
         },
     )
+    @retry_on_deadlock
     @transaction.atomic
     def post(self, request, document_id):
         import os
 
-        document = get_object_or_404(UploadedDocument.objects.select_for_update(), pk=document_id)
-        sp = document.student_practice
-        if sp is not None:
-            sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        get_object_or_404(UploadedDocument.objects.only("pk"), pk=document_id)
+        document, sp = lock_document(document_id)
         self.check_object_permissions(request, document)
 
         file_obj = request.FILES.get("document") or request.FILES.get("file")
@@ -1305,13 +1305,15 @@ class ConfirmContractView(APIView):
             400: OpenApiResponse(description="CAPACITY_FULL — kapacita partnera je plně obsazena"),
         },
     )
+    @retry_on_deadlock
     @transaction.atomic
     def post(self, request, pk):
         from notifications.services import NotificationService
 
         from student_practices.services import _check_contract_capacity
 
-        sp = get_object_or_404(StudentPractice.objects.select_for_update(), pk=pk)
+        get_object_or_404(StudentPractice.objects.only("pk"), pk=pk)
+        sp = lock_student_practice(pk)
 
         # Objektová autorizace — cizí aktér je odmítnut ještě před
         # kapacitní kontrolou a jakýmkoli zápisem (fail-closed).

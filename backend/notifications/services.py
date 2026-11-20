@@ -2,7 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import send_mail
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.template.loader import render_to_string
 
 from api.models import SystemSettings
@@ -769,12 +769,15 @@ class NotificationService:
             notification = Notification.objects.create(**notification_data)
 
             if send_email and getattr(recipient, "email", None):
-                try:
-                    NotificationService._send_email(recipient, verb, message)
-                except Exception as mail_err:
-                    logger.error(f"Failed to send email notification to {recipient.email}: {mail_err}")
+                # E-mail až po potvrzení transakce: při rollbacku ani při opakování
+                # transakce po uváznutí (retry_on_deadlock) neodejde zbytečně / dvakrát.
+                transaction.on_commit(lambda: NotificationService._send_email(recipient, verb, message))
 
             return notification
+        except DatabaseError:
+            # Chybu DB (např. uváznutí) nepolykat: transakce je přerušená a musí
+            # ji vrátit / zopakovat volající.
+            raise
         except Exception as e:
             logger.exception(f"Failed to create notification for {recipient}: {str(e)}")
             return None

@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any
 
 import requests
@@ -35,13 +36,34 @@ class RealStagClient(StagDataProvider):
         if response.status_code != 200:
             raise StagUnreachableError()
 
+    def _current_academic_year(self, ticket: str) -> str:
+        """Aktuální akademický rok ze STAGu; při výpadku dopočet z data (rok začíná 1. 10.)."""
+        url = f"{settings.STAG_WS_URL}/services/rest2/kalendar/getAktualniObdobiInfo"
+        try:
+            response = requests.get(
+                url,
+                cookies={"WSCOOKIE": ticket},
+                params={"outputFormat": "JSON"},
+                timeout=(2, 5),
+                headers={"Accept": "application/json"},
+            )
+            data = response.json() if response.status_code == 200 else None
+            year = data.get("akademRok") if isinstance(data, dict) else None
+            if year:
+                return str(year)
+        except (requests.RequestException, ValueError):
+            pass
+
+        today = date.today()
+        return str(today.year if today.month >= 10 else today.year - 1)
+
     def get_student_subjects(self, ticket: str, os_cislo: str):
         url = f"{settings.STAG_WS_URL}/services/rest2/predmety/getPredmetyByStudent"
         params = {
             "osCislo": os_cislo,
             "outputFormat": "JSON",
             "semestr": "%",
-            "rok": "%",
+            "rok": self._current_academic_year(ticket),
         }
         cookies = {"WSCOOKIE": ticket}
 
@@ -67,7 +89,7 @@ class RealStagClient(StagDataProvider):
             "ucitIdno": ucit_idno,
             "outputFormat": "JSON",
             "semestr": "%",
-            "rok": "%",
+            "rok": self._current_academic_year(ticket),
         }
         cookies = {"WSCOOKIE": ticket}
 

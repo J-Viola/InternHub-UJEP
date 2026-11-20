@@ -15,6 +15,7 @@ from practices.models import (
     PracticeWorkflowState,
     ProgressStatus,
 )
+from student_practices.locking import retry_on_deadlock
 from student_practices.models import (
     DocumentHelper,
     EmployerInvitation,
@@ -100,6 +101,7 @@ class PracticeService:
         }
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def apply_student_practice(user, practice_id: int) -> dict:
         """
@@ -413,6 +415,7 @@ class PracticeService:
         return practice
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def cancel_practice(practice, actor, reason: str) -> Practice:
         """

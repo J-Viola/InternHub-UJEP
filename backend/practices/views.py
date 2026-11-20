@@ -481,12 +481,11 @@ class EmployerPracticeViewSet(viewsets.ModelViewSet):
             )
 
         # Soft-delete via service layer for consistent audit trail + notifications
-        with transaction.atomic():
-            instance = PracticeService.cancel_practice(
-                practice=instance,
-                actor=request.user,
-                reason="Deleted by employer",
-            )
+        instance = PracticeService.cancel_practice(
+            practice=instance,
+            actor=request.user,
+            reason="Deleted by employer",
+        )
 
         ActionLogService.log(
             user=request.user,

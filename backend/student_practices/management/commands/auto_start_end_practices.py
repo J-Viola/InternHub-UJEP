@@ -5,6 +5,7 @@ from django.db import transaction
 from notifications.models import NotificationType
 from notifications.services import NotificationService
 
+from student_practices.locking import lock_student_practice
 from student_practices.models import StudentPractice, StudentPracticeWorkflowState
 from users.action_log import ActionLogService
 from users.constants import ActionLogType
@@ -27,7 +28,7 @@ class Command(BaseCommand):
 
         for sp in contracted_sps:
             with transaction.atomic():
-                sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+                sp = lock_student_practice(sp.pk)
                 if sp.workflow_state == StudentPracticeWorkflowState.CONTRACTED:
                     sp.workflow_state = StudentPracticeWorkflowState.STARTED
                     sp.save(update_fields=["workflow_state"])
@@ -59,7 +60,7 @@ class Command(BaseCommand):
 
         for sp in started_sps:
             with transaction.atomic():
-                sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+                sp = lock_student_practice(sp.pk)
                 if sp.workflow_state == StudentPracticeWorkflowState.STARTED:
                     sp.workflow_state = StudentPracticeWorkflowState.ENDED
                     sp.save(update_fields=["workflow_state"])

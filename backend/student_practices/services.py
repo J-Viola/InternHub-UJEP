@@ -14,6 +14,7 @@ from templates.documents.report_generator import ReportGenerator
 
 from api.helpers import can_manage_practice
 from practices.models import Practice, PracticeWorkflowState, ProgressStatus
+from student_practices.locking import lock_document, lock_student_practice, retry_on_deadlock
 from student_practices.messages import StudentPracticeMessages
 from student_practices.models import (
     DocumentHelper,
@@ -320,6 +321,7 @@ def _generate_completion_protocol(sp: StudentPractice) -> None:
         logger.exception("Failed to store completion protocol PDF for SP %s", sp.student_practice_id)
 
 
+@retry_on_deadlock
 @transaction.atomic
 def withdraw_student_practice(sp, actor):
     """
@@ -327,7 +329,7 @@ def withdraw_student_practice(sp, actor):
     Only allowed in APPLIED or PRELIMINARY_APPROVED state.
     Sets workflow_state to REJECTED.
     """
-    sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+    sp = lock_student_practice(sp.pk)
 
     if sp.is_cancelled:
         raise ValueError(StudentPracticeMessages.CANCELLED_CANNOT_MODIFY)
@@ -513,6 +515,7 @@ class StudentPracticeService:
         return {"created": created_count, "errors": errors}
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def transition_student_practice_state(sp, target_state, actor, reason=None):
         """
@@ -522,7 +525,7 @@ class StudentPracticeService:
         (approval flags, approval/progress statuses), and logs the action.
         """
         # Refetch with row lock to prevent race conditions
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
 
         _assert_no_pending_cancellation(sp)
 
@@ -1008,6 +1011,7 @@ class StudentPracticeService:
         return sp
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def process_invitation_approval(user, invitation_id, action):
         """
@@ -1120,6 +1124,7 @@ class StudentPracticeService:
         raise ValueError(StudentPracticeMessages.INVALID_ACTION)
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def submit_cancellation_request(sp, actor, reason: str):
         """
@@ -1131,7 +1136,7 @@ class StudentPracticeService:
         z podnětu studenta, které blokuje novou žádost, dokud ho garant nevezme na vědomí
         (``resolve_cancellation``). Storno je nevratné (RF-16).
         """
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
 
         if sp.is_cancelled:
             raise ValueError(StudentPracticeMessages.ALREADY_CANCELLED)
@@ -1147,6 +1152,7 @@ class StudentPracticeService:
         return sp
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def cancel_student_practice(sp, actor, reason: str):
         """
@@ -1156,7 +1162,7 @@ class StudentPracticeService:
         the old-style statuses to REJECTED / CANCELLED respectively.
         """
         # Refetch with row lock to prevent race conditions
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
 
         if sp.is_cancelled:
             raise ValueError(StudentPracticeMessages.ALREADY_CANCELLED)
@@ -1236,6 +1242,7 @@ class StudentPracticeService:
         return sp
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def transition_to_awaiting_documents_after_contract_upload(sp, actor):
         """
@@ -1244,7 +1251,7 @@ class StudentPracticeService:
         (atomicky + ActionLog). Student nemá roli na state machine přechod —
         proto se provádí zde, v upload endpointu.
         """
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
         if sp.is_cancelled or sp.workflow_state != StudentPracticeWorkflowState.AWAITING_CONTRACT:
             return sp
 
@@ -1280,6 +1287,7 @@ class StudentPracticeService:
         return sp
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def resolve_cancellation(sp, actor):
         """
@@ -1287,7 +1295,7 @@ class StudentPracticeService:
         uvolní blokaci nové žádosti studenta. Storno samo zůstává (nevratné, RF-16);
         rozhodnutí o jeho zamítnutí neexistuje.
         """
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
 
         if not sp.is_cancelled:
             raise ValueError("Přihláška není stornovaná — není co řešit.")
@@ -1306,6 +1314,7 @@ class StudentPracticeService:
         return sp
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def reapply_to_practice(student, practice_id: int):
         """
@@ -1394,20 +1403,16 @@ class StudentPracticeService:
         return sp
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def process_document_review(user, document_id: int, status_val: int, review_note: str = ""):
         """
         Allows a professor or admin to approve or reject a document.
         """
-        from student_practices.models import UploadedDocument
-
-        document = UploadedDocument.objects.select_for_update().get(pk=document_id)
-        student_practice = document.student_practice
+        document, student_practice = lock_document(document_id)
 
         if not student_practice:
             raise ValueError(StudentPracticeMessages.NOT_FOUND)
-
-        student_practice = StudentPractice.objects.select_for_update().get(pk=student_practice.pk)
 
         _assert_no_pending_cancellation(student_practice)
 
@@ -1489,7 +1494,7 @@ class StudentPracticeService:
         ):
             return
 
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
         if sp.is_cancelled or sp.workflow_state not in (
             StudentPracticeWorkflowState.AWAITING_DOCUMENTS,
             StudentPracticeWorkflowState.ENDED,
@@ -1545,7 +1550,7 @@ class StudentPracticeService:
         if not (sp.contract_document and sp.contract_document.status == DocumentStatus.APPROVED):
             return
 
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
         if sp.is_cancelled or sp.workflow_state != StudentPracticeWorkflowState.AWAITING_DOCUMENTS:
             return
         if not (sp.contract_document and sp.contract_document.status == DocumentStatus.APPROVED):
@@ -1607,6 +1612,7 @@ class StudentPracticeService:
         NotificationService.notify_org_allocation(sp)
 
     @staticmethod
+    @retry_on_deadlock
     @transaction.atomic
     def mark_documents_resubmitted_for_review(sp, actor, document, was_rejected):
         """
@@ -1621,7 +1627,7 @@ class StudentPracticeService:
         znovu na uzamčeném SP; ostatní oprávnění uploadéři (organizace,
         pedagog) doklad nahrají, ale stav se neposune.
         """
-        sp = StudentPractice.objects.select_for_update().get(pk=sp.pk)
+        sp = lock_student_practice(sp.pk)
         # UploadedDocument nemá `student_practice_id` (vazba je property nad
         # OneToOneRel) — ověřujeme přes navázaný objekt, ne přes attname.
         linked_sp = document.student_practice
